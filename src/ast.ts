@@ -38,6 +38,7 @@ export interface ExprStmt {
 
 export type Expression =
 	| LiteralExpr
+	| LogicalExpr
 	| IdentifierExpr
 	| UnaryExpr
 	| BinaryExpr
@@ -88,6 +89,19 @@ export interface BinaryExpr {
 	// ```
 
 	type: "Binary";
+	left: Expression;
+	operator: Token;
+	right: Expression;
+}
+
+export interface LogicalExpr {
+	// example for logical expression
+	// ```gic
+	//   true && false
+	//   ^^^^
+	//   operator
+	// ```
+	type: "Logical";
 	left: Expression;
 	operator: Token;
 	right: Expression;
