@@ -15,6 +15,7 @@ function simplifyExpression(expression: Expression): unknown {
 	if (expression.type === "Literal") {
 		return expression;
 	}
+
 	if (expression.type === "Binary") {
 		return {
 			type: expression.type,
@@ -67,6 +68,13 @@ function simplifyProgram(program: Program) {
 					type: statement.type,
 					name: statement.name.lexeme,
 					initializer: simplifyExpression(statement.initializer),
+				};
+			}
+			if (statement.type === "Assignment") {
+				return {
+					type: statement.type,
+					name: statement.name.lexeme,
+					value: simplifyExpression(statement.value),
 				};
 			}
 
@@ -497,6 +505,110 @@ describe("parser", () => {
 							},
 						],
 						paren: ")",
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse an assignment expression", () => {
+		const lexer = new Lexer("x = 5;");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "Assignment",
+					name: "x",
+					value: {
+						type: "Literal",
+						value: 5,
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse a assignment with expression value", () => {
+		const lexer = new Lexer("x = 5 + 5;");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "Assignment",
+					name: "x",
+					value: {
+						type: "Binary",
+						operator: "+",
+						left: {
+							type: "Literal",
+							value: 5,
+						},
+						right: {
+							type: "Literal",
+							value: 5,
+						},
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse a declaration followed by an assignment", () => {
+		const lexer = new Lexer(`let x = 5;
+x = 10;`);
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					initializer: {
+						type: "Literal",
+						value: 5,
+					},
+					type: "VarDecl",
+					name: "x",
+				},
+				{
+					type: "Assignment",
+					name: "x",
+					value: {
+						type: "Literal",
+						value: 10,
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse identifier expression statement", () => {
+		const lexer = new Lexer("x;");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "ExprStmt",
+					expression: {
+						type: "Identifier",
+						name: "x",
 					},
 				},
 			],

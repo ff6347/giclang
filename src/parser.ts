@@ -28,7 +28,13 @@ import {
 	type Token,
 	type TokenType,
 } from "./tokens.ts";
-import type { Expression, Program, Statement, VarDeclStmt } from "./ast.ts";
+import type {
+	Assignment,
+	Expression,
+	Program,
+	Statement,
+	VarDeclStmt,
+} from "./ast.ts";
 import { ParserError } from "./error.ts";
 
 // parser.ts;
@@ -71,7 +77,15 @@ export class Parser {
 		// TODO: We will get here soon
 		// if(this.match(LEFT_BRACE))
 		// return this.blockStatement();
+		if (this.check(IDENTIFIER) && this.checkNext(EQUAL)) {
+			return this.assignment();
+		}
 		return this.expressionStatement();
+	}
+	checkNext(type: TokenType): boolean {
+		const token = this.tokens.at(this.current + 1);
+		if (token === undefined) return false;
+		return token.type === type;
 	}
 	expressionStatement(): Statement {
 		const expression = this.expression();
@@ -254,8 +268,16 @@ export class Parser {
 		}
 		throw new ParserError("Expected Expression.", this.peek());
 	}
-	assignment(): Expression {
-		throw new Error("Method not implemented.");
+	assignment(): Assignment {
+		const name: Token = this.consume(IDENTIFIER, "Expected variable name.");
+		this.consume(EQUAL, "Expected '=' after variable name.");
+		const value = this.expression();
+		this.consume(SEMICOLON, "Expected ';' after assignment");
+		return {
+			type: "Assignment",
+			name,
+			value,
+		};
 	}
 	consume(type: TokenType, message: string): Token {
 		if (this.check(type)) {

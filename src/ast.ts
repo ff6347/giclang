@@ -10,7 +10,7 @@ export interface Program {
 	type: "Program";
 	statements: Statement[];
 }
-export type Statement = VarDeclStmt | ExprStmt;
+export type Statement = VarDeclStmt | Assignment | ExprStmt;
 
 // initializer is the expression after the equals sign
 // e.g. `let x = 5` or `let y = 1 + 1`
@@ -34,6 +34,18 @@ export interface ExprStmt {
 	// ```
 	type: "ExprStmt";
 	expression: Expression;
+}
+
+export interface Assignment {
+	// example for assignment expression
+	// ```gic
+	//   x = 5
+	//   ^^^
+	//   operator
+	// ```
+	type: "Assignment";
+	name: Token;
+	value: Expression;
 }
 
 export type Expression =
