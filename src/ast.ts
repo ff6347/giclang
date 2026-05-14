@@ -40,8 +40,6 @@ export interface Assignment {
 	// example for assignment expression
 	// ```gic
 	//   x = 5
-	//   ^^^
-	//   operator
 	// ```
 	type: "Assignment";
 	name: Token;
