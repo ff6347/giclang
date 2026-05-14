@@ -11,3 +11,13 @@ export class GicError extends Error {
 		this.line = typeof location === "number" ? location : location.line;
 	}
 }
+
+export class ParserError extends Error {
+	token: Token | undefined;
+
+	constructor(message: string, token: Token | undefined) {
+		super(message);
+		this.name = "ParserError";
+		this.token = token;
+	}
+}

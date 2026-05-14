@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { Lexer } from "./lexer.ts";
 import { GicError } from "./error.ts";
 import { EOF } from "./tokens.ts";
+import { Parser } from "./parser.ts";
 
 async function main() {
 	const args = argv.slice(2);
@@ -56,7 +57,10 @@ async function runPrompt(): Promise<void> {}
 function run(source: string): void {
 	const lexer = new Lexer(source);
 	const tokens = lexer.scanTokens();
-	console.log(tokens);
+	const parser = new Parser(tokens);
+	const ast = parser.parse();
+	console.log(ast);
+	// console.log(tokens);
 }
 
 function error(e: GicError): void {
