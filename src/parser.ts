@@ -2,6 +2,7 @@ import {
 	AND,
 	BANG,
 	BANG_EQUAL,
+	COMMA,
 	EOF,
 	EQUAL,
 	EQUAL_EQUAL,
@@ -191,8 +192,36 @@ export class Parser {
 				right,
 			};
 		}
-		return this.primary();
-		// throw new Error("Method not implemented.");
+		return this.call();
+	}
+	call(): Expression {
+		let expr = this.primary();
+		while (true) {
+			if (this.match(LEFT_PAREN)) {
+				expr = this.finishCall(expr);
+			} else {
+				break;
+			}
+		}
+		return expr;
+	}
+	finishCall(callee: Expression): Expression {
+		const args: Expression[] = [];
+		if (!this.check(RIGHT_PAREN)) {
+			do {
+				// if (args.length >= 255) {
+				// 	throw new ParserError("Too many arguments.", this.peek());
+				// }
+				args.push(this.expression());
+			} while (this.match(COMMA));
+		}
+		const paren = this.consume(RIGHT_PAREN, "Expected ')' after arguments.");
+		return {
+			type: "Call",
+			callee,
+			arguments: args,
+			paren,
+		};
 	}
 
 	primary(): Expression {

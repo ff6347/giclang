@@ -175,7 +175,7 @@ describe("parser", () => {
 		assert.deepStrictEqual(actual, expected);
 	});
 
-	test("", () => {
+	test("should parse arithmetic precedence", () => {
 		const lexer = new Lexer("let x = 1 + 2 * 3;");
 		const tokens = lexer.scanTokens();
 		const expected = {
@@ -212,7 +212,7 @@ describe("parser", () => {
 		const actual = simplifyProgram(parser.parse());
 		assert.deepStrictEqual(actual, expected);
 	});
-	test("", () => {
+	test("should parse a grouping arithmetic precedence", () => {
 		const lexer = new Lexer("let x = (1 + 2) * 3;");
 		const tokens = lexer.scanTokens();
 		const expected = {
@@ -252,7 +252,7 @@ describe("parser", () => {
 		const actual = simplifyProgram(parser.parse());
 		assert.deepStrictEqual(actual, expected);
 	});
-	test("", () => {
+	test("should parse a logical expression", () => {
 		const lexer = new Lexer("let ok = true || false && !done;");
 		const tokens = lexer.scanTokens();
 		const expected = {
@@ -371,6 +371,132 @@ describe("parser", () => {
 							type: "Literal",
 							value: 2,
 						},
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse a call expression", () => {
+		const lexer = new Lexer("circle(50, 50);");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "ExprStmt",
+					expression: {
+						type: "Call",
+						callee: {
+							type: "Identifier",
+							name: "circle",
+						},
+						arguments: [
+							{
+								type: "Literal",
+								value: 50,
+							},
+							{
+								type: "Literal",
+								value: 50,
+							},
+						],
+						paren: ")",
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse a call expression in a variable initializer", () => {
+		const lexer = new Lexer("let x = pow(2, 8);");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "VarDecl",
+					name: "x",
+					initializer: {
+						type: "Call",
+						callee: {
+							type: "Identifier",
+							name: "pow",
+						},
+						arguments: [
+							{
+								type: "Literal",
+								value: 2,
+							},
+							{
+								type: "Literal",
+								value: 8,
+							},
+						],
+						paren: ")",
+					},
+				},
+			],
+		};
+
+		const parser = new Parser(tokens);
+		const actual = simplifyProgram(parser.parse());
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should parse a call with expression arguments", () => {
+		const lexer = new Lexer("circle(50, 25 + 25, 10 * 2);");
+		const tokens = lexer.scanTokens();
+		const expected = {
+			type: "Program",
+			statements: [
+				{
+					type: "ExprStmt",
+					expression: {
+						type: "Call",
+						callee: {
+							type: "Identifier",
+							name: "circle",
+						},
+						arguments: [
+							{
+								type: "Literal",
+								value: 50,
+							},
+							{
+								type: "Binary",
+								operator: "+",
+								left: {
+									type: "Literal",
+									value: 25,
+								},
+								right: {
+									type: "Literal",
+									value: 25,
+								},
+							},
+							{
+								type: "Binary",
+								operator: "*",
+								left: {
+									type: "Literal",
+									value: 10,
+								},
+								right: {
+									type: "Literal",
+									value: 2,
+								},
+							},
+						],
+						paren: ")",
 					},
 				},
 			],
