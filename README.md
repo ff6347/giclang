@@ -9,8 +9,8 @@ Once students have grasp the basic constructs of programming they are encouraged
 
 ## Credits 
 
-Technically the language is based on lox-lang from https://craftinginterpreters.com/ by Robert Nystrom. 
-Conceptually it inherits a lot from Design by Numbers by John Maeda, Processing by Ben Fry and Casey Reas, p5.js Lauren McCarthy, Basil.js by Benedikt Groß, Ludwig Zeller, Ted Davis. 
+Technically the language is based on lox-lang from [craftinginterpreters.com](https://craftinginterpreters.com/) by Robert Nystrom. 
+Conceptually it inherits a lot from [Design by Numbers](https://dbn.media.mit.edu/whatisdbn.html) by [John Maeda](https://maedastudio.com/), [Processing](https://processing.org/) by [Ben Fry](https://www.benfry.com/) and [Casey Reas](https://reas.com/), [p5.js](https://p5js.org/) by [Lauren McCarthy](https://get-lauren.net/), [Basil.js](https://basiljs2.netlify.app/) by [Benedikt Groß](https://benedikt-gross.de/), [Ludwig Zeller](https://www.ludwigzeller.net/), [Ted Davis](https://teddavis.org/). 
 
 ## AI in this Project 
 
