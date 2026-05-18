@@ -1,6 +1,6 @@
 # Gestalten In Code (gic) Language (lang)
 
-gic-lang is a small c style language with the narrow purpose of creating two dimensional generative art. ￼ It is born as part of my research in speculative software design at the university of applied science Potsdam. Inspired by the simplicity of Design by Numbers and Processing and the malcontent of the complexity modern software development presents to beginners gic-lang is aimed as a small learning tool in the area of creative coding. 
+gic-lang is a small c style language with the narrow purpose of creating two dimensional generative art. It is born as part of my research in speculative software design at the university of applied science Potsdam. Inspired by the simplicity of Design by Numbers and Processing and the malcontent of the complexity modern software development presents to beginners gic-lang is aimed as a small learning tool in the area of creative coding. 
 
 It has the deliberately narrow surface. Things like interactivity, typography, or image loading are left out on purpose. 
 It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount of way of doing things. 
