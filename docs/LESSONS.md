@@ -3,26 +3,26 @@
 
 # Lessons
 
-- [x] Specify GIC revision 2
-- [x] Build the lexer
-- [x] Build the basic parser and AST
-- [x] Parse expression precedence
-- [x] Parse call expressions
-- [x] Parse assignments
-- [x] Parse `if` statements
-- [ ] Parse `repeat` statements
-- [ ] Parse function declarations
-- [ ] Parse `return` statements
-- [ ] Parse the `loop` block
-- [ ] Interpret expressions and variables
-- [ ] Interpret conditionals and repetition
-- [ ] Interpret functions and returns
-- [ ] Implement built-in functions
-- [ ] Implement semantic analysis
-- [ ] Add a recording render backend
-- [ ] Add the browser Canvas backend
-- [ ] Build the browser IDE
-- [ ] Package the IDE with Deno Desktop
-- [ ] Design dynamic lists
-- [ ] Design documentation comments
-- [ ] Decide the standard-library and import model
+- [x] [Specify GIC revision 2](<Language specification rev 2.md>)
+- [x] [Build the lexer](milestones/lexer.md)
+- [x] [Build the basic parser and AST](milestones/parser-basic.md)
+- [x] [Parse expression precedence](milestones/parser-expression-precedence.md)
+- [x] [Parse call expressions](milestones/parser-call-expressions.md)
+- [x] [Parse assignments](milestones/parser-assignment.md)
+- [x] [Parse `if` statements](milestones/parser-if-statements.md)
+- [ ] [Parse `repeat` statements](<Language specification rev 2.md#loops>)
+- [ ] [Parse function declarations](<Language specification rev 2.md#user-defined-functions>)
+- [ ] [Parse `return` statements](<Language specification rev 2.md#user-defined-functions>)
+- [ ] [Parse the `loop` block](<Language specification rev 2.md#animation>)
+- [ ] [Interpret expressions and variables](<Implementing GIC.md#interpreter>)
+- [ ] [Interpret conditionals and repetition](<Implementing GIC.md#interpreter>)
+- [ ] [Interpret functions and returns](<Implementing GIC.md#interpreter>)
+- [ ] [Implement built-in functions](<Language specification rev 2.md#built-in-functions>)
+- [ ] [Implement semantic analysis](<Implementing GIC.md#static-analysis>)
+- [ ] [Add a recording render backend](<Language specification rev 2.md#5-render-backends>)
+- [ ] [Add the browser Canvas backend](<Language specification rev 2.md#5-render-backends>)
+- [ ] [Build the browser IDE](MEMORY.md#runtime-and-editor-architecture)
+- [ ] [Package the IDE with Deno Desktop](MEMORY.md#runtime-and-editor-architecture)
+- [ ] [Design dynamic lists](MEMORY.md#language-design)
+- [ ] [Design documentation comments](<Language specification rev 2.md#proposed-documentation-comments>)
+- [ ] [Decide the standard-library and import model](MEMORY.md#language-design)
