@@ -12,12 +12,7 @@ export class Token implements IToken {
 	literal: unknown;
 	type: TokenType;
 
-	constructor(
-		type: TokenType,
-		lexeme: string,
-		literal: unknown,
-		line: number,
-	) {
+	constructor(type: TokenType, lexeme: string, literal: unknown, line: number) {
 		this.lexeme = lexeme;
 		this.line = line;
 		this.literal = literal;
