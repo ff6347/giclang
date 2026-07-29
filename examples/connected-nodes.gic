@@ -1,0 +1,31 @@
+// based on https://gestalten-in-code.qawsed.site/chance/connect/
+// by Fabian Morón Zirfas
+// Tags: Basil.js, chance, repeat, Law of Proximity, Law of Connected Elements
+
+func dist(x1, y1, x2, y2){
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+let num = 100;
+let diam = 5;
+let maxDistance = diam * 3;
+let x = random(0, 100);
+let y = random(0, 100);
+fill(100, 0, 0);
+stroke(100, 0, 0);
+strokeWidth(1);
+repeat(i, 0, num){
+	let px = x;
+	let py = y;
+	x = random(0, 100);
+	y = random(0, 100);
+
+	if(dist(px, py, x, y) < maxDistance){
+		line(px, py, x, y);
+		circle(x, y, diam / 2);
+		circle(px, py, diam / 2);
+	} else {
+		circle(px, py, diam);
+
+	}
+}
