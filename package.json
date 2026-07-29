@@ -10,7 +10,7 @@
 	"keywords": [],
 	"author": "ff6347 <hash@ff6347.email> (https://github.com/ff6347)",
 	"license": "CC BY-NC-SA 4.0",
-	"packageManager": "pnpm@10.33.1",
+	"packageManager": "pnpm@11.15.0",
 	"devDependencies": {
 		"@types/node": "25.7.0",
 		"typescript": "6.0.3"
