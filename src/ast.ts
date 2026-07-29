@@ -10,7 +10,14 @@ export interface Program {
 	type: "Program";
 	statements: Statement[];
 }
-export type Statement = VarDeclStmt | Assignment | ExprStmt;
+export type Statement = VarDeclStmt | IfStmt | Assignment | ExprStmt;
+
+export interface IfStmt {
+	type: "IfStmt";
+	condition: Expression;
+	thenBranch: Statement[];
+	elseBranch?: Statement[];
+}
 
 // initializer is the expression after the equals sign
 // e.g. `let x = 5` or `let y = 1 + 1`

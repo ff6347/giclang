@@ -3,6 +3,7 @@ import {
 	BANG,
 	BANG_EQUAL,
 	COMMA,
+	ELSE,
 	EOF,
 	EQUAL,
 	EQUAL_EQUAL,
@@ -10,6 +11,8 @@ import {
 	GREATER,
 	GREATER_EQUAL,
 	IDENTIFIER,
+	IF,
+	LEFT_BRACE,
 	LEFT_PAREN,
 	LESS,
 	LESS_EQUAL,
@@ -19,6 +22,7 @@ import {
 	NUMBER,
 	OR,
 	PLUS,
+	RIGHT_BRACE,
 	RIGHT_PAREN,
 	SEMICOLON,
 	SLASH,
@@ -68,19 +72,57 @@ export class Parser {
 		// throw new Error("Method not implemented.");
 	}
 	statement(): Statement {
-		// if(this.match(IF))
-		// return this.ifStatement();
+		if (this.match(IF)) return this.ifStatement();
 		// if(this.match(REPEAT))
 		// return this.whileStatement();
 		// if(this.match(RETURN))
 		// return this.returnStatement();
 		// TODO: We will get here soon
-		// if(this.match(LEFT_BRACE))
-		// return this.blockStatement();
+		// if (this.match(LEFT_BRACE)) return this.block();
 		if (this.check(IDENTIFIER) && this.checkNext(EQUAL)) {
 			return this.assignment();
 		}
 		return this.expressionStatement();
+	}
+	block(): Statement[] {
+		const statements: Statement[] = [];
+		while (!this.check(RIGHT_BRACE) && !this.isAtEnd()) {
+			statements.push(this.declaration());
+		}
+
+		this.consume(RIGHT_BRACE, "Expected '}' after block.");
+		return statements;
+	}
+	ifStatement(): Statement {
+		this.consume(LEFT_PAREN, "Expected '(' after 'if'.");
+		const condition = this.expression();
+		this.consume(RIGHT_PAREN, "Expected ')' after condition.");
+
+		this.consume(LEFT_BRACE, "Expected '{' before body");
+
+		const thenBranch = this.block();
+		let elseBranch: Statement[] | undefined;
+		if (this.match(ELSE)) {
+			if (this.match(IF)) {
+				elseBranch = [this.ifStatement()];
+			} else {
+				this.consume(LEFT_BRACE, "Expected '{' before else branch");
+				elseBranch = this.block();
+			}
+		}
+		if (elseBranch !== undefined) {
+			return {
+				type: "IfStmt",
+				condition,
+				thenBranch,
+				elseBranch,
+			};
+		}
+		return {
+			type: "IfStmt",
+			condition,
+			thenBranch,
+		};
 	}
 	checkNext(type: TokenType): boolean {
 		const token = this.tokens.at(this.current + 1);
