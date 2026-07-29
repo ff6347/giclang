@@ -1,3 +1,6 @@
+// ABOUTME: Tests lexical analysis of GIC source into tokens.
+// ABOUTME: Covers valid tokens, ignored comments, and lexer errors.
+
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { Lexer } from "../lexer.ts";

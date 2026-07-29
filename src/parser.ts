@@ -325,8 +325,13 @@ export class Parser {
 		if (this.check(type)) {
 			return this.advance();
 		}
-		throw new ParserError(message, this.tokens.at(this.current - 1));
+		throw new ParserError(message, this.peek());
 	}
+	/**
+	 *  checks and consumes when it matches
+	 * @param types list of token types to match
+	 * @returns true if the current token matches any of the given types, false otherwise
+	 */
 	match(...types: TokenType[]): boolean {
 		for (const type of types) {
 			if (this.check(type)) {
@@ -336,10 +341,17 @@ export class Parser {
 		}
 		return false;
 	}
+	/**
+	 * consumes the current token, then returns it. Does not advance at EOF and returns the previous token at EOF
+	 * @returns the current token
+	 */
 	advance(): Token {
 		if (!this.isAtEnd()) this.current++;
 		return this.previous();
 	}
+	/**
+	 *  look at most recently consumed token
+	 */
 	previous(): Token {
 		const token = this.tokens.at(this.current - 1);
 		if (token === undefined)
@@ -349,6 +361,11 @@ export class Parser {
 			);
 		return token;
 	}
+	/**
+	 *  checks the current token’s type without consuming.
+	 * @param type
+	 * @returns true if the current token's type matches the given type. Always returns false at EOF including `check(EOF)`
+	 */
 	check(type: TokenType): boolean {
 		if (this.isAtEnd()) return false;
 		return this.peek()?.type === type;
@@ -357,6 +374,10 @@ export class Parser {
 	isAtEnd(): boolean {
 		return this.peek()?.type === EOF;
 	}
+	/**
+	 * Looks at the current token without advancing
+	 *
+	 */
 	peek() {
 		return this.tokens.at(this.current);
 	}

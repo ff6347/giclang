@@ -1,3 +1,6 @@
+// ABOUTME: Tests operator precedence in parsed GIC expressions.
+// ABOUTME: Covers arithmetic, grouping, comparison, and logical operators.
+
 import { describe, test } from "node:test";
 import assert from "node:assert";
 import { Parser } from "../parser.ts";
