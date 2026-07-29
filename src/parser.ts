@@ -325,7 +325,7 @@ export class Parser {
 		if (this.check(type)) {
 			return this.advance();
 		}
-		throw new ParserError(message, this.tokens.at(this.current - 1));
+		throw new ParserError(message, this.peek());
 	}
 	match(...types: TokenType[]): boolean {
 		for (const type of types) {
