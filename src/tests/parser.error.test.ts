@@ -21,7 +21,6 @@ describe("parser errors", () => {
 		assert.throws(
 			() => parser.parse(),
 			(error: ParserError) => {
-				console.error(error);
 				assert.equal(error.token?.lexeme, "{");
 				return true;
 			},
