@@ -61,6 +61,18 @@ All control flow and data flow should be visible in the code. No hoisting, no im
 // No multi-line comment syntax (keeps grammar simple)
 ```
 
+#### Proposed Documentation Comments
+
+GIC should support a small JSDoc-style documentation format for user-defined
+functions, parameters, return values, variables, and reusable library code. The
+planned IDE could display this documentation in hover and completion
+information.
+
+This is a proposed feature, not part of the current syntax. GIC-specific
+documentation comments should remain smaller than full JavaScript JSDoc. The
+comment syntax, supported metadata, and representation in the AST or analyzer
+must be specified before implementation.
+
 ### Data Types
 
 gic has three data types:
