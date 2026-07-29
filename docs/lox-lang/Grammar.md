@@ -1,4 +1,3 @@
-
 ```ebnf
 program        → declaration* EOF ;
 
@@ -20,13 +19,13 @@ classDecl 		→ "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function*"}" ;
 statement      → exprStmt
                |forStmt
                | ifStmt
-               | printStmt 
+               | printStmt
                | whileStmt
                | block ;
-               
+
 returnStmt     "return" expression? ";" ;
 
-forStmt        → "for" "(" 
+forStmt        → "for" "("
                ( varDecl | exprStmt | ";" )
                expression? ";"
                expression? ")" statement ;
@@ -43,7 +42,7 @@ printStmt      → "print" expression ";" ;
 
 
 expression     → assignment ;
-assignment     → (call ".")? IDENTIFIER "=" assignment 
+assignment     → (call ".")? IDENTIFIER "=" assignment
                | logic_or;
 
 logic_or       → logic_and ( "or" logic_and )* ;

@@ -37,19 +37,19 @@ Correct:
 
 ```jsonc
 {
-  "lsp": {
-    "jdtls": {
-      "initialization_options": {
-        "settings": {
-          "java": {
-            "project": {
-              "sourcePaths": ["."]
-            }
-          }
-        }
-      }
-    }
-  }
+	"lsp": {
+		"jdtls": {
+			"initialization_options": {
+				"settings": {
+					"java": {
+						"project": {
+							"sourcePaths": ["."],
+						},
+					},
+				},
+			},
+		},
+	},
 }
 ```
 
@@ -57,15 +57,15 @@ Wrong (causes `The declared package does not match the expected package ""`):
 
 ```jsonc
 {
-  "lsp": {
-    "jdtls": {
-      "initialization_options": {
-        "project": {
-          "sourcePaths": ["."]
-        }
-      }
-    }
-  }
+	"lsp": {
+		"jdtls": {
+			"initialization_options": {
+				"project": {
+					"sourcePaths": ["."],
+				},
+			},
+		},
+	},
 }
 ```
 

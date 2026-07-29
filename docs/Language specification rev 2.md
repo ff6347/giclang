@@ -1,9 +1,10 @@
 # Gestalten In Code: A Visual Programming Language Specification
 
-
 Related:
+
 - [[jordanhubbard nanolang A tiny experimental language designed to be targeted by coding LLMs]]
-## questions 
+
+## questions
 
 Does gic need a std lib?
 
@@ -99,13 +100,13 @@ let message = "Hello";
 
 #### Arithmetic
 
-|Operator|Description|
-|---|---|
-|`+`|Addition (numbers) or concatenation (strings)|
-|`-`|Subtraction (binary) and negation (unary)|
-|`*`|Multiplication|
-|`/`|Division|
-|`%`|Modulo|
+| Operator | Description                                   |
+| -------- | --------------------------------------------- |
+| `+`      | Addition (numbers) or concatenation (strings) |
+| `-`      | Subtraction (binary) and negation (unary)     |
+| `*`      | Multiplication                                |
+| `/`      | Division                                      |
+| `%`      | Modulo                                        |
 
 #### Comparison
 
@@ -255,11 +256,11 @@ A function is either **value-returning** or **void**. This is determined by its 
 
 gic has a simple, flat scoping model:
 
-|Scope|Description|
-|---|---|
-|Global|Variables declared outside any function|
-|Function-local|Parameters and variables declared inside a function|
-|Loop-local|Loop variable in `repeat` (scoped to loop body)|
+| Scope          | Description                                         |
+| -------------- | --------------------------------------------------- |
+| Global         | Variables declared outside any function             |
+| Function-local | Parameters and variables declared inside a function |
+| Loop-local     | Loop variable in `repeat` (scoped to loop body)     |
 
 **Rules:**
 
@@ -349,10 +350,10 @@ loop {
 
 ### Animation Built-ins
 
-|Name|Type|Description|
-|---|---|---|
-|`frameCount`|Constant|Current frame number (starts at 0, increments each frame)|
-|`frameRate(fps)`|Function|Set target frames per second (default: 60)|
+| Name             | Type     | Description                                               |
+| ---------------- | -------- | --------------------------------------------------------- |
+| `frameCount`     | Constant | Current frame number (starts at 0, increments each frame) |
+| `frameRate(fps)` | Function | Set target frames per second (default: 60)                |
 
 **Example using frameCount:**
 
@@ -376,9 +377,9 @@ loop {
 
 The canvas is always 101 pixels wide and 101 pixels high, providing a visual center at (50, 50).
 
-|Function|Description|Default|
-|---|---|---|
-|`background(l, c, h);`|Fill entire canvas with color in OKLCH space|Black (0, 0, 0)|
+| Function               | Description                                  | Default         |
+| ---------------------- | -------------------------------------------- | --------------- |
+| `background(l, c, h);` | Fill entire canvas with color in OKLCH space | Black (0, 0, 0) |
 
 `background()` can be called multiple times (clears and repaints).
 
@@ -402,66 +403,66 @@ Color functions are overloaded and accept:
 
 Style functions set the current drawing style. They affect all subsequent shapes until changed.
 
-|Function|Description|Default|
-|---|---|---|
-|`fill(l, c, h);`|Set fill color for shapes|White (100, 0, 0)|
-|`fill(l, c, h, a);`|Set fill color with alpha (0-100)|—|
-|`noFill();`|Disable fill|—|
-|`stroke(l, c, h);`|Set stroke (outline) color|Black (0, 0, 0)|
-|`stroke(l, c, h, a);`|Set stroke color with alpha (0-100)|—|
-|`noStroke();`|Disable stroke|—|
-|`strokeWidth(weight);`|Set stroke thickness in pixels|1|
+| Function               | Description                         | Default           |
+| ---------------------- | ----------------------------------- | ----------------- |
+| `fill(l, c, h);`       | Set fill color for shapes           | White (100, 0, 0) |
+| `fill(l, c, h, a);`    | Set fill color with alpha (0-100)   | —                 |
+| `noFill();`            | Disable fill                        | —                 |
+| `stroke(l, c, h);`     | Set stroke (outline) color          | Black (0, 0, 0)   |
+| `stroke(l, c, h, a);`  | Set stroke color with alpha (0-100) | —                 |
+| `noStroke();`          | Disable stroke                      | —                 |
+| `strokeWidth(weight);` | Set stroke thickness in pixels      | 1                 |
 
 ### Shape Drawing
 
 All coordinates are in pixels from top-left origin (0, 0). Canvas is 101×101 pixels.
 
-|Function|Description|
-|---|---|
-|`point(x, y);`|Draw a single point|
-|`line(x1, y1, x2, y2);`|Draw line from (x1, y1) to (x2, y2)|
-|`rect(x, y, width, height);`|Draw rectangle, (x, y) is top-left corner|
-|`circle(x, y, radius);`|Draw circle centered at (x, y)|
-|`ellipse(x, y, width, height);`|Draw ellipse centered at (x, y)|
-|`triangle(x1, y1, x2, y2, x3, y3);`|Draw triangle with three vertices|
-|`quad(x1, y1, x2, y2, x3, y3, x4, y4);`|Draw quadrilateral with four vertices|
-|`arc(x, y, radius, startAngle, endAngle);`|Draw arc (angles in degrees, 0 = right, clockwise)|
+| Function                                   | Description                                        |
+| ------------------------------------------ | -------------------------------------------------- |
+| `point(x, y);`                             | Draw a single point                                |
+| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)                |
+| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner          |
+| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                     |
+| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)                    |
+| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices                  |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices              |
+| `arc(x, y, radius, startAngle, endAngle);` | Draw arc (angles in degrees, 0 = right, clockwise) |
 
 ### Console Output
 
-|Function|Description|
-|---|---|
-|`print(value);`|Output value to console (for debugging)|
+| Function        | Description                             |
+| --------------- | --------------------------------------- |
+| `print(value);` | Output value to console (for debugging) |
 
 **Note:** There is no built-in text rendering on the canvas. Users who need text can implement letter-drawing functions using primitives, similar to how Design by Numbers handled typography.
 
 ### Math Functions
 
-|Function|Description|
-|---|---|
-|`random(min, max)`|Random float between min (inclusive) and max (exclusive)|
-|`randomSeed(n)`|Set random seed for reproducible outputs|
-|`floor(n)`|Round down to integer|
-|`ceil(n)`|Round up to integer|
-|`round(n)`|Round to nearest integer|
-|`abs(n)`|Absolute value|
-|`min(a, b)`|Smaller of two values|
-|`max(a, b)`|Larger of two values|
-|`sin(degrees)`|Sine (input in degrees)|
-|`cos(degrees)`|Cosine (input in degrees)|
-|`sqrt(n)`|Square root|
-|`pow(base, exp)`|Exponentiation|
+| Function           | Description                                              |
+| ------------------ | -------------------------------------------------------- |
+| `random(min, max)` | Random float between min (inclusive) and max (exclusive) |
+| `randomSeed(n)`    | Set random seed for reproducible outputs                 |
+| `floor(n)`         | Round down to integer                                    |
+| `ceil(n)`          | Round up to integer                                      |
+| `round(n)`         | Round to nearest integer                                 |
+| `abs(n)`           | Absolute value                                           |
+| `min(a, b)`        | Smaller of two values                                    |
+| `max(a, b)`        | Larger of two values                                     |
+| `sin(degrees)`     | Sine (input in degrees)                                  |
+| `cos(degrees)`     | Cosine (input in degrees)                                |
+| `sqrt(n)`          | Square root                                              |
+| `pow(base, exp)`   | Exponentiation                                           |
 
 **Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function.
 
 ### Constants
 
-|Name|Value|Description|
-|---|---|---|
-|`PI`|3.14159…|Mathematical constant|
-|`WIDTH`|101|Canvas width|
-|`HEIGHT`|101|Canvas height|
-|`frameCount`|0, 1, 2, …|Current frame number (animation only)|
+| Name         | Value      | Description                           |
+| ------------ | ---------- | ------------------------------------- |
+| `PI`         | 3.14159…   | Mathematical constant                 |
+| `WIDTH`      | 101        | Canvas width                          |
+| `HEIGHT`     | 101        | Canvas height                         |
+| `frameCount` | 0, 1, 2, … | Current frame number (animation only) |
 
 ---
 
@@ -586,58 +587,58 @@ Token types:
 
 ```typescript
 enum TokenType {
-  // Literals
-  NUMBER,
-  STRING,
-  TRUE,
-  FALSE,
-  IDENTIFIER,
+	// Literals
+	NUMBER,
+	STRING,
+	TRUE,
+	FALSE,
+	IDENTIFIER,
 
-  // Keywords
-  LET,
-  IF,
-  ELSE,
-  REPEAT,
-  FUNC,
-  RETURN,
-  LOOP,
-  NULL,  // Reserved word (not a value, prevents use as identifier)
+	// Keywords
+	LET,
+	IF,
+	ELSE,
+	REPEAT,
+	FUNC,
+	RETURN,
+	LOOP,
+	NULL, // Reserved word (not a value, prevents use as identifier)
 
-  // Operators
-  PLUS,
-  MINUS,
-  STAR,
-  SLASH,
-  PERCENT,
-  EQ,
-  NEQ,
-  LT,
-  GT,
-  LTE,
-  GTE,
-  AND,
-  OR,
-  NOT,
-  ASSIGN,
+	// Operators
+	PLUS,
+	MINUS,
+	STAR,
+	SLASH,
+	PERCENT,
+	EQ,
+	NEQ,
+	LT,
+	GT,
+	LTE,
+	GTE,
+	AND,
+	OR,
+	NOT,
+	ASSIGN,
 
-  // Delimiters
-  LPAREN,
-  RPAREN,
-  LBRACE,
-  RBRACE,
-  COMMA,
-  SEMICOLON,
+	// Delimiters
+	LPAREN,
+	RPAREN,
+	LBRACE,
+	RBRACE,
+	COMMA,
+	SEMICOLON,
 
-  // Special
-  EOF,
+	// Special
+	EOF,
 }
 
 interface Token {
-  type: TokenType;
-  lexeme: string;
-  literal?: number | boolean | string;
-  line: number;
-  column: number;
+	type: TokenType;
+	lexeme: string;
+	literal?: number | boolean | string;
+	line: number;
+	column: number;
 }
 ```
 
@@ -653,98 +654,98 @@ AST Node types:
 
 ```typescript
 interface Program {
-  type: 'Program';
-  statements: Statement[];
-  loopBlock?: LoopBlock;
+	type: "Program";
+	statements: Statement[];
+	loopBlock?: LoopBlock;
 }
 
 type Statement =
-  | VarDeclStmt
-  | AssignmentStmt
-  | IfStmt
-  | RepeatStmt
-  | FuncDeclStmt
-  | ReturnStmt
-  | ExprStmt;
+	| VarDeclStmt
+	| AssignmentStmt
+	| IfStmt
+	| RepeatStmt
+	| FuncDeclStmt
+	| ReturnStmt
+	| ExprStmt;
 
 interface VarDeclStmt {
-  type: 'VarDecl';
-  name: string;
-  initializer: Expression;
-  location: SourceLocation;
+	type: "VarDecl";
+	name: string;
+	initializer: Expression;
+	location: SourceLocation;
 }
 
 interface AssignmentStmt {
-  type: 'Assignment';
-  name: string;
-  value: Expression;
-  location: SourceLocation;
+	type: "Assignment";
+	name: string;
+	value: Expression;
+	location: SourceLocation;
 }
 
 interface IfStmt {
-  type: 'If';
-  condition: Expression;
-  thenBranch: Statement[];
-  elseBranch?: Statement[];
-  location: SourceLocation;
+	type: "If";
+	condition: Expression;
+	thenBranch: Statement[];
+	elseBranch?: Statement[];
+	location: SourceLocation;
 }
 
 interface RepeatStmt {
-  type: 'Repeat';
-  variable: string;
-  start: Expression;
-  end: Expression;
-  step?: Expression;
-  body: Statement[];
-  location: SourceLocation;
+	type: "Repeat";
+	variable: string;
+	start: Expression;
+	end: Expression;
+	step?: Expression;
+	body: Statement[];
+	location: SourceLocation;
 }
 
 interface FuncDeclStmt {
-  type: 'FuncDecl';
-  name: string;
-  params: string[];
-  body: Statement[];
-  location: SourceLocation;
+	type: "FuncDecl";
+	name: string;
+	params: string[];
+	body: Statement[];
+	location: SourceLocation;
 }
 
 interface ReturnStmt {
-  type: 'Return';
-  value?: Expression;
-  location: SourceLocation;
+	type: "Return";
+	value?: Expression;
+	location: SourceLocation;
 }
 
 interface ExprStmt {
-  type: 'ExprStmt';
-  expression: Expression;
-  location: SourceLocation;
+	type: "ExprStmt";
+	expression: Expression;
+	location: SourceLocation;
 }
 
 interface LoopBlock {
-  type: 'LoopBlock';
-  body: Statement[];
-  location: SourceLocation;
+	type: "LoopBlock";
+	body: Statement[];
+	location: SourceLocation;
 }
 
 type Expression =
-  | NumberLiteral
-  | StringLiteral
-  | BooleanLiteral
-  | Identifier
-  | BinaryExpr
-  | UnaryExpr
-  | CallExpr;
+	| NumberLiteral
+	| StringLiteral
+	| BooleanLiteral
+	| Identifier
+	| BinaryExpr
+	| UnaryExpr
+	| CallExpr;
 
 interface StringLiteral {
-  type: 'StringLiteral';
-  value: string;
-  location: SourceLocation;
+	type: "StringLiteral";
+	value: string;
+	location: SourceLocation;
 }
 
 interface SourceLocation {
-  startLine: number;
-  startColumn: number;
-  endLine: number;
-  endColumn: number;
+	startLine: number;
+	startColumn: number;
+	endLine: number;
+	endColumn: number;
 }
 ```
 
@@ -788,44 +789,66 @@ Responsibilities:
 type GicValue = number | boolean | string;
 
 interface Environment {
-  values: Map<string, GicValue>;
-  parent?: Environment;
+	values: Map<string, GicValue>;
+	parent?: Environment;
 }
 
 interface FunctionValue {
-  params: string[];
-  body: Statement[];
-  kind: 'value' | 'void';  // Determined by semantic analysis
-  closure: Environment;     // Always global environment (no closures)
+	params: string[];
+	body: Statement[];
+	kind: "value" | "void"; // Determined by semantic analysis
+	closure: Environment; // Always global environment (no closures)
 }
 
 interface RenderBackend {
-  // Canvas
-  background(l: number, c: number, h: number): void;
+	// Canvas
+	background(l: number, c: number, h: number): void;
 
-  // Style
-  fill(l: number, c: number, h: number, a?: number): void;
-  noFill(): void;
-  stroke(l: number, c: number, h: number, a?: number): void;
-  noStroke(): void;
-  strokeWidth(weight: number): void;
+	// Style
+	fill(l: number, c: number, h: number, a?: number): void;
+	noFill(): void;
+	stroke(l: number, c: number, h: number, a?: number): void;
+	noStroke(): void;
+	strokeWidth(weight: number): void;
 
-  // Shapes
-  circle(x: number, y: number, radius: number): void;
-  rect(x: number, y: number, width: number, height: number): void;
-  line(x1: number, y1: number, x2: number, y2: number): void;
-  ellipse(x: number, y: number, width: number, height: number): void;
-  triangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): void;
-  quad(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): void;
-  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number): void;
-  point(x: number, y: number): void;
+	// Shapes
+	circle(x: number, y: number, radius: number): void;
+	rect(x: number, y: number, width: number, height: number): void;
+	line(x1: number, y1: number, x2: number, y2: number): void;
+	ellipse(x: number, y: number, width: number, height: number): void;
+	triangle(
+		x1: number,
+		y1: number,
+		x2: number,
+		y2: number,
+		x3: number,
+		y3: number,
+	): void;
+	quad(
+		x1: number,
+		y1: number,
+		x2: number,
+		y2: number,
+		x3: number,
+		y3: number,
+		x4: number,
+		y4: number,
+	): void;
+	arc(
+		x: number,
+		y: number,
+		radius: number,
+		startAngle: number,
+		endAngle: number,
+	): void;
+	point(x: number, y: number): void;
 
-  // Animation
-  startAnimationLoop(drawFrame: () => void, fps: number): void;
-  stopAnimationLoop(): void;
+	// Animation
+	startAnimationLoop(drawFrame: () => void, fps: number): void;
+	stopAnimationLoop(): void;
 
-  // Output
-  getOutput(): Promise<Buffer | string>;
+	// Output
+	getOutput(): Promise<Buffer | string>;
 }
 ```
 
@@ -886,35 +909,39 @@ gic-vscode/
 
 ```json
 {
-  "name": "gic-lang",
-  "displayName": "gic",
-  "description": "gic visual programming language support",
-  "version": "0.1.0",
-  "engines": {
-    "vscode": "^1.80.0"
-  },
-  "categories": ["Programming Languages"],
-  "activationEvents": [
-    "onLanguage:gic"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "languages": [{
-      "id": "gic",
-      "aliases": ["gic", "gic"],
-      "extensions": [".gic"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "gic",
-      "scopeName": "source.gic",
-      "path": "./syntaxes/gic.tmLanguage.json"
-    }],
-    "commands": [{
-      "command": "gic.run",
-      "title": "gic: Run Program"
-    }]
-  }
+	"name": "gic-lang",
+	"displayName": "gic",
+	"description": "gic visual programming language support",
+	"version": "0.1.0",
+	"engines": {
+		"vscode": "^1.80.0"
+	},
+	"categories": ["Programming Languages"],
+	"activationEvents": ["onLanguage:gic"],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [
+			{
+				"id": "gic",
+				"aliases": ["gic", "gic"],
+				"extensions": [".gic"],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "gic",
+				"scopeName": "source.gic",
+				"path": "./syntaxes/gic.tmLanguage.json"
+			}
+		],
+		"commands": [
+			{
+				"command": "gic.run",
+				"title": "gic: Run Program"
+			}
+		]
+	}
 }
 ```
 
@@ -1168,7 +1195,7 @@ Error at line 5, column 3:
 Error at line 12, column 14:
   let x = drawSquare(10, 20, 5);
           ^^^^^^^^^^
-  Void function 'drawSquare' cannot be used in an expression. 
+  Void function 'drawSquare' cannot be used in an expression.
   Call it as a standalone statement: drawSquare(10, 20, 5);
 ```
 
