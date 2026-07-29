@@ -12,7 +12,12 @@ export class Token implements IToken {
 	literal: unknown;
 	type: TokenType;
 
-	constructor(type: TokenType, lexeme: string, literal: unknown, line: number) {
+	constructor(
+		type: TokenType,
+		lexeme: string,
+		literal: unknown,
+		line: number,
+	) {
 		this.lexeme = lexeme;
 		this.line = line;
 		this.literal = literal;
@@ -24,41 +29,41 @@ export class Token implements IToken {
 	}
 }
 
-export const EOF: "EOF" = "EOF";
-export const LEFT_PAREN: "LEFT_PAREN" = "LEFT_PAREN";
-export const RIGHT_PAREN: "RIGHT_PAREN" = "RIGHT_PAREN";
-export const LEFT_BRACE: "LEFT_BRACE" = "LEFT_BRACE";
-export const RIGHT_BRACE: "RIGHT_BRACE" = "RIGHT_BRACE";
-export const COMMA: "COMMA" = "COMMA";
-export const MINUS: "MINUS" = "MINUS";
-export const PLUS: "PLUS" = "PLUS";
-export const SEMICOLON: "SEMICOLON" = "SEMICOLON";
-export const SLASH: "SLASH" = "SLASH";
-export const STAR: "STAR" = "STAR";
-export const BANG: "BANG" = "BANG";
-export const BANG_EQUAL: "BANG_EQUAL" = "BANG_EQUAL";
-export const EQUAL: "EQUAL" = "EQUAL";
-export const EQUAL_EQUAL: "EQUAL_EQUAL" = "EQUAL_EQUAL";
-export const GREATER: "GREATER" = "GREATER";
-export const GREATER_EQUAL: "GREATER_EQUAL" = "GREATER_EQUAL";
-export const OR: "OR" = "OR";
-export const AND: "AND" = "AND";
-export const LESS: "LESS" = "LESS";
-export const LESS_EQUAL: "LESS_EQUAL" = "LESS_EQUAL";
-export const IDENTIFIER: "IDENTIFIER" = "IDENTIFIER";
-export const STRING: "STRING" = "STRING";
-export const NUMBER: "NUMBER" = "NUMBER";
-export const ELSE: "ELSE" = "ELSE";
-export const FALSE: "FALSE" = "FALSE";
-export const FUNC: "FUNC" = "FUNC";
-export const IF: "IF" = "IF";
-export const RETURN: "RETURN" = "RETURN";
-export const TRUE: "TRUE" = "TRUE";
-export const LET: "LET" = "LET";
-export const REPEAT: "REPEAT" = "REPEAT";
-export const LOOP: "LOOP" = "LOOP";
-export const NULL: "NULL" = "NULL";
-export const MODULO: "MODULO" = "MODULO";
+export const EOF = "EOF" as const;
+export const LEFT_PAREN = "LEFT_PAREN" as const;
+export const RIGHT_PAREN = "RIGHT_PAREN" as const;
+export const LEFT_BRACE = "LEFT_BRACE" as const;
+export const RIGHT_BRACE = "RIGHT_BRACE" as const;
+export const COMMA = "COMMA" as const;
+export const MINUS = "MINUS" as const;
+export const PLUS = "PLUS" as const;
+export const SEMICOLON = "SEMICOLON" as const;
+export const SLASH = "SLASH" as const;
+export const STAR = "STAR" as const;
+export const BANG = "BANG" as const;
+export const BANG_EQUAL = "BANG_EQUAL" as const;
+export const EQUAL = "EQUAL" as const;
+export const EQUAL_EQUAL = "EQUAL_EQUAL" as const;
+export const GREATER = "GREATER" as const;
+export const GREATER_EQUAL = "GREATER_EQUAL" as const;
+export const OR = "OR" as const;
+export const AND = "AND" as const;
+export const LESS = "LESS" as const;
+export const LESS_EQUAL = "LESS_EQUAL" as const;
+export const IDENTIFIER = "IDENTIFIER" as const;
+export const STRING = "STRING" as const;
+export const NUMBER = "NUMBER" as const;
+export const ELSE = "ELSE" as const;
+export const FALSE = "FALSE" as const;
+export const FUNC = "FUNC" as const;
+export const IF = "IF" as const;
+export const RETURN = "RETURN" as const;
+export const TRUE = "TRUE" as const;
+export const LET = "LET" as const;
+export const REPEAT = "REPEAT" as const;
+export const LOOP = "LOOP" as const;
+export const NULL = "NULL" as const;
+export const MODULO = "MODULO" as const;
 
 export type TokenType =
 	| "LEFT_PAREN"
