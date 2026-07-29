@@ -55,7 +55,6 @@ function simplifyExpression(expression: Expression): unknown {
 	return expression;
 }
 
-
 function simplifyStatement(statement: Statement): unknown {
 	if (statement.type === "VarDecl") {
 		return {
@@ -96,7 +95,6 @@ function simplifyStatement(statement: Statement): unknown {
 
 	return statement;
 }
-
 
 export function simplifyProgram(program: Program) {
 	return {

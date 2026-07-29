@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { Lexer } from "./lexer.ts";
+import { Lexer } from "../lexer.ts";
 
 function scan(source: string) {
 	return new Lexer(source).scanTokens().map((token) => ({
@@ -24,38 +24,44 @@ describe("Lexer", () => {
 	});
 
 	test("tokenizes keywords and identifiers", () => {
-		assert.deepStrictEqual(scan("true false trueValue falseValue let repeat func loop null"), [
-			{ type: "TRUE", lexeme: "true", literal: true, line: 1 },
-			{ type: "FALSE", lexeme: "false", literal: false, line: 1 },
-			{ type: "IDENTIFIER", lexeme: "trueValue", literal: null, line: 1 },
-			{ type: "IDENTIFIER", lexeme: "falseValue", literal: null, line: 1 },
-			{ type: "LET", lexeme: "let", literal: null, line: 1 },
-			{ type: "REPEAT", lexeme: "repeat", literal: null, line: 1 },
-			{ type: "FUNC", lexeme: "func", literal: null, line: 1 },
-			{ type: "LOOP", lexeme: "loop", literal: null, line: 1 },
-			{ type: "NULL", lexeme: "null", literal: null, line: 1 },
-			{ type: "EOF", lexeme: "", literal: null, line: 1 },
-		]);
+		assert.deepStrictEqual(
+			scan("true false trueValue falseValue let repeat func loop null"),
+			[
+				{ type: "TRUE", lexeme: "true", literal: true, line: 1 },
+				{ type: "FALSE", lexeme: "false", literal: false, line: 1 },
+				{ type: "IDENTIFIER", lexeme: "trueValue", literal: null, line: 1 },
+				{ type: "IDENTIFIER", lexeme: "falseValue", literal: null, line: 1 },
+				{ type: "LET", lexeme: "let", literal: null, line: 1 },
+				{ type: "REPEAT", lexeme: "repeat", literal: null, line: 1 },
+				{ type: "FUNC", lexeme: "func", literal: null, line: 1 },
+				{ type: "LOOP", lexeme: "loop", literal: null, line: 1 },
+				{ type: "NULL", lexeme: "null", literal: null, line: 1 },
+				{ type: "EOF", lexeme: "", literal: null, line: 1 },
+			],
+		);
 	});
 
 	test("tokenizes comparison and logical operators", () => {
-		assert.deepStrictEqual(scan("a <= 10 && b >= 20 || !done == false != true"), [
-			{ type: "IDENTIFIER", lexeme: "a", literal: null, line: 1 },
-			{ type: "LESS_EQUAL", lexeme: "<=", literal: null, line: 1 },
-			{ type: "NUMBER", lexeme: "10", literal: 10, line: 1 },
-			{ type: "AND", lexeme: "&&", literal: null, line: 1 },
-			{ type: "IDENTIFIER", lexeme: "b", literal: null, line: 1 },
-			{ type: "GREATER_EQUAL", lexeme: ">=", literal: null, line: 1 },
-			{ type: "NUMBER", lexeme: "20", literal: 20, line: 1 },
-			{ type: "OR", lexeme: "||", literal: null, line: 1 },
-			{ type: "BANG", lexeme: "!", literal: null, line: 1 },
-			{ type: "IDENTIFIER", lexeme: "done", literal: null, line: 1 },
-			{ type: "EQUAL_EQUAL", lexeme: "==", literal: null, line: 1 },
-			{ type: "FALSE", lexeme: "false", literal: false, line: 1 },
-			{ type: "BANG_EQUAL", lexeme: "!=", literal: null, line: 1 },
-			{ type: "TRUE", lexeme: "true", literal: true, line: 1 },
-			{ type: "EOF", lexeme: "", literal: null, line: 1 },
-		]);
+		assert.deepStrictEqual(
+			scan("a <= 10 && b >= 20 || !done == false != true"),
+			[
+				{ type: "IDENTIFIER", lexeme: "a", literal: null, line: 1 },
+				{ type: "LESS_EQUAL", lexeme: "<=", literal: null, line: 1 },
+				{ type: "NUMBER", lexeme: "10", literal: 10, line: 1 },
+				{ type: "AND", lexeme: "&&", literal: null, line: 1 },
+				{ type: "IDENTIFIER", lexeme: "b", literal: null, line: 1 },
+				{ type: "GREATER_EQUAL", lexeme: ">=", literal: null, line: 1 },
+				{ type: "NUMBER", lexeme: "20", literal: 20, line: 1 },
+				{ type: "OR", lexeme: "||", literal: null, line: 1 },
+				{ type: "BANG", lexeme: "!", literal: null, line: 1 },
+				{ type: "IDENTIFIER", lexeme: "done", literal: null, line: 1 },
+				{ type: "EQUAL_EQUAL", lexeme: "==", literal: null, line: 1 },
+				{ type: "FALSE", lexeme: "false", literal: false, line: 1 },
+				{ type: "BANG_EQUAL", lexeme: "!=", literal: null, line: 1 },
+				{ type: "TRUE", lexeme: "true", literal: true, line: 1 },
+				{ type: "EOF", lexeme: "", literal: null, line: 1 },
+			],
+		);
 	});
 
 	test("ignores line comments", () => {
