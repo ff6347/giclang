@@ -1,3 +1,6 @@
+// ABOUTME: Tests parsing of GIC variable declarations and assignments.
+// ABOUTME: Covers literal, identifier, and expression-based values.
+
 import assert from "node:assert";
 import { simplifyProgram } from "./parser-test-helpers.ts";
 import test, { describe } from "node:test";

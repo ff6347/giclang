@@ -1,3 +1,6 @@
+// ABOUTME: Tests parsing of GIC expressions and function calls.
+// ABOUTME: Covers unary, statement, identifier, and call expressions.
+
 import { describe, test } from "node:test";
 import assert from "node:assert";
 import { Parser } from "../parser.ts";

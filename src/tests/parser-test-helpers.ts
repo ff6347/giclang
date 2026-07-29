@@ -1,3 +1,6 @@
+// ABOUTME: Simplifies parser AST nodes for readable test assertions.
+// ABOUTME: Converts token-bearing expressions and statements into plain values.
+
 import type { Expression, Program, Statement } from "../ast.ts";
 
 function simplifyExpression(expression: Expression): unknown {

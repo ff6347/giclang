@@ -1,3 +1,6 @@
+// ABOUTME: Tests parsing of GIC conditional statements and branches.
+// ABOUTME: Covers valid if forms, nesting, and required delimiters.
+
 import test, { describe } from "node:test";
 import assert from "node:assert";
 import { Lexer } from "../lexer.ts";
