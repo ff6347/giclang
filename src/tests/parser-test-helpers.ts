@@ -96,6 +96,20 @@ function simplifyStatement(statement: Statement): unknown {
 		return simplified;
 	}
 
+	if (statement.type === "RepeatStmt") {
+		const simplified: Record<string, unknown> = {
+			type: statement.type,
+			variable: statement.variable.lexeme,
+			start: simplifyExpression(statement.start),
+			end: simplifyExpression(statement.end),
+			body: statement.body.map(simplifyStatement),
+		};
+		if (statement.step !== undefined) {
+			simplified.step = simplifyExpression(statement.step);
+		}
+		return simplified;
+	}
+
 	return statement;
 }
 
