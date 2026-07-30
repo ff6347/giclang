@@ -10,7 +10,21 @@ export interface Program {
 	type: "Program";
 	statements: Statement[];
 }
-export type Statement = VarDeclStmt | IfStmt | Assignment | ExprStmt;
+export type Statement =
+	| VarDeclStmt
+	| IfStmt
+	| Assignment
+	| ExprStmt
+	| RepeatStmt;
+
+export interface RepeatStmt {
+	type: "RepeatStmt";
+	variable: Token;
+	start: Expression;
+	end: Expression;
+	step?: Expression;
+	body: Statement[];
+}
 
 export interface IfStmt {
 	type: "IfStmt";

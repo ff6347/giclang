@@ -22,6 +22,7 @@ import {
 	NUMBER,
 	OR,
 	PLUS,
+	REPEAT,
 	RIGHT_BRACE,
 	RIGHT_PAREN,
 	SEMICOLON,
@@ -36,6 +37,7 @@ import type {
 	Assignment,
 	Expression,
 	Program,
+	RepeatStmt,
 	Statement,
 	VarDeclStmt,
 } from "./ast.ts";
@@ -73,7 +75,7 @@ export class Parser {
 	}
 	statement(): Statement {
 		if (this.match(IF)) return this.ifStatement();
-		// if(this.match(REPEAT))
+		if (this.match(REPEAT)) return this.repeatStatement();
 		// return this.whileStatement();
 		// if(this.match(RETURN))
 		// return this.returnStatement();
@@ -92,6 +94,32 @@ export class Parser {
 
 		this.consume(RIGHT_BRACE, "Expected '}' after block.");
 		return statements;
+	}
+	repeatStatement(): Statement {
+		this.consume(LEFT_PAREN, "Expected '(' after 'repeat'.");
+		const variable = this.consume(IDENTIFIER, "Expected loop variable name.");
+		this.consume(COMMA, "Expected ',' after variable.");
+		const start = this.expression();
+		this.consume(COMMA, "Expected ',' after start.");
+		const end = this.expression();
+		let step: Expression | undefined = undefined;
+		if (this.match(COMMA)) {
+			step = this.expression();
+		}
+		this.consume(RIGHT_PAREN, "Expected ')' after repeat arguments.");
+		this.consume(LEFT_BRACE, "Expected '{' before body");
+		const body = this.block();
+		const stmt: RepeatStmt = {
+			type: "RepeatStmt",
+			variable,
+			start,
+			end,
+			body,
+		};
+		if (step !== undefined) {
+			stmt.step = step;
+		}
+		return stmt;
 	}
 	ifStatement(): Statement {
 		this.consume(LEFT_PAREN, "Expected '(' after 'if'.");
