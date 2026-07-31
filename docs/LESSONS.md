@@ -3,53 +3,53 @@
 
 # Lessons
 
-- [x] Specify GIC revision 2
-- [x] Build the lexer
-- [x] Build the basic parser and AST
-- [x] Parse expression precedence
-- [x] Parse call expressions
-- [x] Parse assignments
-- [x] Parse `if` statements
-- [x] Parse `repeat` statements
-- [ ] Complete function declaration parser coverage
-- [ ] Complete `return` statement parser coverage
-- [ ] Parse the `loop` block as a program-level tail
-- [ ] Stabilize source locations and diagnostic quality
-- [ ] Define the browser-neutral core API and project structure
-- [ ] Represent spec-listed built-in signatures and reserved names
-- [ ] Build the semantic analyzer diagnostic harness
-- [ ] Analyze variable declarations, assignments, and shadowing
-- [ ] Analyze function declarations, calls, and arity
-- [ ] Analyze returns and function void/value kind
-- [ ] Analyze `repeat` and `loop` semantic rules
-- [ ] Analyze inferable type, semantic, and domain errors for built-in calls
-- [ ] Define the runtime value, environment, and error model
-- [ ] Interpret expressions
-- [ ] Interpret variables and assignments
-- [ ] Interpret conditionals
-- [ ] Interpret `repeat` statements
-- [ ] Interpret user-defined functions and returns
-- [ ] Interpret setup and `loop` frame lifecycle
-- [ ] Implement pure constants, math, print, and randomness built-ins
-- [ ] Define the render backend interface and command model
-- [ ] Add a recording render backend
-- [ ] Render drawing, style, and canvas built-ins through the recording backend
-- [ ] Implement animation built-ins and scheduler hooks
-- [ ] Add the browser Canvas backend for static sketches
-- [ ] Add the browser Canvas animation backend
-- [ ] Add CLI check and run entry points
-- [ ] Add example-program and visual-regression verification
-- [ ] Decide the browser IDE technology and sandbox model
-- [ ] Decide language-service, LSP, and VS Code extension scope
-- [ ] Build the browser IDE MVP with diagnostics and static preview
-- [ ] Add browser IDE animation and runtime-error UX
-- [ ] Add browser IDE language assistance
-- [ ] Decide the desktop shell and filesystem model
-- [ ] Package the IDE with Deno Desktop if selected
-- [ ] Design dynamic lists
-- [ ] Decide built-in math expansion
-- [ ] Decide additional drawing APIs and transforms
-- [ ] Design documentation comments
-- [ ] Decide the standard-library and import model
-- [ ] Decide optional CLI export and server render backends
-- [ ] Decide fuzzy prompt-oriented language mode
+- [x] [Specify GIC revision 2](<Language specification rev 2.md>)
+- [x] [Build the lexer](milestones/lexer.md)
+- [x] [Build the basic parser and AST](milestones/parser-basic.md)
+- [x] [Parse expression precedence](milestones/parser-expression-precedence.md)
+- [x] [Parse call expressions](milestones/parser-call-expressions.md)
+- [x] [Parse assignments](milestones/parser-assignment.md)
+- [x] [Parse `if` statements](milestones/parser-if-statements.md)
+- [x] [Parse `repeat` statements](milestones/parser-repeat-statements.md)
+- [ ] [Complete function declaration parser coverage](milestones/parser-functions.md)
+- [ ] [Complete `return` statement parser coverage](milestones/parser-functions.md)
+- [ ] [Parse the `loop` block as a program-level tail](milestones/parser-loop-block.md)
+- [ ] [Stabilize source locations and diagnostic quality](milestones/source-locations-diagnostics.md)
+- [ ] [Define the browser-neutral core API and project structure](milestones/browser-neutral-core-api.md)
+- [ ] [Represent spec-listed built-in signatures and reserved names](milestones/built-in-signatures-reserved-names.md)
+- [ ] [Build the semantic analyzer diagnostic harness](milestones/semantic-analyzer-diagnostic-harness.md)
+- [ ] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
+- [ ] [Analyze function declarations, calls, and arity](milestones/semantic-functions-calls-arity.md)
+- [ ] [Analyze returns and function void/value kind](milestones/semantic-returns-function-kind.md)
+- [ ] [Analyze `repeat` and `loop` semantic rules](milestones/semantic-repeat-loop-rules.md)
+- [ ] [Analyze inferable type, semantic, and domain errors for built-in calls](milestones/semantic-built-in-call-errors.md)
+- [ ] [Define the runtime value, environment, and error model](milestones/runtime-value-environment-errors.md)
+- [ ] [Interpret expressions](milestones/interpreter-expressions.md)
+- [ ] [Interpret variables and assignments](milestones/interpreter-variables-assignments.md)
+- [ ] [Interpret conditionals](milestones/interpreter-conditionals.md)
+- [ ] [Interpret `repeat` statements](milestones/interpreter-repeat-statements.md)
+- [ ] [Interpret user-defined functions and returns](milestones/interpreter-functions-returns.md)
+- [ ] [Interpret setup and `loop` frame lifecycle](milestones/interpreter-setup-loop-lifecycle.md)
+- [ ] [Implement pure constants, math, print, and randomness built-ins](milestones/pure-math-print-randomness-built-ins.md)
+- [ ] [Define the render backend interface and command model](milestones/render-backend-interface-command-model.md)
+- [ ] [Add a recording render backend](milestones/recording-backend-drawing-built-ins.md)
+- [ ] [Render drawing, style, and canvas built-ins through the recording backend](milestones/recording-backend-drawing-built-ins.md)
+- [ ] [Implement animation built-ins and scheduler hooks](milestones/animation-built-ins-scheduler-hooks.md)
+- [ ] [Add the browser Canvas backend for static sketches](milestones/browser-canvas-static-backend.md)
+- [ ] [Add the browser Canvas animation backend](milestones/browser-canvas-animation-backend.md)
+- [ ] [Add CLI check and run entry points](milestones/cli-check-run-entry-points.md)
+- [ ] [Add example-program and visual-regression verification](milestones/example-program-visual-regression.md)
+- [ ] [Decide the browser IDE technology and sandbox model](decisions/browser-ide-technology-sandbox.md)
+- [ ] [Decide language-service, LSP, and VS Code extension scope](decisions/language-service-lsp-vscode-scope.md)
+- [ ] [Build the browser IDE MVP with diagnostics and static preview](milestones/browser-ide-mvp-diagnostics-static-preview.md)
+- [ ] [Add browser IDE animation and runtime-error UX](milestones/browser-ide-animation-runtime-error-ux.md)
+- [ ] [Add browser IDE language assistance](milestones/browser-ide-language-assistance.md)
+- [ ] [Decide the desktop shell and filesystem model](decisions/desktop-shell-filesystem.md)
+- [ ] [Package the IDE with Deno Desktop if selected](milestones/deno-desktop-packaging.md)
+- [ ] [Design dynamic lists](decisions/dynamic-lists.md)
+- [ ] [Decide built-in math expansion](decisions/built-in-math-expansion.md)
+- [ ] [Decide additional drawing APIs and transforms](decisions/additional-drawing-apis-transforms.md)
+- [ ] [Design documentation comments](decisions/documentation-comments.md)
+- [ ] [Decide the standard-library and import model](decisions/standard-library-import-model.md)
+- [ ] [Decide optional CLI export and server render backends](decisions/cli-export-server-render-backends.md)
+- [ ] [Decide fuzzy prompt-oriented language mode](decisions/fuzzy-prompt-oriented-language-mode.md)
