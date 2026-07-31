@@ -27,6 +27,7 @@ The lexer recognizes:
 - Single-character punctuation: `(`, `)`, `{`, `}`, `,`, `;`
 - Arithmetic operators: `+`, `-`, `*`, `/`, `%`
 - Comparison operators: `<`, `<=`, `>`, `>=`, `==`, `!=`
+- Assignment operator: `=`
 - Logical operators: `!`, `&&`, `||`
 - Line comments: `// comment`
 - End-of-file token

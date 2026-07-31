@@ -63,7 +63,7 @@ ifStmt      = "if" "(" expression ")" block
               ( "else" "if" "(" expression ")" block )*
               ( "else" block )? ;
 
-block       = "{" statement* "}" ;
+block       = "{" declaration* "}" ;
 ```
 
 Existing declaration parsing remains:
@@ -80,7 +80,8 @@ varDecl     = "let" IDENTIFIER "=" expression ";" ;
 Add an if statement node:
 
 ```txt
-If
+IfStmt
+  type: "IfStmt"
   condition: Expression
   thenBranch: Statement[]
   elseBranch?: Statement[]
@@ -89,10 +90,10 @@ If
 Extend the statement union:
 
 ```txt
-Statement = VarDecl | Assignment | If | ExprStmt
+Statement = VarDecl | Assignment | IfStmt | ExprStmt
 ```
 
-`else if` can be represented as an `elseBranch` containing one nested `If` statement.
+`else if` can be represented as an `elseBranch` containing one nested `IfStmt` statement.
 
 Example:
 
@@ -107,13 +108,13 @@ if (a) {
 Simplified shape:
 
 ```txt
-If
+IfStmt
   condition: Identifier a
   thenBranch:
     Assignment x
       Literal 1
   elseBranch:
-    If
+    IfStmt
       condition: Identifier b
       thenBranch:
         Assignment x
@@ -144,7 +145,7 @@ block()
 2. Parse the condition expression.
 3. Consume `)`.
 4. Parse the then branch block.
-5. If `else if` appears, parse a nested `If` statement inside `elseBranch`.
+5. If `else if` appears, parse a nested `IfStmt` statement inside `elseBranch`.
 6. If `else` appears, parse the else branch block.
 
 `block()` should:
@@ -169,7 +170,7 @@ if (x > 10) {
 Expected simplified shape:
 
 ```txt
-If
+IfStmt
   condition:
     Binary >
       Identifier x
@@ -192,7 +193,7 @@ if (x > 10) {
 Expected simplified shape:
 
 ```txt
-If
+IfStmt
   condition:
     Binary >
       Identifier x
@@ -220,7 +221,7 @@ if (x > 10) {
 Expected simplified shape:
 
 ```txt
-If
+IfStmt
   condition:
     Binary >
       Identifier x
@@ -229,7 +230,7 @@ If
     Assignment x
       Literal 1
   elseBranch:
-    If
+    IfStmt
       condition:
         Binary >
           Identifier x

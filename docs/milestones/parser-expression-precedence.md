@@ -171,9 +171,9 @@ Expected shape:
 
 ```txt
 VarDecl ok
-  Binary ||
+  Logical ||
     Literal true
-    Binary &&
+    Logical &&
       Literal false
       Unary !
         Identifier done
@@ -200,6 +200,7 @@ Extend the parser test simplifier to handle:
 
 - `Identifier`: convert `name` token to `name.lexeme`
 - `Binary`: convert `operator` token to `operator.lexeme`
+- `Logical`: convert `operator` token to `operator.lexeme`
 - `Unary`: convert `operator` token to `operator.lexeme`
 - `Grouping`: recursively simplify inner expression
 

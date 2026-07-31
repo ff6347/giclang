@@ -58,11 +58,11 @@ block      = "{" statement* "}" ;
 
 ## AST Change
 
-Add function declaration and return statement nodes:
+Add function and return statement nodes. The source-facing AST name is `FuncStmt`, while the grammar production remains `funcDecl`:
 
 ```txt
-FuncDecl
-  type: "FuncDecl"
+FuncStmt
+  type: "FuncStmt"
   name: Token
   params: Token[]
   body: Statement[]
@@ -75,7 +75,7 @@ ReturnStmt
 Extend the statement union:
 
 ```txt
-Statement = VarDecl | IfStmt | RepeatStmt | FuncDecl | ReturnStmt | Assignment | ExprStmt
+Statement = VarDecl | IfStmt | RepeatStmt | FuncStmt | ReturnStmt | Assignment | ExprStmt
 ```
 
 The function name and parameters are `Token` values, matching the identifier
@@ -88,23 +88,22 @@ Add `func` and `return` handling to statement dispatch:
 
 ```txt
 statement()
-  if current token is FUNC: funcDeclaration()
-  if current token is RETURN: returnStatement()
+  if match(FUNC): funcStatement()
+  if match(RETURN): returnStatement()
 ```
 
-`funcDeclaration()` should:
+`funcStatement()` should run after `statement()` has already matched the `func` keyword:
 
-1. Consume `func` and the function name as an `IDENTIFIER` token.
+1. Consume the function name as an `IDENTIFIER` token.
 2. Consume `(`.
 3. If the next token is not `)`, parse one or more comma-separated `IDENTIFIER` parameters.
 4. Consume `)` and `{`.
 5. Parse the function body via `block()`.
 
-`returnStatement()` should:
+`returnStatement()` should run after `statement()` has already matched the `return` keyword:
 
-1. Consume `return`.
-2. If the next token is not `;`, parse an expression as the return value.
-3. Consume `;`.
+1. If the next token is not `;`, parse an expression as the return value.
+2. Consume `;`.
 
 This assumes `block()` is called after `{` has been consumed, matching the
 chosen block convention elsewhere in the parser.

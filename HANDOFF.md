@@ -19,7 +19,7 @@
 - [x] Audit the current implementation, specification, `docs/LESSONS.md`, existing milestone documents, journals, memory, and open git-bugs. Record which lessons are complete, in progress, missing, obsolete, or blocked by a design decision.
 - [x] Define one prerequisite-ordered curriculum from the current parser state through interpreter, semantic analysis, drawing backends, browser IDE, Deno Desktop packaging, and later language-design topics.
 - [x] Keep `docs/LESSONS.md` minimal: an ordered checklist only, with every item linked to a detailed lesson or an explicit design-decision document.
-- [ ] Reconcile existing milestone documents with the curriculum. Preserve accurate completed lessons; correct only factual contradictions that would mislead the student.
+- [x] Reconcile existing milestone documents with the curriculum. Preserve accurate completed lessons; correct only factual contradictions that would mislead the student.
 - [ ] Create the missing detailed lesson documents under `docs/milestones/`. Each must include: learning goal, prerequisites, concepts to understand, relevant specification links, grammar/AST shape where applicable, a TDD-oriented student checklist, explicit non-goals, and concrete verification.
 - [ ] Keep the work educational: explain what Fabian should learn and verify, but do not write complete functions, implementation patches, or copy-ready assignment solutions. Illustrative code fragments must remain short and focused.
 - [ ] Treat unresolved language choices—dynamic lists, documentation comments, standard library/imports, and any newly discovered design question—as decision gates. Present options and consequences without silently choosing.
