@@ -8,6 +8,7 @@ import {
 	EQUAL,
 	EQUAL_EQUAL,
 	FALSE,
+	FUNC,
 	GREATER,
 	GREATER_EQUAL,
 	IDENTIFIER,
@@ -23,6 +24,7 @@ import {
 	OR,
 	PLUS,
 	REPEAT,
+	RETURN,
 	RIGHT_BRACE,
 	RIGHT_PAREN,
 	SEMICOLON,
@@ -36,8 +38,10 @@ import {
 import type {
 	Assignment,
 	Expression,
+	FuncStmt,
 	Program,
 	RepeatStmt,
+	ReturnStmt,
 	Statement,
 	VarDeclStmt,
 } from "./ast.ts";
@@ -76,9 +80,9 @@ export class Parser {
 	statement(): Statement {
 		if (this.match(IF)) return this.ifStatement();
 		if (this.match(REPEAT)) return this.repeatStatement();
-		// return this.whileStatement();
-		// if(this.match(RETURN))
-		// return this.returnStatement();
+
+		if (this.match(FUNC)) return this.funcStatement();
+		if (this.match(RETURN)) return this.returnStatement();
 		// TODO: We will get here soon
 		// if (this.match(LEFT_BRACE)) return this.block();
 		if (this.check(IDENTIFIER) && this.checkNext(EQUAL)) {
@@ -86,6 +90,28 @@ export class Parser {
 		}
 		return this.expressionStatement();
 	}
+	returnStatement(): ReturnStmt {
+		let value: Expression | undefined = undefined;
+		if (!this.check(SEMICOLON)) {
+			value = this.expression();
+		}
+		this.consume(
+			SEMICOLON,
+			value
+				? `Expected ';' after return value.`
+				: `Expected ';' after return keyword.`,
+		);
+
+		const expr: ReturnStmt = {
+			type: "ReturnStmt",
+		};
+		if (value) {
+			expr.value = value;
+		}
+
+		return expr;
+	}
+
 	block(): Statement[] {
 		const statements: Statement[] = [];
 		while (!this.check(RIGHT_BRACE) && !this.isAtEnd()) {
@@ -95,9 +121,48 @@ export class Parser {
 		this.consume(RIGHT_BRACE, "Expected '}' after block.");
 		return statements;
 	}
+	funcStatement(): Statement {
+		const name = this.consume(
+			IDENTIFIER,
+			"Expected function name.",
+		);
+		this.consume(
+			LEFT_PAREN,
+			"Expected '(' after function name.",
+		);
+
+		const params: Token[] | undefined = [];
+
+		while (!this.check(RIGHT_PAREN) && !this.isAtEnd()) {
+			params?.push(
+				this.consume(IDENTIFIER, "Expected parameter name."),
+			);
+			if (this.check(RIGHT_PAREN)) {
+				break;
+			}
+			this.consume(COMMA, "Expected ',' after parameter.");
+		}
+		this.consume(RIGHT_PAREN, "Expected ')' after parameters.");
+		this.consume(LEFT_BRACE, "Expected '{' after parameters.");
+		const body = this.block();
+
+		const stmt: FuncStmt = {
+			type: "FuncStmt",
+			name,
+			body: body,
+		};
+		if (params !== undefined) {
+			stmt.params = params;
+		}
+		return stmt;
+	}
+
 	repeatStatement(): Statement {
 		this.consume(LEFT_PAREN, "Expected '(' after 'repeat'.");
-		const variable = this.consume(IDENTIFIER, "Expected loop variable name.");
+		const variable = this.consume(
+			IDENTIFIER,
+			"Expected loop variable name.",
+		);
 		this.consume(COMMA, "Expected ',' after variable.");
 		const start = this.expression();
 		this.consume(COMMA, "Expected ',' after start.");
@@ -106,9 +171,15 @@ export class Parser {
 		if (this.match(COMMA)) {
 			step = this.expression();
 		} else if (!this.check("RIGHT_PAREN")) {
-			throw new ParserError("Expected ',' after repeat end.", this.peek());
+			throw new ParserError(
+				"Expected ',' after repeat end.",
+				this.peek(),
+			);
 		}
-		this.consume(RIGHT_PAREN, "Expected ')' after repeat arguments.");
+		this.consume(
+			RIGHT_PAREN,
+			"Expected ')' after repeat arguments.",
+		);
 		this.consume(LEFT_BRACE, "Expected '{' before body");
 		const body = this.block();
 		const stmt: RepeatStmt = {
@@ -136,7 +207,10 @@ export class Parser {
 			if (this.match(IF)) {
 				elseBranch = [this.ifStatement()];
 			} else {
-				this.consume(LEFT_BRACE, "Expected '{' before else branch");
+				this.consume(
+					LEFT_BRACE,
+					"Expected '{' before else branch",
+				);
 				elseBranch = this.block();
 			}
 		}
@@ -168,10 +242,19 @@ export class Parser {
 		};
 	}
 	varDeclaration(): VarDeclStmt {
-		const name: Token = this.consume(IDENTIFIER, "Expected variable name.");
-		this.consume(EQUAL, "Expected '=' sign after variable name.");
+		const name: Token = this.consume(
+			IDENTIFIER,
+			"Expected variable name.",
+		);
+		this.consume(
+			EQUAL,
+			"Expected '=' sign after variable name.",
+		);
 		const initializer = this.expression();
-		this.consume(SEMICOLON, "Expected semicolon after variable declaration.");
+		this.consume(
+			SEMICOLON,
+			"Expected semicolon after variable declaration.",
+		);
 		return {
 			type: "VarDecl",
 			name,
@@ -227,7 +310,9 @@ export class Parser {
 	}
 	comparison(): Expression {
 		let expr = this.term();
-		while (this.match(LESS, GREATER, LESS_EQUAL, GREATER_EQUAL)) {
+		while (
+			this.match(LESS, GREATER, LESS_EQUAL, GREATER_EQUAL)
+		) {
 			const operator = this.previous();
 			const right = this.term();
 			expr = {
@@ -301,7 +386,10 @@ export class Parser {
 				args.push(this.expression());
 			} while (this.match(COMMA));
 		}
-		const paren = this.consume(RIGHT_PAREN, "Expected ')' after arguments.");
+		const paren = this.consume(
+			RIGHT_PAREN,
+			"Expected ')' after arguments.",
+		);
 		return {
 			type: "Call",
 			callee,
@@ -332,7 +420,10 @@ export class Parser {
 		}
 		if (this.match(LEFT_PAREN)) {
 			const expr = this.expression();
-			this.consume(RIGHT_PAREN, "Expected ')' after expression.");
+			this.consume(
+				RIGHT_PAREN,
+				"Expected ')' after expression.",
+			);
 			return {
 				type: "Grouping",
 				expression: expr,
@@ -341,7 +432,10 @@ export class Parser {
 		throw new ParserError("Expected Expression.", this.peek());
 	}
 	assignment(): Assignment {
-		const name: Token = this.consume(IDENTIFIER, "Expected variable name.");
+		const name: Token = this.consume(
+			IDENTIFIER,
+			"Expected variable name.",
+		);
 		this.consume(EQUAL, "Expected '=' after variable name.");
 		const value = this.expression();
 		this.consume(SEMICOLON, "Expected ';' after assignment");

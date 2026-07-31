@@ -15,7 +15,21 @@ export type Statement =
 	| IfStmt
 	| Assignment
 	| ExprStmt
-	| RepeatStmt;
+	| RepeatStmt
+	| FuncStmt
+	| ReturnStmt;
+
+export interface ReturnStmt {
+	type: "ReturnStmt";
+	value?: Expression;
+}
+
+export interface FuncStmt {
+	type: "FuncStmt";
+	name: Token;
+	params?: Token[];
+	body: Statement[];
+}
 
 export interface RepeatStmt {
 	type: "RepeatStmt";
