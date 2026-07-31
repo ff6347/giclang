@@ -10,7 +10,7 @@
 - [x] [Parse call expressions](milestones/parser-call-expressions.md)
 - [x] [Parse assignments](milestones/parser-assignment.md)
 - [x] [Parse `if` statements](milestones/parser-if-statements.md)
-- [x] [Parse `repeat` statements](<Language specification rev 2.md#loops>)
+- [x] [Parse `repeat` statements](milestones/parser-repeat-statements.md)
 - [ ] [Parse function declarations](<Language specification rev 2.md#user-defined-functions>)
 - [ ] [Parse `return` statements](<Language specification rev 2.md#user-defined-functions>)
 - [ ] [Parse the `loop` block](<Language specification rev 2.md#animation>)
