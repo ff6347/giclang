@@ -110,6 +110,25 @@ function simplifyStatement(statement: Statement): unknown {
 		return simplified;
 	}
 
+	if (statement.type === "FuncStmt") {
+		return {
+			type: statement.type,
+			name: statement.name.lexeme,
+			params: statement.params?.map((p) => p.lexeme),
+			body: statement.body.map(simplifyStatement),
+		};
+	}
+
+	if (statement.type === "ReturnStmt") {
+		const simplified: Record<string, unknown> = {
+			type: statement.type,
+		};
+		if (statement.value !== undefined) {
+			simplified.value = simplifyExpression(statement.value);
+		}
+		return simplified;
+	}
+
 	return statement;
 }
 
