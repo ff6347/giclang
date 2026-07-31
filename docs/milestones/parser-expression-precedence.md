@@ -1,5 +1,5 @@
 <!-- ABOUTME: Defines the next parser milestone for expression precedence in GIC. -->
-<!-- ABOUTME: Lists the grammar subset, implementation order, and tests to guide parser work. -->
+<!-- ABOUTME: Lists the grammar subset, behavior expectations, and tests to guide parser work. -->
 
 # Parser Milestone: Expression Precedence
 
@@ -12,6 +12,9 @@ This milestone should make programs like this parse correctly:
 ```gic
 let x = 1 + 2 * 3;
 let y = -(x + 4);
+```
+
+```gic
 let ok = x >= 3 && y != 0;
 ```
 
@@ -65,31 +68,33 @@ primary     = NUMBER
             | "(" expression ")" ;
 ```
 
-## Implementation Order
+## Concepts to Understand
 
-1. Add expression statement parsing.
-2. Add grouping expressions.
-3. Add unary expressions: `!`, unary `-`.
-4. Add multiplication-level binary expressions: `*`, `/`, `%`.
-5. Add addition-level binary expressions: `+`, `-`.
-6. Add comparison expressions: `<`, `<=`, `>`, `>=`.
-7. Add equality expressions: `==`, `!=`.
-8. Add logical AND expressions: `&&`.
-9. Add logical OR expressions: `||`.
+- Precedence decides which operator becomes the parent in the AST.
+- Grouping with parentheses overrides the usual precedence order.
+- Unary operators bind more tightly than binary operators.
+- Operators at the same precedence level associate left-to-right for this milestone's binary and logical expressions.
+- Expression statements make calls and calculations usable as standalone statements later, even though calls are not included yet.
 
-## Suggested Parser Methods
+## Behavior Checklist
 
-```txt
-expression()  -> or()
-or()          -> and()
-and()         -> equality()
-equality()    -> comparison()
-comparison()  -> term()
-term()        -> factor()
-factor()      -> unary()
-unary()       -> primary()
-primary()     -> literals, identifiers, grouping
-```
+Verify each precedence level with one focused parser test before combining many operators:
+
+- Expression statements end with `;` and produce `ExprStmt` nodes.
+- Parentheses produce a grouped expression shape.
+- Unary `!` and unary `-` attach to the expression immediately to their right.
+- `*`, `/`, and `%` bind tighter than `+` and `-`.
+- `+` and `-` bind tighter than comparisons.
+- Comparisons bind tighter than equality.
+- Equality binds tighter than `&&`.
+- `&&` binds tighter than `||`.
+
+## Focused Questions
+
+- In `1 + 2 * 3`, which operator should be the root of the expression tree?
+- In `(1 + 2) * 3`, what AST node proves the grouping changed the tree?
+- In `true || false && !done`, which operation happens last?
+- What parser error should a missing closing `)` produce?
 
 ## Tests
 

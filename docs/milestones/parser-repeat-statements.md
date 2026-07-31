@@ -1,5 +1,5 @@
 <!-- ABOUTME: Records the completed parser milestone for repeat statements in GIC. -->
-<!-- ABOUTME: Documents repeat grammar, AST shape, parser approach, and verification tests. -->
+<!-- ABOUTME: Documents repeat grammar, AST shape, parser behavior, and verification tests. -->
 
 # Parser Milestone: Repeat Statements
 
@@ -13,7 +13,9 @@ This milestone supports:
 repeat(i, 0, 10) {
   circle(i * 10, 50, 5);
 }
+```
 
+```gic
 repeat(i, 10, 0, -1) {
   circle(i * 10, 50, 5);
 }
@@ -69,27 +71,27 @@ Extend the statement union:
 Statement = VarDecl | IfStmt | RepeatStmt | Assignment | ExprStmt
 ```
 
-The loop variable is a `Token`, matching `VarDecl.name` and `Assignment.name`.
-The grammar requires an `IDENTIFIER`, not a general expression, so the parser
-consumes one token directly instead of calling `expression()`.
+The loop variable is a `Token`, matching `VarDecl.name` and `Assignment.name`. The grammar requires an `IDENTIFIER`, not a general expression, so the AST should keep the variable as a name token while start, end, and step remain expressions.
 
-## Parser Approach
+## Concepts to Understand
 
-Add `repeat` handling to statement dispatch:
+- `repeat` is a statement whose header has a fixed argument shape.
+- The first header item names the loop variable; it is not evaluated as an expression.
+- Start, end, and optional step use the normal expression grammar.
+- The parser records whether a step expression was written, but it does not apply the default step value.
+- The body is a braced statement block and may contain nested repeats.
 
-```txt
-statement()
-  if match(REPEAT): repeatStatement()
-```
+## Behavior Checklist
 
-`repeatStatement()` should:
-
-1. Consume `(`.
-2. Consume the loop variable as an `IDENTIFIER` token.
-3. Consume `,`, parse start, consume `,`, parse end.
-4. If `,` follows, parse step.
-5. If neither `,` nor `)` follows end, throw a parser error for the missing comma.
-6. Consume `)`, consume `{`, parse the body block.
+- Parse `repeat(i, start, end) { ... }` with no `step` property.
+- Parse `repeat(i, start, end, step) { ... }` with a `step` expression.
+- Preserve unary expressions such as `-1` in the step position.
+- Allow an empty body and a body with existing statement forms.
+- Allow nested `repeat` statements.
+- Reject a missing loop variable name.
+- Reject missing commas between header items.
+- Reject missing `)` after the header.
+- Reject missing `{` before the body.
 
 ## Tests
 
@@ -108,8 +110,6 @@ The milestone is covered by tests for:
 
 ## Notes
 
-The step is optional. When omitted, the AST node has no `step` property; the
-interpreter applies the default of `1` at runtime.
+The step is optional. When omitted, the AST node has no `step` property; the interpreter applies the default of `1` at runtime.
 
-With `exactOptionalPropertyTypes`, an omitted step cannot be set to `undefined`.
-Build the node without `step` and assign it only when present.
+Tests should assert the observable AST shape: an omitted step has no `step` field, while a written step appears with its parsed expression shape.

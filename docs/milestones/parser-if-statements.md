@@ -13,20 +13,26 @@ This milestone supports:
 if (x > 10) {
   circle(50, 50, 20);
 }
+```
 
+```gic
 if (x > 10) {
   circle(50, 50, 20);
 } else {
   circle(25, 25, 10);
 }
+```
 
+```gic
 if (x > 10) {
   circle(50, 50, 20);
 } else if (x > 5) {
   circle(25, 25, 10);
-} else {
-  circle(10, 10, 5);
 }
+```
+
+```gic
+if (x > 10) { circle(50, 50, 20); } else { circle(10, 10, 5); }
 ```
 
 ## Included
@@ -121,41 +127,31 @@ IfStmt
           Literal 2
 ```
 
-## Parser Approach
+## Concepts to Understand
 
-Add `if` handling before assignment/expression statements:
+- `if` is a statement form, so it must be recognized before falling back to expression statements.
+- A condition is any expression, but this parser milestone does not decide whether it is boolean.
+- Braces are part of the syntax contract, not optional formatting.
+- A block produces a list of statements and declarations for its branch body.
+- `else if` is syntax for an `else` branch whose only statement is another `IfStmt`.
+- Tests should observe no `elseBranch` field when source has no `else`, instead of relying on an `undefined` placeholder.
 
-```txt
-statement()
-  if match(IF): ifStatement()
-  if current token is IDENTIFIER and next token is EQUAL: assignment()
-  otherwise: expressionStatement()
-```
+## Behavior Checklist
 
-Suggested parser methods:
+- Parse `if` with a condition in parentheses and a braced then branch.
+- Parse an `else` branch only when it follows the then branch.
+- Parse an `else if` chain as nested conditional AST shape.
+- Allow empty branch blocks.
+- Allow declarations and existing statements inside branch blocks.
+- Reject a condition that is missing `(` or `)`.
+- Reject an unbraced then or else branch.
 
-```txt
-ifStatement()
-block()
-```
+## Focused Questions
 
-`ifStatement()` should:
-
-1. Consume `(`.
-2. Parse the condition expression.
-3. Consume `)`.
-4. Parse the then branch block.
-5. If `else if` appears, parse a nested `IfStmt` statement inside `elseBranch`.
-6. If `else` appears, parse the else branch block.
-
-`block()` should:
-
-1. Consume `{` before entering or assume it has just been consumed consistently.
-2. Parse declarations/statements until `}`.
-3. Consume `}`.
-4. Return `Statement[]`.
-
-Pick one convention for whether `block()` consumes the opening brace or is called after it has already been consumed. Keep it consistent.
+- What visible AST shape distinguishes `else` from `else if`?
+- Which source location should a missing `{` diagnostic point at?
+- Should a declaration inside a branch parse before semantic scoping rules exist?
+- What should happen if `else` appears without a preceding `if`?
 
 ## Tests
 
@@ -213,9 +209,7 @@ if (x > 10) {
   x = 1;
 } else if (x > 5) {
   x = 2;
-} else {
-  x = 3;
-}
+} else { x = 3; }
 ```
 
 Expected simplified shape:

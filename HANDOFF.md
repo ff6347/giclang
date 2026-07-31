@@ -21,7 +21,7 @@
 - [x] Keep `docs/LESSONS.md` minimal: an ordered checklist only, with every item linked to a detailed lesson or an explicit design-decision document.
 - [x] Reconcile existing milestone documents with the curriculum. Preserve accurate completed lessons; correct only factual contradictions that would mislead the student.
 - [x] Create the missing detailed lesson documents under `docs/milestones/`. Each must include: learning goal, prerequisites, concepts to understand, relevant specification links, grammar/AST shape where applicable, a TDD-oriented student checklist, explicit non-goals, and concrete verification.
-- [ ] Keep the work educational: explain what Fabian should learn and verify, but do not write complete functions, implementation patches, or copy-ready assignment solutions. Illustrative code fragments must remain short and focused.
+- [x] Keep the work educational: explain what Fabian should learn and verify, but do not write complete functions, implementation patches, or copy-ready assignment solutions. Illustrative code fragments must remain short and focused.
 - [ ] Treat unresolved language choices—dynamic lists, documentation comments, standard library/imports, and any newly discovered design question—as decision gates. Present options and consequences without silently choosing.
 - [ ] Check ordering, links, terminology, and milestone scope across all curriculum documents. Remove fulfilled plan files only if any are found under `docs/plans/`; never remove journals.
 - [ ] Run documentation formatting and link validation. Confirm no executable source, test, package, or configuration files changed.

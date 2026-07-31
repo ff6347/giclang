@@ -1,5 +1,5 @@
 <!-- ABOUTME: Defines the next parser milestone for reassignment statements in GIC. -->
-<!-- ABOUTME: Describes assignment grammar, AST changes, parser approach, and tests. -->
+<!-- ABOUTME: Describes assignment grammar, AST changes, parser behavior, and tests. -->
 
 # Parser Milestone: Assignment Statements
 
@@ -76,7 +76,7 @@ Extend the statement union:
 Statement = VarDecl | Assignment | ExprStmt
 ```
 
-## Parser Approach
+## Concepts to Understand
 
 The parser needs to distinguish these cases:
 
@@ -88,31 +88,19 @@ x = x + 1;
 x + 1;
 ```
 
-Both begin with `IDENTIFIER`, so statement parsing should look ahead before deciding.
+Both begin with `IDENTIFIER`, but only the first matches the assignment grammar. The observable behavior is:
 
-Suggested approach:
+- `IDENTIFIER = expression ;` becomes an `Assignment` statement.
+- `IDENTIFIER` followed by another expression operator remains an expression statement.
+- The assignment target is a token, not an expression node.
+- Only semantic analysis decides whether the assigned name was declared.
 
-```txt
-statement()
-  if current token is IDENTIFIER and next token is EQUAL:
-    parse assignment statement
-  otherwise:
-    parse expression statement
-```
+## Focused Questions
 
-This requires a parser helper for looking one token ahead.
-
-Example helper:
-
-```txt
-checkNext(type)
-```
-
-Conceptually:
-
-```txt
-checkNext(EQUAL) returns true when tokens[current + 1] is EQUAL
-```
+- What token sequence proves a statement is an assignment rather than an expression statement?
+- Where should the parser report an error for `x = ;`?
+- Should `x + 1;` still parse after assignment support is added?
+- Why does `1 = x;` not belong to this milestone's assignment grammar?
 
 ## Tests
 

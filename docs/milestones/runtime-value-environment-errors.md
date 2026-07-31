@@ -101,7 +101,7 @@ RuntimeError
 
 A user function value should remember the declaration it came from and the environment needed for calls. Current language gates say no closures, so the captured environment may initially be the global/function declaration environment rather than arbitrary nested local state.
 
-At call time, the callable should create a child environment, bind parameters to evaluated argument values, execute the body, and convert return propagation into the call result.
+Verification should stay observable: calls have isolated parameter bindings, body execution sees the intended environment, and return behavior is observed only as the call result.
 
 ## TDD-Oriented Student Checklist
 
