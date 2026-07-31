@@ -25,7 +25,7 @@
 - [x] Treat unresolved language choices—dynamic lists, documentation comments, standard library/imports, and any newly discovered design question—as decision gates. Present options and consequences without silently choosing.
 - [x] Check ordering, links, terminology, and milestone scope across all curriculum documents. Remove fulfilled plan files only if any are found under `docs/plans/`; never remove journals.
 - [x] Run documentation formatting and link validation. Confirm no executable source, test, package, or configuration files changed.
-- [ ] Update this checklist, commit atomic documentation changes with `[skip ci]`, push `docs/lesson-curriculum`, and report completion or blockers to `@chakotay@main` using `agent-msg`.
+- [x] Update this checklist, commit atomic documentation changes with `[skip ci]`, push `docs/lesson-curriculum`, and report completion or blockers to `@chakotay@main` using `agent-msg`.
 
 ## Gate
 
