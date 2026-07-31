@@ -25,7 +25,7 @@ describe("parser repeat statements", () => {
 			},
 		);
 	});
-	test("should fail to parse repeat statement with 3 arguments and missing loop varaible", () => {
+	test("should fail to parse repeat statement with 3 arguments and missing loop variable", () => {
 		const lexer = new Lexer(`repeat(0, 10, 2) {
 			}`);
 
