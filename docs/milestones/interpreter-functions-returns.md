@@ -10,6 +10,7 @@ Run user-defined functions with isolated call environments and observable `retur
 ## Prerequisites
 
 - [Parser functions and returns](parser-functions.md), and [call expressions](parser-call-expressions.md) milestones.
+- [Call target syntax](../decisions/call-target-syntax.md) is a blocking decision for resolving the parser/spec mismatch before this milestone proceeds.
 - [Runtime value, environment, and error model](runtime-value-environment-errors.md) milestone.
 - [Interpreter expressions](interpreter-expressions.md), [variables and assignments](interpreter-variables-assignments.md), [conditionals](interpreter-conditionals.md), and [repeat statements](interpreter-repeat-statements.md).
 

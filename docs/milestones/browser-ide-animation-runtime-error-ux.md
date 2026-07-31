@@ -14,8 +14,8 @@ Extend the selected browser IDE from static preview to animation playback and cl
 - Animation built-ins and scheduler hooks are already defined.
 - Setup and `loop` lifecycle behavior is implemented in the interpreter.
 - The runtime error model carries messages and source evidence.
-- `../decisions/browser-ide-technology-sandbox.md` exists and governs browser scheduling and sandbox constraints.
-- `../decisions/language-service-lsp-vscode-scope.md` exists and governs any message routing through language-service infrastructure.
+- [Browser IDE technology and sandbox model](../decisions/browser-ide-technology-sandbox.md) must first select the relevant browser scheduling and sandbox constraints.
+- If runtime messages use language-service infrastructure, [language-service, LSP, and VS Code scope](../decisions/language-service-lsp-vscode-scope.md) must first select the relevant message-routing constraints.
 
 ## Concepts to Understand
 

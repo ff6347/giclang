@@ -3,7 +3,7 @@
 
 # Lesson Curriculum Audit
 
-Scope: HANDOFF task 1 only. This audit consolidates repository evidence and spot checks. It records current state and reconciliation facts only; later restructuring, checklist corrections, milestone rewrites, and implementation work are out of scope for this task.
+Scope: HANDOFF task 1 snapshot only. This audit consolidates repository evidence and spot checks from before later checklist expansion. It records historical reconciliation facts only; `docs/LESSONS.md` is the current source for the active curriculum checklist.
 
 Status categories used here: **complete**, **in-progress**, **missing**, **obsolete**, **design-blocked**.
 
@@ -12,7 +12,7 @@ Status categories used here: **complete**, **in-progress**, **missing**, **obsol
 | Area                       | Evidence                                                                                                                                                                                                                   |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Educational boundary       | Root `AGENTS.md`; `docs/AGENTS.md`; `HANDOFF.md` tasks and gate. Agents should guide and audit, not implement language features for Fabian.                                                                                |
-| Current checklist          | `docs/LESSONS.md`.                                                                                                                                                                                                         |
+| Current checklist          | `docs/LESSONS.md`, the current source for the active curriculum checklist.                                                                                                                                                 |
 | Current specification      | `docs/Language specification rev 2.md`, especially sections: Language Specification, Functions, Animation, Built-in Functions, Grammar (EBNF), Implementation Architecture, CLI Tool, Testing Strategy, Project Structure. |
 | Existing milestone docs    | `docs/milestones/lexer.md`, `parser-basic.md`, `parser-expression-precedence.md`, `parser-call-expressions.md`, `parser-assignment.md`, `parser-if-statements.md`, `parser-repeat-statements.md`, `parser-functions.md`.   |
 | Durable context            | `docs/MEMORY.md`; `docs/journals/2026-07-29-language-design-and-parser-errors.md`; `docs/journals/2026-07-31-repeat-parser-milestone.md`.                                                                                  |
@@ -49,16 +49,16 @@ Status categories used here: **complete**, **in-progress**, **missing**, **obsol
 
 ## Existing Milestone Document Classifications
 
-| Milestone doc                                     | Status          | Evidence and notes                                                                                                                                                                           |
-| ------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/milestones/lexer.md`                        | **complete**    | Aligns with lexer/token/comment/operator/string/number tests in `src/tests/lexer.test.ts`. Spec: Comments, Data Types, Operators, Grammar (EBNF).                                            |
-| `docs/milestones/parser-basic.md`                 | **complete**    | Basic Program/VarDecl/literal parsing exists and is tested. Its milestone-local “Not Included” material should be read historically because later parser features now exist.                 |
-| `docs/milestones/parser-expression-precedence.md` | **complete**    | Parser precedence and tests exist. Reconciliation note: doc examples describe logical operators as binary-shaped, while implementation uses `Logical` nodes in `src/ast.ts`/`src/parser.ts`. |
-| `docs/milestones/parser-call-expressions.md`      | **complete**    | Generic call parsing as expression/statement/initializer exists and is tested; semantic built-in validation remains a later non-goal.                                                        |
-| `docs/milestones/parser-assignment.md`            | **complete**    | Assignment statement parsing and tests exist. Minor wording drift: one test name says expression, but grammar/spec treat assignment as a statement.                                          |
-| `docs/milestones/parser-if-statements.md`         | **complete**    | If/else/else-if parsing and required-delimiter tests exist. Naming drift: milestone text uses `If`, implementation uses `IfStmt`.                                                            |
-| `docs/milestones/parser-repeat-statements.md`     | **complete**    | Repeat parser and success/error tests exist; aligns with journal and spec syntax. Runtime loop semantics remain outside this milestone.                                                      |
-| `docs/milestones/parser-functions.md`             | **in-progress** | Parser/AST support and one test exist, but the doc’s own test list is mostly uncovered. Naming conflict: doc says `FuncDecl`/`FuncDecl` type, implementation/tests use `FuncStmt`.           |
+| Milestone doc                                     | Status          | Evidence and notes                                                                                                                                                                                                               |
+| ------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/milestones/lexer.md`                        | **complete**    | Aligns with lexer/token/comment/operator/string/number tests in `src/tests/lexer.test.ts`. Spec: Comments, Data Types, Operators, Grammar (EBNF).                                                                                |
+| `docs/milestones/parser-basic.md`                 | **complete**    | Basic Program/VarDecl/literal parsing exists and is tested. Its milestone-local “Not Included” material should be read historically because later parser features now exist.                                                     |
+| `docs/milestones/parser-expression-precedence.md` | **complete**    | Parser precedence and tests exist. Current milestone terminology and implementation use `Logical` nodes for logical-and and logical-or expressions.                                                                              |
+| `docs/milestones/parser-call-expressions.md`      | **complete**    | Generic call parsing as expression/statement/initializer exists and is tested; semantic built-in validation remains a later non-goal.                                                                                            |
+| `docs/milestones/parser-assignment.md`            | **complete**    | Assignment statement parsing and tests exist. Minor wording drift: one test name says expression, but grammar/spec treat assignment as a statement.                                                                              |
+| `docs/milestones/parser-if-statements.md`         | **complete**    | If/else/else-if parsing and required-delimiter tests exist. Current milestone terminology and implementation use `IfStmt`.                                                                                                       |
+| `docs/milestones/parser-repeat-statements.md`     | **complete**    | Repeat parser and success/error tests exist; aligns with journal and spec syntax. Runtime loop semantics remain outside this milestone.                                                                                          |
+| `docs/milestones/parser-functions.md`             | **in-progress** | Parser/AST support and one test exist, but the doc’s own test list is mostly uncovered. Current milestone terminology distinguishes the `funcDecl` grammar production from the `FuncStmt` AST node used by implementation/tests. |
 
 ## Source Reconciliation Findings
 

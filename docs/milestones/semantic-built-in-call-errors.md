@@ -13,6 +13,7 @@ Complete or review:
 
 - [Repeat and program loop rules](semantic-repeat-loop-rules.md)
 - [Built-in signatures and reserved names](built-in-signatures-reserved-names.md)
+- [Call target syntax](../decisions/call-target-syntax.md) is a blocking decision for resolving the parser/spec mismatch before this milestone proceeds.
 
 ## Concepts to Understand
 
