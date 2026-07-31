@@ -105,6 +105,8 @@ export class Parser {
 		let step: Expression | undefined = undefined;
 		if (this.match(COMMA)) {
 			step = this.expression();
+		} else if (!this.check("RIGHT_PAREN")) {
+			throw new ParserError("Expected ',' after repeat end.", this.peek());
 		}
 		this.consume(RIGHT_PAREN, "Expected ')' after repeat arguments.");
 		this.consume(LEFT_BRACE, "Expected '{' before body");
