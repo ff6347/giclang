@@ -42,6 +42,18 @@
   expressions, precedence, conditional statements, and parser errors.
 - [technique] Parser tests simplify token-bearing AST nodes into plain values so
   expected trees remain readable while production AST nodes retain tokens.
+- [lesson] Grammar positions declared as `IDENTIFIER` (repeat loop variable)
+  must be consumed as `Token`s, not parsed as `Expression`s; otherwise invalid
+  loop variables like `1 + 2` parse syntactically.
+- [lesson] Under `exactOptionalPropertyTypes`, optional AST fields cannot be
+  assigned `undefined` explicitly. Build the node, then conditionally assign,
+  or use `Record<string, unknown>` in test simplifiers.
+- [lesson] `peek()` never advances. Check-and-parse sequences must use
+  `match()` or an explicit `advance()`, or the parser starts on the token it
+  just inspected.
+- [technique] `consume()` only expresses "expected one token type". For
+  alternatives (`,` or `)` after repeat end), throw `ParserError` directly
+  with `this.peek()` and a message naming the missing delimiter.
 
 ## Issue Tracking
 
