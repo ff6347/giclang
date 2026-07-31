@@ -3,7 +3,7 @@
 
 ## Context
 
-- GIC is a minimal visual programming language that Fabian is implementing as a student after completing the Java interpreter from *Crafting Interpreters*.
+- GIC is a minimal visual programming language that Fabian is implementing as a student after completing the Java interpreter from _Crafting Interpreters_.
 - This branch creates a complete, ordered educational lesson plan; it must not implement language features for Fabian.
 - Git-bug: `6a023d1` — Build complete educational milestone curriculum.
 - GitHub issue: none; this repository uses a SourceHut origin.
@@ -24,7 +24,7 @@
 - [x] Keep the work educational: explain what Fabian should learn and verify, but do not write complete functions, implementation patches, or copy-ready assignment solutions. Illustrative code fragments must remain short and focused.
 - [x] Treat unresolved language choices—dynamic lists, documentation comments, standard library/imports, and any newly discovered design question—as decision gates. Present options and consequences without silently choosing.
 - [x] Check ordering, links, terminology, and milestone scope across all curriculum documents. Remove fulfilled plan files only if any are found under `docs/plans/`; never remove journals.
-- [ ] Run documentation formatting and link validation. Confirm no executable source, test, package, or configuration files changed.
+- [x] Run documentation formatting and link validation. Confirm no executable source, test, package, or configuration files changed.
 - [ ] Update this checklist, commit atomic documentation changes with `[skip ci]`, push `docs/lesson-curriculum`, and report completion or blockers to `@chakotay@main` using `agent-msg`.
 
 ## Gate
