@@ -7,6 +7,11 @@
 
 - [decision] Language specification revision 2 is the current specification;
   revisions 0 and 1 are historical references.
+- [decision] Functions may only be declared at the top level. A `func`
+  inside a function, `if`, or `repeat` block is a parse error (`Unexpected
+  'func'. Functions can only be declared at the top level.`). This matches
+  the rev 2 flat scoping model: only Global and Function-local scopes exist,
+  and the "No closures" rule applies.
 - [decision] GIC examples use camelCase for variables and functions and
   uppercase names for constants, while underscores remain valid in identifiers.
 - [lesson] Creative-coding algorithms involving proximity graphs, particles,
@@ -54,6 +59,14 @@
 - [technique] `consume()` only expresses "expected one token type". For
   alternatives (`,` or `)` after repeat end), throw `ParserError` directly
   with `this.peek()` and a message naming the missing delimiter.
+- [lesson] A boolean "am I inside a block" flag is unsound for nested blocks
+  because every closing `}` resets it, clobbering the state of enclosing
+  blocks. Use a numeric depth counter instead so depth returns to the outer
+  level rather than zero on close.
+- [technique] Regression tests for stateful parser flags should exercise a
+  block that opens and closes a nested scope followed by the guarded
+  construct in the outer scope; flat single-level tests do not expose
+  reset-on-close bugs.
 
 ## Issue Tracking
 
