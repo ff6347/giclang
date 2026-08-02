@@ -32,7 +32,7 @@ The parser should support:
 - `return;` statements
 - `return expression;` statements
 - Function bodies containing zero or more statements
-- Nested function declarations as permitted by the grammar
+- Rejecting `func` declared inside any block (function, `if`, `repeat`)
 
 ## Not Included
 
@@ -89,7 +89,7 @@ The function name and parameters are `Token` values, matching the identifier con
 - A function body uses the same block behavior as other braced statement lists.
 - `return;` has no value expression; `return expression;` has one.
 - The parser records return syntax wherever it appears, but later semantic lessons decide whether that placement and return kind are legal.
-- Nested function declarations parse as statements inside function bodies; later lessons decide their meaning.
+- A `func` declared inside a function, `if`, or `repeat` block is a parse error. The Language Specification rev 2 defines only Global and Function-local scopes with no closures, so functions can only be declared at the top level.
 
 ## Behavior Checklist
 
@@ -107,7 +107,6 @@ The function name and parameters are `Token` values, matching the identifier con
 - Which AST field should distinguish `return;` from `return x;`?
 - Should duplicate parameter names be accepted by the parser and reported later?
 - What should a missing `}` diagnostic say when the function body reaches EOF?
-- How should parser tests show nested function declarations without deciding their runtime behavior?
 
 ## Tests
 
@@ -118,7 +117,10 @@ The milestone should be covered by tests for:
 - Multiple-parameter function
 - Function with `return expression;`
 - Function with a non-return body, such as an assignment
-- Nested function declarations
+- Rejecting a `func` declared inside a function body
+- Rejecting a `func` declared inside an `if` body
+- Rejecting a `func` declared inside a `repeat` body
+- Rejecting a `func` declared in an outer block after a nested scope has opened and closed (regression for block-depth tracking)
 - Function containing `if` and `repeat` statements
 - Missing `(` after the function name
 - Missing `)` after parameters
