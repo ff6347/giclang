@@ -1,0 +1,6 @@
+func foo(){
+
+	func bah(a, b){
+		return a + b;
+	}
+}
