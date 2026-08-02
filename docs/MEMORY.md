@@ -9,7 +9,7 @@
   revisions 0 and 1 are historical references.
 - [decision] Functions may only be declared at the top level. A `func`
   inside a function, `if`, or `repeat` block is a parse error (`Unexpected
-  'func'. Functions can only be declared at the top level.`). This matches
+'func'. Functions can only be declared at the top level.`). This matches
   the rev 2 flat scoping model: only Global and Function-local scopes exist,
   and the "No closures" rule applies.
 - [decision] GIC examples use camelCase for variables and functions and

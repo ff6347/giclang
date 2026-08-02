@@ -130,21 +130,13 @@ export class Parser {
 		return statements;
 	}
 	funcStatement(): Statement {
-		const name = this.consume(
-			IDENTIFIER,
-			"Expected function name.",
-		);
-		this.consume(
-			LEFT_PAREN,
-			"Expected '(' after function name.",
-		);
+		const name = this.consume(IDENTIFIER, "Expected function name.");
+		this.consume(LEFT_PAREN, "Expected '(' after function name.");
 
 		const params: Token[] | undefined = [];
 
 		while (!this.check(RIGHT_PAREN) && !this.isAtEnd()) {
-			params?.push(
-				this.consume(IDENTIFIER, "Expected parameter name."),
-			);
+			params?.push(this.consume(IDENTIFIER, "Expected parameter name."));
 			if (this.check(RIGHT_PAREN)) {
 				break;
 			}
@@ -168,10 +160,7 @@ export class Parser {
 
 	repeatStatement(): Statement {
 		this.consume(LEFT_PAREN, "Expected '(' after 'repeat'.");
-		const variable = this.consume(
-			IDENTIFIER,
-			"Expected loop variable name.",
-		);
+		const variable = this.consume(IDENTIFIER, "Expected loop variable name.");
 		this.consume(COMMA, "Expected ',' after variable.");
 		const start = this.expression();
 		this.consume(COMMA, "Expected ',' after start.");
@@ -180,15 +169,9 @@ export class Parser {
 		if (this.match(COMMA)) {
 			step = this.expression();
 		} else if (!this.check("RIGHT_PAREN")) {
-			throw new ParserError(
-				"Expected ',' after repeat end.",
-				this.peek(),
-			);
+			throw new ParserError("Expected ',' after repeat end.", this.peek());
 		}
-		this.consume(
-			RIGHT_PAREN,
-			"Expected ')' after repeat arguments.",
-		);
+		this.consume(RIGHT_PAREN, "Expected ')' after repeat arguments.");
 		this.consume(LEFT_BRACE, "Expected '{' before body");
 		this.blockDepth++;
 		const body = this.block();
@@ -217,10 +200,7 @@ export class Parser {
 			if (this.match(IF)) {
 				elseBranch = [this.ifStatement()];
 			} else {
-				this.consume(
-					LEFT_BRACE,
-					"Expected '{' before else branch",
-				);
+				this.consume(LEFT_BRACE, "Expected '{' before else branch");
 				this.blockDepth++;
 				elseBranch = this.block();
 			}
@@ -253,19 +233,10 @@ export class Parser {
 		};
 	}
 	varDeclaration(): VarDeclStmt {
-		const name: Token = this.consume(
-			IDENTIFIER,
-			"Expected variable name.",
-		);
-		this.consume(
-			EQUAL,
-			"Expected '=' sign after variable name.",
-		);
+		const name: Token = this.consume(IDENTIFIER, "Expected variable name.");
+		this.consume(EQUAL, "Expected '=' sign after variable name.");
 		const initializer = this.expression();
-		this.consume(
-			SEMICOLON,
-			"Expected semicolon after variable declaration.",
-		);
+		this.consume(SEMICOLON, "Expected semicolon after variable declaration.");
 		return {
 			type: "VarDecl",
 			name,
@@ -321,9 +292,7 @@ export class Parser {
 	}
 	comparison(): Expression {
 		let expr = this.term();
-		while (
-			this.match(LESS, GREATER, LESS_EQUAL, GREATER_EQUAL)
-		) {
+		while (this.match(LESS, GREATER, LESS_EQUAL, GREATER_EQUAL)) {
 			const operator = this.previous();
 			const right = this.term();
 			expr = {
@@ -397,10 +366,7 @@ export class Parser {
 				args.push(this.expression());
 			} while (this.match(COMMA));
 		}
-		const paren = this.consume(
-			RIGHT_PAREN,
-			"Expected ')' after arguments.",
-		);
+		const paren = this.consume(RIGHT_PAREN, "Expected ')' after arguments.");
 		return {
 			type: "Call",
 			callee,
@@ -431,10 +397,7 @@ export class Parser {
 		}
 		if (this.match(LEFT_PAREN)) {
 			const expr = this.expression();
-			this.consume(
-				RIGHT_PAREN,
-				"Expected ')' after expression.",
-			);
+			this.consume(RIGHT_PAREN, "Expected ')' after expression.");
 			return {
 				type: "Grouping",
 				expression: expr,
@@ -443,10 +406,7 @@ export class Parser {
 		throw new ParserError("Expected Expression.", this.peek());
 	}
 	assignment(): Assignment {
-		const name: Token = this.consume(
-			IDENTIFIER,
-			"Expected variable name.",
-		);
+		const name: Token = this.consume(IDENTIFIER, "Expected variable name.");
 		this.consume(EQUAL, "Expected '=' after variable name.");
 		const value = this.expression();
 		this.consume(SEMICOLON, "Expected ';' after assignment");

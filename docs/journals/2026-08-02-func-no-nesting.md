@@ -53,7 +53,7 @@ scoping model.
   blocks. A depth counter survives arbitrary nesting because depth returns to
   the outer level rather than to zero.
 - [technique] Regression tests for stateful parser flags should exercise a
-  block that opens and closes a nested scope *followed by* the guarded
+  block that opens and closes a nested scope _followed by_ the guarded
   construct in the outer scope. Flat single-level tests do not expose
   reset-on-close bugs.
 - [lesson] Match the error surface to existing convention: this project
