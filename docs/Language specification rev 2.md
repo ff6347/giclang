@@ -260,6 +260,7 @@ A function is either **value-returning** or **void**. This is determined by its 
 
 - All functions must have an explicit `return` statement
 - Functions must be declared before they are called (no hoisting)
+- Functions must be declared globally
 - Function names follow the same rules as variable names
 - Function names cannot shadow global variables or other functions
 - Recursion is allowed
