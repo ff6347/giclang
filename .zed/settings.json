@@ -1,0 +1,12 @@
+{
+	"lsp": {
+		"oxfmt": {
+			"initialization_options": {
+				"settings": {
+					"fmt.configPath": ".oxfmtrc.json",
+					"run": "onSave"
+				}
+			}
+		}
+	}
+}
