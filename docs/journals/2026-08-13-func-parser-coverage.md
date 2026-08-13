@@ -26,8 +26,8 @@ was test-driven; the parser implementation did not change this session.
   parameters since that comes first in funcStatement" and asserted the actual
   thrown message and the offending `{` token. Kept the parser as-is.
 - Found the "missing `}` after body" test's original input (`func fun (a, b)
-  a + b`) had no opening `{` at all, so the parser threw `"Expected '{' after
-  parameters."` before any block existed and the `}` error could never fire.
+a + b`) had no opening `{` at all, so the parser threw `"Expected '{' after
+parameters."` before any block existed and the `}` error could never fire.
   Changed the input to open a block but omit the close
   (`func fun (a, b) { a + b;`) so `block()` reaches EOF and reports
   `"Expected '}' after block."`. Removed the token-lexeme assertion there
@@ -37,7 +37,7 @@ was test-driven; the parser implementation did not change this session.
   grammar, and belongs to the analyzer milestone
   (`semantic-returns-function-kind.md`), not this parser milestone.
 - Ticked `Complete function declaration parser coverage` and `Complete
-  `return` statement parser coverage` in `docs/LESSONS.md`, both pointing at
+`return` statement parser coverage` in `docs/LESSONS.md`, both pointing at
   `milestones/parser-functions.md`.
 
 ## Decisions and Insights
@@ -71,5 +71,5 @@ was test-driven; the parser implementation did not change this session.
 - Parser milestones complete: lexer, basic, precedence, calls, assignment,
   if, repeat, and now functions/returns.
 - Next unchecked LESSONS item: `Parse the loop block as a program-level
-  tail` (`milestones/parser-loop-block.md`).
+tail` (`milestones/parser-loop-block.md`).
 - git-bug `0885b28` (documentation comments) remains open and untouched.

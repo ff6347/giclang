@@ -41,7 +41,7 @@ program = statement* loopBlock?;
 loopBlock = "loop" block;
 ```
 
-Represent the result as a `Program` with its existing setup statements plus an optional `loopBlock` field. The loop node should describe the block body, for example as `LoopBlock.body`, without making `loop` part of the normal statement union unless a later design gate chooses that route.
+Represent the result as a `Program` with its existing setup statements plus an optional `loopStatement` field. The loop node should describe the block body, for example as `LoopStatement.body`, without making `loop` part of the normal statement union unless a later design gate chooses that route.
 
 ## TDD-Oriented Student Checklist
 
@@ -63,7 +63,7 @@ Represent the result as a `Program` with its existing setup statements plus an o
 
 ## Verification
 
-Use parser-focused tests to show both accepted and rejected loop-tail programs. If there is an AST simplifier or snapshot helper, verify it includes `loopBlock` only when present. Run the normal documentation-adjacent implementation checks when the student reaches the code milestone: `pnpm test` and `pnpm typecheck`.
+Use parser-focused tests to show both accepted and rejected loop-tail programs. If there is an AST simplifier or snapshot helper, verify it includes `loopStatement` only when present. Run the normal documentation-adjacent implementation checks when the student reaches the code milestone: `pnpm test` and `pnpm typecheck`.
 
 ## Decision Gates
 

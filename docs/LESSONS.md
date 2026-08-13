@@ -13,7 +13,7 @@
 - [x] [Parse `repeat` statements](milestones/parser-repeat-statements.md)
 - [x] [Complete function declaration parser coverage](milestones/parser-functions.md)
 - [x] [Complete `return` statement parser coverage](milestones/parser-functions.md)
-- [ ] [Parse the `loop` block as a program-level tail](milestones/parser-loop-block.md)
+- [x] [Parse the `loop` block as a program-level tail](milestones/parser-loop-block.md)
 - [ ] [Stabilize source locations and diagnostic quality](milestones/source-locations-diagnostics.md)
 - [ ] [Define the browser-neutral core API and project structure](milestones/browser-neutral-core-api.md)
 - [ ] [Represent spec-listed built-in signatures and reserved names](milestones/built-in-signatures-reserved-names.md)
