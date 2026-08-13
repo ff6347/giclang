@@ -18,6 +18,7 @@ import {
 	LESS,
 	LESS_EQUAL,
 	LET,
+	LOOP,
 	MINUS,
 	MODULO,
 	NUMBER,
@@ -39,6 +40,7 @@ import type {
 	Assignment,
 	Expression,
 	FuncStmt,
+	LoopStmt,
 	Program,
 	RepeatStmt,
 	ReturnStmt,
@@ -58,8 +60,27 @@ export class Parser {
 
 	parse(): Program {
 		const statements: Statement[] = [];
-		while (!this.isAtEnd()) {
+
+		while (!this.isAtEnd() && !this.check(LOOP)) {
 			statements.push(this.declaration());
+		}
+		let loopStatement: LoopStmt | undefined = undefined;
+		if (this.match(LOOP)) {
+			loopStatement = this.loopStatement();
+		}
+		if (!this.isAtEnd()) {
+			throw new ParserError(
+				`Unexpected token '${this.peek()?.lexeme}'.${
+					this.peek()?.type === LOOP
+						? " Only one loop block is allowed and it must be the last construct."
+						: ""
+				}`,
+				this.peek(),
+			);
+		}
+
+		if (loopStatement) {
+			return { type: "Program", statements, loopStatement };
 		}
 		return { type: "Program", statements };
 	}
@@ -79,9 +100,9 @@ export class Parser {
 		// throw new Error("Method not implemented.");
 	}
 	statement(): Statement {
-		if (this.check(FUNC) && this.blockDepth !== 0) {
+		if ((this.check(FUNC) || this.check(LOOP)) && this.blockDepth !== 0) {
 			throw new ParserError(
-				`Unexpected 'func'. Functions can only be declared at the top level.`,
+				`Unexpected 'func' or 'loop'. Functions and loops can only be declared at the top level.`,
 				this.peek(),
 			);
 		}
@@ -96,6 +117,7 @@ export class Parser {
 		}
 		return this.expressionStatement();
 	}
+
 	returnStatement(): ReturnStmt {
 		let value: Expression | undefined = undefined;
 		if (!this.check(SEMICOLON)) {
@@ -156,6 +178,16 @@ export class Parser {
 			stmt.params = params;
 		}
 		return stmt;
+	}
+	loopStatement(): LoopStmt {
+		this.consume(LEFT_BRACE, "Expected '{' after loop.");
+		this.blockDepth++;
+		const body = this.block();
+
+		return {
+			type: "LoopStmt",
+			body,
+		};
 	}
 
 	repeatStatement(): Statement {

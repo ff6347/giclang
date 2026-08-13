@@ -9,6 +9,7 @@ export interface Program {
 	// ```
 	type: "Program";
 	statements: Statement[];
+	loopStatement?: LoopStmt;
 }
 export type Statement =
 	| VarDeclStmt
@@ -28,6 +29,11 @@ export interface FuncStmt {
 	type: "FuncStmt";
 	name: Token;
 	params?: Token[];
+	body: Statement[];
+}
+
+export interface LoopStmt {
+	type: "LoopStmt";
 	body: Statement[];
 }
 
