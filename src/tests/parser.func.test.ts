@@ -412,8 +412,44 @@ describe("parser.func", () => {
 			},
 		);
 	});
-	test.todo("Should throw on Missing ) after parameters");
-	test.todo("Should throw on Missing { before body");
-	test.todo("Should throw on Missing } after body");
-	test.todo("Should throw on return value missing;");
+
+	test("Should throw on Missing , after parameters since that comes first in  funcStatment", () => {
+		const lexer = new Lexer(`func fun (a,b {}`);
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.match(error.message, /Expected ',' after parameter./);
+				assert.strictEqual(error.token?.lexeme, "{");
+				return true;
+			},
+		);
+	});
+	test("Should throw on Missing { before body", () => {
+		const lexer = new Lexer(`func fun (a, b) a + b`);
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.match(error.message, /Expected '\{' after parameters./);
+				assert.strictEqual(error.token?.lexeme, "a");
+				return true;
+			},
+		);
+	});
+	test("Should throw on Missing } after body", () => {
+		const lexer = new Lexer(`func fun (a, b) { a + b;`);
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.match(error.message, /Expected '\}' after block./);
+				return true;
+			},
+		);
+	});
+	test.todo("Should throw on return value missing; in analyser");
 });
