@@ -67,6 +67,25 @@
   block that opens and closes a nested scope followed by the guarded
   construct in the outer scope; flat single-level tests do not expose
   reset-on-close bugs.
+- [decision] Program-level position rules (e.g. "loop must be the last
+  top-level construct") are enforced in `parse()` by mirroring the grammar
+  production (`program = statement* loopBlock?`): parse declarations while
+  `!isAtEnd() && !check(LOOP)`, then parse one optional loop, then require
+  EOF. `statement()` keeps only the nesting guard; it never dispatches the
+  loop tail.
+- [lesson] `statement()` runs for every statement at every depth, including
+  inside blocks via `block()`. A check placed there cannot observe
+  top-level position, and a condition placed after
+  `statements.push(declaration())` can never stop the token it checks for.
+  Stop conditions belong in the loop condition using `check()` to peek.
+- [lesson] Every `block()` call decrements the parser's `blockDepth`; a
+  parse path that opens a block without incrementing first drives the
+  counter negative and corrupts the nesting guard for the rest of the
+  program. Pair increment and `block()` as `funcStatement` and
+  `repeatStatement` do.
+- [technique] Test simplifiers must attach optional AST fields conditionally
+  (the `elseBranch`/`step` pattern); unconditional attachment adds
+  `undefined` fields and breaks every test that lacks the construct.
 
 ## Issue Tracking
 
