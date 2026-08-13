@@ -317,7 +317,7 @@ describe("parser.func", () => {
 			(error: ParserError) => {
 				assert.match(
 					error.message,
-					/Unexpected 'func'. Functions can only be declared at the top level./,
+					/Unexpected 'func' or 'loop'. Functions and loops can only be declared at the top level./,
 				);
 				assert.strictEqual(error.token?.lexeme, "func");
 				return true;
@@ -340,7 +340,7 @@ describe("parser.func", () => {
 			(error: ParserError) => {
 				assert.match(
 					error.message,
-					/Unexpected 'func'. Functions can only be declared at the top level./,
+					/Unexpected 'func' or 'loop'. Functions and loops can only be declared at the top level./,
 				);
 				assert.strictEqual(error.token?.lexeme, "func");
 				return true;
@@ -363,7 +363,7 @@ describe("parser.func", () => {
 			(error: ParserError) => {
 				assert.match(
 					error.message,
-					/Unexpected 'func'. Functions can only be declared at the top level./,
+					/Unexpected 'func' or 'loop'. Functions and loops can only be declared at the top level./,
 				);
 				assert.strictEqual(error.token?.lexeme, "func");
 				return true;
@@ -389,7 +389,7 @@ describe("parser.func", () => {
 			(error: ParserError) => {
 				assert.match(
 					error.message,
-					/Unexpected 'func'. Functions can only be declared at the top level./,
+					/Unexpected 'func' or 'loop'. Functions and loops can only be declared at the top level./,
 				);
 				assert.strictEqual(error.token?.lexeme, "func");
 				return true;

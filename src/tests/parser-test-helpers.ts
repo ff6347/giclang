@@ -133,8 +133,17 @@ function simplifyStatement(statement: Statement): unknown {
 }
 
 export function simplifyProgram(program: Program) {
-	return {
+	const simplified: Record<string, unknown> = {
 		type: program.type,
 		statements: program.statements.map(simplifyStatement),
 	};
+
+	if (program.loopStatement !== undefined) {
+		simplified.loopStatement = {
+			type: program.loopStatement.type,
+			body: program.loopStatement.body.map(simplifyStatement),
+		};
+	}
+
+	return simplified;
 }
