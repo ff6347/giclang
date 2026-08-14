@@ -57,6 +57,11 @@ describe("source location tracking", () => {
 		const lexer = new Lexer(`let x = 0;\nlet y = 1;\n`);
 		const tokens = lexer.scanTokens();
 		const eofToken = tokens[10];
+		const secondLetToken = tokens[5];
+		assert.strictEqual(secondLetToken?.start, 11);
+		assert.strictEqual(secondLetToken?.end, 14);
+		assert.strictEqual(secondLetToken?.line, 1);
+
 		assert.strictEqual(tokens.length, 11);
 		assert.strictEqual(eofToken?.start, 22);
 		assert.strictEqual(eofToken.end, 22);
