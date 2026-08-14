@@ -47,7 +47,7 @@ export class Lexer {
 	source: string;
 	start: number = 0;
 	current: number = 0;
-	line: number = 1;
+	line: number = 0;
 	tokens: Token[] = [];
 
 	constructor(source: string) {
@@ -59,7 +59,10 @@ export class Lexer {
 			this.start = this.current;
 			this.scanToken();
 		}
-		this.tokens.push(new Token(EOF, "", null, this.line));
+		this.start = this.current;
+		this.tokens.push(
+			new Token(EOF, "", null, this.line, this.start, this.current),
+		);
 		return this.tokens;
 	}
 
@@ -71,7 +74,9 @@ export class Lexer {
 	}
 	addToken(type: TokenType, literal: unknown = null) {
 		const text = this.source.substring(this.start, this.current);
-		this.tokens.push(new Token(type, text, literal, this.line));
+		this.tokens.push(
+			new Token(type, text, literal, this.line, this.start, this.current),
+		);
 	}
 	scanToken(): void {
 		const c = this.advance();

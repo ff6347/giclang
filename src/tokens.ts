@@ -4,19 +4,32 @@ interface IToken {
 	line: number;
 	literal: unknown;
 	type: TokenType;
+	start: number;
+	end: number;
 }
 
 export class Token implements IToken {
 	lexeme: string;
 	line: number;
+	start: number;
+	end: number;
 	literal: unknown;
 	type: TokenType;
 
-	constructor(type: TokenType, lexeme: string, literal: unknown, line: number) {
+	constructor(
+		type: TokenType,
+		lexeme: string,
+		literal: unknown,
+		line: number,
+		start: number,
+		end: number,
+	) {
 		this.lexeme = lexeme;
 		this.line = line;
 		this.literal = literal;
 		this.type = type;
+		this.start = start;
+		this.end = end;
 	}
 
 	toString(): string {
