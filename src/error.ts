@@ -4,15 +4,13 @@ export class GicError extends Error {
 	line: number;
 	start: number;
 	end: number;
-	token: Token | undefined;
 
-	constructor(message: string, token: Token | number) {
+	constructor(message: string, line: number, start: number, end: number) {
 		super(message);
 		this.name = "GicError";
-		this.token = typeof token === "number" ? undefined : token;
-		this.line = typeof token === "number" ? token : token.line;
-		this.start = typeof token === "number" ? token : token.start;
-		this.end = typeof token === "number" ? token : token.end;
+		this.line = line;
+		this.start = start;
+		this.end = end;
 	}
 }
 

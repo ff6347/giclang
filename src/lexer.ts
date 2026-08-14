@@ -100,14 +100,24 @@ export class Lexer {
 				if (this.match("|")) {
 					this.addToken(OR);
 				} else {
-					throw new GicError("Unexpected |, did you mean '||'?", this.line);
+					throw new GicError(
+						"Unexpected |, did you mean '||'?",
+						this.line,
+						this.start,
+						this.current,
+					);
 				}
 				break;
 			case "&":
 				if (this.match("&")) {
 					this.addToken(AND);
 				} else {
-					throw new GicError("Unexpected &, did you mean '&&'?", this.line);
+					throw new GicError(
+						"Unexpected &, did you mean '&&'?",
+						this.line,
+						this.start,
+						this.current,
+					);
 				}
 				break;
 			case "%":
@@ -165,7 +175,12 @@ export class Lexer {
 				} else if (this.isAlpha(c)) {
 					this.identifier();
 				} else {
-					throw new GicError("Unexpected character", this.line);
+					throw new GicError(
+						"Unexpected character",
+						this.line,
+						this.start,
+						this.current,
+					);
 				}
 				break;
 		}
@@ -185,7 +200,12 @@ export class Lexer {
 			this.advance();
 		}
 		if (this.peek() === "\n" || this.isAtEnd()) {
-			throw new GicError("Unterminated string", this.line);
+			throw new GicError(
+				"Unterminated string",
+				this.line,
+				this.start,
+				this.current,
+			);
 		}
 
 		this.advance();
