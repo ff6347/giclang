@@ -100,14 +100,14 @@ export class Lexer {
 				if (this.match("|")) {
 					this.addToken(OR);
 				} else {
-					throw new GicError(this.line, "Unexpected |, did you mean '||'?");
+					throw new GicError("Unexpected |, did you mean '||'?", this.line);
 				}
 				break;
 			case "&":
 				if (this.match("&")) {
 					this.addToken(AND);
 				} else {
-					throw new GicError(this.line, "Unexpected &, did you mean '&&'?");
+					throw new GicError("Unexpected &, did you mean '&&'?", this.line);
 				}
 				break;
 			case "%":
@@ -165,7 +165,7 @@ export class Lexer {
 				} else if (this.isAlpha(c)) {
 					this.identifier();
 				} else {
-					throw new GicError(this.line, "Unexpected character");
+					throw new GicError("Unexpected character", this.line);
 				}
 				break;
 		}
@@ -185,7 +185,7 @@ export class Lexer {
 			this.advance();
 		}
 		if (this.peek() === "\n" || this.isAtEnd()) {
-			throw new GicError(this.line, "Unterminated string");
+			throw new GicError("Unterminated string", this.line);
 		}
 
 		this.advance();
