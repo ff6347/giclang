@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { styleText } from "node:util";
 import { resolve } from "node:path";
 import { Lexer } from "./lexer.ts";
-import { GicError } from "./error.ts";
-import { EOF } from "./tokens.ts";
+import { GicError, ParserError } from "./error.ts";
 import { Parser } from "./parser.ts";
+import { error } from "./message-formatter.ts";
 
 async function main() {
 	const args = argv.slice(2);
@@ -27,12 +27,13 @@ function helpAndExit() {
 }
 
 async function runFile(pathToFile: string): Promise<void> {
+	let source: string = "";
 	try {
 		console.log(`Running file: ${pathToFile}`);
 
 		const absolutePath = resolve(cwd(), pathToFile);
 		if (existsSync(absolutePath)) {
-			const source = readFileSync(absolutePath, "utf-8");
+			source = readFileSync(absolutePath, "utf-8");
 			run(source);
 		} else {
 			console.error(
@@ -44,8 +45,10 @@ async function runFile(pathToFile: string): Promise<void> {
 			exit(2);
 		}
 	} catch (e: unknown) {
-		if (e instanceof GicError) {
-			error(e);
+		if (e instanceof GicError || e instanceof ParserError) {
+			const report = error(e, source);
+			console.error(styleText(["red"], report));
+			exit(1);
 		} else {
 			throw e;
 		}
@@ -60,20 +63,4 @@ function run(source: string): void {
 	const parser = new Parser(tokens);
 	const ast = parser.parse();
 	console.log(ast);
-	// console.log(tokens);
-}
-
-function error(e: GicError): void {
-	if (e.token?.type && e.token.type === EOF) {
-		report(e.line, " at end", e.message);
-	} else {
-		report(e.line, ` at '${e.token?.lexeme}'`, e.message);
-	}
-}
-
-function report(line: number, where: string, message: string): void {
-	console.error(
-		styleText(["red"], `[Line ${line}] Error ${where}: ${message}`),
-	);
-	exit(1);
 }
