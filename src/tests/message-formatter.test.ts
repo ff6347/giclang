@@ -17,20 +17,18 @@ describe("message-formatter", () => {
 				const line = error.line;
 				const start = error.start;
 				const end = error.end;
-				const where = `at '${error.token?.lexeme}'`;
 				const message = error.message;
 
 				const m = report({
 					line,
 					start,
 					end,
-					where,
 					message,
 					source,
 				});
 				assert.strictEqual(
 					m,
-					"Error at 'loop' line 2, column 1: Expected semicolon after variable declaration.",
+					"Error at line 2, column 1: Expected semicolon after variable declaration.",
 				);
 				return true;
 			},
