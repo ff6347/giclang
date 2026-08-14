@@ -9,7 +9,6 @@ import { error } from "./message-formatter.ts";
 
 async function main() {
 	const args = argv.slice(2);
-	console.log();
 	if (args.length > 1) {
 		helpAndExit();
 	} else if (args.length === 1 && args[0] !== undefined) {
@@ -29,8 +28,6 @@ function helpAndExit() {
 async function runFile(pathToFile: string): Promise<void> {
 	let source: string = "";
 	try {
-		console.log(`Running file: ${pathToFile}`);
-
 		const absolutePath = resolve(cwd(), pathToFile);
 		if (existsSync(absolutePath)) {
 			source = readFileSync(absolutePath, "utf-8");
