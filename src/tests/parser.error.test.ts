@@ -27,3 +27,27 @@ describe("parser errors", () => {
 		);
 	});
 });
+
+describe("parser diagnostics", () => {
+	test("should report exact location of error", () => {
+		const lexer = new Lexer(`if (x > 10 {
+				x = 0;
+			}
+			`);
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				console.log(error.message);
+				assert.equal(error.token?.lexeme, "{");
+				assert.equal(error.token?.line, 0);
+				assert.equal(error.token?.start, 11);
+				assert.equal(error.token?.end, 12);
+
+				return true;
+			},
+		);
+	});
+});

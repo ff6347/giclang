@@ -6,22 +6,28 @@ export class GicError extends Error {
 	end: number;
 	token: Token | undefined;
 
-	constructor(location: Token | number, message: string) {
+	constructor(message: string, token: Token | number) {
 		super(message);
 		this.name = "GicError";
-		this.token = typeof location === "number" ? undefined : location;
-		this.line = typeof location === "number" ? location : location.line;
-		this.start = typeof location === "number" ? location : location.start;
-		this.end = typeof location === "number" ? location : location.end;
+		this.token = typeof token === "number" ? undefined : token;
+		this.line = typeof token === "number" ? token : token.line;
+		this.start = typeof token === "number" ? token : token.start;
+		this.end = typeof token === "number" ? token : token.end;
 	}
 }
 
 export class ParserError extends Error {
 	token: Token | undefined;
+	line: number;
+	start: number;
+	end: number;
 
 	constructor(message: string, token: Token | undefined) {
 		super(message);
 		this.name = "ParserError";
 		this.token = token;
+		this.line = token?.line ?? 0;
+		this.start = token?.start ?? 0;
+		this.end = token?.end ?? 0;
 	}
 }
