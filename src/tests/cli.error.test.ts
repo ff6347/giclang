@@ -25,4 +25,6 @@ describe("cli error", () => {
 				"  Expected '}' after block.\n",
 		);
 	});
+
+	test.todo("should exit with 0 and print parsed program to stdout.");
 });
