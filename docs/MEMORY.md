@@ -113,6 +113,12 @@ start))` — the `Math.max` covers empty EOF spans.
   "multi-char token at column > 0" passed a suite covering only
   width-or-column, never both. Cover the combination space.
 
+- [decision] AST nodes retain their significant tokens (name, operator,
+  paren), which carry spans. Errors point at a single token — enough for
+  shadowing, arity, and runtime type errors. Full per-node spans are an
+  additive extension, not a prerequisite; revisit only when an error needs
+  to underline a whole expression.
+
 ## Issue Tracking
 
 - [risk] The repository uses a SourceHut Git remote without an external

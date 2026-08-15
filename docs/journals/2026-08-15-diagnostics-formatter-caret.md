@@ -76,3 +76,43 @@ lineEnd}`. No column counter in the lexer; column is always derived.
 - git-bug: `0885b28` (documentation comments) still open; `2e6b272`
   (context lines) open. Fabian pushes `git-bug` himself — sandbox blocks
   SSH.
+
+## Milestone Completion: AST-Locations Decision
+
+The last open item was whether AST nodes carry source spans. Surfaced the
+matter concretely with a tiny example (`a + b`) to separate three kinds of
+pointing: a single token (stored), a whole expression (computed from
+first-token.start to last-token.end), and an empty position (EOF).
+
+Decision: AST nodes retain their significant tokens (name, operator,
+paren), which already carry spans — enough to underline a name
+(shadowing), a paren (arity), or an operator (runtime type errors),
+covering every spec example. Full per-node spans are an additive
+extension: a `Span` field on AST interfaces with the parser computing
+`[first-token.start, last-token.end)` per node. It needs no rework of
+existing tokens or errors and breaks no tests — deferring costs nothing.
+
+Recorded in three places:
+
+- `docs/milestones/source-locations-diagnostics.md` Decision Gates plus the
+  checklist item marked decided.
+- `docs/milestones/diagnostic-enhancements.md` gains a "Full per-node AST
+  spans" enhancement section alongside context lines and secondary spans.
+- `docs/MEMORY.md`.
+
+## Summary
+
+The Source Locations and Diagnostic Quality milestone is complete.
+Internals are 0-based; display is 1-based with conversion in exactly one
+place (the pure formatter). Tokens carry half-open spans; EOF is an empty
+span. Errors are thrown inside and converted at the CLI boundary — no
+stack traces for expected language errors. The formatter renders the spec
+shape: header, source excerpt, caret, message. `GicError` carries a
+position, `ParserError` carries the offending token; both expose
+`line`/`start`/`end`.
+
+Deferred to `diagnostic-enhancements.md`: context lines (git-bug
+`2e6b272`), secondary spans for unclosed delimiters, and full per-node
+AST spans.
+
+Next per curriculum order: browser-neutral core API.
