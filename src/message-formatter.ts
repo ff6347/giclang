@@ -1,14 +1,4 @@
-import type { GicError, ParserError } from "./error.ts";
-
-export function error(e: GicError | ParserError, source: string): string {
-	return report({
-		offset: e.start,
-		end: e.end,
-		message: e.message,
-		source,
-	});
-}
-
+// ABOUTME: functions for formatting for the cli
 export function report({
 	start,
 	message,
