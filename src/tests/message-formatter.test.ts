@@ -19,7 +19,7 @@ describe("message-formatter", () => {
 				const message = error.message;
 
 				const m = report({
-					offset: start,
+					start: start,
 					end,
 					message,
 					source,
@@ -49,7 +49,7 @@ describe("message-formatter", () => {
 				const message = error.message;
 
 				const actual = report({
-					offset: start,
+					start: start,
 					end,
 					message,
 					source,
@@ -79,7 +79,7 @@ describe("message-formatter", () => {
 				const message = error.message;
 
 				const actual = report({
-					offset: start,
+					start: start,
 					end,
 					message,
 					source,

@@ -10,21 +10,24 @@ export function error(e: GicError | ParserError, source: string): string {
 }
 
 export function report({
-	offset,
+	start,
 	message,
 	source,
 	end,
 }: {
-	offset: number;
+	start: number;
 	end: number;
 	message: string;
 	source: string;
 }): string {
-	const { column, line, lineStart, lineEnd } = locate({ offset, source });
+	const { column, line, lineStart, lineEnd } = locate({
+		offset: start,
+		source,
+	});
 	const indent = "  ";
 	const sourceLine = source.slice(lineStart, lineEnd);
 
-	const caret = " ".repeat(column) + "^".repeat(Math.max(1, end - offset));
+	const caret = " ".repeat(column) + "^".repeat(Math.max(1, end - start));
 	return `Error at line ${line + 1}, column ${column + 1}:\n${indent}${sourceLine}\n${indent}${caret}\n${indent}${message}`;
 }
 
