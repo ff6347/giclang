@@ -1,6 +1,7 @@
 import test, { describe } from "node:test";
 import { parseSource } from "../core.ts";
 import assert from "node:assert";
+import type { Program } from "../core.ts";
 
 describe("core.parseSource", () => {
 	test("should return ok true and diagnostics array and existing program", () => {
@@ -27,5 +28,12 @@ describe("core.parseSource", () => {
 		assert.strictEqual(actual.diagnostics[0]!.line, 0);
 		assert.strictEqual(actual.diagnostics[0]!.start, 9);
 		assert.strictEqual(actual.diagnostics[0]!.end, 9);
+	});
+
+	test("should export `Program` type export/import", () => {
+		const result = parseSource("let x = 0;");
+		assert.strictEqual(result.ok, true);
+		const program: Program = result.program;
+		assert.strictEqual(program.type, "Program");
 	});
 });

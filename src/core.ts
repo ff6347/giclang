@@ -1,3 +1,4 @@
+export type { Program } from "./ast.ts";
 import type { Program } from "./ast.ts";
 import { GicError, ParserError } from "./error.ts";
 import { Lexer } from "./lexer.ts";
