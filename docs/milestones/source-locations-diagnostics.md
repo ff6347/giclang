@@ -49,7 +49,11 @@ This is explicitly not a grammar lesson. The boundary shape is token location da
 - Check parser missing-token diagnostics point to a useful location.
 - Check unexpected-token diagnostics name the unexpected token and expected construct.
 - Check multi-line diagnostic examples are formatted consistently.
-- Add AST range expectations only after deciding whether AST nodes carry source locations.
+- Add AST range expectations only after deciding whether AST nodes carry source
+  locations. **Decided**: AST nodes retain their significant tokens (name,
+  operator, paren), which already carry spans. Errors point at a token's span.
+  Full per-node spans are an additive extension, not a prerequisite — revisit only
+  when an error needs to underline a whole expression.
 - Check CLI/core formatting avoids stack traces for expected lexer and parser diagnostics.
 
 ## Non-Goals
@@ -90,3 +94,8 @@ Resolved during implementation:
 - The Crafting Interpreters `where` clause ("at end", "at 'loop'") was
   dropped; real locations make it redundant. Output matches the spec shape:
   `Error at line X, column Y:` + source excerpt + caret + message.
+- AST nodes retain their significant tokens (name, operator, paren), which
+  carry spans. Full per-node spans (`[first-token.start, last-token.end)`) are
+  an additive extension, not a prerequisite — deferred until an error needs to
+  underline a whole expression. Adding them later does not require reworking
+  tokens or existing errors.

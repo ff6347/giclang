@@ -32,6 +32,14 @@ For "unclosed block" errors, point at the opening `{` as a second annotation ("t
 - Requires the formatter to render two annotations.
 - Pairs naturally with the open decision whether AST nodes carry source locations: both thread source positions deeper into the pipeline.
 
+### Full per-node AST spans
+
+Give every AST node its own span (`[first-token.start, last-token.end)`) so errors can underline a whole expression or statement, not just a single token. Useful for type errors ("this expression is not a number") and IDE selection ranges.
+
+- Additive: a `Span` field on AST interfaces; the parser computes it as it builds each node.
+- Does not require reworking tokens or existing errors, which continue to point at significant tokens.
+- Revisit when a concrete error needs to underline a whole expression; until then, token spans (already retained by AST nodes) cover the spec's shadowing and arity examples.
+
 ## Verification
 
 - Formatter tests cover the new output shapes, including the edge cases above.
