@@ -2,8 +2,7 @@ import type { GicError, ParserError } from "./error.ts";
 
 export function error(e: GicError | ParserError, source: string): string {
 	return report({
-		line: e.line,
-		start: e.start,
+		offset: e.start,
 		end: e.end,
 		message: e.message,
 		source,
@@ -11,37 +10,36 @@ export function error(e: GicError | ParserError, source: string): string {
 }
 
 export function report({
-	line,
-	start,
+	offset,
 	message,
 	source,
+	end,
 }: {
-	line: number;
-	start: number;
+	offset: number;
 	end: number;
 	message: string;
 	source: string;
 }): string {
-	const column = calcColumn({ offset: start, source });
+	const { column, line, lineStart, lineEnd } = locate({ offset, source });
+	const indent = "  ";
+	const sourceLine = source.slice(lineStart, lineEnd);
 
-	return `Error at line ${line + 1}, column ${column + 1}: ${message}`;
+	const caret = " ".repeat(column) + "^".repeat(Math.max(1, end - offset));
+	return `Error at line ${line + 1}, column ${column + 1}:\n${indent}${sourceLine}\n${indent}${caret}\n${indent}${message}`;
 }
 
-export function calcColumn({
-	offset,
-	source,
-}: {
-	source: string;
-	offset: number;
-}) {
+export function locate({ offset, source }: { source: string; offset: number }) {
 	let line = 0;
 	let lineStart = 0;
+
 	for (let i = 0; i < offset; i++) {
 		if (source[i] === "\n") {
 			line++;
 			lineStart = i + 1; // first char after the newline
 		}
 	}
+	const nextNewline = source.indexOf("\n", lineStart);
+	const lineEnd = nextNewline === -1 ? source.length : nextNewline;
 	const column = offset - lineStart;
-	return column;
+	return { line, column, lineStart, lineEnd };
 }

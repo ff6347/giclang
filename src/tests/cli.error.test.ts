@@ -19,7 +19,10 @@ describe("cli error", () => {
 		assert.strictEqual(result.stdout, "");
 		assert.strictEqual(
 			result.stderr,
-			"Error at line 2, column 1: Expected '}' after block.\n",
+			"Error at line 2, column 1:\n" +
+				"  \n" +
+				"  ^\n" +
+				"  Expected '}' after block.\n",
 		);
 	});
 });
