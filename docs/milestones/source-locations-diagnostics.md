@@ -65,6 +65,28 @@ Use focused lexer and parser diagnostic tests, updating existing tests intention
 
 ## Decision Gates
 
-- Decide whether columns are 1-based for users, 0-based internally, or one convention everywhere.
-- Decide whether end positions are inclusive or exclusive.
-- Decide whether language failures are thrown errors, returned diagnostics, or converted at the public API boundary.
+Resolved during implementation:
+
+- Columns are 1-based for users and 0-based internally. The conversion
+  happens in exactly one place: the diagnostic formatter at the CLI
+  boundary. (LSP-style; rustc and GCC display 1-based.)
+- End positions are exclusive. Spans are half-open `[start, end)`, like
+  `String.slice`. Tokens carry `start`/`end` offsets; there is no `column`
+  field — column is derived from the offset and source at format time, so
+  the lexer needs no column counter.
+- EOF gets an empty span `[len, len)`: a meaningful "where more input was
+  expected" position.
+- Language failures are thrown errors inside (lexer, parser) and converted
+  at the public API boundary. The CLI catches both error types, formats
+  them, and exits 1 — expected language errors never print stack traces.
+- `GicError` (lexer) carries a position `{line, start, end}` — lexer errors
+  are failures to produce a token, so carrying one would be a lie.
+  `ParserError` carries the offending token, which is the subject of the
+  error. Both classes expose `line`/`start`/`end`; the formatter reads only
+  those fields.
+- The formatter is a pure `(error, source) → string` function
+  (`message-formatter.ts`). `report()` derives line and column from the
+  offset via `locate()` — one source of truth, no `line` parameter.
+- The Crafting Interpreters `where` clause ("at end", "at 'loop'") was
+  dropped; real locations make it redundant. Output matches the spec shape:
+  `Error at line X, column Y:` + source excerpt + caret + message.
