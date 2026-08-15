@@ -2,10 +2,8 @@ import { argv, exit, cwd } from "node:process";
 import { existsSync, readFileSync } from "node:fs";
 import { styleText } from "node:util";
 import { resolve } from "node:path";
-import { Lexer } from "./lexer.ts";
-import { GicError, ParserError } from "./error.ts";
-import { Parser } from "./parser.ts";
-import { error } from "./message-formatter.ts";
+import { report } from "./message-formatter.ts";
+import { parseSource } from "./core.ts";
 
 async function main() {
 	const args = argv.slice(2);
@@ -27,37 +25,35 @@ function helpAndExit() {
 
 async function runFile(pathToFile: string): Promise<void> {
 	let source: string = "";
-	try {
-		const absolutePath = resolve(cwd(), pathToFile);
-		if (existsSync(absolutePath)) {
-			source = readFileSync(absolutePath, "utf-8");
-			run(source);
-		} else {
-			console.error(
-				styleText(
-					["black", "bgWhiteBright"],
-					`File not found: ${absolutePath}`,
-				),
-			);
-			exit(2);
-		}
-	} catch (e: unknown) {
-		if (e instanceof GicError || e instanceof ParserError) {
-			const report = error(e, source);
-			console.error(styleText(["red"], report));
+
+	const absolutePath = resolve(cwd(), pathToFile);
+	if (existsSync(absolutePath)) {
+		source = readFileSync(absolutePath, "utf-8");
+		const result = parseSource(source);
+		if (!result.ok) {
+			result.diagnostics.forEach((diagnostic) => {
+				console.error(
+					styleText(
+						["red"],
+						report({
+							start: diagnostic.start,
+							end: diagnostic.end,
+							message: diagnostic.message,
+							source,
+						}),
+					),
+				);
+			});
 			exit(1);
 		} else {
-			throw e;
+			console.info(result.program);
 		}
+	} else {
+		console.error(
+			styleText(["black", "bgWhiteBright"], `File not found: ${absolutePath}`),
+		);
+		exit(2);
 	}
 }
 
 async function runPrompt(): Promise<void> {}
-
-function run(source: string): void {
-	const lexer = new Lexer(source);
-	const tokens = lexer.scanTokens();
-	const parser = new Parser(tokens);
-	const ast = parser.parse();
-	console.log(ast);
-}
