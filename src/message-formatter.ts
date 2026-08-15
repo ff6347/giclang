@@ -11,7 +11,7 @@ export function report({
 	source: string;
 }): string {
 	const { column, line, lineStart, lineEnd } = locate({
-		offset: start,
+		start: start,
 		source,
 	});
 	const indent = "  ";
@@ -21,11 +21,11 @@ export function report({
 	return `Error at line ${line + 1}, column ${column + 1}:\n${indent}${sourceLine}\n${indent}${caret}\n${indent}${message}`;
 }
 
-export function locate({ offset, source }: { source: string; offset: number }) {
+export function locate({ start, source }: { source: string; start: number }) {
 	let line = 0;
 	let lineStart = 0;
 
-	for (let i = 0; i < offset; i++) {
+	for (let i = 0; i < start; i++) {
 		if (source[i] === "\n") {
 			line++;
 			lineStart = i + 1; // first char after the newline
@@ -33,6 +33,6 @@ export function locate({ offset, source }: { source: string; offset: number }) {
 	}
 	const nextNewline = source.indexOf("\n", lineStart);
 	const lineEnd = nextNewline === -1 ? source.length : nextNewline;
-	const column = offset - lineStart;
+	const column = start - lineStart;
 	return { line, column, lineStart, lineEnd };
 }

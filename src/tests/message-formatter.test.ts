@@ -97,8 +97,11 @@ describe("message-formatter", () => {
 
 	test("`locate` should return character index of next newline or source.length", () => {
 		const source = "let x = 0;\nloop{}";
-		const offset = 5;
-		const { lineEnd, line, column, lineStart } = locate({ source, offset });
+		const start = 5;
+		const { lineEnd, line, column, lineStart } = locate({
+			source,
+			start,
+		});
 		assert.strictEqual(line, 0);
 		assert.strictEqual(column, 5);
 		assert.strictEqual(lineStart, 0);
@@ -107,8 +110,11 @@ describe("message-formatter", () => {
 
 	test("`locate` should return character index of source.length since there is no newline", () => {
 		const source = "let x = 0;";
-		const offset = 3;
-		const { lineEnd, line, column, lineStart } = locate({ source, offset });
+		const start = 3;
+		const { lineEnd, line, column, lineStart } = locate({
+			source,
+			start,
+		});
 		assert.strictEqual(line, 0);
 		assert.strictEqual(column, 3);
 		assert.strictEqual(lineStart, 0);
@@ -118,8 +124,11 @@ describe("message-formatter", () => {
 
 	test("`locate` should return character index of next newline from multiline source code", () => {
 		const source = "let x = 0;\nlet y = 10;\nlet z = 20;\nloop{}";
-		const offset = 13;
-		const { lineEnd, line, column, lineStart } = locate({ source, offset });
+		const start = 13;
+		const { lineEnd, line, column, lineStart } = locate({
+			source,
+			start,
+		});
 		assert.strictEqual(line, 1);
 		assert.strictEqual(column, 2);
 		assert.strictEqual(lineStart, 11);
