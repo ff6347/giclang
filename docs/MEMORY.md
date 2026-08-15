@@ -37,6 +37,20 @@
   for filesystem access and desktop distribution.
 - [direction] Treat Node-based image rendering as an optional export, CI, or
   dataset tool rather than the primary execution environment.
+- [decision] The browser-neutral public language entry point is `src/core.ts`;
+  its explicit name distinguishes reusable language work from the Node CLI in
+  `src/main.ts`.
+- [decision] `parseSource(source)` returns a discriminated `ParseResult` with
+  `diagnostics` on both branches: success has `ok: true` plus a `Program`, while
+  failure has `ok: false`. Keeping diagnostics present on success leaves room
+  for future warnings without changing the public result shape.
+- [decision] Core diagnostics are structured `message`/`line`/`start`/`end`
+  data, not formatted output. The core converts expected `GicError` and
+  `ParserError` exceptions into results, rethrows unexpected implementation
+  errors, and leaves presentation to CLI, browser, or tooling consumers.
+- [lesson] A public shape with `ok: boolean` and `program?: Program` permits
+  contradictory states. Literal boolean branches enforce the success invariant
+  and allow TypeScript to narrow `program` safely.
 
 ## Parser and Tests
 
