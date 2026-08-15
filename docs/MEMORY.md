@@ -87,6 +87,32 @@
   (the `elseBranch`/`step` pattern); unconditional attachment adds
   `undefined` fields and breaks every test that lacks the construct.
 
+## Diagnostics and Error Reporting
+
+- [decision] Location contract: 0-based internally, 1-based user-facing;
+  the `+1` conversion happens only in the diagnostic formatter. Spans are
+  half-open `[start, end)`. Tokens carry offsets, never columns — column is
+  derived at format time.
+- [decision] `GicError` carries a position, `ParserError` carries the
+  offending token; both expose `line`/`start`/`end` fields, which is all
+  the formatter reads. Uniformity through field shape, not shared token
+  references.
+- [technique] `locate(source, offset)` walks the source once: newlines
+  before the offset give line/lineStart, `indexOf("\n", lineStart)` gives
+  lineEnd. The caret is `" ".repeat(column) + "^".repeat(Math.max(1, end -
+start))` — the `Math.max` covers empty EOF spans.
+- [lesson] Pin exact output formats with `assert.strictEqual`, not
+  `assert.match` — an unescaped `[...]` in a regex is a character class and
+  fails or matches for the wrong reason.
+- [lesson] Tests that spawn subprocesses must pin the environment
+  (`env: { ...process.env, NO_COLOR: "1", ... }`): ambient variables like
+  `FORCE_COLOR` change child behavior per shell. `env` replaces the whole
+  environment — spread `process.env` or the child loses `PATH`.
+- [lesson] When a function of two variables misbehaves, tests that vary
+  only one variable per case hide it — a caret formula wrong for
+  "multi-char token at column > 0" passed a suite covering only
+  width-or-column, never both. Cover the combination space.
+
 ## Issue Tracking
 
 - [risk] The repository uses a SourceHut Git remote without an external
