@@ -1,0 +1,7 @@
+// working script for testing
+let xoff = 0;
+let y = 50;
+repeat(i, 0, 100){
+  xoff = random(-1,1);
+  circle(i + xoff, y, 10);
+}

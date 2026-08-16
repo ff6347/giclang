@@ -30,7 +30,7 @@ describe("core.parseSource", () => {
 		assert.strictEqual(actual.diagnostics[0]!.end, 9);
 	});
 
-	test("should export `Program` type export/import", () => {
+	test("should expose `Program` through core api", () => {
 		const result = parseSource("let x = 0;");
 		assert.strictEqual(result.ok, true);
 		const program: Program = result.program;
