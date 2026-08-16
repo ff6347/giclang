@@ -15,4 +15,24 @@ describe("built-ins", () => {
 		const actual = builtIns["circle"];
 		assert.deepStrictEqual(actual, expected);
 	});
+
+	test("should describe PI as numeric constant in registry", () => {
+		const expected = { kind: "constant", valueKind: "number" };
+		const actual = builtIns["PI"];
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should describe fill with multiple signatures in registry", () => {
+		const expected = {
+			kind: "function",
+			signatures: [
+				["string"],
+				["number", "number", "number"],
+				["number", "number", "number", "number"],
+			],
+			returnKind: "void",
+		};
+		const actual = builtIns["fill"];
+		assert.deepStrictEqual(actual, expected);
+	});
 });
