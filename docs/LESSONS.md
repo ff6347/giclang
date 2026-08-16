@@ -15,7 +15,7 @@
 - [x] [Complete `return` statement parser coverage](milestones/parser-functions.md)
 - [x] [Parse the `loop` block as a program-level tail](milestones/parser-loop-block.md)
 - [x] [Stabilize source locations and diagnostic quality](milestones/source-locations-diagnostics.md)
-- [ ] [Define the browser-neutral core API and project structure](milestones/browser-neutral-core-api.md)
+- [x] [Define the browser-neutral core API and project structure](milestones/browser-neutral-core-api.md)
 - [ ] [Represent spec-listed built-in signatures and reserved names](milestones/built-in-signatures-reserved-names.md)
 - [ ] [Build the semantic analyzer diagnostic harness](milestones/semantic-analyzer-diagnostic-harness.md)
 - [ ] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
