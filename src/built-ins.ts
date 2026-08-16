@@ -1,7 +1,7 @@
 // ABOUTME: Defines shared metadata for GIC built-in functions and constants.
 // ABOUTME: Provides immutable signatures for analyzer and interpreter consumers.
 
-type BuiltInKeys = "circle" | "fill" | "PI";
+type BuiltInKeys = "circle" | "fill" | "noFill" | "PI";
 type ValueKind = "number" | "boolean" | "string";
 type Signature = readonly ValueKind[];
 type FunctionEntry = {
@@ -25,6 +25,11 @@ export const builtIns: BuiltInRegistry = {
 	circle: {
 		kind: "function",
 		signatures: [["number", "number", "number"]],
+		returnKind: "void",
+	},
+	noFill: {
+		kind: "function",
+		signatures: [[]],
 		returnKind: "void",
 	},
 	fill: {

@@ -35,4 +35,14 @@ describe("built-ins", () => {
 		const actual = builtIns["fill"];
 		assert.deepStrictEqual(actual, expected);
 	});
+
+	test("should describe noFill with zero paramter signatures in registry", () => {
+		const expected = {
+			kind: "function",
+			signatures: [[]],
+			returnKind: "void",
+		};
+		const actual = builtIns["noFill"];
+		assert.deepStrictEqual(actual, expected);
+	});
 });
