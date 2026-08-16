@@ -60,3 +60,26 @@ browser-neutral core milestone remains open. Next steps are to decide which
 student-facing AST/token types should be re-exported from `core.ts` and make
 `main.ts` delegate language work to the core while retaining only argument
 handling, file IO, formatting, output, and exit-status responsibilities.
+
+## Completion
+
+- [decision] `Program` is re-exported from `core.ts` because callers receive it
+  from `parseSource()` and should not need to import the internal AST module.
+- [decision] `Token` and `TokenType` remain internal until a public tokenization
+  operation returns them. Exporting types without a corresponding public
+  operation would enlarge the API without serving a caller.
+- [decision] `main.ts` delegates parsing to `parseSource()` while retaining
+  argument handling, file IO, diagnostic formatting, output, and exit status.
+
+The browser-neutral core milestone is complete. The core has no Node, DOM,
+Canvas, or render-backend dependencies, and the CLI success and diagnostic paths
+use the public core result contract.
+
+Final verification:
+
+- `node --test src/tests/core.test.ts`: 3 passed.
+- `node --test src/tests/cli.test.ts`: 2 passed.
+- `pnpm test`: 90 tests total, 89 passed, 1 existing analyzer todo.
+- `pnpm typecheck`: passed.
+- `pnpm lint`: passed with 0 warnings and 0 errors.
+- `pnpm fmt:check`: passed.

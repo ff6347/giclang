@@ -40,6 +40,9 @@
 - [decision] The browser-neutral public language entry point is `src/core.ts`;
   its explicit name distinguishes reusable language work from the Node CLI in
   `src/main.ts`.
+- [decision] `Token` and `TokenType` remain internal until a public core
+  tokenization operation returns them; exporting types without a corresponding
+  operation would enlarge the API without serving a caller.
 - [decision] `parseSource(source)` returns a discriminated `ParseResult` with
   `diagnostics` on both branches: success has `ok: true` plus a `Program`, while
   failure has `ok: false`. Keeping diagnostics present on success leaves room
