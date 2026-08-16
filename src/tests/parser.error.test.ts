@@ -40,7 +40,6 @@ describe("parser diagnostics", () => {
 		assert.throws(
 			() => parser.parse(),
 			(error: ParserError) => {
-				console.log(error.message);
 				assert.equal(error.token?.lexeme, "{");
 				assert.equal(error.token?.line, 0);
 				assert.equal(error.token?.start, 11);
