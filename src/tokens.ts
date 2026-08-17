@@ -1,3 +1,4 @@
+// ABOUTME: Token class definition
 interface IToken {
 	toString(): string;
 	lexeme: string;
