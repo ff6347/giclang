@@ -25,6 +25,17 @@
 - [question] Documentation comments should use a small GIC-specific format,
   not full JSDoc compatibility. Define syntax, declaration association,
   metadata, and IDE presentation before implementation.
+- [decision] Reserved names = the ten keywords plus every built-in registry
+  key, constants included. The analyzer enforces them at declaration sites;
+  the lexer never rejects names because it sees occurrences, not
+  declarations. Keywords self-enforce through the grammar (a declaration
+  expects IDENTIFIER and finds a keyword token).
+- [decision] Color functions `fill`, `stroke`, and `background` share three
+  signatures: string (hex/CSS), OKLCH triple, OKLCH+alpha quad — per the
+  Colors prose, not the per-function tables. `print` accepts string,
+  number, or boolean as three unary signatures.
+- [decision] `frameRate` and `frameCount` are deferred to animation work;
+  `frameCount` is a read-only value, not a function, per the spec.
 
 ## Runtime and Editor Architecture
 
@@ -103,6 +114,9 @@
 - [technique] Test simplifiers must attach optional AST fields conditionally
   (the `elseBranch`/`step` pattern); unconditional attachment adds
   `undefined` fields and breaks every test that lacks the construct.
+- [lesson] Write metadata-pinning tests from the spec, not from the
+  implementation; `deepStrictEqual` protects only what it pins and will
+  otherwise lock in spec violations.
 
 ## Diagnostics and Error Reporting
 
@@ -135,6 +149,26 @@ start))` — the `Math.max` covers empty EOF spans.
   shadowing, arity, and runtime type errors. Full per-node spans are an
   additive extension, not a prerequisite; revisit only when an error needs
   to underline a whole expression.
+
+## Data Modeling and Types
+
+- [decision] Built-ins live in one registry with a discriminated
+  `FunctionEntry | ConstantEntry` union; the `kind` discriminant lets the
+  analyzer produce precise errors for wrong-kind usage.
+- [lesson] `readonly` does not propagate into nested containers; each layer
+  (registry, entry, signatures array, signature) needs its own `readonly`.
+- [lesson] `Readonly<Set<T>>` still exposes callable mutators; use
+  `ReadonlySet` to omit them. `as const` under an explicit type annotation
+  does nothing — express immutability in the annotation itself.
+- [lesson] A type predicate is trusted by the compiler, never verified; a
+  false one silently corrupts type safety.
+- [technique] Classify-then-index: an exhaustive `Record<LiteralUnion, V>`
+  refuses arbitrary string indexing, so guard with a `word is Key`
+  predicate using `in`, then index safely.
+- [technique] Derive lookup data from sources of truth
+  (`new Set([...Object.keys(x)])`); hand-copied name lists drift.
+- [lesson] Spreading an array into an object literal uses the array's
+  indices as keys (`{...["a"]}` → `{"0": "a"}`).
 
 ## Issue Tracking
 
