@@ -1,7 +1,7 @@
 // ABOUTME: Defines shared metadata for GIC built-in functions and constants.
 // ABOUTME: Provides immutable signatures for analyzer and interpreter consumers.
 
-type BuiltInKeys =
+export type BuiltInKeys =
 	| "point"
 	| "line"
 	| "rect"

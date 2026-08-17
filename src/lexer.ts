@@ -1,4 +1,6 @@
+// ABOUTME: The lexer that turns source into tokens
 import { GicError } from "./error.ts";
+import { keywords, type SyntaxKeywords } from "./keywords.ts";
 import {
 	AND,
 	BANG,
@@ -31,19 +33,11 @@ import {
 	type TokenType,
 } from "./tokens.ts";
 
+function isKeyword(word: string): word is SyntaxKeywords {
+	return word in keywords;
+}
+
 export class Lexer {
-	keywords: Record<string, TokenType> = {
-		else: "ELSE",
-		false: "FALSE",
-		true: "TRUE",
-		if: "IF",
-		return: "RETURN",
-		let: "LET",
-		repeat: "REPEAT",
-		func: "FUNC",
-		loop: "LOOP",
-		null: "NULL",
-	};
 	source: string;
 	start: number = 0;
 	current: number = 0;
@@ -231,16 +225,19 @@ export class Lexer {
 		}
 		let literal: unknown = null;
 		const text = this.source.substring(this.start, this.current);
-		let type = this.keywords[text];
-		if (type === null || type === undefined) {
-			type = IDENTIFIER;
+
+		if (isKeyword(text)) {
+			const kind = keywords[text];
+			if (kind === TRUE) {
+				literal = true;
+			} else if (kind === FALSE) {
+				literal = false;
+			}
+
+			this.addToken(kind, literal);
+		} else {
+			this.addToken(IDENTIFIER, literal);
 		}
-		if (type === TRUE) {
-			literal = true;
-		} else if (type === FALSE) {
-			literal = false;
-		}
-		this.addToken(type, literal);
 	}
 	isAlpha(c: string): boolean {
 		return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
