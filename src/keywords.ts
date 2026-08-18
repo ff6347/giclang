@@ -1,4 +1,5 @@
 // ABOUTME: All reserved words go in here
+// ABOUTME: Shared keyword table for the lexer plus reservedNames derived from keywords and built-ins.
 import { builtIns } from "./built-ins.ts";
 import type { TokenType } from "./tokens.ts";
 

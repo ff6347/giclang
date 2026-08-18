@@ -1,4 +1,5 @@
 // ABOUTME: Testing for reserved words
+// ABOUTME: Pins the keyword table and the reserved-name derivation against the spec.
 import assert from "node:assert";
 import test, { describe } from "node:test";
 import { reservedNames } from "../keywords.ts";
