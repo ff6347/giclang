@@ -170,8 +170,35 @@ start))` — the `Math.max` covers empty EOF spans.
 - [lesson] Spreading an array into an object literal uses the array's
   indices as keys (`{...["a"]}` → `{"0": "a"}`).
 
+## Semantic Analyzer
+
+- [decision] The analyzer collects diagnostics in a list and returns them;
+  it never throws on semantic findings. Throws are reserved for unhandled
+  node kinds (implementation bugs), guarded by exhaustive switches whose
+  `default` assigns the node to `never` and throws. Collect-many serves
+  LSP-style consumers.
+- [decision] The walker is a class in the Lexer/Parser shape: switches
+  dispatch on node tags to `protected` per-kind methods. Semantic rules
+  land inside those methods; tests observe traversal by subclassing them.
+  No double dispatch, no visitor interface.
+- [lesson] `Program` and `LoopStmt` sit outside the `Statement` union, so
+  compile-time exhaustiveness cannot prove full traversal; the loop tail
+  needs its own protected seam called from `analyze()`.
+- [technique] Prove traversal with a test-file subclass that tallies
+  visits per kind in a `Map` (uniform count-then-`super` overrides) and
+  pins hand-counted per-kind expectations with `deepStrictEqual`. A grand
+  total cannot assert per-kind coverage.
+- [lesson] An override that wraps must call `super` or observation alters
+  behavior; a super-less `onLogical` override silently stopped the walk
+  (5 nodes lost under one `&&`).
+- [lesson] An assertion green under both a correct and a broken
+  implementation proves nothing; make the effect observable (walk the
+  loop, unmuzzle the `never` check, count the visits).
+
 ## Issue Tracking
 
-- [risk] The repository uses a SourceHut Git remote without an external
-  git-bug bridge. If `git-bug push` cannot use the SSH agent, Git can push
-  `refs/bugs/*` and `refs/identities/*` to preserve the distributed issues.
+- [technique] `git-bug push` fails when the SSH agent has no identities
+  (go-git only tries the agent). Confirmed fallback: system Git pushes
+  fine via key files — `git push origin 'refs/bugs/*:refs/bugs/*'
+'refs/identities/*:refs/identities/*'`. The SourceHut remote has no
+  git-bug bridge.
