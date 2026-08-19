@@ -93,4 +93,18 @@ x = false;
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
+
+	test("should detect declaration order and report a name used in is own initialization", () => {
+		const source = "let count = count;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'count'.",
+			line: 0,
+			start: 12,
+			end: 17,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });

@@ -20,6 +20,7 @@ import type {
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
+import { reservedNames } from "./keywords.ts";
 import type { Token } from "./tokens.ts";
 
 class Scope {
@@ -32,6 +33,15 @@ export class Analyser {
 	program: Program;
 	constructor(program: Program) {
 		this.program = program;
+	}
+
+	missingNameDiagnostic(token: Token): Diagnostic {
+		return {
+			message: `Cannot find name '${token.lexeme}'.`,
+			line: token.line,
+			start: token.start,
+			end: token.end,
+		};
 	}
 	walkStatement(statement: Statement) {
 		switch (statement.type) {
@@ -91,13 +101,7 @@ export class Analyser {
 	}
 	protected onAssignment(statement: Assignment) {
 		if (!this.scope.declarations.has(statement.name.lexeme)) {
-			const diagnostic: Diagnostic = {
-				message: `Cannot find name '${statement.name.lexeme}'.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			};
-			this.diagnostics.push(diagnostic);
+			this.diagnostics.push(this.missingNameDiagnostic(statement.name));
 		}
 		this.walkExpression(statement.value);
 	}
@@ -105,6 +109,7 @@ export class Analyser {
 		this.walkExpression(statement.expression);
 	}
 	protected onVarDecl(statement: VarDeclStmt) {
+		this.walkExpression(statement.initializer);
 		if (this.scope.declarations.has(statement.name.lexeme)) {
 			const diagnostic: Diagnostic = {
 				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
@@ -116,7 +121,6 @@ export class Analyser {
 		} else {
 			this.scope.declarations.set(statement.name.lexeme, statement.name);
 		}
-		this.walkExpression(statement.initializer);
 	}
 
 	protected onIfStmt(statement: IfStmt) {
@@ -179,8 +183,14 @@ export class Analyser {
 	protected onGrouping(expr: GroupingExpr) {
 		this.walkExpression(expr.expression);
 	}
-	protected onIdentifier(_expr: IdentifierExpr) {
+	protected onIdentifier(expr: IdentifierExpr) {
 		// leaf: no children to walk
+		const known =
+			this.scope.declarations.has(expr.name.lexeme) ||
+			reservedNames.has(expr.name.lexeme);
+		if (!known) {
+			this.diagnostics.push(this.missingNameDiagnostic(expr.name));
+		}
 	}
 	protected onLiteral(_expr: LiteralExpr) {
 		// leaf: no children to walk
