@@ -29,14 +29,14 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 
 ## Relevant Specification Links
 
-- [Immediate Visual Feedback](<../Language specification rev 2.md#3-immediate-visual-feedback>)
-- [Fail Clearly](<../Language specification rev 2.md#4-fail-clearly>)
-- [Implementation Architecture](<../Language specification rev 2.md#implementation-architecture>)
-- [Semantic Analyzer component](<../Language specification rev 2.md#3-semantic-analyzer-analyzerts>)
-- [Render Backends](<../Language specification rev 2.md#5-render-backends>)
-- [LSP Server component](<../Language specification rev 2.md#6-lsp-server-lspserverts>)
-- [Live Preview Panel](<../Language specification rev 2.md#live-preview-panel>)
-- [Error Message Guidelines](<../Language specification rev 2.md#error-message-guidelines>)
+- [Immediate Visual Feedback](<../Language specification rev 2.1.md#3-immediate-visual-feedback>)
+- [Fail Clearly](<../Language specification rev 2.1.md#4-fail-clearly>)
+- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Render Backends](<../Language specification rev 2.1.md#5-render-backends>)
+- [LSP Server component](<../Language specification rev 2.1.md#6-lsp-server-lspserverts>)
+- [Live Preview Panel](<../Language specification rev 2.1.md#live-preview-panel>)
+- [Error Message Guidelines](<../Language specification rev 2.1.md#error-message-guidelines>)
 
 ## Included
 

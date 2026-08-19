@@ -27,12 +27,12 @@ Package the completed browser IDE as a desktop app only if the desktop decision 
 
 ## Relevant Specification Links
 
-- [Project Structure](<../Language specification rev 2.md#project-structure>)
-- [Implementation Architecture](<../Language specification rev 2.md#implementation-architecture>)
-- [File Extension](<../Language specification rev 2.md#file-extension>)
-- [Example Programs](<../Language specification rev 2.md#example-programs>)
-- [Live Preview Panel](<../Language specification rev 2.md#live-preview-panel>)
-- [CLI Tool](<../Language specification rev 2.md#cli-tool>)
+- [Project Structure](<../Language specification rev 2.1.md#project-structure>)
+- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [File Extension](<../Language specification rev 2.1.md#file-extension>)
+- [Example Programs](<../Language specification rev 2.1.md#example-programs>)
+- [Live Preview Panel](<../Language specification rev 2.1.md#live-preview-panel>)
+- [CLI Tool](<../Language specification rev 2.1.md#cli-tool>)
 
 ## Included
 

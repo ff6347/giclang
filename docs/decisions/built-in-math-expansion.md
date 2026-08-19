@@ -69,10 +69,10 @@ larger Processing-style bundle.
 
 ## Related Guidance
 
-- [Math Functions](<../Language specification rev 2.md#math-functions>)
-- [Built-in Functions](<../Language specification rev 2.md#built-in-functions>)
-- [Constants](<../Language specification rev 2.md#constants>)
-- [User-Defined Functions](<../Language specification rev 2.md#user-defined-functions>)
+- [Math Functions](<../Language specification rev 2.1.md#math-functions>)
+- [Built-in Functions](<../Language specification rev 2.1.md#built-in-functions>)
+- [Constants](<../Language specification rev 2.1.md#constants>)
+- [User-Defined Functions](<../Language specification rev 2.1.md#user-defined-functions>)
 - [Built-in signatures milestone](../milestones/built-in-signatures-reserved-names.md)
 - [Pure math built-ins milestone](../milestones/pure-math-print-randomness-built-ins.md)
 - [Example verification milestone](../milestones/example-program-visual-regression.md)

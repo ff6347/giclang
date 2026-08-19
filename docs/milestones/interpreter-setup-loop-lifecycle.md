@@ -22,11 +22,11 @@ Separate one-time setup execution from frame-by-frame `loop` execution.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.md#animation`
-- `../Language specification rev 2.md#static-programs`
-- `../Language specification rev 2.md#animated-programs`
-- `../Language specification rev 2.md#animation-built-ins`
-- `../Language specification rev 2.md#grammar-ebnf`
+- `../Language specification rev 2.1.md#animation`
+- `../Language specification rev 2.1.md#static-programs`
+- `../Language specification rev 2.1.md#animated-programs`
+- `../Language specification rev 2.1.md#animation-built-ins`
+- `../Language specification rev 2.1.md#grammar-ebnf`
 
 ## Existing Code Context
 

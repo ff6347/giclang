@@ -28,9 +28,9 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Variables](<../Language specification rev 2.md#variables>)
-- [Scoping Rules](<../Language specification rev 2.md#scoping-rules>)
-- [Semantic Analyzer component](<../Language specification rev 2.md#3-semantic-analyzer-analyzerts>)
+- [Variables](<../Language specification rev 2.1.md#variables>)
+- [Scoping Rules](<../Language specification rev 2.1.md#scoping-rules>)
+- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

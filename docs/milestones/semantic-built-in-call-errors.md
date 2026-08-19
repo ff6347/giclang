@@ -26,11 +26,11 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Built-in Functions](<../Language specification rev 2.md#built-in-functions>)
-- [Data Types](<../Language specification rev 2.md#data-types>)
-- [Constants](<../Language specification rev 2.md#constants>)
-- [Semantic Analyzer component](<../Language specification rev 2.md#3-semantic-analyzer-analyzerts>)
-- [Error Message Guidelines](<../Language specification rev 2.md#error-message-guidelines>)
+- [Built-in Functions](<../Language specification rev 2.1.md#built-in-functions>)
+- [Data Types](<../Language specification rev 2.1.md#data-types>)
+- [Constants](<../Language specification rev 2.1.md#constants>)
+- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Error Message Guidelines](<../Language specification rev 2.1.md#error-message-guidelines>)
 - [Memory](../MEMORY.md)
 
 ## Grammar and AST Shape

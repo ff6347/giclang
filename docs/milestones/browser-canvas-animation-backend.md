@@ -23,11 +23,11 @@ Connect animation lifecycle to browser scheduling through a testable adapter.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.md#animation`
-- `../Language specification rev 2.md#animated-programs`
-- `../Language specification rev 2.md#animation-built-ins`
-- `../Language specification rev 2.md#canvas`
-- `../Language specification rev 2.md#implementation-architecture`
+- `../Language specification rev 2.1.md#animation`
+- `../Language specification rev 2.1.md#animated-programs`
+- `../Language specification rev 2.1.md#animation-built-ins`
+- `../Language specification rev 2.1.md#canvas`
+- `../Language specification rev 2.1.md#implementation-architecture`
 
 ## Existing Code Context
 

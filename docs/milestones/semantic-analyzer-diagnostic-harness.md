@@ -25,9 +25,9 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Semantic Analyzer component](<../Language specification rev 2.md#3-semantic-analyzer-analyzerts>)
-- [Implementation Architecture](<../Language specification rev 2.md#implementation-architecture>)
-- [Error Message Guidelines](<../Language specification rev 2.md#error-message-guidelines>)
+- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [Error Message Guidelines](<../Language specification rev 2.1.md#error-message-guidelines>)
 
 ## Grammar and AST Shape
 

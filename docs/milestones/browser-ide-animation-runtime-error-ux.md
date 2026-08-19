@@ -27,15 +27,15 @@ Extend the selected browser IDE from static preview to animation playback and cl
 
 ## Relevant Specification Links
 
-- [Animation](<../Language specification rev 2.md#animation>)
-- [Static Programs](<../Language specification rev 2.md#static-programs>)
-- [Animated Programs](<../Language specification rev 2.md#animated-programs>)
-- [Animation Built-ins](<../Language specification rev 2.md#animation-built-ins>)
-- [Constants](<../Language specification rev 2.md#constants>)
-- [Interpreter component](<../Language specification rev 2.md#4-interpreter-interpreterts>)
-- [Render Backends](<../Language specification rev 2.md#5-render-backends>)
-- [Live Preview Panel](<../Language specification rev 2.md#live-preview-panel>)
-- [Error Message Guidelines](<../Language specification rev 2.md#error-message-guidelines>)
+- [Animation](<../Language specification rev 2.1.md#animation>)
+- [Static Programs](<../Language specification rev 2.1.md#static-programs>)
+- [Animated Programs](<../Language specification rev 2.1.md#animated-programs>)
+- [Animation Built-ins](<../Language specification rev 2.1.md#animation-built-ins>)
+- [Constants](<../Language specification rev 2.1.md#constants>)
+- [Interpreter component](<../Language specification rev 2.1.md#4-interpreter-interpreterts>)
+- [Render Backends](<../Language specification rev 2.1.md#5-render-backends>)
+- [Live Preview Panel](<../Language specification rev 2.1.md#live-preview-panel>)
+- [Error Message Guidelines](<../Language specification rev 2.1.md#error-message-guidelines>)
 
 ## Included
 

@@ -23,11 +23,11 @@ Adapt recorded/backend drawing operations to browser Canvas for one-shot renderi
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.md#canvas`
-- `../Language specification rev 2.md#colors`
-- `../Language specification rev 2.md#shape-style`
-- `../Language specification rev 2.md#shape-drawing`
-- `../Language specification rev 2.md#static-programs`
+- `../Language specification rev 2.1.md#canvas`
+- `../Language specification rev 2.1.md#colors`
+- `../Language specification rev 2.1.md#shape-style`
+- `../Language specification rev 2.1.md#shape-drawing`
+- `../Language specification rev 2.1.md#static-programs`
 
 ## Existing Code Context
 

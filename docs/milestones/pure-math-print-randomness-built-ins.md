@@ -18,16 +18,16 @@ Add deterministic non-rendering built-ins through the same call-dispatch seam as
 
 - Built-ins are callable runtime internals, not syntax exceptions.
 - Constants are read-only bindings exposed through the environment or registry.
-- Deterministic tests need controlled output and the public `randomSeed(n)` built-in specified by `../Language specification rev 2.md`.
+- Deterministic tests need controlled output and the public `randomSeed(n)` built-in specified by `../Language specification rev 2.1.md`.
 - Domain, arity, and type errors are runtime guard responsibilities unless analyzer support exists.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.md#built-in-functions`
-- `../Language specification rev 2.md#console-output`
-- `../Language specification rev 2.md#math-functions`
-- `../Language specification rev 2.md#constants`
-- `../Language specification rev 2.md#animation-built-ins`
+- `../Language specification rev 2.1.md#built-in-functions`
+- `../Language specification rev 2.1.md#console-output`
+- `../Language specification rev 2.1.md#math-functions`
+- `../Language specification rev 2.1.md#constants`
+- `../Language specification rev 2.1.md#animation-built-ins`
 
 ## Existing Code Context
 
@@ -78,7 +78,7 @@ The print sink and random source should be injectable so tests do not depend on 
 
 Math built-ins should accept and return GIC numbers. Trigonometric functions use degrees, matching the learner-facing language design rather than JavaScript's radian defaults.
 
-`../Language specification rev 2.md` exposes `randomSeed(n)` as a public GIC built-in. Use that public API to seed random behavior in programs and tests; the interpreter may still inject the underlying random source behind the built-in for determinism.
+`../Language specification rev 2.1.md` exposes `randomSeed(n)` as a public GIC built-in. Use that public API to seed random behavior in programs and tests; the interpreter may still inject the underlying random source behind the built-in for determinism.
 
 ## Print Output Sink
 

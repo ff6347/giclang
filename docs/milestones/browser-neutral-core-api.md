@@ -25,9 +25,9 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Implementation Architecture](<../Language specification rev 2.md#implementation-architecture>)
-- [Component Details](<../Language specification rev 2.md#component-details>)
-- [Project Structure](<../Language specification rev 2.md#project-structure>)
+- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [Component Details](<../Language specification rev 2.1.md#component-details>)
+- [Project Structure](<../Language specification rev 2.1.md#project-structure>)
 - [Memory](../MEMORY.md)
 
 ## Grammar and AST Shape

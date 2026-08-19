@@ -29,14 +29,14 @@ Expose `check` and `run` command entry points over the completed browser-neutral
 
 ## Relevant Specification Links
 
-- [File Extension](<../Language specification rev 2.md#file-extension>)
-- [Implementation Architecture](<../Language specification rev 2.md#implementation-architecture>)
-- [Semantic Analyzer component](<../Language specification rev 2.md#3-semantic-analyzer-analyzerts>)
-- [Interpreter component](<../Language specification rev 2.md#4-interpreter-interpreterts>)
-- [Render Backends](<../Language specification rev 2.md#5-render-backends>)
-- [CLI Tool](<../Language specification rev 2.md#cli-tool>)
-- [Error Message Guidelines](<../Language specification rev 2.md#error-message-guidelines>)
-- [Integration Tests](<../Language specification rev 2.md#integration-tests>)
+- [File Extension](<../Language specification rev 2.1.md#file-extension>)
+- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Interpreter component](<../Language specification rev 2.1.md#4-interpreter-interpreterts>)
+- [Render Backends](<../Language specification rev 2.1.md#5-render-backends>)
+- [CLI Tool](<../Language specification rev 2.1.md#cli-tool>)
+- [Error Message Guidelines](<../Language specification rev 2.1.md#error-message-guidelines>)
+- [Integration Tests](<../Language specification rev 2.1.md#integration-tests>)
 
 ## Included
 

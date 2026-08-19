@@ -23,10 +23,10 @@ Execute exactly one branch based on a boolean condition.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.md#control-flow`
-- `../Language specification rev 2.md#operators`
-- `../Language specification rev 2.md#scoping-rules`
-- `../Language specification rev 2.md#grammar-ebnf`
+- `../Language specification rev 2.1.md#control-flow`
+- `../Language specification rev 2.1.md#operators`
+- `../Language specification rev 2.1.md#scoping-rules`
+- `../Language specification rev 2.1.md#grammar-ebnf`
 
 ## Existing Code Context
 

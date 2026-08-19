@@ -17,9 +17,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project is in the **specification phase**. No implementation exists yet. The specification documents are:
 
-- `Language specification rev 2.md` - Current specification (use this)
-- `Language specification rev 1.md` - Previous revision
-- `Language specification rev 0.md` - Initial draft
+- `Language specification rev 2.1.md` - Current specification (use this)
+- `deprecated/Language specification rev 2.md` - Previous revision
+- `deprecated/Language specification rev 1.md` - Earlier revision
+- `deprecated/Language specification rev 0.md` - Initial draft
 
 ## Key Language Design Decisions
 
