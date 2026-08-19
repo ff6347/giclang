@@ -19,6 +19,7 @@ import type {
 	UnaryExpr,
 	VarDeclStmt,
 } from "../ast.ts";
+import type { Diagnostic } from "../core.ts";
 import { Lexer } from "../lexer.ts";
 import { Parser } from "../parser.ts";
 
@@ -95,12 +96,15 @@ export class TestAnalyser extends Analyser {
 	}
 }
 
-export function analyseSource(source: string) {
+export function analyseSource(source: string): {
+	diagnostics: Diagnostic[];
+	analyzer: TestAnalyser;
+} {
 	const lexer = new Lexer(source);
 	const tokens = lexer.scanTokens();
 	const parser = new Parser(tokens);
 	const program = parser.parse();
 	const analyzer = new TestAnalyser(program);
-	const actual = analyzer.analyze();
-	return { actual, analyzer };
+	const diagnostics = analyzer.analyze();
+	return { diagnostics, analyzer };
 }

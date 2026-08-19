@@ -8,7 +8,7 @@ describe("Analyser", () => {
 	test("should call Analyser and not throw", () => {
 		const source = "let x = 0;loop{if(x==0){print(x);}}";
 		const result = analyseSource(source);
-		assert.deepStrictEqual(result.actual, []);
+		assert.deepStrictEqual(result.diagnostics, []);
 	});
 
 	test("should walk full program with all existing node kinds", () => {
@@ -70,14 +70,14 @@ x = false;
 			end: 5,
 		};
 		const result = analyseSource(source);
-		assert.strictEqual(result.actual.length, 1);
-		assert.deepStrictEqual(result.actual[0], expected);
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
 	test("should not report anything for declared and reassigned variable", () => {
 		const source = "let value = 1;value=2;";
 		const result = analyseSource(source);
 
-		assert.strictEqual(result.actual.length, 0);
+		assert.strictEqual(result.diagnostics.length, 0);
 	});
 });
