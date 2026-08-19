@@ -35,7 +35,7 @@ This project is in the **specification phase**. No implementation exists yet. Th
 ### Explicit Over Implicit
 
 - No hoisting: variables and functions must be declared before use
-- No shadowing: global names cannot be reused in any scope
+- No shadowing: visible names cannot be reused, and global names are reserved program-wide
 - All functions require explicit `return` or `return;`
 - Braces always required for control flow
 

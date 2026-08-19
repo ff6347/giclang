@@ -7,12 +7,12 @@ Status: Unresolved
 
 ## Decision Question
 
-Should GIC expand the rev-2 math built-ins beyond the current list, and if so,
+Should GIC expand the revision 2.1 math built-ins beyond the current list, and if so,
 what scope should the expansion have?
 
 ## Current Baseline
 
-Rev 2 lists random, randomSeed, rounding, absolute value, min, max, degree-based
+Revision 2.1 lists random, randomSeed, rounding, absolute value, min, max, degree-based
 sin/cos, sqrt, pow, and constants such as PI, WIDTH, HEIGHT, and frameCount.
 Project memory records an open question about whether common Processing-style
 helpers such as `dist()` belong in the built-in math API.
@@ -26,7 +26,7 @@ larger Processing-style bundle.
 
 ## Options and Consequences
 
-- **Keep rev-2 math only**
+- **Keep revision 2.1 math only**
   - Preserves the current small built-in surface.
   - Requires users to compose helpers manually or define functions in examples.
 - **Add `dist` only**
@@ -63,7 +63,7 @@ larger Processing-style bundle.
 
 ## Unblocks
 
-- Future implementation milestones for any selected math helpers beyond rev 2.
+- Future implementation milestones for any selected math helpers beyond revision 2.1.
 - Future examples and visual-regression coverage that require selected expanded
   math helpers.
 

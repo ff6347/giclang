@@ -8,11 +8,11 @@ Status: Unresolved
 ## Decision Question
 
 Should GIC add more drawing primitives, helper variants, or transform functions
-beyond the current rev-2 shape API?
+beyond the current revision 2.1 shape API?
 
 ## Current Baseline
 
-Rev 2 defines a fixed 101×101 canvas, style functions, and shape drawing
+Revision 2.1 defines a fixed 101×101 canvas, style functions, and shape drawing
 functions for point, line, rect, circle, ellipse, triangle, quad, and arc. Its
 additional considerations ask whether extra shapes such as Bezier curves or
 arbitrary polygons are needed and whether transform functions such as rotate,
@@ -28,7 +28,7 @@ subsequent drawing command is interpreted.
 ## Options and Consequences
 
 - **No expansion**
-  - Keeps the drawing surface aligned with rev 2.
+  - Keeps the drawing surface aligned with revision 2.1.
   - Requires complex shapes and coordinate reuse to be built from existing
     primitives.
 - **Extra primitives**

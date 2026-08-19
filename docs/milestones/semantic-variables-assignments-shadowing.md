@@ -19,11 +19,12 @@ Complete or review:
 ## Concepts to Understand
 
 - Symbol tables record names that are visible in a scope.
-- Rev-2 uses a simple flat scope baseline: global names, function-local parameters/variables, and loop-local repeat variables.
+- Revision 2.1 uses a simple flat scope baseline: global names, function-local parameters/variables, and loop-local repeat variables.
+- Top-level variables and functions share one namespace whose names are reserved program-wide.
 - Functions can read and modify globals, but there are no closures over non-global enclosing scopes.
-- Declared-before-use means source order matters.
-- Assignment targets must name an existing assignable symbol.
-- Reserved names from keywords and built-ins should not be available for student declarations.
+- Declared-before-use means source order matters even though global names are reserved regardless of order.
+- Assignment targets must name a variable, parameter, or repeat variable; functions and built-ins are not assignable.
+- Reserved names from keywords and built-ins are prohibited at every declaration site.
 - No-shadowing keeps beginner programs explicit and easier to read.
 
 ## Relevant Specification Links
@@ -34,7 +35,7 @@ Complete or review:
 
 ## Grammar and AST Shape
 
-There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, and `Identifier` nodes against the rev-2 flat scope model: declarations in ordinary blocks belong to the enclosing global or function scope unless they are repeat loop variables.
+There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, and `Identifier` nodes against the revision 2.1 flat scope model: declarations in ordinary blocks belong to the enclosing global or function scope unless they are repeat loop variables.
 
 ## TDD-Oriented Student Checklist
 
@@ -42,10 +43,13 @@ There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, a
 - Report assignment to an undefined target.
 - Report identifier use in an initializer before that identifier has been declared.
 - Report same-scope variable redeclaration.
-- Report shadowing of a global by a parameter, local variable, or function name.
-- Report attempts to declare reserved names.
+- Report reuse of any visible name.
+- Report conflicts with program-wide global variable and function names regardless of declaration order.
+- Report attempts to use reserved names for variables, functions, parameters, or repeat variables.
+- Report assignments to functions and built-ins.
+- Report at most one primary diagnostic at each source location while collecting independent diagnostics elsewhere.
 - Check function-local variables do not leak into global scope.
-- Check ordinary block declarations follow the rev-2 flat scope baseline rather than creating new block-local scopes.
+- Check ordinary block declarations follow the revision 2.1 flat scope baseline rather than creating new block-local scopes.
 - Check diagnostics point at the name being declared, assigned, or used.
 
 ## Non-Goals
@@ -61,5 +65,7 @@ Use analyzer tests for each checklist behavior, including diagnostic message and
 
 ## Decision Gates
 
-- No open gate for ordinary block scopes: use the rev-2 flat scope baseline unless the language specification changes.
-- Decide whether reserved-name diagnostics are introduced here or fully covered by the built-in registry lesson.
+- No open gate for ordinary block scopes: use the revision 2.1 flat scope baseline.
+- Reserved-name diagnostics are part of this lesson and apply at every declaration site.
+- Global names are reserved program-wide, so analysis must distinguish global name reservation from source-order visibility.
+- A source location receives at most one primary diagnostic.

@@ -15,7 +15,7 @@ scoping model.
 - Reviewed the existing `parser.func.test.ts` on the `test/func-nested`
   branch; found the second test asserted a wrong expected AST copied from the
   first test.
-- Confirmed against `docs/Language specification rev 2.md` that only two
+- Confirmed against `docs/deprecated/Language specification rev 2.md` that only two
   scopes exist (Global, Function-local), there are no nested-function scopes,
   and the "No closures" rule applies. Functions are only ever shown at the top
   level in the spec.

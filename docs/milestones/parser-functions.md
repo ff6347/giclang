@@ -89,7 +89,7 @@ The function name and parameters are `Token` values, matching the identifier con
 - A function body uses the same block behavior as other braced statement lists.
 - `return;` has no value expression; `return expression;` has one.
 - The parser records return syntax wherever it appears, but later semantic lessons decide whether that placement and return kind are legal.
-- A `func` declared inside a function, `if`, or `repeat` block is a parse error. The Language Specification rev 2 defines only Global and Function-local scopes with no closures, so functions can only be declared at the top level.
+- A `func` declared inside a function, `if`, or `repeat` block is a parse error. Language specification revision 2.1 defines only global and function-local scopes with no closures, so functions can only be declared at the top level.
 
 ## Behavior Checklist
 
