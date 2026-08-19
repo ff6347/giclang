@@ -60,4 +60,24 @@ x = false;
 			44,
 		);
 	});
+
+	test("should report undeclared variable ghost", () => {
+		const source = "ghost = 1;";
+		const expected = {
+			message: "Cannot find name 'ghost'.",
+			line: 0,
+			start: 0,
+			end: 5,
+		};
+		const result = analyseSource(source);
+		assert.strictEqual(result.actual.length, 1);
+		assert.deepStrictEqual(result.actual[0], expected);
+	});
+
+	test("should not report anything for declared and reassigned variable", () => {
+		const source = "let value = 1;value=2;";
+		const result = analyseSource(source);
+
+		assert.strictEqual(result.actual.length, 0);
+	});
 });

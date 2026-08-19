@@ -20,8 +20,14 @@ import type {
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
+import type { Token } from "./tokens.ts";
+
+class Scope {
+	declarations: Map<string, Token> = new Map();
+}
 
 export class Analyser {
+	scope: Scope = new Scope();
 	diagnostics: Diagnostic[] = [];
 	program: Program;
 	constructor(program: Program) {
@@ -84,12 +90,22 @@ export class Analyser {
 		});
 	}
 	protected onAssignment(statement: Assignment) {
+		if (!this.scope.declarations.has(statement.name.lexeme)) {
+			const diagnostic: Diagnostic = {
+				message: `Cannot find name '${statement.name.lexeme}'.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			};
+			this.diagnostics.push(diagnostic);
+		}
 		this.walkExpression(statement.value);
 	}
 	protected onExprStmt(statement: ExprStmt) {
 		this.walkExpression(statement.expression);
 	}
 	protected onVarDecl(statement: VarDeclStmt) {
+		this.scope.declarations.set(statement.name.lexeme, statement.name);
 		this.walkExpression(statement.initializer);
 	}
 
