@@ -105,7 +105,17 @@ export class Analyser {
 		this.walkExpression(statement.expression);
 	}
 	protected onVarDecl(statement: VarDeclStmt) {
-		this.scope.declarations.set(statement.name.lexeme, statement.name);
+		if (this.scope.declarations.has(statement.name.lexeme)) {
+			const diagnostic: Diagnostic = {
+				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			};
+			this.diagnostics.push(diagnostic);
+		} else {
+			this.scope.declarations.set(statement.name.lexeme, statement.name);
+		}
 		this.walkExpression(statement.initializer);
 	}
 

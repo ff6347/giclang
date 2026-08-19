@@ -80,4 +80,17 @@ x = false;
 
 		assert.strictEqual(result.diagnostics.length, 0);
 	});
+
+	test("should report redeclared variable", () => {
+		const source = "let shade = 0;\nlet shade = 1;";
+		const expected = {
+			message: "Cannot declare 'shade' because that name already exists.",
+			line: 1,
+			start: 19,
+			end: 24,
+		};
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });
