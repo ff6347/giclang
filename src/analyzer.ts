@@ -100,7 +100,15 @@ export class Analyser {
 		});
 	}
 	protected onAssignment(statement: Assignment) {
-		if (!this.scope.declarations.has(statement.name.lexeme)) {
+		if (reservedNames.has(statement.name.lexeme)) {
+			const diagnostic: Diagnostic = {
+				message: `Cannot assign to '${statement.name.lexeme}' because that name is defined by GIC.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			};
+			this.diagnostics.push(diagnostic);
+		} else if (!this.scope.declarations.has(statement.name.lexeme)) {
 			this.diagnostics.push(this.missingNameDiagnostic(statement.name));
 		}
 		this.walkExpression(statement.value);
@@ -110,7 +118,15 @@ export class Analyser {
 	}
 	protected onVarDecl(statement: VarDeclStmt) {
 		this.walkExpression(statement.initializer);
-		if (this.scope.declarations.has(statement.name.lexeme)) {
+		if (reservedNames.has(statement.name.lexeme)) {
+			const diagnostic: Diagnostic = {
+				message: `Cannot declare '${statement.name.lexeme}' because that name is defined by GIC.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			};
+			this.diagnostics.push(diagnostic);
+		} else if (this.scope.declarations.has(statement.name.lexeme)) {
 			const diagnostic: Diagnostic = {
 				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
 				line: statement.name.line,

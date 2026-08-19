@@ -94,7 +94,7 @@ x = false;
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
-	test("should detect declaration order and report a name used in is own initialization", () => {
+	test("should report a name used in its own initializer", () => {
 		const source = "let count = count;";
 		const result = analyseSource(source);
 		const expected = {
@@ -104,6 +104,32 @@ x = false;
 			end: 17,
 		};
 
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should reject assignment to a GIC-defined name", () => {
+		const source = "let PI = 3;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'PI' because that name is defined by GIC.",
+			line: 0,
+			start: 4,
+			end: 6,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should reject a variable declaration using a GIC-defined nam", () => {
+		const source = "PI = 3;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot assign to 'PI' because that name is defined by GIC.",
+			line: 0,
+			start: 0,
+			end: 2,
+		};
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
