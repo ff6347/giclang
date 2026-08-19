@@ -315,12 +315,12 @@ func main() {
 ```gic
 let size = 10;
 
-func bad(size) {           // ERROR: 'size' shadows global variable
+func bad(size) {           // ERROR: name already exists
   return size * 2;
 }
 
 func also_bad() {
-  let size = 5;            // ERROR: 'size' shadows global variable
+  let size = 5;            // ERROR: name already exists
   return;
 }
 
@@ -333,7 +333,7 @@ let count = 10;
 
 func repeat_bad() {
   let index = 0;
-  repeat(index, 0, 3) {}   // ERROR: repeat variable shadows local variable
+  repeat(index, 0, 3) {}   // ERROR: name already exists
   return;
 }
 ```
@@ -805,20 +805,17 @@ Responsibilities:
 
 Errors to detect:
 
-- `Undefined variable 'x'`
-- `Undefined function 'foo'`
-- `Name 'PI' is reserved`
-- `Variable 'x' already declared in this scope`
-- `Name 'x' conflicts with global name 'x'`
-- `Cannot shadow variable 'x'`
-- `Cannot assign to function 'draw'`
-- `Cannot assign to built-in 'PI'`
-- `Cannot reassign loop variable 'i'`
-- `Function 'circle' expects 3 arguments, got 2`
-- `Function 'foo' must have a return statement`
-- `Function 'foo' must be declared before it is called`
-- `Function 'foo' mixes value-returning and void return statements`
-- `Void function 'foo' cannot be used in an expression`
+- `Cannot find name 'x'.`
+- `Cannot declare 'PI' because that name is defined by GIC.`
+- `Cannot declare 'x' because that name already exists.`
+- `Cannot assign to function 'draw'.`
+- `Cannot assign to 'PI' because that name is defined by GIC.`
+- `Cannot assign to repeat variable 'i'.`
+- `Function 'circle' expects 3 arguments, but got 2.`
+- `Function 'foo' must have a return statement.`
+- `Cannot call function 'foo' before its declaration.`
+- `Function 'foo' cannot return both a value and no value.`
+- `Function 'foo' does not return a value and cannot be used in an expression.`
 
 #### 4. Interpreter (`interpreter.ts`)
 
@@ -1192,7 +1189,7 @@ Errors should be:
 - **Helpful**: Suggest fixes when possible
 - **Focused**: Report one primary diagnostic per source location and suppress dependent diagnostics caused by the same mistake
 
-The analyzer continues after an error so that independent mistakes at other source locations are reported together. When one declaration violates several rules, reserved-name violations take priority over declaration-conflict diagnostics.
+The analyzer continues after an error so that independent mistakes at other source locations are reported together. When one declaration violates several rules, conflicts with names defined by GIC take priority over other declaration conflicts.
 
 ### Examples
 
@@ -1217,25 +1214,25 @@ Unexpected token
 Error at line 3, column 5:
   x = 10;
   ^
-  Variable 'x' is not declared. Did you mean to use 'let x = 10;'?
+  Cannot find name 'x'.
 ```
 
-**Good error (shadowing):**
+**Good error (declaration conflict):**
 
 ```
 Error at line 8, column 10:
   func draw(size) {
             ^^^^
-  Parameter 'size' shadows global variable 'size' declared at line 1.
+  Cannot declare 'size' because that name already exists.
 ```
 
-**Good error (function not declared):**
+**Good error (call before declaration):**
 
 ```
 Error at line 5, column 3:
   helper(10);
   ^^^^^^
-  Function 'helper' is not declared. Functions must be declared before use.
+  Cannot call function 'helper' before its declaration.
 ```
 
 **Good error (void function in expression):**
@@ -1244,8 +1241,7 @@ Error at line 5, column 3:
 Error at line 12, column 14:
   let x = drawSquare(10, 20, 5);
           ^^^^^^^^^^
-  Void function 'drawSquare' cannot be used in an expression.
-  Call it as a standalone statement: drawSquare(10, 20, 5);
+  Function 'drawSquare' does not return a value and cannot be used in an expression.
 ```
 
 ---
