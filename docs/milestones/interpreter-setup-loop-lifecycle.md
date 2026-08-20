@@ -22,11 +22,11 @@ Separate one-time setup execution from frame-by-frame `loop` execution.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.1.md#animation`
-- `../Language specification rev 2.1.md#static-programs`
-- `../Language specification rev 2.1.md#animated-programs`
-- `../Language specification rev 2.1.md#animation-built-ins`
-- `../Language specification rev 2.1.md#grammar-ebnf`
+- `../Language specification.md#animation`
+- `../Language specification.md#static-programs`
+- `../Language specification.md#animated-programs`
+- `../Language specification.md#animation-built-ins`
+- `../Language specification.md#grammar-ebnf`
 
 ## Existing Code Context
 
@@ -39,7 +39,7 @@ Separate one-time setup execution from frame-by-frame `loop` execution.
 - Program lifecycle entry point for setup execution.
 - Testable single-frame execution method for loop bodies.
 - Persistent global environment across setup and frames.
-- Fresh loop-local environment per frame where semantic rules require it.
+- Fresh block-local environment for the loop body on every frame.
 - No-loop static program behavior.
 - Minimal scheduler seam sufficient for tests.
 
@@ -74,7 +74,7 @@ The exact names are not important. The boundary is important: frame execution mu
 
 - Each frame executes only the loop body.
 - Global bindings persist between frames.
-- Loop-local declarations are recreated according to the chosen loop-body scoping model.
+- Block-local declarations in the loop body are recreated on every frame.
 - Assignments update globals when the global environment owns the name.
 - Frame execution should be deterministic when called repeatedly by a test.
 

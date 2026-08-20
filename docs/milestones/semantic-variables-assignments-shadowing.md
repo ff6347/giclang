@@ -19,7 +19,7 @@ Complete or review:
 ## Concepts to Understand
 
 - Symbol tables record names that are visible in a scope.
-- Revision 2.1 uses a simple flat scope baseline: global names, function-local parameters/variables, and loop-local repeat variables.
+- Revision 2.2 uses lexical scopes: global declarations, function-local parameters and direct declarations, and block-local declarations in control-flow bodies.
 - Top-level variables and functions share one namespace whose names are reserved program-wide.
 - Functions can read and modify globals, but there are no closures over non-global enclosing scopes.
 - Declared-before-use means source order matters even though global names are reserved regardless of order.
@@ -29,13 +29,13 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Variables](<../Language specification rev 2.1.md#variables>)
-- [Scoping Rules](<../Language specification rev 2.1.md#scoping-rules>)
-- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Variables](<../Language specification.md#variables>)
+- [Scoping Rules](<../Language specification.md#scoping-rules>)
+- [Semantic Analyzer component](<../Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 
-There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, and `Identifier` nodes against the revision 2.1 flat scope model: declarations in ordinary blocks belong to the enclosing global or function scope unless they are repeat loop variables.
+There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, and `Identifier` nodes against the revision 2.2 lexical scope model. Every `if`, `else`, `repeat`, and `loop` body introduces a block scope, and the `repeat` variable belongs to its repeat body scope.
 
 ## TDD-Oriented Student Checklist
 
@@ -49,7 +49,7 @@ There is no grammar change. This lesson uses existing `VarDecl`, `Assignment`, a
 - Report assignments to functions and built-ins.
 - Report at most one primary diagnostic at each source location while collecting independent diagnostics elsewhere.
 - Check function-local variables do not leak into global scope.
-- Check ordinary block declarations follow the revision 2.1 flat scope baseline rather than creating new block-local scopes.
+- Check declarations in `if`, `else`, `repeat`, and `loop` bodies are block-local and do not leak after their block.
 - Check diagnostics point at the name being declared, assigned, or used.
 
 ## Non-Goals
@@ -65,7 +65,7 @@ Use analyzer tests for each checklist behavior, including diagnostic message and
 
 ## Decision Gates
 
-- No open gate for ordinary block scopes: use the revision 2.1 flat scope baseline.
+- No open gate for control-flow scopes: revision 2.2 requires block scope for every `if`, `else`, `repeat`, and `loop` body.
 - Reserved-name diagnostics are part of this lesson and apply at every declaration site.
 - Global names are reserved program-wide, so analysis must distinguish global name reservation from source-order visibility.
 - A source location receives at most one primary diagnostic.

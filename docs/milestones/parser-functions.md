@@ -86,10 +86,10 @@ The function name and parameters are `Token` values, matching the identifier con
 
 - A function declaration is a statement that introduces a name and a braced body.
 - Parameters are a comma-separated list of identifier tokens inside required parentheses.
-- A function body uses the same block behavior as other braced statement lists.
+- A function body owns a function-local scope, while control-flow bodies own block-local scopes.
 - `return;` has no value expression; `return expression;` has one.
 - The parser records return syntax wherever it appears, but later semantic lessons decide whether that placement and return kind are legal.
-- A `func` declared inside a function, `if`, or `repeat` block is a parse error. Language specification revision 2.1 defines only global and function-local scopes with no closures, so functions can only be declared at the top level.
+- A `func` declared inside a function, `if`, or `repeat` block is a parse error. Language specification revision 2.2 keeps function declarations global and does not support closures.
 
 ## Behavior Checklist
 

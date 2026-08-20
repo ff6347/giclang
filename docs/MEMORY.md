@@ -5,13 +5,16 @@
 
 ## Language Design
 
-- [decision] Language specification revision 2 is the current specification;
-  revisions 0 and 1 are historical references.
+- [decision] Language specification revision 2.2 is the current specification;
+  revisions 0 through 2.1 are historical references.
 - [decision] Functions may only be declared at the top level. A `func`
   inside a function, `if`, or `repeat` block is a parse error (`Unexpected
-'func'. Functions can only be declared at the top level.`). This matches
-  the rev 2 flat scoping model: only Global and Function-local scopes exist,
-  and the "No closures" rule applies.
+'func'. Functions can only be declared at the top level.`). Function
+  declarations remain global-only, and the "No closures" rule applies.
+- [decision] Every `if`, `else`, `repeat`, and `loop` body introduces a block
+  scope. Declarations do not leak after their block, cannot shadow visible
+  names, and may be reused in separate non-overlapping scopes unless a global
+  declaration reserves the name.
 - [decision] GIC examples use camelCase for variables and functions and
   uppercase names for constants, while underscores remain valid in identifiers.
 - [lesson] Creative-coding algorithms involving proximity graphs, particles,
