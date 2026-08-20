@@ -188,13 +188,17 @@ export class Analyser {
 
 	protected onIfStmt(statement: IfStmt) {
 		this.walkExpression(statement.condition);
+		this.scopes.push(new Scope());
 		for (const thenStatement of statement.thenBranch) {
 			this.walkStatement(thenStatement);
 		}
+		this.scopes.pop();
 		if (statement.elseBranch) {
+			this.scopes.push(new Scope());
 			for (const elseStatement of statement.elseBranch) {
 				this.walkStatement(elseStatement);
 			}
+			this.scopes.pop();
 		}
 	}
 
@@ -284,8 +288,10 @@ export class Analyser {
 	}
 
 	protected onLoopStatement(loop: LoopStmt): void {
+		this.scopes.push(new Scope());
 		for (const statement of loop.body) {
 			this.walkStatement(statement);
 		}
+		this.scopes.pop();
 	}
 }
