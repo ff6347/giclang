@@ -3,7 +3,7 @@
 
 # Lessons
 
-- [x] [Specify GIC revision 2.1](<Language specification rev 2.1.md>)
+- [x] [Specify GIC revision 2.2](<Language specification rev 2.2.md>)
 - [x] [Build the lexer](milestones/lexer.md)
 - [x] [Build the basic parser and AST](milestones/parser-basic.md)
 - [x] [Parse expression precedence](milestones/parser-expression-precedence.md)

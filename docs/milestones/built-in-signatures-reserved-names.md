@@ -26,16 +26,16 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Variables](<../Language specification rev 2.1.md#variables>)
-- [Built-in Functions](<../Language specification rev 2.1.md#built-in-functions>)
-- [Canvas](<../Language specification rev 2.1.md#canvas>)
-- [Colors](<../Language specification rev 2.1.md#colors>)
-- [Shape Style](<../Language specification rev 2.1.md#shape-style>)
-- [Shape Drawing](<../Language specification rev 2.1.md#shape-drawing>)
-- [Console Output](<../Language specification rev 2.1.md#console-output>)
-- [Math Functions](<../Language specification rev 2.1.md#math-functions>)
-- [Constants](<../Language specification rev 2.1.md#constants>)
-- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Variables](<../Language specification rev 2.2.md#variables>)
+- [Built-in Functions](<../Language specification rev 2.2.md#built-in-functions>)
+- [Canvas](<../Language specification rev 2.2.md#canvas>)
+- [Colors](<../Language specification rev 2.2.md#colors>)
+- [Shape Style](<../Language specification rev 2.2.md#shape-style>)
+- [Shape Drawing](<../Language specification rev 2.2.md#shape-drawing>)
+- [Console Output](<../Language specification rev 2.2.md#console-output>)
+- [Math Functions](<../Language specification rev 2.2.md#math-functions>)
+- [Constants](<../Language specification rev 2.2.md#constants>)
+- [Semantic Analyzer component](<../Language specification rev 2.2.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

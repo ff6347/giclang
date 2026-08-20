@@ -24,11 +24,11 @@ Expose frame state and scheduler seams without browser timers.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.1.md#animation`
-- `../Language specification rev 2.1.md#animated-programs`
-- `../Language specification rev 2.1.md#animation-built-ins`
-- `../Language specification rev 2.1.md#constants`
-- `../Language specification rev 2.1.md#implementation-architecture`
+- `../Language specification rev 2.2.md#animation`
+- `../Language specification rev 2.2.md#animated-programs`
+- `../Language specification rev 2.2.md#animation-built-ins`
+- `../Language specification rev 2.2.md#constants`
+- `../Language specification rev 2.2.md#implementation-architecture`
 
 ## Existing Code Context
 

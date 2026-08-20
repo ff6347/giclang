@@ -24,10 +24,10 @@ Run user-defined functions with isolated call environments and observable `retur
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.1.md#functions`
-- `../Language specification rev 2.1.md#scoping-rules`
-- `../Language specification rev 2.1.md#grammar-ebnf`
-- `../Language specification rev 2.1.md#error-message-guidelines`
+- `../Language specification rev 2.2.md#functions`
+- `../Language specification rev 2.2.md#scoping-rules`
+- `../Language specification rev 2.2.md#grammar-ebnf`
+- `../Language specification rev 2.2.md#error-message-guidelines`
 
 ## Existing Code Context
 

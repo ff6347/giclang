@@ -12,7 +12,7 @@ IDE behavior should they have?
 
 ## Current Baseline
 
-Revision 2.1 currently supports `//` single-line comments only and says proposed
+Revision 2.2 currently supports `//` single-line comments only and says proposed
 documentation comments are not part of the current syntax. The proposal mentions
 a small GIC-specific documentation format for functions, parameters, return
 values, variables, and reusable library code. Open git-bug `0885b28` tracks
@@ -34,7 +34,7 @@ chosen may duplicate or contradict later metadata rules.
 - **`/** */` block documentation comments**
   - Provides a familiar documentation-comment shape from JavaScript-like
     ecosystems.
-  - Adds multi-line comment lexing that revision 2.1 currently excludes.
+  - Adds multi-line comment lexing that revision 2.2 currently excludes.
 - **Structured ordinary `//` comments**
   - Reuses the existing comment form with conventions for tags or declaration
     proximity.
@@ -74,9 +74,9 @@ chosen may duplicate or contradict later metadata rules.
 
 ## Related Guidance
 
-- [Comments](<../Language specification rev 2.1.md#comments>)
-- [Proposed Documentation Comments](<../Language specification rev 2.1.md#proposed-documentation-comments>)
-- [LSP Server component](<../Language specification rev 2.1.md#6-lsp-server-lspserverts>)
+- [Comments](<../Language specification rev 2.2.md#comments>)
+- [Proposed Documentation Comments](<../Language specification rev 2.2.md#proposed-documentation-comments>)
+- [LSP Server component](<../Language specification rev 2.2.md#6-lsp-server-lspserverts>)
 - [Browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - [Language design journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 

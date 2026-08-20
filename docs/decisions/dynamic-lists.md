@@ -74,9 +74,9 @@ signatures, and teaching order.
 
 ## Related Guidance
 
-- [Data Types](<../Language specification rev 2.1.md#data-types>)
-- [Variables](<../Language specification rev 2.1.md#variables>)
-- [Implementation Architecture](<../Language specification rev 2.1.md#implementation-architecture>)
+- [Data Types](<../Language specification rev 2.2.md#data-types>)
+- [Variables](<../Language specification rev 2.2.md#variables>)
+- [Implementation Architecture](<../Language specification rev 2.2.md#implementation-architecture>)
 - [Memory: Language Design](../MEMORY.md#language-design)
 - [Language design journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 - [Runtime value milestone](../milestones/runtime-value-environment-errors.md)

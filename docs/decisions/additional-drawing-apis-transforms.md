@@ -8,11 +8,11 @@ Status: Unresolved
 ## Decision Question
 
 Should GIC add more drawing primitives, helper variants, or transform functions
-beyond the current revision 2.1 shape API?
+beyond the current revision 2.2 shape API?
 
 ## Current Baseline
 
-Revision 2.1 defines a fixed 101×101 canvas, style functions, and shape drawing
+Revision 2.2 defines a fixed 101×101 canvas, style functions, and shape drawing
 functions for point, line, rect, circle, ellipse, triangle, quad, and arc. Its
 additional considerations ask whether extra shapes such as Bezier curves or
 arbitrary polygons are needed and whether transform functions such as rotate,
@@ -28,7 +28,7 @@ subsequent drawing command is interpreted.
 ## Options and Consequences
 
 - **No expansion**
-  - Keeps the drawing surface aligned with revision 2.1.
+  - Keeps the drawing surface aligned with revision 2.2.
   - Requires complex shapes and coordinate reuse to be built from existing
     primitives.
 - **Extra primitives**
@@ -74,9 +74,9 @@ subsequent drawing command is interpreted.
 
 ## Related Guidance
 
-- [Canvas](<../Language specification rev 2.1.md#canvas>)
-- [Shape Drawing](<../Language specification rev 2.1.md#shape-drawing>)
-- [Additional Considerations](<../Language specification rev 2.1.md#additional-considerations>)
+- [Canvas](<../Language specification rev 2.2.md#canvas>)
+- [Shape Drawing](<../Language specification rev 2.2.md#shape-drawing>)
+- [Additional Considerations](<../Language specification rev 2.2.md#additional-considerations>)
 - [Render backend interface milestone](../milestones/render-backend-interface-command-model.md)
 - [Recording backend milestone](../milestones/recording-backend-drawing-built-ins.md)
 - [Browser Canvas static backend milestone](../milestones/browser-canvas-static-backend.md)

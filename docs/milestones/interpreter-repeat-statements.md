@@ -22,10 +22,10 @@ Execute numeric repeat loops while keeping loop-variable scope isolated.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.1.md#control-flow`
-- `../Language specification rev 2.1.md#scoping-rules`
-- `../Language specification rev 2.1.md#grammar-ebnf`
-- `../Language specification rev 2.1.md#error-message-guidelines`
+- `../Language specification rev 2.2.md#control-flow`
+- `../Language specification rev 2.2.md#scoping-rules`
+- `../Language specification rev 2.2.md#grammar-ebnf`
+- `../Language specification rev 2.2.md#error-message-guidelines`
 
 ## Existing Code Context
 

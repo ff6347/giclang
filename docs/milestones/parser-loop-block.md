@@ -29,10 +29,10 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Animation](<../Language specification rev 2.1.md#animation>)
-- [Animated Programs](<../Language specification rev 2.1.md#animated-programs>)
-- [Grammar (EBNF)](<../Language specification rev 2.1.md#grammar-ebnf>)
-- [Parser component](<../Language specification rev 2.1.md#2-parser-parserts>)
+- [Animation](<../Language specification rev 2.2.md#animation>)
+- [Animated Programs](<../Language specification rev 2.2.md#animated-programs>)
+- [Grammar (EBNF)](<../Language specification rev 2.2.md#grammar-ebnf>)
+- [Parser component](<../Language specification rev 2.2.md#2-parser-parserts>)
 
 ## Grammar and AST Shape
 

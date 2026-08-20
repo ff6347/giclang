@@ -26,15 +26,15 @@ Curate deterministic `.gic` examples as executable documentation and visual regr
 
 ## Relevant Specification Links
 
-- [Example Programs](<../Language specification rev 2.1.md#example-programs>)
-- [Visual Regression Tests](<../Language specification rev 2.1.md#visual-regression-tests>)
-- [Integration Tests](<../Language specification rev 2.1.md#integration-tests>)
-- [Canvas](<../Language specification rev 2.1.md#canvas>)
-- [Shape Drawing](<../Language specification rev 2.1.md#shape-drawing>)
-- [Math Functions](<../Language specification rev 2.1.md#math-functions>)
-- [Animation](<../Language specification rev 2.1.md#animation>)
-- [Animation Built-ins](<../Language specification rev 2.1.md#animation-built-ins>)
-- [Testing Strategy](<../Language specification rev 2.1.md#testing-strategy>)
+- [Example Programs](<../Language specification rev 2.2.md#example-programs>)
+- [Visual Regression Tests](<../Language specification rev 2.2.md#visual-regression-tests>)
+- [Integration Tests](<../Language specification rev 2.2.md#integration-tests>)
+- [Canvas](<../Language specification rev 2.2.md#canvas>)
+- [Shape Drawing](<../Language specification rev 2.2.md#shape-drawing>)
+- [Math Functions](<../Language specification rev 2.2.md#math-functions>)
+- [Animation](<../Language specification rev 2.2.md#animation>)
+- [Animation Built-ins](<../Language specification rev 2.2.md#animation-built-ins>)
+- [Testing Strategy](<../Language specification rev 2.2.md#testing-strategy>)
 
 ## Included
 

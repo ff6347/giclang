@@ -19,11 +19,11 @@ What language-service capability route will GIC expose for diagnostics, syntax h
   - [Build the browser IDE MVP with diagnostics and static preview](../milestones/browser-ide-mvp-diagnostics-static-preview.md)
   - [Add browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - Relevant specification anchors:
-  - [LSP server](<../Language specification rev 2.1.md#6-lsp-server-lspserverts>)
-  - [VS Code extension](<../Language specification rev 2.1.md#vs-code-extension>)
-  - [Syntax highlighting](<../Language specification rev 2.1.md#syntax-highlighting>)
-  - [Live preview panel](<../Language specification rev 2.1.md#live-preview-panel>)
-  - [CLI tool](<../Language specification rev 2.1.md#cli-tool>)
+  - [LSP server](<../Language specification rev 2.2.md#6-lsp-server-lspserverts>)
+  - [VS Code extension](<../Language specification rev 2.2.md#vs-code-extension>)
+  - [Syntax highlighting](<../Language specification rev 2.2.md#syntax-highlighting>)
+  - [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
+  - [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
 
 ## Why This Is a Gate
 
@@ -69,11 +69,11 @@ Browser IDE milestones need a defined route for diagnostics, parse errors, seman
 
 - [Memory](../MEMORY.md)
 - [Lessons](../LESSONS.md)
-- [LSP server](<../Language specification rev 2.1.md#6-lsp-server-lspserverts>)
-- [VS Code extension](<../Language specification rev 2.1.md#vs-code-extension>)
-- [Syntax highlighting](<../Language specification rev 2.1.md#syntax-highlighting>)
-- [Live preview panel](<../Language specification rev 2.1.md#live-preview-panel>)
-- [CLI tool](<../Language specification rev 2.1.md#cli-tool>)
+- [LSP server](<../Language specification rev 2.2.md#6-lsp-server-lspserverts>)
+- [VS Code extension](<../Language specification rev 2.2.md#vs-code-extension>)
+- [Syntax highlighting](<../Language specification rev 2.2.md#syntax-highlighting>)
+- [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
+- [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
 
 ## Non-Goals
 

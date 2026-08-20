@@ -7,12 +7,12 @@ Status: Unresolved
 
 ## Decision Question
 
-Should GIC expand the revision 2.1 math built-ins beyond the current list, and if so,
+Should GIC expand the revision 2.2 math built-ins beyond the current list, and if so,
 what scope should the expansion have?
 
 ## Current Baseline
 
-Revision 2.1 lists random, randomSeed, rounding, absolute value, min, max, degree-based
+Revision 2.2 lists random, randomSeed, rounding, absolute value, min, max, degree-based
 sin/cos, sqrt, pow, and constants such as PI, WIDTH, HEIGHT, and frameCount.
 Project memory records an open question about whether common Processing-style
 helpers such as `dist()` belong in the built-in math API.
@@ -26,7 +26,7 @@ larger Processing-style bundle.
 
 ## Options and Consequences
 
-- **Keep revision 2.1 math only**
+- **Keep revision 2.2 math only**
   - Preserves the current small built-in surface.
   - Requires users to compose helpers manually or define functions in examples.
 - **Add `dist` only**
@@ -63,16 +63,16 @@ larger Processing-style bundle.
 
 ## Unblocks
 
-- Future implementation milestones for any selected math helpers beyond revision 2.1.
+- Future implementation milestones for any selected math helpers beyond revision 2.2.
 - Future examples and visual-regression coverage that require selected expanded
   math helpers.
 
 ## Related Guidance
 
-- [Math Functions](<../Language specification rev 2.1.md#math-functions>)
-- [Built-in Functions](<../Language specification rev 2.1.md#built-in-functions>)
-- [Constants](<../Language specification rev 2.1.md#constants>)
-- [User-Defined Functions](<../Language specification rev 2.1.md#user-defined-functions>)
+- [Math Functions](<../Language specification rev 2.2.md#math-functions>)
+- [Built-in Functions](<../Language specification rev 2.2.md#built-in-functions>)
+- [Constants](<../Language specification rev 2.2.md#constants>)
+- [User-Defined Functions](<../Language specification rev 2.2.md#user-defined-functions>)
 - [Built-in signatures milestone](../milestones/built-in-signatures-reserved-names.md)
 - [Pure math built-ins milestone](../milestones/pure-math-print-randomness-built-ins.md)
 - [Example verification milestone](../milestones/example-program-visual-regression.md)

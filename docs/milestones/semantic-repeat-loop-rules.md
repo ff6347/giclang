@@ -27,11 +27,11 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Loops](<../Language specification rev 2.1.md#loops>)
-- [Animation](<../Language specification rev 2.1.md#animation>)
-- [Animated Programs](<../Language specification rev 2.1.md#animated-programs>)
-- [Grammar (EBNF)](<../Language specification rev 2.1.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [Loops](<../Language specification rev 2.2.md#loops>)
+- [Animation](<../Language specification rev 2.2.md#animation>)
+- [Animated Programs](<../Language specification rev 2.2.md#animated-programs>)
+- [Grammar (EBNF)](<../Language specification rev 2.2.md#grammar-ebnf>)
+- [Semantic Analyzer component](<../Language specification rev 2.2.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

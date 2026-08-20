@@ -57,9 +57,9 @@ Function and call analysis must know which call targets are syntactically valid 
 
 ## Related Guidance
 
-- [User-Defined Functions](<../Language specification rev 2.1.md#user-defined-functions>)
-- [Grammar (EBNF)](<../Language specification rev 2.1.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../Language specification rev 2.1.md#3-semantic-analyzer-analyzerts>)
+- [User-Defined Functions](<../Language specification rev 2.2.md#user-defined-functions>)
+- [Grammar (EBNF)](<../Language specification rev 2.2.md#grammar-ebnf>)
+- [Semantic Analyzer component](<../Language specification rev 2.2.md#3-semantic-analyzer-analyzerts>)
 - [Parser call expressions](../milestones/parser-call-expressions.md)
 - [Semantic functions, calls, and arity](../milestones/semantic-functions-calls-arity.md)
 
