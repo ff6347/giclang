@@ -133,4 +133,167 @@ x = false;
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
+
+	test("should report a function-local name used at global scope", () => {
+		const source = "func make(){let inside=1;return;}\ninside=2;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'inside'.",
+			line: 1,
+			start: 34,
+			end: 40,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should allow a function to read a global variable", () => {
+		const source = "let outside = 1;\nfunc read(){\nprint(outside);\nreturn;}";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should allow a function to assign to a global variable", () => {
+		const source = "let level = 1;\nfunc update(){\nlevel = 2;\nreturn;\n}";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should make a function parameter visible inside its body", () => {
+		const source = "func echo(value){\nprint(value);\nreturn;\n}";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report a function parameter used at global scope", () => {
+		const source = "func echo(value){\nreturn;\n}\nvalue = 1;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'value'.",
+			line: 3,
+			start: 28,
+			end: 33,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should find a function name after its declaration", () => {
+		const source = "func greet(){return;}\ngreet();";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report a function call before its declaration", () => {
+		const source = "greet();\nfunc greet(){}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'greet'.",
+			line: 0,
+			start: 0,
+			end: 5,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should allow a function to call itself", () => {
+		const source = "func again(){again();return;}";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report a duplicate function declaration", () => {
+		const source = "func paint(){return;}\nfunc paint(){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'paint' because that name already exists.",
+			line: 1,
+			start: 27,
+			end: 32,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a function name that conflicts with a global variable", () => {
+		const source = "let paint = 1;\nfunc paint(){return;}";
+		const expected = {
+			message: "Cannot declare 'paint' because that name already exists.",
+			line: 1,
+			start: 20,
+			end: 25,
+		};
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report duplicate parameter names", () => {
+		const source = "func blend(value,value){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'value' because that name already exists.",
+			line: 0,
+			start: 17,
+			end: 22,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a parameter that reuses a visible global name", () => {
+		const source = "let size = 1;\nfunc scale(size){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'size' because that name already exists.",
+			line: 1,
+			start: 25,
+			end: 29,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a function-local variable that reuses a global name", () => {
+		const source = "let size=1;\nfunc adjust(){let size=2;return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'size' because that name already exists.",
+			line: 1,
+			start: 30,
+			end: 34,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a local variable that conflicts with a later global", () => {
+		const source = "func make(){let size=1;return;}\nlet size=2;";
+		const result = analyseSource(source);
+
+		const expected = {
+			message: "Cannot declare 'size' because that name already exists.",
+			line: 0,
+			start: 16,
+			end: 20,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a parameter that conflicts with a later global", () => {
+		const source = "func scale(size){return;}\nlet size = 1;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'size' because that name already exists.",
+			line: 0,
+			start: 11,
+			end: 15,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });

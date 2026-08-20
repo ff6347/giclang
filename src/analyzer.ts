@@ -21,18 +21,18 @@ import type {
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
 import { reservedNames } from "./keywords.ts";
+import { Scope } from "./scope.ts";
 import type { Token } from "./tokens.ts";
 
-class Scope {
-	declarations: Map<string, Token> = new Map();
-}
-
 export class Analyser {
-	scope: Scope = new Scope();
+	scopes: Scope[] = [];
 	diagnostics: Diagnostic[] = [];
 	program: Program;
+	programGlobalNames: Set<string> = new Set();
 	constructor(program: Program) {
 		this.program = program;
+		const globalScope = new Scope();
+		this.scopes.push(globalScope);
 	}
 
 	missingNameDiagnostic(token: Token): Diagnostic {
@@ -42,6 +42,14 @@ export class Analyser {
 			start: token.start,
 			end: token.end,
 		};
+	}
+	findDeclaration(name: string) {
+		for (let i = this.scopes.length - 1; i >= 0; i--) {
+			if (this.scopes[i]?.declarations.has(name)) {
+				return this.scopes[i]?.declarations.get(name);
+			}
+		}
+		return undefined;
 	}
 	walkStatement(statement: Statement) {
 		switch (statement.type) {
@@ -95,9 +103,40 @@ export class Analyser {
 		});
 	}
 	protected onFuncStmt(statement: FuncStmt) {
+		if (this.findDeclaration(statement.name.lexeme) !== undefined) {
+			this.diagnostics.push({
+				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			});
+		}
+		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, statement.name);
+		this.scopes.push(new Scope());
+		if (statement.params) {
+			statement.params.forEach((param) => {
+				if (this.programGlobalNames.has(param.lexeme)) {
+					this.diagnostics.push({
+						message: `Cannot declare '${param.lexeme}' because that name already exists.`,
+						line: param.line,
+						start: param.start,
+						end: param.end,
+					});
+				} else if (this.findDeclaration(param.lexeme) !== undefined) {
+					this.diagnostics.push({
+						message: `Cannot declare '${param.lexeme}' because that name already exists.`,
+						line: param.line,
+						start: param.start,
+						end: param.end,
+					});
+				}
+				this.scopes.at(-1)?.declarations.set(param.lexeme, param);
+			});
+		}
 		statement.body.forEach((stmt) => {
 			this.walkStatement(stmt);
 		});
+		this.scopes.pop();
 	}
 	protected onAssignment(statement: Assignment) {
 		if (reservedNames.has(statement.name.lexeme)) {
@@ -108,7 +147,7 @@ export class Analyser {
 				end: statement.name.end,
 			};
 			this.diagnostics.push(diagnostic);
-		} else if (!this.scope.declarations.has(statement.name.lexeme)) {
+		} else if (this.findDeclaration(statement.name.lexeme) === undefined) {
 			this.diagnostics.push(this.missingNameDiagnostic(statement.name));
 		}
 		this.walkExpression(statement.value);
@@ -126,7 +165,18 @@ export class Analyser {
 				end: statement.name.end,
 			};
 			this.diagnostics.push(diagnostic);
-		} else if (this.scope.declarations.has(statement.name.lexeme)) {
+		} else if (
+			this.scopes.length > 1 &&
+			this.programGlobalNames.has(statement.name.lexeme)
+		) {
+			const diagnostic: Diagnostic = {
+				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			};
+			this.diagnostics.push(diagnostic);
+		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
 			const diagnostic: Diagnostic = {
 				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
 				line: statement.name.line,
@@ -135,7 +185,9 @@ export class Analyser {
 			};
 			this.diagnostics.push(diagnostic);
 		} else {
-			this.scope.declarations.set(statement.name.lexeme, statement.name);
+			this.scopes
+				.at(-1)
+				?.declarations.set(statement.name.lexeme, statement.name);
 		}
 	}
 
@@ -202,7 +254,7 @@ export class Analyser {
 	protected onIdentifier(expr: IdentifierExpr) {
 		// leaf: no children to walk
 		const known =
-			this.scope.declarations.has(expr.name.lexeme) ||
+			this.findDeclaration(expr.name.lexeme) ||
 			reservedNames.has(expr.name.lexeme);
 		if (!known) {
 			this.diagnostics.push(this.missingNameDiagnostic(expr.name));
@@ -221,6 +273,11 @@ export class Analyser {
 	}
 
 	analyze(): Diagnostic[] {
+		for (const statement of this.program.statements) {
+			if (statement.type === "FuncStmt" || statement.type === "VarDecl") {
+				this.programGlobalNames.add(statement.name.lexeme);
+			}
+		}
 		for (const statement of this.program.statements) {
 			this.walkStatement(statement);
 		}
