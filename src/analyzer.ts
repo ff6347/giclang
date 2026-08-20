@@ -20,6 +20,11 @@ import type {
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
+import {
+	diagnosticAssignDefinedByGIC,
+	diagnosticDeclareAlreadyExisting,
+	diagnosticDeclareDefinedByGIC,
+} from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
 import { Scope } from "./scope.ts";
 import type { Token } from "./tokens.ts";
@@ -98,11 +103,24 @@ export class Analyser {
 		if (statement.step) {
 			this.walkExpression(statement.step);
 		}
+
 		this.scopes.push(new Scope());
 
-		this.scopes
-			.at(-1)
-			?.declarations.set(statement.variable.lexeme, statement.variable);
+		if (reservedNames.has(statement.variable.lexeme)) {
+			this.diagnostics.push(diagnosticDeclareDefinedByGIC(statement.variable));
+		} else if (this.programGlobalNames.has(statement.variable.lexeme)) {
+			this.diagnostics.push(
+				diagnosticDeclareAlreadyExisting(statement.variable),
+			);
+		} else if (this.findDeclaration(statement.variable.lexeme) !== undefined) {
+			this.diagnostics.push(
+				diagnosticDeclareAlreadyExisting(statement.variable),
+			);
+		} else {
+			this.scopes
+				.at(-1)
+				?.declarations.set(statement.variable.lexeme, statement.variable);
+		}
 		statement.body.forEach((stmt) => {
 			this.walkStatement(stmt);
 		});
@@ -110,45 +128,20 @@ export class Analyser {
 	}
 	protected onFuncStmt(statement: FuncStmt) {
 		if (reservedNames.has(statement.name.lexeme)) {
-			this.diagnostics.push({
-				message: `Cannot declare '${statement.name.lexeme}' because that name is defined by GIC.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			});
+			this.diagnostics.push(diagnosticDeclareDefinedByGIC(statement.name));
 		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
-			this.diagnostics.push({
-				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			});
+			this.diagnostics.push(diagnosticDeclareAlreadyExisting(statement.name));
 		}
 		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, statement.name);
 		this.scopes.push(new Scope());
 		if (statement.params) {
 			statement.params.forEach((param) => {
 				if (reservedNames.has(param.lexeme)) {
-					this.diagnostics.push({
-						message: `Cannot declare '${param.lexeme}' because that name is defined by GIC.`,
-						line: param.line,
-						start: param.start,
-						end: param.end,
-					});
+					this.diagnostics.push(diagnosticDeclareDefinedByGIC(param));
 				} else if (this.programGlobalNames.has(param.lexeme)) {
-					this.diagnostics.push({
-						message: `Cannot declare '${param.lexeme}' because that name already exists.`,
-						line: param.line,
-						start: param.start,
-						end: param.end,
-					});
+					this.diagnostics.push(diagnosticDeclareAlreadyExisting(param));
 				} else if (this.findDeclaration(param.lexeme) !== undefined) {
-					this.diagnostics.push({
-						message: `Cannot declare '${param.lexeme}' because that name already exists.`,
-						line: param.line,
-						start: param.start,
-						end: param.end,
-					});
+					this.diagnostics.push(diagnosticDeclareAlreadyExisting(param));
 				}
 				this.scopes.at(-1)?.declarations.set(param.lexeme, param);
 			});
@@ -160,12 +153,9 @@ export class Analyser {
 	}
 	protected onAssignment(statement: Assignment) {
 		if (reservedNames.has(statement.name.lexeme)) {
-			const diagnostic: Diagnostic = {
-				message: `Cannot assign to '${statement.name.lexeme}' because that name is defined by GIC.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			};
+			const diagnostic: Diagnostic = diagnosticAssignDefinedByGIC(
+				statement.name,
+			);
 			this.diagnostics.push(diagnostic);
 		} else if (this.findDeclaration(statement.name.lexeme) === undefined) {
 			this.diagnostics.push(this.missingNameDiagnostic(statement.name));
@@ -178,31 +168,16 @@ export class Analyser {
 	protected onVarDecl(statement: VarDeclStmt) {
 		this.walkExpression(statement.initializer);
 		if (reservedNames.has(statement.name.lexeme)) {
-			const diagnostic: Diagnostic = {
-				message: `Cannot declare '${statement.name.lexeme}' because that name is defined by GIC.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			};
-			this.diagnostics.push(diagnostic);
+			this.diagnostics.push(diagnosticDeclareDefinedByGIC(statement.name));
 		} else if (
 			this.scopes.length > 1 &&
 			this.programGlobalNames.has(statement.name.lexeme)
 		) {
-			const diagnostic: Diagnostic = {
-				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			};
-			this.diagnostics.push(diagnostic);
+			this.diagnostics.push(diagnosticDeclareAlreadyExisting(statement.name));
 		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
-			const diagnostic: Diagnostic = {
-				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
-				line: statement.name.line,
-				start: statement.name.start,
-				end: statement.name.end,
-			};
+			const diagnostic: Diagnostic = diagnosticDeclareAlreadyExisting(
+				statement.name,
+			);
 			this.diagnostics.push(diagnostic);
 		} else {
 			this.scopes
