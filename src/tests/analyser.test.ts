@@ -296,4 +296,96 @@ x = false;
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
+
+	test("should report a function using GIC-defined name", () => {
+		const source = "func print(){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'print' because that name is defined by GIC.",
+			line: 0,
+			start: 5,
+			end: 10,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a parameter using a GIC-defined name", () => {
+		const source = "func show(PI){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'PI' because that name is defined by GIC.",
+			line: 0,
+			start: 10,
+			end: 12,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should make a repeat variable visible inside its body", () => {
+		const source = "repeat(i,0,3){print(i);}";
+		const result = analyseSource(source);
+
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report a repeat variable used after its loop", () => {
+		const source = "repeat(i,0,3){print(i);}\ni=1;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'i'.",
+			line: 1,
+			start: 25,
+			end: 26,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test.todo(`should report a repeat variable using a GIC-defined name`);
+	test.todo(
+		`should report a repeat variable referenced in its range expressions`,
+	);
+	test.todo(
+		`should report a repeat variable that reuses a visible function-local name`,
+	);
+	test.todo(
+		`should report a repeat variable that conflicts with a later global name`,
+	);
+	test.todo(`should allow the same repeat variable name in separate loops`);
+	test.todo(
+		`should report a variable in a repeat body that reuses the repeat variable`,
+	);
+	test.todo(
+		`should keep a variable declared in a repeat body in the enclosing scope`,
+	);
+
+	test.todo(
+		`should report a function-local variable that reuses a parameter name`,
+	);
+	test.todo(`should allow the same local variable name in separate functions`);
+	test.todo(
+		`should report a global variable that conflicts with an earlier function`,
+	);
+	test.todo(
+		`should report a local name that conflicts with a later global function`,
+	);
+	test.todo(`should report a variable read before its global declaration`);
+	test.todo(`should report an assignment before its global declaration`);
+
+	test.todo(`should report assignment to a user-defined function`);
+
+	test.todo(`should keep a top-level if declaration visible after the block`);
+	test.todo(
+		`should keep a function-local if declaration visible after the block`,
+	);
+	test.todo(
+		`should reserve a global name declared in a top-level block throughout the program`,
+	);
+	test.todo(
+		`should reserve a global name declared in the animation loop throughout the program`,
+	);
 });

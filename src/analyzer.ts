@@ -98,12 +98,25 @@ export class Analyser {
 		if (statement.step) {
 			this.walkExpression(statement.step);
 		}
+		this.scopes.push(new Scope());
+
+		this.scopes
+			.at(-1)
+			?.declarations.set(statement.variable.lexeme, statement.variable);
 		statement.body.forEach((stmt) => {
 			this.walkStatement(stmt);
 		});
+		this.scopes.pop();
 	}
 	protected onFuncStmt(statement: FuncStmt) {
-		if (this.findDeclaration(statement.name.lexeme) !== undefined) {
+		if (reservedNames.has(statement.name.lexeme)) {
+			this.diagnostics.push({
+				message: `Cannot declare '${statement.name.lexeme}' because that name is defined by GIC.`,
+				line: statement.name.line,
+				start: statement.name.start,
+				end: statement.name.end,
+			});
+		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
 			this.diagnostics.push({
 				message: `Cannot declare '${statement.name.lexeme}' because that name already exists.`,
 				line: statement.name.line,
@@ -115,7 +128,14 @@ export class Analyser {
 		this.scopes.push(new Scope());
 		if (statement.params) {
 			statement.params.forEach((param) => {
-				if (this.programGlobalNames.has(param.lexeme)) {
+				if (reservedNames.has(param.lexeme)) {
+					this.diagnostics.push({
+						message: `Cannot declare '${param.lexeme}' because that name is defined by GIC.`,
+						line: param.line,
+						start: param.start,
+						end: param.end,
+					});
+				} else if (this.programGlobalNames.has(param.lexeme)) {
 					this.diagnostics.push({
 						message: `Cannot declare '${param.lexeme}' because that name already exists.`,
 						line: param.line,
