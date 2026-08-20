@@ -22,10 +22,10 @@ Evaluate expression AST nodes into GIC runtime values without relying on JavaScr
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.2.md#data-types`
-- `../Language specification rev 2.2.md#operators`
-- `../Language specification rev 2.2.md#grammar-ebnf`
-- `../Language specification rev 2.2.md#error-message-guidelines`
+- `../Language specification.md#data-types`
+- `../Language specification.md#operators`
+- `../Language specification.md#grammar-ebnf`
+- `../Language specification.md#error-message-guidelines`
 
 ## Existing Code Context
 

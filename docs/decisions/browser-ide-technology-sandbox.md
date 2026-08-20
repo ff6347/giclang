@@ -22,11 +22,11 @@ Which browser editor or shell, preview isolation model, runtime scheduling bound
   - [Add browser IDE animation and runtime-error UX](../milestones/browser-ide-animation-runtime-error-ux.md)
   - [Add browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - Relevant specification anchors:
-  - [Implementation architecture](<../Language specification rev 2.2.md#implementation-architecture>)
-  - [Render backends](<../Language specification rev 2.2.md#5-render-backends>)
-  - [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
-  - [Error message guidelines](<../Language specification rev 2.2.md#error-message-guidelines>)
-  - [Testing strategy](<../Language specification rev 2.2.md#testing-strategy>)
+  - [Implementation architecture](<../Language specification.md#implementation-architecture>)
+  - [Render backends](<../Language specification.md#5-render-backends>)
+  - [Live preview panel](<../Language specification.md#live-preview-panel>)
+  - [Error message guidelines](<../Language specification.md#error-message-guidelines>)
+  - [Testing strategy](<../Language specification.md#testing-strategy>)
 
 ## Why This Is a Gate
 
@@ -72,11 +72,11 @@ Browser IDE milestones cannot assume Monaco, iframe preview isolation, worker ex
 
 - [Memory](../MEMORY.md)
 - [Lessons](../LESSONS.md)
-- [Implementation architecture](<../Language specification rev 2.2.md#implementation-architecture>)
-- [Render backends](<../Language specification rev 2.2.md#5-render-backends>)
-- [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
-- [Error message guidelines](<../Language specification rev 2.2.md#error-message-guidelines>)
-- [Testing strategy](<../Language specification rev 2.2.md#testing-strategy>)
+- [Implementation architecture](<../Language specification.md#implementation-architecture>)
+- [Render backends](<../Language specification.md#5-render-backends>)
+- [Live preview panel](<../Language specification.md#live-preview-panel>)
+- [Error message guidelines](<../Language specification.md#error-message-guidelines>)
+- [Testing strategy](<../Language specification.md#testing-strategy>)
 - [ff6347/p5-code-sandbox](https://github.com/ff6347/p5-code-sandbox)
 
 ## Non-Goals

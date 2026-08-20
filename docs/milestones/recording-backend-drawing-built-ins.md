@@ -24,11 +24,11 @@ Make drawing built-ins testable deterministically without Canvas.
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.2.md#canvas`
-- `../Language specification rev 2.2.md#colors`
-- `../Language specification rev 2.2.md#shape-style`
-- `../Language specification rev 2.2.md#shape-drawing`
-- `../Language specification rev 2.2.md#testing-strategy`
+- `../Language specification.md#canvas`
+- `../Language specification.md#colors`
+- `../Language specification.md#shape-style`
+- `../Language specification.md#shape-drawing`
+- `../Language specification.md#testing-strategy`
 
 ## Existing Code Context
 

@@ -28,13 +28,13 @@ Add beginner-friendly completions, hover or signature help, and definition featu
 
 ## Relevant Specification Links
 
-- [LSP Server component](<../Language specification rev 2.2.md#6-lsp-server-lspserverts>)
-- [VS Code Extension](<../Language specification rev 2.2.md#vs-code-extension>)
-- [Syntax Highlighting](<../Language specification rev 2.2.md#syntax-highlighting>)
-- [Built-in Functions](<../Language specification rev 2.2.md#built-in-functions>)
-- [User-Defined Functions](<../Language specification rev 2.2.md#user-defined-functions>)
-- [Scoping Rules](<../Language specification rev 2.2.md#scoping-rules>)
-- [Error Message Guidelines](<../Language specification rev 2.2.md#error-message-guidelines>)
+- [LSP Server component](<../Language specification.md#6-lsp-server-lspserverts>)
+- [VS Code Extension](<../Language specification.md#vs-code-extension>)
+- [Syntax Highlighting](<../Language specification.md#syntax-highlighting>)
+- [Built-in Functions](<../Language specification.md#built-in-functions>)
+- [User-Defined Functions](<../Language specification.md#user-defined-functions>)
+- [Scoping Rules](<../Language specification.md#scoping-rules>)
+- [Error Message Guidelines](<../Language specification.md#error-message-guidelines>)
 
 ## Included
 

@@ -22,10 +22,10 @@ Execute declaration and assignment statements using the runtime environment mode
 
 ## Relevant Specification Links
 
-- `../Language specification rev 2.2.md#variables`
-- `../Language specification rev 2.2.md#scoping-rules`
-- `../Language specification rev 2.2.md#grammar-ebnf`
-- `../Language specification rev 2.2.md#error-message-guidelines`
+- `../Language specification.md#variables`
+- `../Language specification.md#scoping-rules`
+- `../Language specification.md#grammar-ebnf`
+- `../Language specification.md#error-message-guidelines`
 
 ## Existing Code Context
 

@@ -27,10 +27,10 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [User-Defined Functions](<../Language specification rev 2.2.md#user-defined-functions>)
-- [Scoping Rules](<../Language specification rev 2.2.md#scoping-rules>)
-- [Grammar (EBNF)](<../Language specification rev 2.2.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../Language specification rev 2.2.md#3-semantic-analyzer-analyzerts>)
+- [User-Defined Functions](<../Language specification.md#user-defined-functions>)
+- [Scoping Rules](<../Language specification.md#scoping-rules>)
+- [Grammar (EBNF)](<../Language specification.md#grammar-ebnf>)
+- [Semantic Analyzer component](<../Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

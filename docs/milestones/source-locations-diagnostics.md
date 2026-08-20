@@ -31,10 +31,10 @@ Complete or review [the loop-block parser milestone](parser-loop-block.md) and e
 
 ## Relevant Specification Links
 
-- [Fail Clearly](<../Language specification rev 2.2.md#4-fail-clearly>)
-- [Lexer component](<../Language specification rev 2.2.md#1-lexer-lexerts>)
-- [Parser component](<../Language specification rev 2.2.md#2-parser-parserts>)
-- [Error Message Guidelines](<../Language specification rev 2.2.md#error-message-guidelines>)
+- [Fail Clearly](<../Language specification.md#4-fail-clearly>)
+- [Lexer component](<../Language specification.md#1-lexer-lexerts>)
+- [Parser component](<../Language specification.md#2-parser-parserts>)
+- [Error Message Guidelines](<../Language specification.md#error-message-guidelines>)
 - [Parser error journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 
 ## Grammar and AST Shape

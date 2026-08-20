@@ -28,9 +28,9 @@ browser-driven export, Node Canvas, or headless browser rendering are in scope.
   - [Add CLI check and run entry points](../milestones/cli-check-run-entry-points.md)
   - [Add example-program and visual-regression verification](../milestones/example-program-visual-regression.md)
 - Relevant specification anchors:
-  - [Render backends](<../Language specification rev 2.2.md#5-render-backends>)
-  - [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
-  - [Testing strategy](<../Language specification rev 2.2.md#testing-strategy>)
+  - [Render backends](<../Language specification.md#5-render-backends>)
+  - [CLI tool](<../Language specification.md#cli-tool>)
+  - [Testing strategy](<../Language specification.md#testing-strategy>)
 
 ## Why This Is a Gate
 
@@ -105,9 +105,9 @@ resolved.
 - [Implement animation built-ins and scheduler hooks](../milestones/animation-built-ins-scheduler-hooks.md)
 - [Add CLI check and run entry points](../milestones/cli-check-run-entry-points.md)
 - [Add example-program and visual-regression verification](../milestones/example-program-visual-regression.md)
-- [Render backends](<../Language specification rev 2.2.md#5-render-backends>)
-- [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
-- [Testing strategy](<../Language specification rev 2.2.md#testing-strategy>)
+- [Render backends](<../Language specification.md#5-render-backends>)
+- [CLI tool](<../Language specification.md#cli-tool>)
+- [Testing strategy](<../Language specification.md#testing-strategy>)
 
 ## Non-Goals
 

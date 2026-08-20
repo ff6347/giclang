@@ -83,8 +83,8 @@ unpredictable for beginners.
 
 ## Related Guidance
 
-- [Design Principles](<../Language specification rev 2.2.md#design-principles>)
-- [Additional Considerations](<../Language specification rev 2.2.md#additional-considerations>)
+- [Design Principles](<../Language specification.md#design-principles>)
+- [Additional Considerations](<../Language specification.md#additional-considerations>)
 - [Browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - [AI in this Project](../../README.md#ai-in-this-project)
 

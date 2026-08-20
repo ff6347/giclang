@@ -74,9 +74,9 @@ chosen may duplicate or contradict later metadata rules.
 
 ## Related Guidance
 
-- [Comments](<../Language specification rev 2.2.md#comments>)
-- [Proposed Documentation Comments](<../Language specification rev 2.2.md#proposed-documentation-comments>)
-- [LSP Server component](<../Language specification rev 2.2.md#6-lsp-server-lspserverts>)
+- [Comments](<../Language specification.md#comments>)
+- [Proposed Documentation Comments](<../Language specification.md#proposed-documentation-comments>)
+- [LSP Server component](<../Language specification.md#6-lsp-server-lspserverts>)
 - [Browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - [Language design journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 

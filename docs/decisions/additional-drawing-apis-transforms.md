@@ -74,9 +74,9 @@ subsequent drawing command is interpreted.
 
 ## Related Guidance
 
-- [Canvas](<../Language specification rev 2.2.md#canvas>)
-- [Shape Drawing](<../Language specification rev 2.2.md#shape-drawing>)
-- [Additional Considerations](<../Language specification rev 2.2.md#additional-considerations>)
+- [Canvas](<../Language specification.md#canvas>)
+- [Shape Drawing](<../Language specification.md#shape-drawing>)
+- [Additional Considerations](<../Language specification.md#additional-considerations>)
 - [Render backend interface milestone](../milestones/render-backend-interface-command-model.md)
 - [Recording backend milestone](../milestones/recording-backend-drawing-built-ins.md)
 - [Browser Canvas static backend milestone](../milestones/browser-canvas-static-backend.md)

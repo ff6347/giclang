@@ -29,10 +29,10 @@ to the browser IDE.
   - [Add browser IDE animation and runtime-error UX](../milestones/browser-ide-animation-runtime-error-ux.md)
   - [Add browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - Relevant specification anchors:
-  - [Project structure](<../Language specification rev 2.2.md#project-structure>)
-  - [File extension](<../Language specification rev 2.2.md#file-extension>)
-  - [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
-  - [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
+  - [Project structure](<../Language specification.md#project-structure>)
+  - [File extension](<../Language specification.md#file-extension>)
+  - [Live preview panel](<../Language specification.md#live-preview-panel>)
+  - [CLI tool](<../Language specification.md#cli-tool>)
 
 ## Why This Is a Gate
 
@@ -96,10 +96,10 @@ locations, and file-extension workflow.
 - [Build the browser IDE MVP with diagnostics and static preview](../milestones/browser-ide-mvp-diagnostics-static-preview.md)
 - [Add browser IDE animation and runtime-error UX](../milestones/browser-ide-animation-runtime-error-ux.md)
 - [Add browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
-- [Project structure](<../Language specification rev 2.2.md#project-structure>)
-- [File extension](<../Language specification rev 2.2.md#file-extension>)
-- [Live preview panel](<../Language specification rev 2.2.md#live-preview-panel>)
-- [CLI tool](<../Language specification rev 2.2.md#cli-tool>)
+- [Project structure](<../Language specification.md#project-structure>)
+- [File extension](<../Language specification.md#file-extension>)
+- [Live preview panel](<../Language specification.md#live-preview-panel>)
+- [CLI tool](<../Language specification.md#cli-tool>)
 
 ## Non-Goals
 

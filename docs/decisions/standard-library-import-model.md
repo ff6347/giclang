@@ -76,10 +76,10 @@ built-in handling or the educational no-hoisting rules.
 
 ## Related Guidance
 
-- [Questions](<../Language specification rev 2.2.md#questions>)
-- [Grammar (EBNF)](<../Language specification rev 2.2.md#grammar-ebnf>)
-- [Scoping Rules](<../Language specification rev 2.2.md#scoping-rules>)
-- [Implementation Architecture](<../Language specification rev 2.2.md#implementation-architecture>)
+- [Questions](<../Language specification.md#questions>)
+- [Grammar (EBNF)](<../Language specification.md#grammar-ebnf>)
+- [Scoping Rules](<../Language specification.md#scoping-rules>)
+- [Implementation Architecture](<../Language specification.md#implementation-architecture>)
 - [Memory: Language Design](../MEMORY.md#language-design)
 
 ## Non-Goals
