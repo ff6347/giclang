@@ -22,12 +22,13 @@ import type {
 import type { Diagnostic, Program } from "./core.ts";
 import {
 	diagnosticAssignDefinedByGIC,
+	diagnosticAssignFunction,
 	diagnosticDeclareAlreadyExisting,
 	diagnosticDeclareDefinedByGIC,
+	missingNameDiagnostic,
 } from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
-import { Scope } from "./scope.ts";
-import type { Token } from "./tokens.ts";
+import { Scope, type Declaration } from "./scope.ts";
 
 export class Analyser {
 	scopes: Scope[] = [];
@@ -40,15 +41,7 @@ export class Analyser {
 		this.scopes.push(globalScope);
 	}
 
-	missingNameDiagnostic(token: Token): Diagnostic {
-		return {
-			message: `Cannot find name '${token.lexeme}'.`,
-			line: token.line,
-			start: token.start,
-			end: token.end,
-		};
-	}
-	findDeclaration(name: string) {
+	findDeclaration(name: string): Declaration | undefined {
 		for (let i = this.scopes.length - 1; i >= 0; i--) {
 			if (this.scopes[i]?.declarations.has(name)) {
 				return this.scopes[i]?.declarations.get(name);
@@ -117,9 +110,10 @@ export class Analyser {
 				diagnosticDeclareAlreadyExisting(statement.variable),
 			);
 		} else {
-			this.scopes
-				.at(-1)
-				?.declarations.set(statement.variable.lexeme, statement.variable);
+			this.scopes.at(-1)?.declarations.set(statement.variable.lexeme, {
+				kind: "variable",
+				token: statement.variable,
+			});
 		}
 		statement.body.forEach((stmt) => {
 			this.walkStatement(stmt);
@@ -132,7 +126,10 @@ export class Analyser {
 		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
 			this.diagnostics.push(diagnosticDeclareAlreadyExisting(statement.name));
 		}
-		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, statement.name);
+		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, {
+			kind: "function",
+			token: statement.name,
+		});
 		this.scopes.push(new Scope());
 		if (statement.params) {
 			statement.params.forEach((param) => {
@@ -143,7 +140,10 @@ export class Analyser {
 				} else if (this.findDeclaration(param.lexeme) !== undefined) {
 					this.diagnostics.push(diagnosticDeclareAlreadyExisting(param));
 				}
-				this.scopes.at(-1)?.declarations.set(param.lexeme, param);
+				this.scopes.at(-1)?.declarations.set(param.lexeme, {
+					kind: "variable",
+					token: param,
+				});
 			});
 		}
 		statement.body.forEach((stmt) => {
@@ -152,13 +152,17 @@ export class Analyser {
 		this.scopes.pop();
 	}
 	protected onAssignment(statement: Assignment) {
+		const declaration = this.findDeclaration(statement.name.lexeme);
+
 		if (reservedNames.has(statement.name.lexeme)) {
 			const diagnostic: Diagnostic = diagnosticAssignDefinedByGIC(
 				statement.name,
 			);
 			this.diagnostics.push(diagnostic);
-		} else if (this.findDeclaration(statement.name.lexeme) === undefined) {
-			this.diagnostics.push(this.missingNameDiagnostic(statement.name));
+		} else if (declaration === undefined) {
+			this.diagnostics.push(missingNameDiagnostic(statement.name));
+		} else if (declaration.kind === "function") {
+			this.diagnostics.push(diagnosticAssignFunction(statement.name));
 		}
 		this.walkExpression(statement.value);
 	}
@@ -180,9 +184,10 @@ export class Analyser {
 			);
 			this.diagnostics.push(diagnostic);
 		} else {
-			this.scopes
-				.at(-1)
-				?.declarations.set(statement.name.lexeme, statement.name);
+			this.scopes.at(-1)?.declarations.set(statement.name.lexeme, {
+				kind: "variable",
+				token: statement.name,
+			});
 		}
 	}
 
@@ -256,7 +261,7 @@ export class Analyser {
 			this.findDeclaration(expr.name.lexeme) ||
 			reservedNames.has(expr.name.lexeme);
 		if (!known) {
-			this.diagnostics.push(this.missingNameDiagnostic(expr.name));
+			this.diagnostics.push(missingNameDiagnostic(expr.name));
 		}
 	}
 	protected onLiteral(_expr: LiteralExpr) {

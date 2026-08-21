@@ -195,15 +195,58 @@ describe("Analyser functions", () => {
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
-	test.todo(
-		"should report a function-local variable that reuses a parameter name",
-	);
-	test.todo("should allow the same local variable name in separate functions");
-	test.todo(
-		"should report a global variable that conflicts with an earlier function",
-	);
-	test.todo(
-		"should report a local name that conflicts with a later global function",
-	);
-	test.todo("should report assignment to a user-defined function");
+	test("should report a function-local variable that reuses a parameter name", () => {
+		const source = "func f(x){let x=1;return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'x' because that name already exists.",
+			line: 0,
+			start: 14,
+			end: 15,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+	test("should allow the same local variable name in separate functions", () => {
+		const source =
+			"func first(){let x=1;return;}func second(){let x=2;return;}";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+	test("should report a global variable that conflicts with an earlier function", () => {
+		const source = "func f(){return;}let f=2;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'f' because that name already exists.",
+			line: 0,
+			start: 21,
+			end: 22,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+	test("should report a local name that conflicts with a later global function", () => {
+		const source = "if(true){let f=1;}func f(){return;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'f' because that name already exists.",
+			line: 0,
+			start: 13,
+			end: 14,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+	test("should report assignment to a user-defined function", () => {
+		const source = "func f(){return;}f=2;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot assign to function 'f'.",
+			line: 0,
+			start: 17,
+			end: 18,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });

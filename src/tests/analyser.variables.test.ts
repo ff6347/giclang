@@ -78,6 +78,28 @@ describe("Analyser variables", () => {
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
-	test.todo("should report a variable read before its global declaration");
-	test.todo("should report an assignment before its global declaration");
+	test("should report a variable read before its global declaration", () => {
+		const source = "print(x);let x=1;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'x'.",
+			line: 0,
+			start: 6,
+			end: 7,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+	test("should report an assignment before its global declaration", () => {
+		const source = "x = 2;let x = 1;";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'x'.",
+			line: 0,
+			start: 0,
+			end: 1,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });
