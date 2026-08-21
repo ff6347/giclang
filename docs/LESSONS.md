@@ -18,7 +18,7 @@
 - [x] [Define the browser-neutral core API and project structure](milestones/browser-neutral-core-api.md)
 - [x] [Represent spec-listed built-in signatures and reserved names](milestones/built-in-signatures-reserved-names.md)
 - [x] [Build the semantic analyzer diagnostic harness](milestones/semantic-analyzer-diagnostic-harness.md)
-- [ ] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
+- [x] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
 - [ ] [Decide call target syntax](decisions/call-target-syntax.md)
 - [ ] [Analyze function declarations, calls, and arity](milestones/semantic-functions-calls-arity.md)
 - [ ] [Analyze returns and function void/value kind](milestones/semantic-returns-function-kind.md)
