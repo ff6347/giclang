@@ -10,14 +10,14 @@ Run user-defined functions with isolated call environments and observable `retur
 ## Prerequisites
 
 - [Parser functions and returns](parser-functions.md), and [call expressions](parser-call-expressions.md) milestones.
-- [Call target syntax](../decisions/call-target-syntax.md) is a blocking decision for resolving the parser/spec mismatch before this milestone proceeds.
+- [Call target syntax](../decisions/call-target-syntax.md) selects bare identifier targets; parser and AST alignment must be complete.
 - [Runtime value, environment, and error model](runtime-value-environment-errors.md) milestone.
 - [Interpreter expressions](interpreter-expressions.md), [variables and assignments](interpreter-variables-assignments.md), [conditionals](interpreter-conditionals.md), and [repeat statements](interpreter-repeat-statements.md).
 
 ## Concepts to Understand
 
-- A function declaration creates a callable value without running the body.
-- Calls expose source-order side effects from the callee expression and arguments before body effects.
+- A function declaration creates an internal callable binding without running the body.
+- Calls resolve the target identifier, then expose argument-expression side effects before body effects.
 - Parameters and locals live in the call environment.
 - `return` ends the current function call, even when it appears inside nested statement bodies.
 - Analyzer lessons decide return-kind consistency and declared-before-use legality.
@@ -33,12 +33,12 @@ Run user-defined functions with isolated call environments and observable `retur
 
 - `parser-functions.md` defines `FuncStmt` and `ReturnStmt`.
 - `parser-call-expressions.md` defines `CallExpr`.
-- The environment model describes function value behavior and parameter binding.
+- The environment model describes internal callable bindings and parameter binding.
 
 ## Included
 
-- Execute function declarations by storing callables.
-- Preserve observable source-order side effects from callee and argument expressions.
+- Execute function declarations by storing internal callables under their names.
+- Preserve observable source-order side effects from argument expressions.
 - Bind parameters in a fresh local environment for each call.
 - Execute function bodies with local variables isolated from callers.
 - Allow reads and assignments through the parent chain according to environment rules.
@@ -64,12 +64,12 @@ ReturnStmt
 CallExpr
 ```
 
-`FuncStmt` contains a name, parameter tokens, and body statements. `ReturnStmt` contains an optional expression. `CallExpr` contains a callee expression and argument expressions.
+`FuncStmt` contains a name, parameter tokens, and body statements. `ReturnStmt` contains an optional expression. `CallExpr` contains an identifier target and argument expressions.
 
 ## Observable Function Call Behavior
 
 - A function declaration stores a callable under the function name and does not execute the body.
-- Source-order side effects from the callee expression and arguments are observable before any function-body side effects.
+- Argument expressions are evaluated in source order before any function-body side effects.
 - Arity errors are reported before a function body can observe partially bound parameters.
 - Each call gets its own local parameter bindings.
 - Local variables created during one call are not visible to later calls or to the caller.
@@ -108,7 +108,7 @@ A `return` statement ends the current function call immediately:
 ## Verification
 
 - Use counters to prove declaration-time bodies do not run.
-- Test callee and argument source order with expressions that append to a print sink or mutate variables.
+- Test argument source order with expressions that append to a print sink or mutate variables.
 - Include early-return cases inside conditionals or repeat bodies.
 - Add one non-callable call diagnostic test.
 

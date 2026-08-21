@@ -58,7 +58,7 @@ Literal | Grouping | Unary | Binary
 Logical | Identifier | Call
 ```
 
-`Identifier` uses the environment model for lookup. `Call` evaluates the callee and arguments, then hands dispatch to the callable mechanism available at that point in the curriculum.
+`Identifier` uses the environment model for lookup. `Call` resolves its identifier target, evaluates its argument expressions in source order, then hands dispatch to the callable mechanism available at that point in the curriculum.
 
 ## Expression Evaluation Rules
 

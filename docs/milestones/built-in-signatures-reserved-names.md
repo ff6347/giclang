@@ -39,7 +39,7 @@ Complete or review:
 
 ## Grammar and AST Shape
 
-This is explicitly not a grammar lesson. Calls remain generic `Call` nodes. Built-in meaning comes from analyzer and runtime metadata, not from new parser nodes.
+This is explicitly not a grammar lesson. Built-ins and user functions share identifier-target `Call` nodes. Built-in meaning comes from analyzer and runtime metadata, not from separate parser nodes.
 
 ## TDD-Oriented Student Checklist
 

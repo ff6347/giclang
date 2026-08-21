@@ -13,7 +13,7 @@ Complete or review:
 
 - [Repeat and program loop rules](semantic-repeat-loop-rules.md)
 - [Built-in signatures and reserved names](built-in-signatures-reserved-names.md)
-- [Call target syntax](../decisions/call-target-syntax.md) is a blocking decision for resolving the parser/spec mismatch before this milestone proceeds.
+- [Call target syntax](../decisions/call-target-syntax.md) selects bare identifier targets; parser and AST alignment must be complete.
 
 ## Concepts to Understand
 
@@ -35,7 +35,7 @@ Complete or review:
 
 ## Grammar and AST Shape
 
-There is no grammar change. This lesson uses generic `Call` nodes. Constant reassignment checks may also touch existing `Assignment` and `Identifier` nodes.
+There is no grammar change. This lesson uses identifier-target `Call` nodes. Constant reassignment checks may also touch existing `Assignment` and `Identifier` nodes.
 
 ## TDD-Oriented Student Checklist
 

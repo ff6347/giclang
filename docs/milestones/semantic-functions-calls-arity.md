@@ -14,7 +14,7 @@ Complete or review:
 - [Variables, assignments, and shadowing](semantic-variables-assignments-shadowing.md)
 - [Function parsing](parser-functions.md)
 - [Call-expression parsing](parser-call-expressions.md)
-- [Call target syntax](../decisions/call-target-syntax.md) is a blocking decision for resolving the parser/spec mismatch before this milestone proceeds.
+- [Call target syntax](../decisions/call-target-syntax.md) selects bare identifier targets; complete its parser and AST alignment checklist before this milestone proceeds.
 
 ## Concepts to Understand
 
@@ -23,7 +23,7 @@ Complete or review:
 - Parameters are symbols scoped to a function body.
 - Duplicate parameters make call behavior unclear and should be diagnosed.
 - User-defined calls and built-in calls can share resolution machinery while still having different metadata sources.
-- The call-target syntax is intentionally unresolved here: the parser milestone currently models a generic callee expression, while the rev-2 grammar models calls as `IDENTIFIER(...)`.
+- Call targets are bare identifiers. The analyzer resolves that identifier and distinguishes user functions, built-ins, variables/constants, and missing names.
 
 ## Relevant Specification Links
 
@@ -34,11 +34,11 @@ Complete or review:
 
 ## Grammar and AST Shape
 
-No parser change is planned in this milestone. This lesson uses `FuncStmt` and `Call`, but the exact allowed call target shape is blocked on the [call target syntax decision](../decisions/call-target-syntax.md) because the current parser may permit generic callee expressions while the specification call grammar uses `IDENTIFIER` for calls.
+No parser change belongs in this milestone. Complete the parser/AST alignment from the [call target syntax decision](../decisions/call-target-syntax.md) first. This lesson then uses `FuncStmt` and identifier-target `Call` nodes.
 
 ## TDD-Oriented Student Checklist
 
-- Align call-target tests with the [call target syntax decision](../decisions/call-target-syntax.md) before adding analyzer cases that depend on target shape.
+- Confirm parser and AST tests enforce the identifier-only [call target syntax decision](../decisions/call-target-syntax.md) before adding analyzer cases.
 - Accept a call to a user function declared earlier.
 - Report a call before declaration when no-hoisting applies.
 - Report a call to an undefined function.
@@ -57,10 +57,10 @@ No parser change is planned in this milestone. This lesson uses `FuncStmt` and `
 
 ## Verification
 
-After the [call target syntax decision](../decisions/call-target-syntax.md) is resolved, use analyzer tests for a valid call, undefined call, before-declaration call, arity mismatch, and duplicate names. Do not lock in tests that choose a call-target implementation before that decision. Run `pnpm test` and `pnpm typecheck` after implementation changes.
+Use analyzer tests for a valid identifier call, undefined call, before-declaration call, non-callable identifier, arity mismatch, and duplicate names. Run `pnpm test` and `pnpm typecheck` after implementation changes.
 
 ## Decision Gates
 
-- Blocking: resolve the [call target syntax decision](../decisions/call-target-syntax.md) before implementing call-target-dependent diagnostics.
-- Decide whether nested function declarations are valid and how their symbols are scoped.
+- Complete the parser and AST alignment checklist in the [call target syntax decision](../decisions/call-target-syntax.md) before implementing call diagnostics.
+- No open gate for nested declarations: functions remain global-only under revision 2.2.
 - Decide whether built-in arity checks are deferred to the built-in call error lesson.

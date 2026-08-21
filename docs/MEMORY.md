@@ -12,6 +12,11 @@
   inside a function, `if`, or `repeat` block is a parse error (`Unexpected
 'func'. Functions can only be declared at the top level.`). Function
   declarations remain global-only, and the "No closures" rule applies.
+- [decision] Function calls use bare identifier targets for built-ins and user
+  functions. The selected AST boundary narrows `CallExpr.callee` to an
+  `IdentifierExpr`; parser and AST alignment is pending. Literals, grouped
+  expressions, and call results are not callable syntax. Arguments remain full
+  expressions, and callable runtime objects are not user-visible values.
 - [decision] Every `if`, `else`, `repeat`, and `loop` body introduces a block
   scope. Declarations do not leak after their block, cannot shadow visible
   names, and may be reused in separate non-overlapping scopes unless a global

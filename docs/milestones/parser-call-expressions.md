@@ -7,7 +7,7 @@
 
 Parse function calls as ordinary expressions.
 
-This milestone makes built-in and user-defined function calls use the same syntax in the AST. The parser does not decide whether a call is valid, built-in, user-defined, or has the right number of arguments.
+This milestone makes built-in and user-defined function calls use the same identifier-target syntax in the AST. The parser enforces that syntactic boundary but does not decide whether the identifier names a valid built-in or user-defined function or whether the call has the right number of arguments.
 
 Examples:
 
@@ -26,6 +26,7 @@ The parser supports:
 - Call expressions inside variable initializers
 - Zero or more comma-separated arguments
 - Arguments that are full expressions
+- Bare identifier call targets shared by built-in and user-defined functions
 
 ## Not Included
 
@@ -37,6 +38,7 @@ This milestone does not include:
 - Function return checking
 - Runtime call behavior
 - Method/property calls
+- Generic expression or chained-call targets
 
 ## Grammar
 
@@ -44,7 +46,8 @@ This milestone does not include:
 unary     = ( "!" | "-" ) unary
           | call ;
 
-call      = primary ( "(" arguments? ")" )* ;
+call      = IDENTIFIER "(" arguments? ")"
+          | primary ;
 
 arguments = expression ( "," expression )* ;
 
@@ -56,13 +59,13 @@ primary   = NUMBER
           | "(" expression ")" ;
 ```
 
-`call` sits between `unary` and `primary` so calls bind tightly, while call arguments can still contain full expressions.
+`call` sits between `unary` and `primary` so calls bind tightly, while call arguments can still contain full expressions. Only the `IDENTIFIER` branch may be followed by an argument list.
 
 ## AST Shape
 
 ```txt
 Call
-  callee: Expression
+  callee: IdentifierExpr
   arguments: Expression[]
   paren: Token
 ```
@@ -89,9 +92,9 @@ ExprStmt
         Literal 2
 ```
 
-## Tests
+## Verification
 
-The milestone is covered by parser tests for:
+Positive parser coverage includes:
 
 ```gic
 circle(50, 50);
@@ -104,6 +107,18 @@ let x = pow(2, 8);
 ```gic
 circle(50, 25 + 25, 10 * 2);
 ```
+
+Identifier-only alignment also requires parser-error coverage for non-identifier
+and chained-call targets:
+
+```gic
+42();
+(circle)(1);
+makeThing()(1);
+```
+
+Each rejected target reports `Only function names can be called.` at the opening
+`(` that attempts the invalid call.
 
 ## Follow-up Cleanup
 

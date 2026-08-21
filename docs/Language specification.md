@@ -572,6 +572,13 @@ NUMBER         = [0-9]+ ( "." [0-9]+ )? ;
 STRING         = '"' [^"]* '"' ;
 ```
 
+Call targets are bare identifiers. Built-in and user-defined functions share
+this syntax. Parenthesized identifiers, literals, grouped expressions, and call
+results cannot be called. The parser reports
+`Only function names can be called.` at the opening `(` of an attempted
+non-identifier call. Arguments remain full expressions, and calls may appear
+inside larger expressions.
+
 ---
 
 ## Implementation Architecture

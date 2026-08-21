@@ -1,53 +1,95 @@
-<!-- ABOUTME: Frames the unresolved GIC call-target syntax decision. -->
-<!-- ABOUTME: Records the parser/spec mismatch without choosing an implementation path. -->
+<!-- ABOUTME: Records the identifier-only call-target syntax decision for GIC. -->
+<!-- ABOUTME: Defines parser, AST, analyzer, and runtime consequences for function calls. -->
 
-# Decide Call Target Syntax
+# Call Target Syntax
 
-Status: Unresolved
+Status: Decided
 
-## Decision Question
+## Decision
 
-Should GIC calls be limited to `IDENTIFIER(...)`, or should the language accept a more general callee expression shape?
+GIC call targets are bare identifiers. Built-in and user-defined functions use
+the same syntax:
 
-## Current Baseline
+```gic
+circle(50, 50, 20);
+let result = calculate(2);
+```
 
-The rev-2 grammar describes calls as `IDENTIFIER "(" arguments? ")"` in `callExpr`, while the completed parser call-expression milestone models calls as a generic `callee: Expression` and parses `primary ( "(" arguments? ")" )*`. That means the parser milestone and AST can represent call targets that the written specification does not currently allow.
+A call target is not an arbitrary expression. Parenthesized identifiers,
+literals, grouped expressions, and call results cannot be called:
 
-## Why This Is a Gate
+```gic
+(circle)(50, 50, 20);
+42();
+(1 + 2)(3);
+makeThing()(1);
+```
 
-Function and call analysis must know which call targets are syntactically valid before it can report undefined functions, declaration-order errors, arity errors, or invalid target diagnostics. Choosing the boundary later may force parser tests, AST helpers, analyzer assumptions, and examples to change.
+The parser reports `Only function names can be called.` at the opening `(` of
+an attempted non-identifier call.
 
-## Options and Consequences
+## Grammar and AST Boundary
 
-- **Spec-strict identifier calls**
-  - Keeps calls aligned with the rev-2 grammar and beginner-visible function names.
-  - Requires the parser/AST/tests to reject or avoid generic callee expressions.
-- **Parser-generic, analyzer-restricted calls**
-  - Keeps the current parser shape but treats non-identifier callees as semantic errors.
-  - Requires clear diagnostics explaining why a parsed expression is not callable.
-- **Deliberate generic calls**
-  - Makes the parser milestone shape part of the language design.
-  - Requires the spec, analyzer, runtime callable model, and teaching material to define which expression values can be called.
-- **Identifier calls with future syntax reserved**
-  - Keeps today's valid calls identifier-only while documenting reserved space for later member calls or other forms.
-  - Requires tests to distinguish intentionally reserved syntax from accidental support.
+The grammar remains:
 
-## Questions Before Choosing
+```ebnf
+callExpr = IDENTIFIER "(" arguments? ")" | primary ;
+```
 
-- Should users ever see function values as ordinary GIC values?
-- Is method-like or property-like syntax a likely future need?
-- Which option produces the clearest error for beginners who type `(foo)(1)` or `makeThing()(1)`?
-- How much parser churn is acceptable after the existing call-expression milestone?
-- Should built-in calls and user-defined calls share exactly the same target syntax?
+`CallExpr.callee` is an `IdentifierExpr`, not a general `Expression`. Arguments
+remain full expressions, and calls may appear inside larger expressions.
 
-## Decision Checklist
+The parser validates only the target's syntactic shape. An identifier call such
+as `item()` parses successfully; semantic analysis determines whether `item`
+denotes a user function, built-in function, variable, constant, or missing name.
 
-- Update or confirm the grammar rule for calls.
-- Update or confirm the AST shape for call targets.
-- Align parser tests with the chosen syntax boundary.
-- Define analyzer diagnostics for invalid, undefined, or before-declaration call targets.
-- Confirm built-in and user-defined call resolution use the same selected boundary.
-- Update examples if any previously accepted syntax becomes invalid.
+## Rationale
+
+- GIC has named user functions and built-in functions, but no user-visible
+  function values.
+- GIC does not define anonymous functions, methods, properties, modules, or
+  another expression form that can evaluate to a callable value.
+- Generic callee expressions would admit syntax such as `42()` without defining
+  a valid program that could make the literal callable.
+- Parser rejection gives beginners a direct syntax diagnostic instead of
+  accepting an expression that the analyzer or runtime must later reject.
+- Narrowing the AST makes the selected language invariant explicit to the
+  parser, analyzer, interpreter, and TypeScript compiler.
+- Future method, qualified-name, or first-class-function syntax requires a
+  deliberate language decision rather than inheriting accidental parser
+  support.
+
+## Consequences
+
+- The parser accepts one argument list after a bare identifier and rejects
+  grouped, literal, binary, and chained-call targets.
+- User-defined and built-in call resolution share the same identifier-target
+  AST shape.
+- Analyzer call rules resolve the callee name, then distinguish missing names,
+  variables/constants, user functions, and built-in functions.
+- The interpreter resolves an internal callable by name. Callable runtime
+  objects may remain implementation details but are not GIC expression values.
+- Argument expressions retain ordinary source-order evaluation. There is no
+  separate callee-expression evaluation step.
+
+## Alternatives Not Selected
+
+- **Parser-generic, analyzer-restricted calls:** rejected because it preserves
+  AST shapes that no valid GIC runtime value can satisfy.
+- **Deliberate generic calls:** rejected because it would require first-class
+  function values and a broader runtime/type design that GIC does not need.
+- **Generic syntax reserved in the current parser:** rejected because accidental
+  acceptance is not a stable reservation mechanism. Future syntax can be added
+  explicitly when its semantics are designed.
+
+## Alignment Checklist
+
+- [x] Confirm the active grammar uses identifier call targets.
+- [x] Define the parser diagnostic and source location for non-identifier calls.
+- [ ] Narrow `CallExpr.callee` to `IdentifierExpr`.
+- [ ] Align parser tests and implementation with the selected syntax boundary.
+- [ ] Confirm analyzer diagnostics distinguish callable and non-callable names.
+- [ ] Confirm interpreter dispatch resolves internal callables by identifier.
 
 ## Unblocks
 
@@ -55,17 +97,9 @@ Function and call analysis must know which call targets are syntactically valid 
 - [Analyze inferable type, semantic, and domain errors for built-in calls](../milestones/semantic-built-in-call-errors.md)
 - [Interpret user-defined functions and returns](../milestones/interpreter-functions-returns.md)
 
-## Related Guidance
-
-- [User-Defined Functions](<../Language specification.md#user-defined-functions>)
-- [Grammar (EBNF)](<../Language specification.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../Language specification.md#3-semantic-analyzer-analyzerts>)
-- [Parser call expressions](../milestones/parser-call-expressions.md)
-- [Semantic functions, calls, and arity](../milestones/semantic-functions-calls-arity.md)
-
 ## Non-Goals
 
-- Selecting a method, property, or module syntax.
-- Adding first-class functions.
+- Selecting method, property, module, or qualified-name syntax.
+- Adding first-class or anonymous functions.
 - Changing function declaration syntax.
-- Implementing analyzer or runtime behavior in this document.
+- Implementing analyzer or runtime call behavior in this decision.
