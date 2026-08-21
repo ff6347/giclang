@@ -21,14 +21,17 @@ import type {
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
 import {
+	arityMismatchDiagnostic,
 	diagnosticAssignDefinedByGIC,
 	diagnosticAssignFunction,
 	diagnosticDeclareAlreadyExisting,
 	diagnosticDeclareDefinedByGIC,
 	missingNameDiagnostic,
+	notAFunctionDiagnostic,
 } from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
 import { Scope, type Declaration } from "./scope.ts";
+import { builtIns, isBuiltInName } from "./built-ins.ts";
 
 export class Analyser {
 	scopes: Scope[] = [];
@@ -129,6 +132,7 @@ export class Analyser {
 		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, {
 			kind: "function",
 			token: statement.name,
+			arity: statement.params?.length ?? 0,
 		});
 		this.scopes.push(new Scope());
 		if (statement.params) {
@@ -268,6 +272,26 @@ export class Analyser {
 		// leaf: no children to walk
 	}
 	protected onCall(expr: CallExpr) {
+		const declaration = this.findDeclaration(expr.callee.name.lexeme);
+		if (declaration && declaration.kind === "variable") {
+			this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
+		} else if (
+			isBuiltInName(expr.callee.name.lexeme) &&
+			builtIns[expr.callee.name.lexeme].kind === "constant"
+		) {
+			this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
+		} else if (declaration && declaration.kind === "function") {
+			if (expr.arguments.length !== declaration.arity) {
+				this.diagnostics.push(
+					arityMismatchDiagnostic(
+						expr.callee.name,
+						declaration.arity,
+						expr.arguments.length,
+					),
+				);
+			}
+		}
+
 		this.walkExpression(expr.callee);
 		expr.arguments.forEach((arg) => this.walkExpression(arg));
 	}

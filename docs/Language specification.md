@@ -840,6 +840,7 @@ Errors to detect:
 - `Function 'circle' expects 3 arguments, but got 2.`
 - `Function 'foo' must have a return statement.`
 - `Cannot call function 'foo' before its declaration.`
+- `Cannot call 'item' because it is not a function.`
 - `Function 'foo' cannot return both a value and no value.`
 - `Function 'foo' does not return a value and cannot be used in an expression.`
 

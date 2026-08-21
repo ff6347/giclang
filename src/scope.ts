@@ -3,10 +3,17 @@
 
 import type { Token } from "./tokens.ts";
 
-export interface Declaration {
-	token: Token;
-	kind: "function" | "variable";
-}
+export type Declaration =
+	| {
+			token: Token;
+			kind: "variable";
+	  }
+	| {
+			token: Token;
+			kind: "function";
+			arity: number;
+	  };
+
 export class Scope {
 	declarations: Map<string, Declaration> = new Map();
 }

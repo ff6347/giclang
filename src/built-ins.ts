@@ -221,3 +221,7 @@ export const builtIns: BuiltInRegistry = {
 		returnKind: "value",
 	},
 };
+
+export function isBuiltInName(name: string): name is BuiltInKeys {
+	return Object.hasOwn(builtIns, name);
+}

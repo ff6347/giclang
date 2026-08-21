@@ -46,3 +46,25 @@ export function missingNameDiagnostic(token: Token): Diagnostic {
 		end: token.end,
 	};
 }
+
+export function notAFunctionDiagnostic(name: Token): Diagnostic {
+	return {
+		message: `Cannot call '${name.lexeme}' because it is not a function.`,
+		line: name.line,
+		start: name.start,
+		end: name.end,
+	};
+}
+
+export function arityMismatchDiagnostic(
+	name: Token,
+	expected: number,
+	actual: number,
+): Diagnostic {
+	return {
+		message: `Function '${name.lexeme}' expects ${expected} arguments, but got ${actual}.`,
+		line: name.line,
+		start: name.start,
+		end: name.end,
+	};
+}

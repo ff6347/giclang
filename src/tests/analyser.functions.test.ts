@@ -69,6 +69,83 @@ describe("Analyser functions", () => {
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
+	test("should report a call to an undefined name", () => {
+		const source = "missing();";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'missing'.",
+			line: 0,
+			start: 0,
+			end: 7,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a call to a variable", () => {
+		const source = "let item=1;item();";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot call 'item' because it is not a function.",
+			line: 0,
+			start: 11,
+			end: 15,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a call to a built-in constant", () => {
+		const source = "PI();";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot call 'PI' because it is not a function.",
+			line: 0,
+			start: 0,
+			end: 2,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should accept a call to a built-in function", () => {
+		const source = "print(1);";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should accept the correct number of user-function arguments", () => {
+		const source = "func blend(a,b){return;}blend(1,2);";
+		const result = analyseSource(source);
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report too few arguments to a user function", () => {
+		const source = "func blend(a,b){return;}blend(1);";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Function 'blend' expects 2 arguments, but got 1.",
+			line: 0,
+			start: 24,
+			end: 29,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report too many arguments to a user function", () => {
+		const source = "func blend(a,b){return;}blend(1,2,3);";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Function 'blend' expects 2 arguments, but got 3.",
+			line: 0,
+			start: 24,
+			end: 29,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
 	test("should allow a function to call itself", () => {
 		const source = "func again(){again();return;}";
 		const result = analyseSource(source);
