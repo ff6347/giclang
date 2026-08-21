@@ -116,7 +116,7 @@ export interface CallExpr {
 	// ```
 	// The whole expression is the Call.
 	type: "Call";
-	callee: Expression;
+	callee: IdentifierExpr;
 	arguments: Expression[];
 	paren: Token;
 }

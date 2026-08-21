@@ -40,6 +40,7 @@ import type {
 	Assignment,
 	Expression,
 	FuncStmt,
+	IdentifierExpr,
 	LoopStmt,
 	Program,
 	RepeatStmt,
@@ -381,6 +382,12 @@ export class Parser {
 		let expr = this.primary();
 		while (true) {
 			if (this.match(LEFT_PAREN)) {
+				if (expr.type !== "Identifier") {
+					throw new ParserError(
+						"Only function names can be called.",
+						this.previous(),
+					);
+				}
 				expr = this.finishCall(expr);
 			} else {
 				break;
@@ -388,7 +395,7 @@ export class Parser {
 		}
 		return expr;
 	}
-	finishCall(callee: Expression): Expression {
+	finishCall(callee: IdentifierExpr): Expression {
 		const args: Expression[] = [];
 		if (!this.check(RIGHT_PAREN)) {
 			do {

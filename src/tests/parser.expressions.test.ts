@@ -6,6 +6,7 @@ import assert from "node:assert";
 import { Parser } from "../parser.ts";
 import { Lexer } from "../lexer.ts";
 import { simplifyProgram } from "./parser-test-helpers.ts";
+import type { ParserError } from "../error.ts";
 
 describe("parser expressions", () => {
 	test("should parse a unary expression", () => {
@@ -207,5 +208,62 @@ describe("parser expressions", () => {
 		const parser = new Parser(tokens);
 		const actual = simplifyProgram(parser.parse());
 		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should reject a numeric call target", () => {
+		const lexer = new Lexer("42();");
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.strictEqual(error.message, "Only function names can be called.");
+				assert.strictEqual(error.token?.lexeme, "(");
+				assert.strictEqual(error.token?.line, 0);
+				assert.strictEqual(error.token?.start, 2);
+				assert.strictEqual(error.token?.end, 3);
+
+				return true;
+			},
+		);
+	});
+
+	test("should reject grouped identifier call target", () => {
+		const lexer = new Lexer("(circle)(1);");
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.strictEqual(error.message, "Only function names can be called.");
+				assert.strictEqual(error.token?.lexeme, "(");
+				assert.strictEqual(error.token?.line, 0);
+				assert.strictEqual(error.token?.start, 8);
+				assert.strictEqual(error.token?.end, 9);
+
+				return true;
+			},
+		);
+	});
+
+	test("should reject chained call target", () => {
+		const lexer = new Lexer("makeThing()(1);");
+		const tokens = lexer.scanTokens();
+		const parser = new Parser(tokens);
+
+		assert.throws(
+			() => parser.parse(),
+			(error: ParserError) => {
+				assert.strictEqual(error.message, "Only function names can be called.");
+				assert.strictEqual(error.token?.lexeme, "(");
+				assert.strictEqual(error.token?.line, 0);
+				assert.strictEqual(error.token?.start, 11);
+				assert.strictEqual(error.token?.end, 12);
+
+				return true;
+			},
+		);
 	});
 });
