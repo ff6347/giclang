@@ -178,8 +178,8 @@ start))` — the `Math.max` covers empty EOF spans.
 - [lesson] A type predicate is trusted by the compiler, never verified; a
   false one silently corrupts type safety.
 - [technique] Classify-then-index: an exhaustive `Record<LiteralUnion, V>`
-  refuses arbitrary string indexing, so guard with a `word is Key`
-  predicate using `in`, then index safely.
+  refuses arbitrary string indexing, so guard with a truthful `word is Key`
+  predicate (`Object.hasOwn()` when own registry keys matter), then index safely.
 - [technique] Derive lookup data from sources of truth
   (`new Set([...Object.keys(x)])`); hand-copied name lists drift.
 - [lesson] Spreading an array into an object literal uses the array's
@@ -213,10 +213,11 @@ start))` — the `Math.max` covers empty EOF spans.
   `programGlobalNames` reserves every direct global name, while the scope stack
   contains only declarations visible at the current source position. A function
   is inserted immediately before its body so recursion works without hoisting.
-- [decision] Scope entries retain a declaration token and semantic kind. Current
-  kinds are `"variable"` and `"function"`, which lets assignment distinguish
-  user functions from assignable names; repeat-variable assignment remains
-  deferred because repeat iterators currently use `"variable"`.
+- [decision] Scope entries are a discriminated union: variables retain a token,
+  while functions retain a token and arity. The kind lets assignment reject
+  user functions and lets calls compare argument count with parameter count;
+  repeat-variable assignment remains deferred because repeat iterators currently
+  use `"variable"`.
 - [lesson] Analyze a variable initializer before registering its declaration,
   and analyze repeat bounds before registering the iterator. Registration-first
   ordering incorrectly permits self-reference.
@@ -228,8 +229,19 @@ start))` — the `Math.max` covers empty EOF spans.
   in analyzer TODOs.
 - [lesson] A callback passed to Node's `test.todo()` still counts as TODO until
   the call is changed to `test()`.
-- [preference] During interactive analyzer TDD, Fabian runs focused tests and
-  reports red/green state; the agent runs tests only when explicitly requested.
+- [decision] Call resolution uses scope declaration kind for user names and
+  built-in registry kind for GIC names. Variables and built-in constants report
+  `Cannot call '<name>' because it is not a function.`; missing names retain the
+  ordinary missing-name diagnostic. `reservedNames` cannot decide callability
+  because it combines keywords, functions, and constants.
+- [decision] User-function calls require exact arity. Built-in arity and
+  signature checks remain deferred to the built-in call-error lesson.
+- [lesson] Call-target or arity diagnostics must not stop traversal of argument
+  expressions; independent argument diagnostics still need collecting.
+- [preference] During interactive analyzer TDD, the agent may batch agreed red
+  tests while Fabian makes each behavior green and requests hints as needed.
+  Fabian reports focused red/green state; the agent runs tests only when
+  explicitly requested.
 
 ## Issue Tracking
 
