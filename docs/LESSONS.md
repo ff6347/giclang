@@ -19,7 +19,7 @@
 - [x] [Represent spec-listed built-in signatures and reserved names](milestones/built-in-signatures-reserved-names.md)
 - [x] [Build the semantic analyzer diagnostic harness](milestones/semantic-analyzer-diagnostic-harness.md)
 - [x] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
-- [ ] [Decide call target syntax](decisions/call-target-syntax.md)
+- [x] [Decide call target syntax](decisions/call-target-syntax.md)
 - [ ] [Analyze function declarations, calls, and arity](milestones/semantic-functions-calls-arity.md)
 - [ ] [Analyze returns and function void/value kind](milestones/semantic-returns-function-kind.md)
 - [ ] [Analyze `repeat` and `loop` semantic rules](milestones/semantic-repeat-loop-rules.md)
