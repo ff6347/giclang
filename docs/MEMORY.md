@@ -5,8 +5,9 @@
 
 ## Language Design
 
-- [decision] Language specification revision 2.2 is the current specification;
-  revisions 0 through 2.1 are historical references.
+- [decision] `docs/Language specification.md` is the stable active specification
+  path; its frontmatter identifies revision 2.2, while revisions 0 through 2.1
+  are historical references under `docs/deprecated/`.
 - [decision] Functions may only be declared at the top level. A `func`
   inside a function, `if`, or `repeat` block is a parse error (`Unexpected
 'func'. Functions can only be declared at the top level.`). Function
@@ -197,6 +198,27 @@ start))` — the `Math.max` covers empty EOF spans.
 - [lesson] An assertion green under both a correct and a broken
   implementation proves nothing; make the effect observable (walk the
   loop, unmuzzle the `never` check, count the visits).
+- [decision] Global reservation and source-order visibility use separate state:
+  `programGlobalNames` reserves every direct global name, while the scope stack
+  contains only declarations visible at the current source position. A function
+  is inserted immediately before its body so recursion works without hoisting.
+- [decision] Scope entries retain a declaration token and semantic kind. Current
+  kinds are `"variable"` and `"function"`, which lets assignment distinguish
+  user functions from assignable names; repeat-variable assignment remains
+  deferred because repeat iterators currently use `"variable"`.
+- [lesson] Analyze a variable initializer before registering its declaration,
+  and analyze repeat bounds before registering the iterator. Registration-first
+  ordering incorrectly permits self-reference.
+- [lesson] One scope must surround an entire branch or loop body, not each
+  statement. Multi-statement and nested-block fixtures expose push/pop placed
+  inside the statement loop.
+- [lesson] An animation `loop` must end the program, so valid source cannot test
+  a loop-local name after the block. Do not encode impossible post-loop behavior
+  in analyzer TODOs.
+- [lesson] A callback passed to Node's `test.todo()` still counts as TODO until
+  the call is changed to `test()`.
+- [preference] During interactive analyzer TDD, Fabian runs focused tests and
+  reports red/green state; the agent runs tests only when explicitly requested.
 
 ## Issue Tracking
 
