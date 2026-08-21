@@ -13,10 +13,11 @@
 'func'. Functions can only be declared at the top level.`). Function
   declarations remain global-only, and the "No closures" rule applies.
 - [decision] Function calls use bare identifier targets for built-ins and user
-  functions. The selected AST boundary narrows `CallExpr.callee` to an
-  `IdentifierExpr`; parser and AST alignment is pending. Literals, grouped
-  expressions, and call results are not callable syntax. Arguments remain full
-  expressions, and callable runtime objects are not user-visible values.
+  functions. `CallExpr.callee` is an `IdentifierExpr`; the parser rejects
+  literals, grouped expressions, and call results with
+  `Only function names can be called.` at the attempted opening `(`. Arguments
+  remain full expressions, and callable runtime objects are not user-visible
+  values.
 - [decision] Every `if`, `else`, `repeat`, and `loop` body introduces a block
   scope. Declarations do not leak after their block, cannot shadow visible
   names, and may be reused in separate non-overlapping scopes unless a global
@@ -126,6 +127,11 @@
 - [lesson] Write metadata-pinning tests from the spec, not from the
   implementation; `deepStrictEqual` protects only what it pins and will
   otherwise lock in spec violations.
+- [lesson] A recursive-descent method named for a precedence level may return
+  several AST kinds. `Parser.call()` remains `Expression` because its no-call
+  path returns any primary; only `finishCall()` and `CallExpr.callee` narrow to
+  `IdentifierExpr`. After matching `(`, `previous()` provides the exact token for
+  rejecting numeric, grouped, or chained call targets.
 
 ## Diagnostics and Error Reporting
 
