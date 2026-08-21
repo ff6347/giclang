@@ -52,7 +52,7 @@ No parser change belongs in this milestone. Complete the parser/AST alignment fr
 
 - No function execution.
 - No return-kind checking.
-- No built-in arity checking unless the deferral gate says to include it here.
+- No built-in arity checking.
 - No overloads for user-defined functions.
 
 ## Verification
@@ -63,4 +63,4 @@ Use analyzer tests for a valid identifier call, undefined call, before-declarati
 
 - Complete the parser and AST alignment checklist in the [call target syntax decision](../decisions/call-target-syntax.md) before implementing call diagnostics.
 - No open gate for nested declarations: functions remain global-only under revision 2.2.
-- Decide whether built-in arity checks are deferred to the built-in call error lesson.
+- Built-in arity checks are deferred to the [built-in call error lesson](semantic-built-in-call-errors.md).

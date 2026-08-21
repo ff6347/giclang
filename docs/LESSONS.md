@@ -20,7 +20,7 @@
 - [x] [Build the semantic analyzer diagnostic harness](milestones/semantic-analyzer-diagnostic-harness.md)
 - [x] [Analyze variable declarations, assignments, and shadowing](milestones/semantic-variables-assignments-shadowing.md)
 - [x] [Decide call target syntax](decisions/call-target-syntax.md)
-- [ ] [Analyze function declarations, calls, and arity](milestones/semantic-functions-calls-arity.md)
+- [x] [Analyze function declarations, calls, and arity](milestones/semantic-functions-calls-arity.md)
 - [ ] [Analyze returns and function void/value kind](milestones/semantic-returns-function-kind.md)
 - [ ] [Analyze `repeat` and `loop` semantic rules](milestones/semantic-repeat-loop-rules.md)
 - [ ] [Analyze inferable type, semantic, and domain errors for built-in calls](milestones/semantic-built-in-call-errors.md)

@@ -88,7 +88,7 @@ denotes a user function, built-in function, variable, constant, or missing name.
 - [x] Define the parser diagnostic and source location for non-identifier calls.
 - [x] Narrow `CallExpr.callee` to `IdentifierExpr`.
 - [x] Align parser tests and implementation with the selected syntax boundary.
-- [ ] Confirm analyzer diagnostics distinguish callable and non-callable names.
+- [x] Confirm analyzer diagnostics distinguish callable and non-callable names.
 - [ ] Confirm interpreter dispatch resolves internal callables by identifier.
 
 ## Unblocks
