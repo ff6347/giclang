@@ -3,6 +3,8 @@
 
 import type { Token } from "./tokens.ts";
 
+export type FunctionReturnKind = "void" | "value";
+
 export type Declaration =
 	| {
 			token: Token;
@@ -11,6 +13,7 @@ export type Declaration =
 	| {
 			token: Token;
 			kind: "function";
+			returnKind?: FunctionReturnKind;
 			arity: number;
 	  };
 

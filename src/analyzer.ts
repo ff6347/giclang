@@ -26,6 +26,10 @@ import {
 	diagnosticAssignFunction,
 	diagnosticDeclareAlreadyExisting,
 	diagnosticDeclareDefinedByGIC,
+	diagnosticFunctionReturn,
+	diagnosticFunctionReturnMixed,
+	diagnosticReturnOutsideFunction,
+	diagnosticVoidCallInExpression,
 	missingNameDiagnostic,
 	notAFunctionDiagnostic,
 } from "./analyser-diagnostics.ts";
@@ -33,17 +37,95 @@ import { reservedNames } from "./keywords.ts";
 import { Scope, type Declaration } from "./scope.ts";
 import { builtIns, isBuiltInName } from "./built-ins.ts";
 
+type FunctionReturnState = "none" | "void" | "value" | "mixed";
+
 export class Analyser {
 	scopes: Scope[] = [];
 	diagnostics: Diagnostic[] = [];
 	program: Program;
 	programGlobalNames: Set<string> = new Set();
+	returnState: FunctionReturnState | undefined = undefined;
+
 	constructor(program: Program) {
 		this.program = program;
 		const globalScope = new Scope();
 		this.scopes.push(globalScope);
 	}
 
+	classifyStatements(statements: Statement[]): FunctionReturnState {
+		statements.forEach((stmt) => {
+			this.classifyStatement(stmt);
+		});
+	}
+	classifyStatement(stmt: Statement) {
+		throw new Error("Method not implemented.");
+	}
+
+	classifyReturn(statement: Statement): FunctionReturnState {
+		switch (statement.type) {
+			case "ReturnStmt": {
+				if (statement.value) {
+					return "value";
+				} else {
+					return "void";
+				}
+			}
+			case "IfStmt": {
+				// recursifly classify both branches
+				for (const stmt of statement.thenBranch) {
+					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
+				}
+				for (const stmt of statement.elseBranch ?? []) {
+					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
+				}
+				break;
+			}
+			case "RepeatStmt": {
+				for (const stmt of statement.body) {
+					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
+				}
+				break;
+			}
+			default: {
+				return "none";
+			}
+		}
+	}
+	recursiveReturnClassify(statements: Statement[]): void {
+		this.returnState = "none";
+
+		for (const statement of statements) {
+			this.returnState = this.mergeReturnStates(this.classifyReturn(statement));
+		}
+	}
+	mergeReturnStates(state: FunctionReturnState): FunctionReturnState {
+		if (this.returnState === undefined) {
+			this.returnState = "none";
+		}
+		if (this.returnState === "none") {
+			return state;
+		}
+		if (this.returnState === "void" && state === "void") {
+			return "void";
+		}
+		if (this.returnState === "value" && state === "value") {
+			return "value";
+		}
+
+		if (this.returnState === "void" && state === "value") {
+			return "mixed";
+		}
+
+		if (this.returnState === "value" && state === "void") {
+			return "mixed";
+		}
+
+		if (this.returnState === "mixed") {
+			return "mixed";
+		}
+
+		if (state === "none") return this.returnState;
+	}
 	findDeclaration(name: string): Declaration | undefined {
 		for (let i = this.scopes.length - 1; i >= 0; i--) {
 			if (this.scopes[i]?.declarations.has(name)) {
@@ -89,9 +171,12 @@ export class Analyser {
 		}
 	}
 	protected onReturnStmt(statement: ReturnStmt) {
-		if (statement.value) {
-			this.walkExpression(statement.value);
-		}
+		const observed = statement.value ? "value" : "void";
+		if (this.returnState === undefined) {
+			this.diagnostics.push(diagnosticReturnOutsideFunction(statement.keyword));
+		} else if (this.returnState === "none") this.returnState = observed;
+		else if (this.returnState !== observed) this.returnState = "mixed";
+		if (statement.value) this.walkExpression(statement.value);
 	}
 	protected onRepeatStmt(statement: RepeatStmt) {
 		this.walkExpression(statement.start);
@@ -124,16 +209,20 @@ export class Analyser {
 		this.scopes.pop();
 	}
 	protected onFuncStmt(statement: FuncStmt) {
+		this.returnState = "none";
 		if (reservedNames.has(statement.name.lexeme)) {
 			this.diagnostics.push(diagnosticDeclareDefinedByGIC(statement.name));
 		} else if (this.findDeclaration(statement.name.lexeme) !== undefined) {
 			this.diagnostics.push(diagnosticDeclareAlreadyExisting(statement.name));
 		}
-		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, {
+
+		const declaration: Declaration = {
 			kind: "function",
 			token: statement.name,
 			arity: statement.params?.length ?? 0,
-		});
+		};
+		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, declaration);
+		this.recursiveReturnClassify(statement.body);
 		this.scopes.push(new Scope());
 		if (statement.params) {
 			statement.params.forEach((param) => {
@@ -153,7 +242,21 @@ export class Analyser {
 		statement.body.forEach((stmt) => {
 			this.walkStatement(stmt);
 		});
+		if (this.returnState === "none") {
+			this.diagnostics.push(diagnosticFunctionReturn(statement.name));
+		} else if (this.returnState === "mixed") {
+			this.diagnostics.push(diagnosticFunctionReturnMixed(statement.name));
+		} else {
+			if (declaration?.kind === "function") {
+				if (this.returnState === "void") {
+					declaration.returnKind = "void";
+				} else if (this.returnState === "value") {
+					declaration.returnKind = "value";
+				}
+			}
+		}
 		this.scopes.pop();
+		this.returnState = undefined;
 	}
 	protected onAssignment(statement: Assignment) {
 		const declaration = this.findDeclaration(statement.name.lexeme);
@@ -171,7 +274,11 @@ export class Analyser {
 		this.walkExpression(statement.value);
 	}
 	protected onExprStmt(statement: ExprStmt) {
-		this.walkExpression(statement.expression);
+		if (statement.expression.type === "Call") {
+			this.onCall(statement.expression, false);
+		} else {
+			this.walkExpression(statement.expression);
+		}
 	}
 	protected onVarDecl(statement: VarDeclStmt) {
 		this.walkExpression(statement.initializer);
@@ -271,7 +378,7 @@ export class Analyser {
 	protected onLiteral(_expr: LiteralExpr) {
 		// leaf: no children to walk
 	}
-	protected onCall(expr: CallExpr) {
+	protected onCall(expr: CallExpr, valueRequired: boolean = true) {
 		const declaration = this.findDeclaration(expr.callee.name.lexeme);
 		if (declaration && declaration.kind === "variable") {
 			this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
@@ -289,6 +396,9 @@ export class Analyser {
 						expr.arguments.length,
 					),
 				);
+			}
+			if (declaration.returnKind === "void" && valueRequired) {
+				this.diagnostics.push(diagnosticVoidCallInExpression(expr.callee.name));
 			}
 		}
 

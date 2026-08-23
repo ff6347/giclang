@@ -48,9 +48,9 @@ export class TestAnalyser extends Analyser {
 		this.visited(loop.type);
 		super.onLoopStatement(loop);
 	}
-	override onCall(expr: CallExpr) {
+	override onCall(expr: CallExpr, valueRequired = true) {
 		this.visited(expr.type);
-		super.onCall(expr);
+		super.onCall(expr, valueRequired);
 	}
 	override onLiteral(expr: LiteralExpr) {
 		this.visited(expr.type);

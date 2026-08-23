@@ -22,6 +22,7 @@ export type Statement =
 
 export interface ReturnStmt {
 	type: "ReturnStmt";
+	keyword: Token;
 	value?: Expression;
 }
 

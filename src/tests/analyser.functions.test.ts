@@ -57,7 +57,7 @@ describe("Analyser functions", () => {
 	});
 
 	test("should report a function call before its declaration", () => {
-		const source = "greet();\nfunc greet(){}";
+		const source = "greet();\nfunc greet(){return;}";
 		const result = analyseSource(source);
 		const expected = {
 			message: "Cannot find name 'greet'.",

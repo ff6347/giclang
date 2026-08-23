@@ -255,6 +255,7 @@ func drawSquare(x, y, size) {
 
 - `return expression;` - returns a value (Number, Boolean, or String)
 - `return;` - returns nothing (for procedures with side effects)
+- A return statement is only valid inside a function
 
 **Function kinds:**
 
@@ -839,6 +840,7 @@ Errors to detect:
 - `Cannot assign to repeat variable 'i'.`
 - `Function 'circle' expects 3 arguments, but got 2.`
 - `Function 'foo' must have a return statement.`
+- `Cannot return outside a function.`
 - `Cannot call function 'foo' before its declaration.`
 - `Cannot call 'item' because it is not a function.`
 - `Function 'foo' cannot return both a value and no value.`

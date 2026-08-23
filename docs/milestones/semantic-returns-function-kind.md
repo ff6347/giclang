@@ -48,7 +48,7 @@ There is no grammar change. This lesson uses `ReturnStmt.value?`; with `exactOpt
 
 - No runtime return propagation.
 - No static value type inference beyond void versus value.
-- No path-sensitive all-branches checking unless the decision gate chooses it.
+- No path-sensitive all-branches checking; follow-up work is tracked by git-bug `a751ee3`.
 - No built-in implementation.
 
 ## Verification
@@ -57,5 +57,5 @@ Use analyzer tests for each checklist behavior. Run `pnpm test` and `pnpm typech
 
 ## Decision Gates
 
-- Decide whether to add optional path-sensitive all-branches checking after the baseline explicit-return check.
-- Decide whether top-level `return` is rejected by the parser or diagnosed by the analyzer.
+- Baseline analysis accepts a function when any explicit return appears in its body or nested blocks. Path-sensitive all-branches checking is deferred to git-bug `a751ee3`.
+- The parser accepts `return` statements wherever statements are syntactically valid. The analyzer reports `Cannot return outside a function.` at the `return` keyword.

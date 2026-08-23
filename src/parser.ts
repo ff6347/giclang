@@ -110,7 +110,7 @@ export class Parser {
 		if (this.match(IF)) return this.ifStatement();
 		if (this.match(REPEAT)) return this.repeatStatement();
 		if (this.match(FUNC)) return this.funcStatement();
-		if (this.match(RETURN)) return this.returnStatement();
+		if (this.match(RETURN)) return this.returnStatement(this.previous());
 		// TODO: We will get here soon
 		// if (this.match(LEFT_BRACE)) return this.block();
 		if (this.check(IDENTIFIER) && this.checkNext(EQUAL)) {
@@ -119,7 +119,7 @@ export class Parser {
 		return this.expressionStatement();
 	}
 
-	returnStatement(): ReturnStmt {
+	returnStatement(keyword: Token): ReturnStmt {
 		let value: Expression | undefined = undefined;
 		if (!this.check(SEMICOLON)) {
 			value = this.expression();
@@ -133,6 +133,7 @@ export class Parser {
 
 		const expr: ReturnStmt = {
 			type: "ReturnStmt",
+			keyword,
 		};
 		if (value) {
 			expr.value = value;

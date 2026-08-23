@@ -451,5 +451,4 @@ describe("parser.func", () => {
 			},
 		);
 	});
-	test.todo("Should throw on return value missing; in analyser");
 });

@@ -68,3 +68,39 @@ export function arityMismatchDiagnostic(
 		end: name.end,
 	};
 }
+
+export function diagnosticFunctionReturn(name: Token): Diagnostic {
+	return {
+		message: `Function '${name.lexeme}' must have a return statement.`,
+		line: name.line,
+		start: name.start,
+		end: name.end,
+	};
+}
+
+export function diagnosticFunctionReturnMixed(name: Token): Diagnostic {
+	return {
+		message: `Function '${name.lexeme}' cannot return both a value and no value.`,
+		line: name.line,
+		start: name.start,
+		end: name.end,
+	};
+}
+
+export function diagnosticReturnOutsideFunction(keyword: Token): Diagnostic {
+	return {
+		message: "Cannot return outside a function.",
+		line: keyword.line,
+		start: keyword.start,
+		end: keyword.end,
+	};
+}
+
+export function diagnosticVoidCallInExpression(token: Token): Diagnostic {
+	return {
+		message: `Function '${token.lexeme}' does not return a value and cannot be used in an expression.`,
+		line: token.line,
+		start: token.start,
+		end: token.end,
+	};
+}
