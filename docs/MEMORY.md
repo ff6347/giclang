@@ -53,9 +53,17 @@
   the TypeScript lexer, parser, analyzer, and interpreter platform-neutral.
 - [technique] Use a recording render backend for deterministic interpreter
   tests before connecting execution to a real Canvas backend.
-- [direction] The existing `ff6347/p5-code-sandbox` Monaco-and-iframe design is
-  a candidate foundation for the GIC editor; Deno Desktop is a candidate shell
-  for filesystem access and desktop distribution.
+- [decision] The first browser shell uses a plain `<textarea>` and automatically
+  previews source after a short idle period. The final editor remains deferred.
+- [decision] Preview execution runs in a dedicated Web Worker with termination
+  for replacement and runaway-program protection. The main thread renders
+  structured output to Canvas; interpreted GIC does not use an iframe.
+- [decision] The previous image remains during execution, is replaced on success,
+  and is cleared on diagnostics or timeout.
+- [decision] Playwright with Firefox is the required browser test path.
+- [decision] The browser calls the shared browser-neutral core directly and
+  exposes diagnostics only before Slice 6. LSP, VS Code, and broader language
+  assistance remain deferred.
 - [direction] Treat Node-based image rendering as an optional export, CI, or
   dataset tool rather than the primary execution environment.
 - [decision] The browser-neutral public language entry point is `src/core.ts`;
@@ -264,9 +272,10 @@ start))` — the `Math.max` covers empty EOF spans.
 - [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical
   slices may implement partial milestone behavior without checking the milestone
   early.
-- [process] Each vertical slice uses a feature branch/worktree, starts with a
+- [process] Each vertical slice uses a feature branch and starts with a
   source-level acceptance test, keeps the core browser-neutral, and ends with an
-  experiment, durable documentation, review, atomic commits, and a push.
+  experiment, durable documentation, review, atomic commits, and a push. Use a
+  separate worktree only when parallel agents require isolated working trees.
 
 ## Issue Tracking
 
