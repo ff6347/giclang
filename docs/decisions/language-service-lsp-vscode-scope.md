@@ -1,13 +1,33 @@
-<!-- ABOUTME: Defines the unresolved language-service, LSP, and VS Code scope decision gate. -->
-<!-- ABOUTME: Compares direct service APIs, LSP, VS Code, and capability scope without selecting one. -->
+<!-- ABOUTME: Records the selected browser language-service route and editor capability scope. -->
+<!-- ABOUTME: Keeps diagnostics direct while deferring LSP, VS Code, and broader assistance. -->
 
 # Decision: Language-Service, LSP, and VS Code Extension Scope
 
-Status: Unresolved
+Status: Accepted for the vertical browser path
 
 ## Decision Question
 
 What language-service capability route will GIC expose for diagnostics, syntax highlighting, editor assistance, LSP integration, and any VS Code extension work? This decision defines scope and adapter boundaries without choosing documentation-comment syntax or changing language semantics.
+
+## Decision
+
+- The browser calls the shared browser-neutral GIC core directly. The first
+  browser path does not introduce an LSP bridge, transport protocol, or separate
+  capability model.
+- Browser diagnostics use the core's structured diagnostic data for parser and
+  semantic findings. Presentation remains a browser responsibility.
+- Diagnostics are the only language assistance included before Slice 6. Syntax
+  highlighting, completion, hover, signature help, and go-to-definition are
+  deferred.
+- LSP and a VS Code extension are excluded from the vertical browser path. Their
+  eventual scope remains unresolved and requires a separate decision before
+  implementation.
+- Node-oriented LSP dependencies do not enter the browser path.
+- Documentation-comment syntax, metadata, and presentation remain a separate
+  decision.
+
+The direct route may support future adapters, but this decision does not design
+those adapters or stabilize capabilities that no current browser slice needs.
 
 ## Current Baseline
 
@@ -29,7 +49,7 @@ What language-service capability route will GIC expose for diagnostics, syntax h
 
 Browser IDE milestones need a defined route for diagnostics, parse errors, semantic errors, and later language assistance. The gate also prevents accidental expansion from shared analysis helpers into `gic lsp`, VS Code packaging, or documentation-comment UI before those scopes are explicitly resolved.
 
-## Options and Consequences
+## Considered Options
 
 - Option: `Direct shared language-service API first; no LSP or VS Code yet`
   - Consequences: gives the browser IDE a service route with a small transport surface; keeps Node-oriented LSP dependencies out of the browser path; leaves LSP and VS Code scope unresolved; requires API boundaries stable enough for later adapters.
@@ -42,14 +62,16 @@ Browser IDE milestones need a defined route for diagnostics, parse errors, seman
 - Option: `Syntax highlighting only for first pass`
   - Consequences: limits initial editor capability to a small visible feature; does not satisfy browser IDE diagnostic needs by itself; delays questions about error ranges, semantic analysis access, and runtime preview integration.
 
-## Questions Before Choosing
+## Consequences and Deferred Details
 
-- What minimum diagnostic capabilities are required for the browser IDE MVP?
-- Are syntax highlighting, hover, completion, and go-to-definition in scope for the first language-assistance milestone?
-- Does the browser IDE call a direct API, an LSP bridge, or an adapter that hides transport details?
-- Can a Node-oriented LSP package run acceptably in the browser target, or is a browser-native service boundary needed?
-- Which capabilities depend on documentation comments, and which remain independent?
-- How does the CLI avoid silently gaining `gic lsp` while sharing analysis code?
+- Browser diagnostics reuse the existing source-location contract without an
+  early protocol translation layer.
+- The CLI does not gain `gic lsp` by sharing core analysis code.
+- The textarea shell does not need syntax-highlighting or completion integration.
+- Slice 6 must decide which broader assistance capabilities justify implementation
+  before selecting an editor integration or reusable adapter boundary.
+- LSP, VS Code, and documentation comments remain explicit future decisions; they
+  are not implied by the direct browser service route.
 
 ## Decision Checklist
 
