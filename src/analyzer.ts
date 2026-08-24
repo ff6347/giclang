@@ -53,15 +53,15 @@ export class Analyser {
 	}
 
 	classifyStatements(statements: Statement[]): FunctionReturnState {
-		statements.forEach((stmt) => {
-			this.classifyStatement(stmt);
-		});
-	}
-	classifyStatement(stmt: Statement) {
-		throw new Error("Method not implemented.");
+		let state: FunctionReturnState = "none";
+
+		for (const stmt of statements) {
+			state = this.mergeReturnStates(state, this.classifyStatement(stmt));
+		}
+		return state;
 	}
 
-	classifyReturn(statement: Statement): FunctionReturnState {
+	classifyStatement(statement: Statement): FunctionReturnState {
 		switch (statement.type) {
 			case "ReturnStmt": {
 				if (statement.value) {
@@ -72,60 +72,30 @@ export class Analyser {
 			}
 			case "IfStmt": {
 				// recursifly classify both branches
-				for (const stmt of statement.thenBranch) {
-					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
-				}
-				for (const stmt of statement.elseBranch ?? []) {
-					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
-				}
-				break;
+				return this.mergeReturnStates(
+					this.classifyStatements(statement.thenBranch),
+					this.classifyStatements(statement.elseBranch ?? []),
+				);
 			}
 			case "RepeatStmt": {
-				for (const stmt of statement.body) {
-					this.returnState = this.mergeReturnStates(this.classifyReturn(stmt));
-				}
-				break;
+				return this.classifyStatements(statement.body);
 			}
 			default: {
 				return "none";
 			}
 		}
 	}
-	recursiveReturnClassify(statements: Statement[]): void {
-		this.returnState = "none";
 
-		for (const statement of statements) {
-			this.returnState = this.mergeReturnStates(this.classifyReturn(statement));
-		}
+	mergeReturnStates(
+		current: FunctionReturnState,
+		observed: FunctionReturnState,
+	): FunctionReturnState {
+		if (current === "mixed" || observed === "mixed") return "mixed";
+		if (current === "none") return observed;
+		if (observed === "none" || current === observed) return current;
+		return "mixed";
 	}
-	mergeReturnStates(state: FunctionReturnState): FunctionReturnState {
-		if (this.returnState === undefined) {
-			this.returnState = "none";
-		}
-		if (this.returnState === "none") {
-			return state;
-		}
-		if (this.returnState === "void" && state === "void") {
-			return "void";
-		}
-		if (this.returnState === "value" && state === "value") {
-			return "value";
-		}
 
-		if (this.returnState === "void" && state === "value") {
-			return "mixed";
-		}
-
-		if (this.returnState === "value" && state === "void") {
-			return "mixed";
-		}
-
-		if (this.returnState === "mixed") {
-			return "mixed";
-		}
-
-		if (state === "none") return this.returnState;
-	}
 	findDeclaration(name: string): Declaration | undefined {
 		for (let i = this.scopes.length - 1; i >= 0; i--) {
 			if (this.scopes[i]?.declarations.has(name)) {
@@ -221,8 +191,14 @@ export class Analyser {
 			token: statement.name,
 			arity: statement.params?.length ?? 0,
 		};
+		const returnState = this.classifyStatements(statement.body);
+		this.returnState = returnState;
+		if (returnState === "void" || returnState === "value") {
+			declaration.returnKind = returnState;
+		}
+
 		this.scopes.at(-1)?.declarations.set(statement.name.lexeme, declaration);
-		this.recursiveReturnClassify(statement.body);
+
 		this.scopes.push(new Scope());
 		if (statement.params) {
 			statement.params.forEach((param) => {
@@ -396,8 +372,7 @@ export class Analyser {
 						expr.arguments.length,
 					),
 				);
-			}
-			if (declaration.returnKind === "void" && valueRequired) {
+			} else if (declaration.returnKind === "void" && valueRequired) {
 				this.diagnostics.push(diagnosticVoidCallInExpression(expr.callee.name));
 			}
 		}
