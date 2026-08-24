@@ -187,6 +187,49 @@ describe("Analyser returns", () => {
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
+	test("should classify a recursive void function through a nested if", () => {
+		const source = "func again(x){let result=again(x);if(x){return;}}";
+		const result = analyseSource(source);
+		const expected = {
+			message:
+				"Function 'again' does not return a value and cannot be used in an expression.",
+			line: 0,
+			start: 25,
+			end: 30,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should classify a recursive void function through a repeat body", () => {
+		const source = "func again(){let result=again();repeat(i,0,1){return;}}";
+		const result = analyseSource(source);
+		const expected = {
+			message:
+				"Function 'again' does not return a value and cannot be used in an expression.",
+			line: 0,
+			start: 24,
+			end: 29,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should require a value from an argument of a standalone call", () => {
+		const source =
+			"func empty(){return;}func consume(x){return;}consume(empty());";
+		const result = analyseSource(source);
+		const expected = {
+			message:
+				"Function 'empty' does not return a value and cannot be used in an expression.",
+			line: 0,
+			start: 53,
+			end: 58,
+		};
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
 	test("should prioritize an arity diagnostic for a void call", () => {
 		const source = "func show(a,b){return;}let result=show(1);";
 		const result = analyseSource(source);
