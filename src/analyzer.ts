@@ -35,7 +35,7 @@ import {
 } from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
 import { Scope, type Declaration } from "./scope.ts";
-import { builtIns, isBuiltInName } from "./built-ins.ts";
+import { builtIns, isBuiltInName, type FunctionEntry } from "./built-ins.ts";
 
 type FunctionReturnState = "none" | "void" | "value" | "mixed";
 
@@ -356,13 +356,34 @@ export class Analyser {
 	}
 	protected onCall(expr: CallExpr, valueRequired: boolean = true) {
 		const declaration = this.findDeclaration(expr.callee.name.lexeme);
+
 		if (declaration && declaration.kind === "variable") {
 			this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
-		} else if (
-			isBuiltInName(expr.callee.name.lexeme) &&
-			builtIns[expr.callee.name.lexeme].kind === "constant"
-		) {
-			this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
+		} else if (isBuiltInName(expr.callee.name.lexeme)) {
+			const builtIn = builtIns[expr.callee.name.lexeme];
+
+			if (builtIn.kind === "constant") {
+				this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
+			} else if (builtIn.kind === "function") {
+				if (
+					!builtIn.signatures.some(
+						(sig) => sig.length === expr.arguments.length,
+					)
+				) {
+					// deliberately move to function for better understanding
+					const unique = (arr: FunctionEntry) => {
+						return Array.from(new Set(arr.signatures.map((sig) => sig.length)));
+					};
+
+					this.diagnostics.push(
+						arityMismatchDiagnostic(
+							expr.callee.name,
+							unique(builtIn).sort((a, b) => a - b),
+							expr.arguments.length,
+						),
+					);
+				}
+			}
 		} else if (declaration && declaration.kind === "function") {
 			if (expr.arguments.length !== declaration.arity) {
 				this.diagnostics.push(

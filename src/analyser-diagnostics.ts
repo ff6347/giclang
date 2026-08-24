@@ -58,11 +58,20 @@ export function notAFunctionDiagnostic(name: Token): Diagnostic {
 
 export function arityMismatchDiagnostic(
 	name: Token,
-	expected: number,
+	expected: number | readonly number[],
 	actual: number,
 ): Diagnostic {
+	const listify = new Intl.ListFormat("en-US", {
+		style: "short",
+		type: "disjunction",
+	});
+
 	return {
-		message: `Function '${name.lexeme}' expects ${expected} arguments, but got ${actual}.`,
+		message: `Function '${name.lexeme}' expects ${
+			typeof expected === "number"
+				? expected
+				: listify.format(expected.map(String))
+		} arguments, but got ${actual}.`,
 		line: name.line,
 		start: name.start,
 		end: name.end,

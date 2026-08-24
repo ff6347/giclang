@@ -60,4 +60,39 @@ describe("built-in functions", () => {
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
+
+	test("should reject invalid circle arity", () => {
+		const source = "circle(50, 50);";
+		const actual = runSource(source);
+		const expected = {
+			ok: false,
+			diagnostics: [
+				{
+					message: "Function 'circle' expects 3 arguments, but got 2.",
+					line: 0,
+					start: 0,
+					end: 6,
+				},
+			],
+		};
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should reject invalid background arity", () => {
+		const source = "background(50, 50);";
+		const actual = runSource(source);
+		const expected = {
+			ok: false,
+			diagnostics: [
+				{
+					message:
+						"Function 'background' expects 1, 3, or 4 arguments, but got 2.",
+					line: 0,
+					start: 0,
+					end: 10,
+				},
+			],
+		};
+		assert.deepStrictEqual(actual, expected);
+	});
 });

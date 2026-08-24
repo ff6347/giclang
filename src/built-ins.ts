@@ -35,7 +35,7 @@ export type BuiltInKeys =
 
 type ValueKind = "number" | "boolean" | "string";
 type Signature = readonly ValueKind[];
-type FunctionEntry = {
+export type FunctionEntry = {
 	readonly kind: "function";
 	readonly signatures: readonly Signature[];
 	readonly returnKind: "void" | "value";
