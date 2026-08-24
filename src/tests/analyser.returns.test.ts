@@ -56,6 +56,7 @@ describe("Analyser returns", () => {
 	test("should accept an explicit return in a nested block", () => {
 		const source = "func maybe(x){if(x){return 1;}}";
 		const result = analyseSource(source);
+
 		assert.strictEqual(result.diagnostics.length, 0);
 	});
 
@@ -171,17 +172,31 @@ describe("Analyser returns", () => {
 		assert.strictEqual(result.diagnostics.length, 0);
 	});
 
-	test("should report function without returnkind used in expression", () => {
-		const source = "func again() {\nlet result = again();\nreturn;\n}";
+	test("should report a recursive void call used as an initializer", () => {
+		const source = "func again(){let result=again();return;}";
 		const result = analyseSource(source);
 		const expected = {
-			message: "",
-			line: 1,
-			start: 27,
-			end: 34,
+			message:
+				"Function 'again' does not return a value and cannot be used in an expression.",
+			line: 0,
+			start: 24,
+			end: 29,
 		};
-		console.log(result.diagnostics[0]);
-		console.log(result.analyzer.visits);
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should prioritize an arity diagnostic for a void call", () => {
+		const source = "func show(a,b){return;}let result=show(1);";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Function 'show' expects 2 arguments, but got 1.",
+			line: 0,
+			start: 34,
+			end: 38,
+		};
+
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
