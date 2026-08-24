@@ -214,10 +214,10 @@ start))` — the `Math.max` covers empty EOF spans.
   contains only declarations visible at the current source position. A function
   is inserted immediately before its body so recursion works without hoisting.
 - [decision] Scope entries are a discriminated union: variables retain a token,
-  while functions retain a token and arity. The kind lets assignment reject
-  user functions and lets calls compare argument count with parameter count;
-  repeat-variable assignment remains deferred because repeat iterators currently
-  use `"variable"`.
+  while functions retain a token, arity, and an optional valid `"void" | "value"`
+  return kind. The kind lets assignment reject user functions and lets calls
+  validate arity and value context; repeat-variable assignment remains deferred
+  because repeat iterators currently use `"variable"`.
 - [lesson] Analyze a variable initializer before registering its declaration,
   and analyze repeat bounds before registering the iterator. Registration-first
   ordering incorrectly permits self-reference.
@@ -238,10 +238,35 @@ start))` — the `Math.max` covers empty EOF spans.
   signature checks remain deferred to the built-in call-error lesson.
 - [lesson] Call-target or arity diagnostics must not stop traversal of argument
   expressions; independent argument diagnostics still need collecting.
+- [decision] `ReturnStmt.keyword` retains the `return` token so the analyzer can
+  diagnose returns outside functions. Baseline required-return analysis accepts
+  any explicit return in nested statement containers; path-sensitive all-branches
+  checking is deferred to git-bug `a751ee3`.
+- [technique] Classify function returns with a pure recursive pre-pass over
+  statements, merging `"none" | "void" | "value" | "mixed"` across `if` branches
+  and repeat bodies. Attach valid return metadata before semantic body traversal
+  so recursive calls see it; analyze return expressions only in the normal walk.
+- [decision] Only a direct call expression statement may discard a void result.
+  Initializers, operators, return values, and arguments require values. Arity
+  mismatch takes priority over void-value misuse at the same callee token, while
+  arguments are still traversed.
 - [preference] During interactive analyzer TDD, the agent may batch agreed red
   tests while Fabian makes each behavior green and requests hints as needed.
   Fabian reports focused red/green state; the agent runs tests only when
   explicitly requested.
+
+## Delivery Planning
+
+- [decision] Remaining GIC work is delivered through
+  `docs/plans/vertical-slice-roadmap.md` after the function-call analyzer
+  transition point. Return analysis was completed before Slice 0 and is consumed
+  by executable function work in Slice 4.
+- [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical
+  slices may implement partial milestone behavior without checking the milestone
+  early.
+- [process] Each vertical slice uses a feature branch/worktree, starts with a
+  source-level acceptance test, keeps the core browser-neutral, and ends with an
+  experiment, durable documentation, review, atomic commits, and a push.
 
 ## Issue Tracking
 
