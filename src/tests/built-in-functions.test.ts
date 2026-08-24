@@ -46,4 +46,18 @@ describe("built-in functions", () => {
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
+
+	test("should return background and circle commands in source order", () => {
+		const source = "background(20, 0,0);\ncircle(50,50,30);";
+		const actual = runSource(source);
+		const expected = {
+			ok: true,
+			commands: [
+				{ type: "background", lightness: 20, chroma: 0, hue: 0 },
+				{ type: "circle", x: 50, y: 50, radius: 30 },
+			],
+			diagnostics: [],
+		};
+		assert.deepStrictEqual(actual, expected);
+	});
 });

@@ -42,18 +42,31 @@ export class Interpreter {
 
 	private onCall(expr: CallExpr, commands: Command[]) {
 		switch (expr.callee.name.lexeme) {
-			case "background":
+			case "circle": {
 				if (expr.arguments.length === 3) {
-					const [lightness, chroma, hue] = expr.arguments;
+					const [x, y, radius] = expr.arguments;
 					commands.push({
-						type: "background",
-						lightness:
-							lightness?.type === "Literal" ? (lightness.value as number) : 0,
-						chroma: chroma?.type === "Literal" ? (chroma.value as number) : 0,
-						hue: hue?.type === "Literal" ? (hue.value as number) : 0,
+						type: "circle",
+						x: x?.type === "Literal" ? (x.value as number) : 0,
+						y: y?.type === "Literal" ? (y.value as number) : 0,
+						radius: radius?.type === "Literal" ? (radius.value as number) : 0,
 					});
 				}
-
+				break;
+			}
+			case "background":
+				{
+					if (expr.arguments.length === 3) {
+						const [lightness, chroma, hue] = expr.arguments;
+						commands.push({
+							type: "background",
+							lightness:
+								lightness?.type === "Literal" ? (lightness.value as number) : 0,
+							chroma: chroma?.type === "Literal" ? (chroma.value as number) : 0,
+							hue: hue?.type === "Literal" ? (hue.value as number) : 0,
+						});
+					}
+				}
 				break;
 			default:
 				break;
