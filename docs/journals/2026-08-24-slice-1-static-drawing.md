@@ -99,3 +99,14 @@ test green: source changes start a worker, the worker calls `runSource()`, the
 main thread receives commands, and Canvas translates `background` and `circle`.
 Keep diagnostics and timeout/replacement behavior aligned with the Slice 0
 decision record.
+
+## Browser Test Checkpoint
+
+The browser setup and red test were checkpointed after the reflection snapshot:
+
+- `1578f81 chore(browser): scaffold Vite and Playwright`
+- `9490eab test(browser): pin static preview acceptance`
+
+Both commits are pushed. The acceptance test remains intentionally red and the
+empty browser entry retains the documented lint warning until preview behavior is
+implemented.
