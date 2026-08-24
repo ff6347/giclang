@@ -23,7 +23,9 @@ not mean implementing every option in a decision document.
 
 The horizontal analyzer phase ends after
 [functions, calls, and arity](../milestones/semantic-functions-calls-arity.md).
-At this point GIC has:
+Return and function-kind analysis was also completed before vertical slicing
+began; Slice 4 consumes that completed analyzer behavior rather than rebuilding
+it. At this point GIC has:
 
 - a lexer, parser, AST, and source-located parser diagnostics;
 - a browser-neutral parsing API;
@@ -195,7 +197,7 @@ a seeded random program reproduces the same result.
 
 **Work through the stack:**
 
-- finish return placement, required-return, and void/value-kind analysis;
+- use the completed return-placement, required-return, and void/value-kind analysis;
 - execute function declarations, argument binding, calls, recursion, and early
   returns;
 - preserve return propagation through conditionals and repeats;
@@ -216,8 +218,9 @@ a seeded random program reproduces the same result.
 - seeded random output is repeatable;
 - every current pure built-in is exercised through normal call dispatch.
 
-This slice should close the return, function interpreter, and pure built-in
-milestones. It completes non-animation built-in call analysis, but the combined
+This slice consumes the completed return-analysis milestone and should close the
+function interpreter and pure built-in milestones. It completes non-animation
+built-in call analysis, but the combined
 built-in semantic milestone remains open until Slice 5 resolves `frameCount`
 and `frameRate` policy.
 
@@ -341,7 +344,7 @@ silently dropping it.
 
 | Existing open area                                | Delivery slice                                        |
 | ------------------------------------------------- | ----------------------------------------------------- |
-| Return and function-kind analysis                 | 4                                                     |
+| Return and function-kind analysis                 | Completed before Slice 0; consumed by 4               |
 | Repeat and program-loop analysis                  | 3 and 5                                               |
 | Built-in call analysis                            | 1 incrementally; non-animation rules in 4; close in 5 |
 | Runtime value, environment, and errors            | 1 incrementally; complete in 2                        |
