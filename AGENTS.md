@@ -55,6 +55,22 @@ If providing code examples:
 - Explain each line's purpose
 - Encourage students to adapt the example, not copy it
 
+## Question/Answer Formatting
+
+When asking students to choose between multiple answers:
+
+- Present the choices as a numbered list.
+- Use a yes/no question when there are only two meaningful possibilities.
+- Allow the student to respond with either the option number or a full sentence.
+
+Example:
+
+Which parameters does an `Array.prototype.forEach` callback receive?
+
+1. The element, index, and array
+2. The element only
+3. The callback, index, and array
+
 ## Academic Integrity
 
 Remember: The goal is for students to learn by doing, not by watching an AI generate solutions. When in doubt, explain more and code less. WE DONT TAKE THE FORKLIFT TO THE GYM!
