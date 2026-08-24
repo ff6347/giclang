@@ -31,7 +31,7 @@ Complete or review:
 
 ## Grammar and AST Shape
 
-There is no grammar change. This lesson uses `ReturnStmt.value?`; with `exactOptionalPropertyTypes`, the optional property should be absent when no return value exists.
+There is no grammar change. `ReturnStmt.keyword` retains the `return` token for diagnostic locations. `ReturnStmt.value?` is absent when no return value exists, as required by `exactOptionalPropertyTypes`.
 
 ## TDD-Oriented Student Checklist
 
