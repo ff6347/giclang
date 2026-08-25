@@ -6,6 +6,7 @@ import { expect, test, type Page } from "@playwright/test";
 const acceptanceSource = `background(20, 0, 0);
 circle(50, 50, 30);`;
 const backgroundOnlySource = "background(20, 0, 0);";
+const invalidSource = "circle(50, 50);";
 
 async function sampleCanvas(page: Page) {
 	return page.locator("#canvas").evaluate((element) => {
@@ -55,4 +56,32 @@ test("renders only the latest of rapid source edits", async ({ page }) => {
 			centerOpaque: true,
 			centerDiffersFromCorner: false,
 		});
+});
+
+test("clears the preview and shows a source-located diagnostic", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const editor = page.getByLabel("GiC");
+
+	await editor.fill(acceptanceSource);
+	await expect
+		.poll(() => sampleCanvas(page))
+		.toEqual({
+			cornerOpaque: true,
+			centerOpaque: true,
+			centerDiffersFromCorner: true,
+		});
+
+	await editor.fill(invalidSource);
+	await expect
+		.poll(() => sampleCanvas(page))
+		.toEqual({
+			cornerOpaque: false,
+			centerOpaque: false,
+			centerDiffersFromCorner: false,
+		});
+	await expect(page.locator("#diagnostics")).toHaveText(
+		"Line 1: Function 'circle' expects 3 arguments, but got 2.",
+	);
 });
