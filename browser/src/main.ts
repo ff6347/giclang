@@ -96,7 +96,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			} else {
 				clearCanvas();
 				diagnostics.setHTML(
-					e.data.diagnostics.map((d) => `<p>${d.message}</p>`).join("\n"),
+					e.data.diagnostics
+						.map((d) => `<p>Line ${d.line + 1}: ${d.message}</p>`)
+						.join("\n"),
 				);
 			}
 		};

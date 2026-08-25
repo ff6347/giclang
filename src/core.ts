@@ -33,7 +33,12 @@ export function parseSource(source: string): ParseResult {
 		return { ok: true, diagnostics, program };
 	} catch (e: unknown) {
 		if (e instanceof GicError || e instanceof ParserError) {
-			diagnostics.push(e);
+			diagnostics.push({
+				message: e.message,
+				line: e.line,
+				start: e.start,
+				end: e.end,
+			});
 		} else {
 			throw e;
 		}
@@ -62,7 +67,12 @@ export function runSource(source: string): RunResult {
 		}
 	} catch (e: unknown) {
 		if (e instanceof GicError || e instanceof ParserError) {
-			diagnostics.push(e);
+			diagnostics.push({
+				message: e.message,
+				line: e.line,
+				start: e.start,
+				end: e.end,
+			});
 		} else {
 			throw e;
 		}
