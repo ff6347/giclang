@@ -1,4 +1,6 @@
 export type { Program } from "./ast.ts";
+export type { Command } from "./commands.ts";
+
 import { Analyser } from "./analyzer.ts";
 import type { Program } from "./ast.ts";
 import type { Command } from "./commands.ts";

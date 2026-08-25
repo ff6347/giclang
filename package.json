@@ -15,6 +15,7 @@
 		"lint": "oxlint",
 		"lint:fix": "oxlint --fix",
 		"typecheck": "tsc --noEmit",
+		"typecheck:browser": "tsc --project browser/tsconfig.json --noEmit",
 		"build:browser": "vite build",
 		"dev:browser": "vite"
 	},
