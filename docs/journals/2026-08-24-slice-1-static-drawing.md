@@ -5,11 +5,12 @@
 
 ## Summary
 
-Slice 1 now has a browser-neutral source-to-command path for the selected
-`background` and `circle` built-ins. The accepted program produces exact ordered
-render commands, and analyzer diagnostics block execution. The browser shell and
-Firefox test infrastructure exist in the working tree; the real browser test is
-red because worker execution and Canvas command translation are not implemented.
+Slice 1 is complete. The browser-neutral source-to-command path for the
+selected `background` and `circle` built-ins produces exact ordered render
+commands, and analyzer diagnostics block execution. The browser shell renders
+source edits to Canvas through a Web Worker, shows source-located diagnostics,
+and replaces stale workers on rapid edits. All three Firefox acceptance tests
+are green.
 
 ## Core Execution Path
 
@@ -86,20 +87,6 @@ All three commits are pushed to `origin/slice-1-static-drawing`.
   `browser/src/main.ts`; Fabian chose to retain the entry file until behavior is
   implemented.
 
-## Current Working Tree
-
-The Vite shell, Playwright setup, exact dependency updates, and red browser test
-are uncommitted. Generated `browser/dist/`, `test-results/`, and
-`playwright-report/` output is ignored.
-
-## Next Step
-
-Implement the smallest worker-backed preview path that makes the existing Firefox
-test green: source changes start a worker, the worker calls `runSource()`, the
-main thread receives commands, and Canvas translates `background` and `circle`.
-Keep diagnostics and timeout/replacement behavior aligned with the Slice 0
-decision record.
-
 ## Browser Test Checkpoint
 
 The browser setup and red test were checkpointed after the reflection snapshot:
@@ -107,6 +94,51 @@ The browser setup and red test were checkpointed after the reflection snapshot:
 - `1578f81 chore(browser): scaffold Vite and Playwright`
 - `9490eab test(browser): pin static preview acceptance`
 
-Both commits are pushed. The acceptance test remains intentionally red and the
-empty browser entry retains the documented lint warning until preview behavior is
-implemented.
+## Preview Implementation
+
+The worker-backed preview path landed in three follow-up commits:
+
+- `e594fd3 feat(browser): render source changes on canvas`
+- `86daef5 test(browser): pin invalid source feedback`
+- `b8ba04c fix(browser): preserve diagnostic source locations`
+
+The main thread debounces textarea input (100 ms), spawns a fresh worker per
+run, enforces a 500 ms execution timeout, and ignores messages from replaced
+workers by comparing against `activeWorker`. The worker calls `runSource()`
+and posts the `RunResult` back. On success the main thread translates
+`background` and `circle` commands to Canvas 2D calls; on diagnostics it clears
+the canvas and renders `Line N: message` paragraphs into the aria-live region.
+
+- [technique] Results crossing the worker boundary must be plain data.
+  `core.ts` converts caught `GicError`/`ParserError` instances into
+  `{message, line, start, end}` literals before they reach `postMessage`,
+  because structured clone does not preserve class instances for the
+  consumer's `instanceof` checks and the browser only needs the fields.
+- [technique] A stale-worker guard (`worker !== activeWorker`) in every
+  callback prevents a timed-out or superseded worker from touching the DOM
+  after its replacement has started.
+
+## Slice Completion Verification
+
+All quality gates verified green in a later session:
+
+- `pnpm test`: 199/199 pass.
+- `pnpm typecheck`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`,
+  `pnpm build:browser`: all clean.
+- `pnpm test:e2e`: 3/3 Firefox tests pass (render, rapid-edit replacement,
+  invalid-source diagnostics), run outside the agent sandbox.
+- Core has no browser imports; `runSource()` remains the single pipeline.
+
+- [lesson] Playwright Firefox cannot launch inside the nono sandbox (Mach
+  `bootstrap_check_in` denied). Agent sessions must ask Fabian to run
+  `pnpm test:e2e` in a regular terminal, or the session needs a nono grant.
+- [lesson] Conversation context goes stale between sessions: files claimed
+  to have type errors were already fixed in earlier commits. Always verify
+  claims against the current working tree (`git status`, re-read files, run
+  the gates) before diagnosing.
+
+## Next Step
+
+Slice 1 is done pending review and merge. Slice 2 (Computed Static Drawing)
+extends the runtime environment with variables, arithmetic, assignment, and
+`if` branches through the same source-to-canvas path.
