@@ -76,6 +76,28 @@
   `diagnostics` on both branches: success has `ok: true` plus a `Program`, while
   failure has `ok: false`. Keeping diagnostics present on success leaves room
   for future warnings without changing the public result shape.
+- [decision] `runSource(source)` composes parsing, analysis, interpretation, and
+  command output through a discriminated `RunResult`. Parser or analyzer findings
+  return failure diagnostics without constructing the interpreter or exposing
+  commands.
+- [decision] GIC uses a platform-neutral tree-walking interpreter rather than
+  generating JavaScript. Serializable render commands carry drawing intent to
+  browser Canvas or future adapters; shells do not reimplement language execution.
+- [technique] Firefox browser acceptance tests fill the real textarea and compare
+  corner and center Canvas pixels for opacity and visible difference, avoiding
+  test-only DOM markers.
+- [technique] Results crossing the Web Worker boundary must be plain data.
+  `core.ts` converts caught `GicError`/`ParserError` instances into
+  `{message, line, start, end}` literals before `postMessage`; structured
+  clone does not preserve class instances for consumer `instanceof` checks.
+- [technique] The browser preview keeps a stale-worker guard
+  (`worker !== activeWorker`) in every callback so a timed-out or superseded
+  worker cannot touch the DOM after its replacement starts. A fresh worker is
+  spawned per run after a 100 ms input debounce, with a 500 ms execution
+  timeout.
+- [lesson] Playwright Firefox cannot launch inside the nono sandbox (Mach
+  `bootstrap_check_in` denied). Run `pnpm test:e2e` in a regular terminal
+  outside the agent session.
 - [decision] Core diagnostics are structured `message`/`line`/`start`/`end`
   data, not formatted output. The core converts expected `GicError` and
   `ParserError` exceptions into results, rethrows unexpected implementation
@@ -242,8 +264,11 @@ start))` — the `Math.max` covers empty EOF spans.
   `Cannot call '<name>' because it is not a function.`; missing names retain the
   ordinary missing-name diagnostic. `reservedNames` cannot decide callability
   because it combines keywords, functions, and constants.
-- [decision] User-function calls require exact arity. Built-in arity and
-  signature checks remain deferred to the built-in call-error lesson.
+- [decision] User-function calls require exact arity. Built-in function arity is
+  registry-driven: any signature length may match, and accepted arities are
+  deduplicated and sorted for deterministic single or overloaded diagnostics.
+- [lesson] Scope declarations resolve user functions and variables; built-in
+  callability and signatures come from the built-in registry instead.
 - [lesson] Call-target or arity diagnostics must not stop traversal of argument
   expressions; independent argument diagnostics still need collecting.
 - [decision] `ReturnStmt.keyword` retains the `return` token so the analyzer can
@@ -276,6 +301,8 @@ start))` — the `Math.max` covers empty EOF spans.
   source-level acceptance test, keeps the core browser-neutral, and ends with an
   experiment, durable documentation, review, atomic commits, and a push. Use a
   separate worktree only when parallel agents require isolated working trees.
+- [preference] Fabian's personal learning comments are intentional working notes;
+  agents preserve them unless he requests comment review or removal.
 
 ## Issue Tracking
 

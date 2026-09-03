@@ -1,6 +1,11 @@
 export type { Program } from "./ast.ts";
+export type { Command } from "./commands.ts";
+
+import { Analyser } from "./analyzer.ts";
 import type { Program } from "./ast.ts";
+import type { Command } from "./commands.ts";
 import { GicError, ParserError } from "./error.ts";
+import { Interpreter } from "./interpreter.ts";
 import { Lexer } from "./lexer.ts";
 import { Parser } from "./parser.ts";
 
@@ -14,6 +19,10 @@ export type ParseResult =
 	| { ok: true; program: Program; diagnostics: Diagnostic[] }
 	| { ok: false; diagnostics: Diagnostic[] };
 
+export type RunResult =
+	| { ok: true; commands: Command[]; diagnostics: Diagnostic[] }
+	| { ok: false; diagnostics: Diagnostic[] };
+
 export function parseSource(source: string): ParseResult {
 	const diagnostics: Diagnostic[] = [];
 	try {
@@ -24,7 +33,46 @@ export function parseSource(source: string): ParseResult {
 		return { ok: true, diagnostics, program };
 	} catch (e: unknown) {
 		if (e instanceof GicError || e instanceof ParserError) {
-			diagnostics.push(e);
+			diagnostics.push({
+				message: e.message,
+				line: e.line,
+				start: e.start,
+				end: e.end,
+			});
+		} else {
+			throw e;
+		}
+		return { ok: false, diagnostics };
+	}
+}
+
+export function runSource(source: string): RunResult {
+	const diagnostics: Diagnostic[] = [];
+	try {
+		const parsedSource = parseSource(source);
+		diagnostics.push(...parsedSource.diagnostics);
+		if (!parsedSource.ok) {
+			return { ok: false, diagnostics };
+		} else {
+			const { program } = parsedSource;
+			const analyser = new Analyser(program);
+			const analysedResult = analyser.analyze();
+			diagnostics.push(...analysedResult);
+			if (diagnostics.length > 0) {
+				return { ok: false, diagnostics };
+			}
+			const interpreter = new Interpreter(program);
+			const commands = interpreter.interpret();
+			return { ok: true, commands, diagnostics };
+		}
+	} catch (e: unknown) {
+		if (e instanceof GicError || e instanceof ParserError) {
+			diagnostics.push({
+				message: e.message,
+				line: e.line,
+				start: e.start,
+				end: e.end,
+			});
 		} else {
 			throw e;
 		}

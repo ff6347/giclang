@@ -1,0 +1,17 @@
+<!-- ABOUTME: Defines the browser shell for editing and previewing GIC programs. -->
+<!-- ABOUTME: Provides source input, diagnostics output, and the fixed-size canvas. -->
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>GiC | Gestalten in Code</title>
+	</head>
+	<body>
+		<label for="code">GiC</label>
+		<textarea id="code"></textarea>
+		<canvas id="canvas" width="101" height="101"></canvas>
+		<div id="diagnostics" aria-live="polite"></div>
+		<script src="src/main.ts" type="module"></script>
+	</body>
+</html>
