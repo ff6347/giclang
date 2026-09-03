@@ -86,6 +86,18 @@
 - [technique] Firefox browser acceptance tests fill the real textarea and compare
   corner and center Canvas pixels for opacity and visible difference, avoiding
   test-only DOM markers.
+- [technique] Results crossing the Web Worker boundary must be plain data.
+  `core.ts` converts caught `GicError`/`ParserError` instances into
+  `{message, line, start, end}` literals before `postMessage`; structured
+  clone does not preserve class instances for consumer `instanceof` checks.
+- [technique] The browser preview keeps a stale-worker guard
+  (`worker !== activeWorker`) in every callback so a timed-out or superseded
+  worker cannot touch the DOM after its replacement starts. A fresh worker is
+  spawned per run after a 100 ms input debounce, with a 500 ms execution
+  timeout.
+- [lesson] Playwright Firefox cannot launch inside the nono sandbox (Mach
+  `bootstrap_check_in` denied). Run `pnpm test:e2e` in a regular terminal
+  outside the agent session.
 - [decision] Core diagnostics are structured `message`/`line`/`start`/`end`
   data, not formatted output. The core converts expected `GicError` and
   `ParserError` exceptions into results, rethrows unexpected implementation
