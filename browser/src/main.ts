@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			if (e.data.ok) {
 				renderToCanvas(e.data.commands);
-				console.log("Result:", e.data.commands);
+				console.info("Result:", e.data.commands);
 				diagnostics.setHTML("");
 				// write to canvas
 			} else {

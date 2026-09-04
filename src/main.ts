@@ -19,7 +19,7 @@ async function main() {
 await main();
 
 function helpAndExit() {
-	console.log("Usage: gic [script]");
+	console.info("Usage: gic [script]");
 	exit(64);
 }
 
