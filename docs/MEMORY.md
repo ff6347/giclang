@@ -80,6 +80,18 @@
   command output through a discriminated `RunResult`. Parser or analyzer findings
   return failure diagnostics without constructing the interpreter or exposing
   commands.
+- [decision] Interpreter expression results distinguish user-visible
+  `number | string | boolean` values from a unique internal `VOID` symbol.
+  Environments store only user-visible values; command-emitting calls return
+  `VOID` without exposing it to GIC programs.
+- [technique] Pass the current `Environment` explicitly through statement and
+  expression evaluation. Declarations write to the current environment, reads
+  search its parent chain, and assignment updates the nearest environment that
+  already owns the name.
+- [technique] Built-in call arguments are AST expressions, not values. Evaluate
+  them left-to-right in the current environment, validate the resulting runtime
+  values, then emit commands; checking `typeof` on the AST node only sees an
+  object.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
@@ -190,10 +202,12 @@ start))` — the `Math.max` covers empty EOF spans.
   width-or-column, never both. Cover the combination space.
 
 - [decision] AST nodes retain their significant tokens (name, operator,
-  paren), which carry spans. Errors point at a single token — enough for
-  shadowing, arity, and runtime type errors. Full per-node spans are an
-  additive extension, not a prerequisite; revisit only when an error needs
-  to underline a whole expression.
+  paren), which carry spans. `IfStmt` retains its `if` keyword because
+  expressions lack a common location and runtime condition-type diagnostics
+  need source evidence. Errors point at a single token — enough for shadowing,
+  arity, and runtime type errors. Full per-node spans are an additive extension,
+  not a prerequisite; revisit only when an error needs to underline a whole
+  expression.
 
 ## Data Modeling and Types
 
