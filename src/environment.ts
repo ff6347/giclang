@@ -23,6 +23,28 @@ export class Environment {
 		return undefined;
 	}
 
+	/**
+	 * Assigns a value to a variable in this environment or its parent.
+	 * Returns true if the variable was assigned, false if not found.
+	 */
+	assign(name: string, value: LiteralValue): boolean {
+		// update variables if the name is already defined
+		// otherwise recurse into parent environment
+		// if parent has no variable, return false
+
+		// returns true if the variable was assigned, false if not found
+
+		if (this.variables.has(name)) {
+			this.variables.set(name, value);
+			return true;
+		}
+		if (this.parent) {
+			return this.parent.assign(name, value);
+		} else {
+			return false;
+		}
+	}
+
 	set(name: string, value: LiteralValue): void {
 		this.variables.set(name, value);
 	}

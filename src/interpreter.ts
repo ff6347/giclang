@@ -2,6 +2,7 @@
 // ABOUTME: Keeps language evaluation separate from browser and Canvas APIs.
 
 import type {
+	Assignment,
 	BinaryExpr,
 	CallExpr,
 	Expression,
@@ -33,6 +34,10 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	) {
 		switch (statement.type) {
+			case "Assignment": {
+				this.onAssignment(statement, commands, currentEnvironment);
+				break;
+			}
 			case "VarDecl": {
 				this.onVarDecl(statement, commands, currentEnvironment);
 				break;
@@ -42,6 +47,31 @@ export class Interpreter {
 				break;
 			default:
 				break;
+		}
+	}
+	onAssignment(
+		statement: Assignment,
+		commands: Command[],
+		currentEnvironment: Environment,
+	) {
+		const value = this.evaluateExpression(
+			statement.value,
+			commands,
+			currentEnvironment,
+		);
+		if (value === VOID) {
+			throw new Error(
+				`Assignment value did not produce a value '${statement.name.lexeme}'`,
+			);
+		}
+		const result = currentEnvironment.assign(statement.name.lexeme, value);
+		if (!result) {
+			throw new GicError(
+				`Cannot find name '${statement.name.lexeme}'.`,
+				statement.name.line,
+				statement.name.start,
+				statement.name.end,
+			);
 		}
 	}
 	onVarDecl(
