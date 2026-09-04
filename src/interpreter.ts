@@ -8,6 +8,7 @@ import type {
 	Expression,
 	ExprStmt,
 	IdentifierExpr,
+	IfStmt,
 	LiteralExpr,
 	LiteralValue,
 	Program,
@@ -34,6 +35,10 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	) {
 		switch (statement.type) {
+			case "IfStmt": {
+				this.onIfStmt(statement, commands, currentEnvironment);
+				break;
+			}
 			case "Assignment": {
 				this.onAssignment(statement, commands, currentEnvironment);
 				break;
@@ -48,6 +53,40 @@ export class Interpreter {
 			default:
 				break;
 		}
+	}
+	onIfStmt(
+		statement: IfStmt,
+		commands: Command[],
+		currentEnvironment: Environment,
+	): void {
+		const condition = this.evaluateExpression(
+			statement.condition,
+			commands,
+			currentEnvironment,
+		);
+		if (condition === VOID) {
+			throw new Error("If condition did not produce a value");
+		}
+		if (typeof condition !== "boolean") {
+			throw new GicError(
+				"Cannot use non-boolean value as condition.",
+				statement.keyword.line,
+				statement.keyword.start,
+				statement.keyword.end,
+			);
+		}
+		if (condition) {
+			const thenEnv = new Environment(currentEnvironment);
+			for (const branch of statement.thenBranch) {
+				this.executeStatement(branch, commands, thenEnv);
+			}
+		}
+		// else if (statement.elseBranch) {
+		// 	const elseEnv = new Environment(currentEnvironment);
+		// 	for (const branch of statement.elseBranch) {
+		// 		this.executeStatement(branch, commands, elseEnv);
+		// 	}
+		// }
 	}
 	onAssignment(
 		statement: Assignment,
@@ -122,12 +161,40 @@ export class Interpreter {
 			commands,
 			currentEnvironment,
 		);
+		if (left === VOID) {
+			throw new GicError(
+				`Cannot perform binary operation on void value`,
+				expr.operator.line,
+				expr.operator.start,
+				expr.operator.end,
+			);
+		}
 		const right = this.evaluateExpression(
 			expr.right,
 			commands,
 			currentEnvironment,
 		);
+		if (right === VOID) {
+			throw new GicError(
+				`Cannot perform binary operation on void value`,
+				expr.operator.line,
+				expr.operator.start,
+				expr.operator.end,
+			);
+		}
+
 		switch (expr.operator.type) {
+			case "GREATER":
+				if (typeof left === "number" && typeof right === "number") {
+					return left > right;
+				} else {
+					throw new GicError(
+						`Cannot compare non-number values.`,
+						expr.operator.line,
+						expr.operator.start,
+						expr.operator.end,
+					);
+				}
 			// case "PLUS":
 			// return left + right;
 			// case "MINUS":

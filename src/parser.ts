@@ -107,7 +107,9 @@ export class Parser {
 				this.peek(),
 			);
 		}
-		if (this.match(IF)) return this.ifStatement();
+		if (this.match(IF)) {
+			return this.ifStatement(this.previous());
+		}
 		if (this.match(REPEAT)) return this.repeatStatement();
 		if (this.match(FUNC)) return this.funcStatement();
 		if (this.match(RETURN)) return this.returnStatement(this.previous());
@@ -221,7 +223,7 @@ export class Parser {
 		}
 		return stmt;
 	}
-	ifStatement(): Statement {
+	ifStatement(keyword: Token): Statement {
 		this.consume(LEFT_PAREN, "Expected '(' after 'if'.");
 		const condition = this.expression();
 		this.consume(RIGHT_PAREN, "Expected ')' after condition.");
@@ -232,7 +234,7 @@ export class Parser {
 		let elseBranch: Statement[] | undefined;
 		if (this.match(ELSE)) {
 			if (this.match(IF)) {
-				elseBranch = [this.ifStatement()];
+				elseBranch = [this.ifStatement(this.previous())];
 			} else {
 				this.consume(LEFT_BRACE, "Expected '{' before else branch");
 				this.blockDepth++;
@@ -242,6 +244,7 @@ export class Parser {
 		if (elseBranch !== undefined) {
 			return {
 				type: "IfStmt",
+				keyword,
 				condition,
 				thenBranch,
 				elseBranch,
@@ -249,6 +252,7 @@ export class Parser {
 		}
 		return {
 			type: "IfStmt",
+			keyword,
 			condition,
 			thenBranch,
 		};

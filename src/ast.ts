@@ -49,6 +49,7 @@ export interface RepeatStmt {
 
 export interface IfStmt {
 	type: "IfStmt";
+	keyword: Token;
 	condition: Expression;
 	thenBranch: Statement[];
 	elseBranch?: Statement[];
