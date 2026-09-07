@@ -7,12 +7,14 @@ import type {
 	CallExpr,
 	Expression,
 	ExprStmt,
+	GroupingExpr,
 	IdentifierExpr,
 	IfStmt,
 	LiteralExpr,
 	LiteralValue,
 	Program,
 	Statement,
+	UnaryExpr,
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Command } from "./commands.ts";
@@ -136,6 +138,11 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	): EvaluationResult {
 		switch (expr.type) {
+			case "Unary":
+				return this.onUnary(expr, commands, currentEnvironment);
+
+			case "Grouping":
+				return this.onGrouping(expr, commands, currentEnvironment);
 			case "Binary":
 				return this.onBinary(expr, commands, currentEnvironment);
 			case "Literal":
@@ -149,6 +156,36 @@ export class Interpreter {
 			default:
 				throw new Error(`Unknown expression type: ${expr.type}`);
 		}
+	}
+	onUnary(
+		expr: UnaryExpr,
+		commands: Command[],
+		currentEnvironment: Environment,
+	): LiteralValue {
+		const value = this.evaluateExpression(
+			expr.right,
+			commands,
+			currentEnvironment,
+		);
+		if (value === VOID) {
+			throw new Error(`Cannot perform unary operation on void value`);
+		}
+		return value;
+	}
+	onGrouping(
+		expr: GroupingExpr,
+		commands: Command[],
+		currentEnvironment: Environment,
+	): LiteralValue {
+		const value = this.evaluateExpression(
+			expr.expression,
+			commands,
+			currentEnvironment,
+		);
+		if (value === VOID) {
+			throw new Error(`Cannot perform grouping on void value`);
+		}
+		return value;
 	}
 	onBinary(
 		expr: BinaryExpr,
