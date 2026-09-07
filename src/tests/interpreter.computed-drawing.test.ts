@@ -76,6 +76,55 @@ background(tone, 50, 50);
 		]);
 	});
 
+	test("should evaluate unary numeric negation", () => {
+		const source = `let x = -10;
+	circle(x, 50, 10);`;
+		const actual = runSource(source);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: -10, y: 50, radius: 10 },
+		]);
+	});
+
+	test("should evaluate unary boolean negation", () => {
+		const source = `if (!false) {
+	circle(50, 50, 10);
+}`;
+		const actual = runSource(source);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 50, y: 50, radius: 10 },
+		]);
+	});
+
+	test("should reject unary numeric negation of a string", () => {
+		const actual = runSource(`let x = -"no";`);
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Cannot perform unary operation on non-number value.",
+				line: 0,
+				start: 8,
+				end: 9,
+			},
+		]);
+	});
+
+	test("should reject unary boolean negation of a number", () => {
+		const actual = runSource(`if (!1) {}`);
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Cannot perform unary operation on non-boolean value.",
+				line: 0,
+				start: 4,
+				end: 5,
+			},
+		]);
+	});
+
 	test("should compute binary value after assignment properties with variable for background", () => {
 		const source = `let tone = 10;
 tone = tone * 3;
