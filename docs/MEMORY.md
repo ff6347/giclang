@@ -121,7 +121,13 @@
   browser Canvas or future adapters; shells do not reimplement language execution.
 - [technique] Firefox browser acceptance tests fill the real textarea and compare
   corner and center Canvas pixels for opacity and visible difference, avoiding
-  test-only DOM markers.
+  test-only DOM markers. Slice 2 acceptance edits a computed variable so an
+  `if` branch stops drawing, then introduces a dynamic operand error and verifies
+  that stale Canvas output clears with a source-located diagnostic.
+- [decision] Slice 2 completes the expression, variable/assignment, and
+  conditional interpreter lessons. Keep the broader runtime value/environment
+  lesson open until later slices implement its callable-value and return-signal
+  requirements.
 - [technique] Results crossing the Web Worker boundary must be plain data.
   `core.ts` converts caught `GicError`/`ParserError` instances into
   `{message, line, start, end}` literals before `postMessage`; structured
