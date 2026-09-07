@@ -1,7 +1,7 @@
 // ABOUTME: Applies unary and binary operators to evaluated GIC runtime values.
 // ABOUTME: Enforces operand types and reports source-located operator errors.
 
-import type { BinaryExpr, LiteralValue } from "./ast.ts";
+import type { LiteralValue } from "./ast.ts";
 import { GicError } from "./error.ts";
 import type { Token } from "./tokens.ts";
 
@@ -37,79 +37,74 @@ export function applyUnaryOperation(
 }
 
 export function applyBinaryOperation(
-	expr: BinaryExpr,
+	token: Token,
 	left: LiteralValue,
 	right: LiteralValue,
 ): LiteralValue {
-	switch (expr.operator.type) {
+	switch (token.type) {
 		case "BANG_EQUAL":
 			return left !== right;
 
 		case "EQUAL_EQUAL":
 			return left === right;
 
-		case "MODULO":
-			if (typeof left === "number" && typeof right === "number") {
-				if (right === 0) {
-					throw new GicError(
-						`Cannot calculate modulo by zero.`,
-						expr.operator.line,
-						expr.operator.start,
-						expr.operator.end,
-					);
-				}
-				return left % right;
-			}
-			throw new GicError(
+		case "MODULO": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
 				`Cannot perform modulo on non-number values.`,
-				expr.operator.line,
-				expr.operator.start,
-				expr.operator.end,
 			);
-
-		case "LESS":
-			if (typeof left !== "number" || typeof right !== "number") {
+			if (rightNumber === 0) {
 				throw new GicError(
-					`Cannot compare non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
+					`Cannot calculate modulo by zero.`,
+					token.line,
+					token.start,
+					token.end,
 				);
 			}
-			return left < right;
+			return leftNumber % rightNumber;
+		}
 
-		case "LESS_EQUAL":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot compare non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			return left <= right;
+		case "LESS": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot compare non-number values.`,
+			);
+			return leftNumber < rightNumber;
+		}
 
-		case "GREATER":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot compare non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			return left > right;
+		case "LESS_EQUAL": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot compare non-number values.`,
+			);
+			return leftNumber <= rightNumber;
+		}
 
-		case "GREATER_EQUAL":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot compare non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			return left >= right;
+		case "GREATER": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot compare non-number values.`,
+			);
+			return leftNumber > rightNumber;
+		}
+
+		case "GREATER_EQUAL": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot compare non-number values.`,
+			);
+			return leftNumber >= rightNumber;
+		}
 
 		case "PLUS":
 			if (typeof left === "number" && typeof right === "number") {
@@ -119,51 +114,60 @@ export function applyBinaryOperation(
 			} else {
 				throw new GicError(
 					`Cannot add values unless both are numbers or both are strings.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
+					token.line,
+					token.start,
+					token.end,
 				);
 			}
-		case "MINUS":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot perform subtraction on non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			return left - right;
-		case "STAR":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot perform multiplication on non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			return left * right;
-		case "SLASH":
-			if (typeof left !== "number" || typeof right !== "number") {
-				throw new GicError(
-					`Cannot perform division on non-number values.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
-				);
-			}
-			if (right === 0) {
+		case "MINUS": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot perform subtraction on non-number values.`,
+			);
+			return leftNumber - rightNumber;
+		}
+		case "STAR": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot perform multiplication on non-number values.`,
+			);
+			return leftNumber * rightNumber;
+		}
+		case "SLASH": {
+			const [leftNumber, rightNumber] = requireNumbers(
+				token,
+				left,
+				right,
+				`Cannot perform division on non-number values.`,
+			);
+			if (rightNumber === 0) {
 				throw new GicError(
 					`Cannot divide by zero.`,
-					expr.operator.line,
-					expr.operator.start,
-					expr.operator.end,
+					token.line,
+					token.start,
+					token.end,
 				);
 			}
 
-			return left / right;
+			return leftNumber / rightNumber;
+		}
 		default:
-			throw new Error(`Unknown operator: ${expr.operator.lexeme}`);
+			throw new Error(`Unknown operator: ${token.lexeme}`);
 	}
+}
+
+function requireNumbers(
+	token: Token,
+	left: LiteralValue,
+	right: LiteralValue,
+	message: string,
+): [number, number] {
+	if (typeof left !== "number" || typeof right !== "number") {
+		throw new GicError(message, token.line, token.start, token.end);
+	}
+	return [left, right];
 }

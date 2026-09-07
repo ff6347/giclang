@@ -3,7 +3,6 @@
 
 import assert from "node:assert";
 import test, { describe } from "node:test";
-import type { BinaryExpr } from "../ast.ts";
 import { runSource } from "../core.ts";
 import { applyBinaryOperation } from "../operators.ts";
 import { Token } from "../tokens.ts";
@@ -21,14 +20,7 @@ describe("binary arithmetic", () => {
 
 	test("should concatenate strings", () => {
 		const operator = new Token("PLUS", "+", null, 0, 6, 7);
-		const expression: BinaryExpr = {
-			type: "Binary",
-			left: { type: "Literal", value: "gic" },
-			operator,
-			right: { type: "Literal", value: "-lang" },
-		};
-
-		const actual = applyBinaryOperation(expression, "gic", "-lang");
+		const actual = applyBinaryOperation(operator, "gic", "-lang");
 
 		assert.equal(actual, "gic-lang");
 	});

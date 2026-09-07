@@ -223,7 +223,7 @@ export class Interpreter {
 				expr.operator.end,
 			);
 		}
-		return applyBinaryOperation(expr, left, right);
+		return applyBinaryOperation(expr.operator, left, right);
 	}
 	onLiteral(expr: LiteralExpr): LiteralValue {
 		return expr.value;
