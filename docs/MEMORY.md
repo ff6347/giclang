@@ -96,8 +96,16 @@
   object.
 - [technique] Keep recursive operand evaluation and internal `VOID` rejection in
   the interpreter while pure unary/binary application and operator-token
-  diagnostics live in `src/operators.ts`. This boundary keeps the tree walker
-  readable as operator coverage grows.
+  diagnostics live in `src/operators.ts`. `applyBinaryOperation()` accepts only
+  the significant `Token`, and `requireNumbers()` centralizes numeric narrowing
+  and source evidence. This boundary keeps the tree walker readable as operator
+  coverage grows.
+- [decision] Division and modulo by zero are source-located runtime errors. GIC
+  equality is strict and does not coerce: cross-type `==` is `false`, while
+  cross-type `!=` is `true`.
+- [lesson] Prefer explicit, named source programs and result assertions for
+  language-semantics tests. A table-driven operator matrix was shorter but made
+  individual GIC behavior harder for humans to read and learn from.
 - [risk] The built-in registry accepts one-, three-, and four-argument
   `background` signatures, but the runtime currently implements only the
   numeric triple. The other accepted forms intentionally emit no command until
