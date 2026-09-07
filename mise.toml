@@ -1,4 +1,4 @@
 [tools]
 node = "26.5.1"
 nub = { version = "0.7.5", allow_builds = ["@nubjs/nub"] }
-pnpm = "11.21.0"
+pnpm = "12"
