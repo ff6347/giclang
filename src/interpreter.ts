@@ -12,6 +12,7 @@ import type {
 	IfStmt,
 	LiteralExpr,
 	LiteralValue,
+	LogicalExpr,
 	Program,
 	Statement,
 	UnaryExpr,
@@ -22,6 +23,7 @@ import { background } from "./draw/background.ts";
 import { circle } from "./draw/circle.ts";
 import { Environment } from "./environment.ts";
 import { GicError } from "./error.ts";
+import { requireBoolean } from "./logical.ts";
 import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 
 const VOID = Symbol("void");
@@ -141,6 +143,9 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	): EvaluationResult {
 		switch (expr.type) {
+			case "Logical":
+				return this.onLogical(expr, commands, currentEnvironment);
+
 			case "Unary":
 				return this.onUnary(expr, commands, currentEnvironment);
 
@@ -157,8 +162,47 @@ export class Interpreter {
 			case "Call":
 				return this.onCall(expr, commands, currentEnvironment);
 			default:
-				throw new Error(`Unknown expression type: ${expr.type}`);
+				throw new Error(`Unknown expression.`);
 		}
+	}
+	onLogical(
+		expr: LogicalExpr,
+		commands: Command[],
+		currentEnvironment: Environment,
+	): boolean {
+		if (expr.operator.type === "AND" || expr.operator.type === "OR") {
+			const left = this.evaluateExpression(
+				expr.left,
+				commands,
+				currentEnvironment,
+			);
+			if (left === VOID) {
+				throw new Error(`Cannot perform logical operation on void value`);
+			}
+			const leftValue = requireBoolean(expr.operator, left);
+
+			if (leftValue === false && expr.operator.type === "AND") {
+				return false;
+			}
+			if (leftValue === true && expr.operator.type === "OR") {
+				return true;
+			}
+
+			const right = this.evaluateExpression(
+				expr.right,
+				commands,
+				currentEnvironment,
+			);
+
+			if (right === VOID) {
+				throw new Error(`Cannot perform logical operation on void value`);
+			}
+
+			const rightValue = requireBoolean(expr.operator, right);
+			return rightValue;
+		}
+
+		throw new Error(`Unknown logical operator: ${expr.operator.type}`);
 	}
 	onUnary(
 		expr: UnaryExpr,
