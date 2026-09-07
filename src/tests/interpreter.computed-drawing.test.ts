@@ -114,6 +114,46 @@ background(tone, 50, 50);
 		]);
 	});
 
+	test("should execute only the else branch when the condition is false", () => {
+		const source = `if (false) {
+	circle(10, 10, 5);
+} else {
+	let radius = 10;
+	circle(50, 50, radius);
+}`;
+		const actual = runSource(source);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 50, y: 50, radius: 10 },
+		]);
+	});
+
+	test("should do nothing when a false condition has no else branch", () => {
+		const actual = runSource(`if (false) {
+	circle(10, 10, 5);
+}`);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, []);
+	});
+
+	test("should execute the selected nested else-if branch", () => {
+		const source = `if (false) {
+	circle(10, 10, 5);
+} else if (true) {
+	circle(20, 20, 10);
+} else {
+	circle(30, 30, 15);
+}`;
+		const actual = runSource(source);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 20, y: 20, radius: 10 },
+		]);
+	});
+
 	test("should compute shape properties through variables, assignment, arithmetic, and an if branch", () => {
 		const source = `background(20, 0, 0);
 let size = 10;

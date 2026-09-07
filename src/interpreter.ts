@@ -80,13 +80,12 @@ export class Interpreter {
 			for (const branch of statement.thenBranch) {
 				this.executeStatement(branch, commands, thenEnv);
 			}
+		} else if (statement.elseBranch) {
+			const elseEnv = new Environment(currentEnvironment);
+			for (const branch of statement.elseBranch) {
+				this.executeStatement(branch, commands, elseEnv);
+			}
 		}
-		// else if (statement.elseBranch) {
-		// 	const elseEnv = new Environment(currentEnvironment);
-		// 	for (const branch of statement.elseBranch) {
-		// 		this.executeStatement(branch, commands, elseEnv);
-		// 	}
-		// }
 	}
 	onAssignment(
 		statement: Assignment,
