@@ -88,10 +88,21 @@
   expression evaluation. Declarations write to the current environment, reads
   search its parent chain, and assignment updates the nearest environment that
   already owns the name.
-- [technique] Built-in call arguments are AST expressions, not values. Evaluate
-  them left-to-right in the current environment, validate the resulting runtime
-  values, then emit commands; checking `typeof` on the AST node only sees an
+- [technique] Built-in call arguments are AST expressions, not values.
+  `Interpreter.onCall()` evaluates them exactly once, left-to-right, before
+  dispatch. Drawing functions under `src/draw/` accept the resulting values as
+  `unknown`, narrow them through shared guards, and create commands without
+  depending on interpreter types; checking `typeof` on an AST node only sees an
   object.
+- [technique] Keep recursive operand evaluation and internal `VOID` rejection in
+  the interpreter while pure unary/binary application and operator-token
+  diagnostics live in `src/operators.ts`. This boundary keeps the tree walker
+  readable as operator coverage grows.
+- [risk] The built-in registry accepts one-, three-, and four-argument
+  `background` signatures, but the runtime currently implements only the
+  numeric triple. The other accepted forms intentionally emit no command until
+  Slice 3; never silently ignore alpha or introduce a contradictory arity error
+  during call-dispatch refactors.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
