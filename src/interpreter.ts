@@ -319,75 +319,30 @@ export class Interpreter {
 		commands: Command[],
 		currentEnvironment: Environment,
 	): EvaluationResult {
+		const values = expr.arguments.map((arg) =>
+			this.evaluateExpression(arg, commands, currentEnvironment),
+		);
 		switch (expr.callee.name.lexeme) {
 			case "circle": {
-				if (expr.arguments.length === 3) {
-					const [x, y, radius] = expr.arguments;
-
-					if (x !== undefined && y !== undefined && radius !== undefined) {
-						const xValue = this.evaluateExpression(
-							x,
-							commands,
-							currentEnvironment,
-						);
-						const yValue = this.evaluateExpression(
-							y,
-							commands,
-							currentEnvironment,
-						);
-						const radiusValue = this.evaluateExpression(
-							radius,
-							commands,
-							currentEnvironment,
-						);
-
-						const command = circle({
-							xValue,
-							yValue,
-							radiusValue,
+				commands.push(
+					circle({
+						values,
+						token: expr.callee.name,
+					}),
+				);
+				return VOID;
+			}
+			case "background": {
+				if (values.length === 3) {
+					commands.push(
+						background({
+							values,
 							token: expr.callee.name,
-						});
-						commands.push(command);
-					}
+						}),
+					);
 				}
 				return VOID;
 			}
-			case "background":
-				{
-					if (expr.arguments.length === 3) {
-						const [lightness, chroma, hue] = expr.arguments;
-						if (
-							lightness !== undefined &&
-							chroma !== undefined &&
-							hue !== undefined
-						) {
-							const lightnessValue = this.evaluateExpression(
-								lightness,
-								commands,
-								currentEnvironment,
-							);
-							const chromaValue = this.evaluateExpression(
-								chroma,
-								commands,
-								currentEnvironment,
-							);
-							const hueValue = this.evaluateExpression(
-								hue,
-								commands,
-								currentEnvironment,
-							);
-
-							const command = background({
-								lightnessValue,
-								chromaValue,
-								hueValue,
-								token: expr.callee.name,
-							});
-							commands.push(command);
-						}
-					}
-				}
-				return VOID;
 			default:
 				return VOID;
 		}

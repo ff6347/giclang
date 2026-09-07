@@ -6,19 +6,15 @@ import type { Token } from "../tokens.ts";
 import { requireNumber } from "./arguments.ts";
 
 export function background({
-	lightnessValue,
-	chromaValue,
-	hueValue,
+	values,
 	token,
 }: {
-	lightnessValue: unknown;
-	chromaValue: unknown;
-	hueValue: unknown;
+	values: readonly unknown[];
 	token: Token;
 }): Command {
-	const lightness = requireNumber(lightnessValue, "lightness", token);
-	const chroma = requireNumber(chromaValue, "chroma", token);
-	const hue = requireNumber(hueValue, "hue", token);
+	const lightness = requireNumber(values[0], "lightness", token);
+	const chroma = requireNumber(values[1], "chroma", token);
+	const hue = requireNumber(values[2], "hue", token);
 
 	return {
 		type: "background",

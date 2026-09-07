@@ -6,19 +6,15 @@ import type { Token } from "../tokens.ts";
 import { requireNumber } from "./arguments.ts";
 
 export function circle({
-	xValue,
-	yValue,
-	radiusValue,
+	values,
 	token,
 }: {
-	xValue: unknown;
-	yValue: unknown;
-	radiusValue: unknown;
+	values: readonly unknown[];
 	token: Token;
 }): Command {
-	const x = requireNumber(xValue, "x", token);
-	const y = requireNumber(yValue, "y", token);
-	const radius = requireNumber(radiusValue, "radius", token);
+	const x = requireNumber(values[0], "x", token);
+	const y = requireNumber(values[1], "y", token);
+	const radius = requireNumber(values[2], "radius", token);
 
 	return {
 		type: "circle",
