@@ -216,3 +216,30 @@ acceptance path to confirm that editing computed valid source refreshes visible
 geometry and invalid source clears or marks stale output as previously decided.
 Update the lesson-completeness ledger only after that audit proves every Slice 2
 acceptance criterion.
+
+## Slice 2 Acceptance Complete
+
+The Firefox acceptance spec now exercises the full computed browser path. A
+valid program declares and assigns a size, multiplies it, selects an `if` branch,
+and renders a visible circle. Editing the input so the computed condition is
+false removes the circle while preserving the background. A mixed-type runtime
+comparison clears the previous Canvas output and displays its source-located
+runtime diagnostic.
+
+Fabian ran `pnpm test:e2e` outside the sandbox and reported the complete browser
+suite passing. The agent-run static checkpoint also remains clean with 261/261
+core tests, both typechecks, lint, formatting, browser build, and diff checks.
+
+The lesson ledger now marks expression interpretation, variable/assignment
+interpretation, and conditional interpretation complete. The broader runtime
+value/environment lesson remains open because its callable-value and return
+signal portions belong to later function slices.
+
+Relevant commits:
+
+- `ab0bae1 test(e2e): cover computed preview updates`
+- `68f046f docs(lessons): complete slice 2 interpreter milestones [skip ci]`
+
+Slice 2 is acceptance-complete. The next product slice is Slice 3's repeated
+pattern, beginning with the repeat-variable semantic audit before runtime loop
+execution.
