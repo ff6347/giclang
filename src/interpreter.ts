@@ -18,6 +18,8 @@ import type {
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Command } from "./commands.ts";
+import { background } from "./draw/background.ts";
+import { circle } from "./draw/circle.ts";
 import { Environment } from "./environment.ts";
 import { GicError } from "./error.ts";
 import type { Token } from "./tokens.ts";
@@ -339,43 +341,13 @@ export class Interpreter {
 							currentEnvironment,
 						);
 
-						if (
-							typeof xValue === "number" &&
-							typeof yValue === "number" &&
-							typeof radiusValue === "number"
-						) {
-							commands.push({
-								type: "circle",
-								x: xValue,
-								y: yValue,
-								radius: radiusValue,
-							});
-						} else {
-							if (typeof xValue !== "number") {
-								throw new GicError(
-									"circle x argument must be a number",
-									expr.callee.name.line,
-									expr.callee.name.start,
-									expr.callee.name.end,
-								);
-							}
-							if (typeof yValue !== "number") {
-								throw new GicError(
-									"circle y argument must be a number",
-									expr.callee.name.line,
-									expr.callee.name.start,
-									expr.callee.name.end,
-								);
-							}
-							if (typeof radiusValue !== "number") {
-								throw new GicError(
-									"circle radius argument must be a number",
-									expr.callee.name.line,
-									expr.callee.name.start,
-									expr.callee.name.end,
-								);
-							}
-						}
+						const command = circle({
+							xValue,
+							yValue,
+							radiusValue,
+							token: expr.callee.name,
+						});
+						commands.push(command);
 					}
 				}
 				return VOID;
@@ -405,45 +377,13 @@ export class Interpreter {
 								currentEnvironment,
 							);
 
-							if (
-								typeof lightnessValue === "number" &&
-								typeof chromaValue === "number" &&
-								typeof hueValue === "number"
-							) {
-								commands.push({
-									type: "background",
-									lightness: lightnessValue,
-									chroma: chromaValue,
-									hue: hueValue,
-								});
-							} else {
-								if (typeof lightnessValue !== "number") {
-									throw new GicError(
-										"background arguments lightness must be numbers",
-										expr.callee.name.line,
-										expr.callee.name.start,
-										expr.callee.name.end,
-									);
-								}
-
-								if (typeof chromaValue !== "number") {
-									throw new GicError(
-										"background arguments chroma must be numbers",
-										expr.callee.name.line,
-										expr.callee.name.start,
-										expr.callee.name.end,
-									);
-								}
-
-								if (typeof hueValue !== "number") {
-									throw new GicError(
-										"background arguments hue must be numbers",
-										expr.callee.name.line,
-										expr.callee.name.start,
-										expr.callee.name.end,
-									);
-								}
-							}
+							const command = background({
+								lightnessValue,
+								chromaValue,
+								hueValue,
+								token: expr.callee.name,
+							});
+							commands.push(command);
 						}
 					}
 				}
