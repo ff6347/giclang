@@ -139,3 +139,42 @@ families one source-level red test at a time. Resolve the documented division by
 zero and cross-type equality gates before encoding those semantics. Keep
 operator application in `src/operators.ts` and recursive evaluation in the
 interpreter.
+
+## Binary Operator Checkpoint
+
+The runtime now implements every `BinaryExpr` operator: numeric arithmetic,
+numeric comparison, equality, inequality, and string concatenation. Arithmetic
+operators reject non-number operands except that `+` accepts either two numbers
+or two strings. Numeric comparison rejects non-number operands.
+
+- [decision] Division and modulo by zero produce source-located `GicError`
+  diagnostics rather than exposing JavaScript `Infinity` or `NaN` behavior.
+- [decision] Equality uses strict, non-coercing semantics. Cross-type `==`
+  returns `false`, and cross-type `!=` returns `true`.
+- [lesson] A compact table-driven operator test was mechanically convenient but
+  obscured each language example. The final tests use one named source program
+  and explicit result assertions per behavior; only string concatenation calls
+  the pure operator function directly because this slice has no observable
+  string-output command.
+
+`applyBinaryOperation()` now accepts the significant operator `Token`, not a
+complete `BinaryExpr`. The private `requireNumbers()` guard centralizes numeric
+operand narrowing and source-located errors. The interpreter continues to own
+left-to-right recursive evaluation and passes only `expr.operator` across this
+boundary.
+
+Relevant commits:
+
+- `a9c36d8 feat(interpreter): evaluate binary operators`
+- `a699783 refactor(operators): centralize numeric operand validation`
+
+Verification after the refactor: 249/249 tests pass; core and browser typechecks,
+lint, formatting, and `git diff --check` are clean.
+
+## Current Next Step After Binary Operators
+
+Implement `LogicalExpr` evaluation in the interpreter. Add explicit tests for
+boolean `&&` and `||`, non-boolean operand diagnostics, and short-circuit cases
+whose skipped right side would otherwise raise a runtime error. Logical
+operators must remain in the interpreter because they decide whether the right
+AST child is evaluated.
