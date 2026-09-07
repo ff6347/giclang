@@ -42,6 +42,53 @@ export function applyBinaryOperation(
 	right: LiteralValue,
 ): LiteralValue {
 	switch (expr.operator.type) {
+		case "BANG_EQUAL":
+			return left !== right;
+
+		case "EQUAL_EQUAL":
+			return left === right;
+
+		case "MODULO":
+			if (typeof left === "number" && typeof right === "number") {
+				if (right === 0) {
+					throw new GicError(
+						`Cannot calculate modulo by zero.`,
+						expr.operator.line,
+						expr.operator.start,
+						expr.operator.end,
+					);
+				}
+				return left % right;
+			}
+			throw new GicError(
+				`Cannot perform modulo on non-number values.`,
+				expr.operator.line,
+				expr.operator.start,
+				expr.operator.end,
+			);
+
+		case "LESS":
+			if (typeof left !== "number" || typeof right !== "number") {
+				throw new GicError(
+					`Cannot compare non-number values.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+			return left < right;
+
+		case "LESS_EQUAL":
+			if (typeof left !== "number" || typeof right !== "number") {
+				throw new GicError(
+					`Cannot compare non-number values.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+			return left <= right;
+
 		case "GREATER":
 			if (typeof left !== "number" || typeof right !== "number") {
 				throw new GicError(
@@ -52,22 +99,70 @@ export function applyBinaryOperation(
 				);
 			}
 			return left > right;
-		// case "PLUS":
-		// return left + right;
-		// case "MINUS":
-		// return left - right;
+
+		case "GREATER_EQUAL":
+			if (typeof left !== "number" || typeof right !== "number") {
+				throw new GicError(
+					`Cannot compare non-number values.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+			return left >= right;
+
+		case "PLUS":
+			if (typeof left === "number" && typeof right === "number") {
+				return left + right;
+			} else if (typeof left === "string" && typeof right === "string") {
+				return left + right;
+			} else {
+				throw new GicError(
+					`Cannot add values unless both are numbers or both are strings.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+		case "MINUS":
+			if (typeof left !== "number" || typeof right !== "number") {
+				throw new GicError(
+					`Cannot perform subtraction on non-number values.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+			return left - right;
 		case "STAR":
 			if (typeof left !== "number" || typeof right !== "number") {
 				throw new GicError(
-					`Cannot perform multiplication on non-number values`,
+					`Cannot perform multiplication on non-number values.`,
 					expr.operator.line,
 					expr.operator.start,
 					expr.operator.end,
 				);
 			}
 			return left * right;
-		// case "SLASH":
-		// return left / right;
+		case "SLASH":
+			if (typeof left !== "number" || typeof right !== "number") {
+				throw new GicError(
+					`Cannot perform division on non-number values.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+			if (right === 0) {
+				throw new GicError(
+					`Cannot divide by zero.`,
+					expr.operator.line,
+					expr.operator.start,
+					expr.operator.end,
+				);
+			}
+
+			return left / right;
 		default:
 			throw new Error(`Unknown operator: ${expr.operator.lexeme}`);
 	}
