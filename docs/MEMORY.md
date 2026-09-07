@@ -103,6 +103,11 @@
 - [decision] Division and modulo by zero are source-located runtime errors. GIC
   equality is strict and does not coerce: cross-type `==` is `false`, while
   cross-type `!=` is `true`.
+- [technique] Logical expressions remain in the interpreter because they control
+  AST evaluation. Evaluate and validate the left operand first, return for
+  `false && ...` or `true || ...`, and only then evaluate and validate the right
+  operand. An invalid right expression is an effective test probe for whether
+  short-circuiting actually occurred.
 - [lesson] Prefer explicit, named source programs and result assertions for
   language-semantics tests. A table-driven operator matrix was shorter but made
   individual GIC behavior harder for humans to read and learn from.
