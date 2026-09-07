@@ -178,3 +178,41 @@ boolean `&&` and `||`, non-boolean operand diagnostics, and short-circuit cases
 whose skipped right side would otherwise raise a runtime error. Logical
 operators must remain in the interpreter because they decide whether the right
 AST child is evaluated.
+
+## Logical Expression Checkpoint
+
+`Interpreter.onLogical()` now implements boolean `&&` and `||` with explicit
+short-circuit evaluation. It evaluates and validates the left operand first,
+returns immediately when that value determines the result, and evaluates the
+right operand only when required. The validated right boolean is the final
+result in both non-short-circuit paths.
+
+- [technique] A right operand containing an invalid mixed-type comparison proves
+  short-circuit behavior: the program succeeds only when the interpreter truly
+  skips that AST child.
+- [lesson] Evaluating both operands before checking the operator made ordinary
+  truth-table tests pass while both short-circuit tests failed. Evaluation order
+  is part of logical-operator semantics, not an optimization.
+- [decision] Non-boolean logical operands produce
+  `Logical operator '<operator>' requires boolean operands.` at the significant
+  operator token. `src/logical.ts` owns this shared boolean guard.
+
+The twelve explicit logical tests cover the four basic outcomes, both skipped
+right operands, both required right operands, and invalid left/right operands
+for both operators.
+
+Relevant commit:
+
+- `814b406 feat(interpreter): evaluate logical expressions`
+
+Verification: 261/261 tests pass; core and browser typechecks, lint, formatting,
+and `git diff --check` are clean.
+
+## Current Next Step After Logical Expressions
+
+Perform a Slice 2 completion audit against the roadmap and expression,
+environment, assignment, and conditional milestones. Run the real browser
+acceptance path to confirm that editing computed valid source refreshes visible
+geometry and invalid source clears or marks stale output as previously decided.
+Update the lesson-completeness ledger only after that audit proves every Slice 2
+acceptance criterion.
