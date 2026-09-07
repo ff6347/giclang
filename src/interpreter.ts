@@ -22,7 +22,7 @@ import { background } from "./draw/background.ts";
 import { circle } from "./draw/circle.ts";
 import { Environment } from "./environment.ts";
 import { GicError } from "./error.ts";
-import type { Token } from "./tokens.ts";
+import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -174,38 +174,9 @@ export class Interpreter {
 		if (value === VOID) {
 			throw new Error(`Cannot perform unary operation on void value`);
 		}
-		return this.applyUnaryOperation(operator, value);
+		return applyUnaryOperation(operator, value);
 	}
-	applyUnaryOperation(
-		token: Token,
-		value: string | number | boolean,
-	): LiteralValue {
-		switch (token.type) {
-			case "MINUS":
-				if (typeof value !== "number") {
-					throw new GicError(
-						`Cannot perform unary operation on non-number value.`,
-						token.line,
-						token.start,
-						token.end,
-					);
-				}
-				return -value;
-			case "BANG":
-				if (typeof value !== "boolean") {
-					throw new GicError(
-						`Cannot perform unary operation on non-boolean value.`,
-						token.line,
-						token.start,
-						token.end,
-					);
-				}
-				return !value;
 
-			default:
-				throw new Error(`Unknown unary operation: ${token.lexeme}`);
-		}
-	}
 	onGrouping(
 		expr: GroupingExpr,
 		commands: Command[],
@@ -252,39 +223,7 @@ export class Interpreter {
 				expr.operator.end,
 			);
 		}
-
-		switch (expr.operator.type) {
-			case "GREATER":
-				if (typeof left === "number" && typeof right === "number") {
-					return left > right;
-				} else {
-					throw new GicError(
-						`Cannot compare non-number values.`,
-						expr.operator.line,
-						expr.operator.start,
-						expr.operator.end,
-					);
-				}
-			// case "PLUS":
-			// return left + right;
-			// case "MINUS":
-			// return left - right;
-			case "STAR":
-				if (typeof left === "number" && typeof right === "number") {
-					return left * right;
-				} else {
-					throw new GicError(
-						`Cannot perform multiplication on non-number values`,
-						expr.operator.line,
-						expr.operator.start,
-						expr.operator.end,
-					);
-				}
-			// case "SLASH":
-			// return left / right;
-			default:
-				throw new Error(`Unknown operator: ${expr.operator.lexeme}`);
-		}
+		return applyBinaryOperation(expr, left, right);
 	}
 	onLiteral(expr: LiteralExpr): LiteralValue {
 		return expr.value;
