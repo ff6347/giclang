@@ -65,6 +65,17 @@ background(tone, 50, 50);
 		]);
 	});
 
+	test("should evaluate a grouped expression", () => {
+		const source = `let radius = (2 * 5);
+	circle(50, 50, radius);`;
+		const actual = runSource(source);
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 50, y: 50, radius: 10 },
+		]);
+	});
+
 	test("should compute binary value after assignment properties with variable for background", () => {
 		const source = `let tone = 10;
 tone = tone * 3;
