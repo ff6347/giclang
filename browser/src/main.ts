@@ -2,6 +2,7 @@
 // ABOUTME: Manages worker replacement, execution limits, and visible diagnostics.
 import Worker from "./worker.ts?worker";
 import type { RunResult, Command } from "../../src/core.ts";
+import { colorToCanvasStyle } from "./color-conversion.ts";
 
 document.addEventListener("DOMContentLoaded", () => {
 	const TIMEOUT_IN_MS = 500;
@@ -33,7 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		for (const command of commands) {
 			switch (command.type) {
 				case "background":
-					canvasContext.fillStyle = `oklch(${command.lightness}% ${command.chroma}% ${command.hue % 360})`;
+					const color = command.color;
+					canvasContext.fillStyle = colorToCanvasStyle(color);
 					canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 					break;
 				case "circle":
