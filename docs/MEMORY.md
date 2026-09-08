@@ -58,9 +58,15 @@
   numeric lightness, chroma, and alpha use inclusive `0`–`100` ranges, while hue
   uses inclusive `0`–`360`.
 - [technique] Browser color conversion preserves GIC alpha percentages by
-  appending `%` in the Canvas OKLCH string. The browser currently renders tagged
-  background colors but does not yet apply recorded `fill` or `noStroke`
-  commands.
+  appending `%` in Canvas OKLCH strings and passes validated CSS color strings
+  through unchanged.
+- [decision] The static Canvas renderer keeps ordered fill, stroke, enablement,
+  and stroke-width state local to each render. Every preview starts with white
+  fill, black stroke, width `1`, and fill and stroke enabled; `fill` and `stroke`
+  re-enable styles disabled by `noFill` and `noStroke`.
+- [risk] The registered `point`, `line`, `rect`, `ellipse`, `triangle`, `quad`,
+  and `arc` functions still emit no commands. Slice 3 requires their recording
+  and Canvas behavior unless its documented scope is narrowed.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.
 - [decision] Preview execution runs in a dedicated Web Worker with termination
@@ -127,10 +133,15 @@
 - [lesson] Prefer explicit, named source programs and result assertions for
   language-semantics tests. A table-driven operator matrix was shorter but made
   individual GIC behavior harder for humans to read and learn from.
-- [risk] The built-in registry accepts one-, three-, and four-argument
-  `background` signatures. The runtime emits tagged colors for the numeric
-  triple and quad, including alpha, but the accepted one-argument CSS form still
-  emits no command.
+- [preference] Keep GIC source programs local to their E2E tests and duplicate
+  short snippets when that keeps setup, action, and assertion readable together.
+- [lesson] Canvas antialiasing makes exact edge-pixel color assertions brittle.
+  Stroke geometry tests should assert a visible difference from the background
+  while exact colors are sampled from fully covered pixels.
+- [decision] `background`, `fill`, and `stroke` share one runtime color
+  validator. It accepts numeric OKLCH triples and percentage-alpha quads,
+  standard CSS names case-insensitively, and 3-, 4-, 6-, or 8-digit hexadecimal
+  colors; invalid strings produce source-located diagnostics.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
