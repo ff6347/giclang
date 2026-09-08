@@ -3,7 +3,7 @@
 
 import type { Command } from "../commands.ts";
 import type { Token } from "../tokens.ts";
-import { requireNumber } from "./arguments.ts";
+import { requireArgumentNumber } from "./arguments.ts";
 
 export function background({
 	values,
@@ -12,9 +12,9 @@ export function background({
 	values: readonly unknown[];
 	token: Token;
 }): Command {
-	const lightness = requireNumber(values[0], "lightness", token);
-	const chroma = requireNumber(values[1], "chroma", token);
-	const hue = requireNumber(values[2], "hue", token);
+	const lightness = requireArgumentNumber(values[0], "lightness", token);
+	const chroma = requireArgumentNumber(values[1], "chroma", token);
+	const hue = requireArgumentNumber(values[2], "hue", token);
 
 	return {
 		type: "background",

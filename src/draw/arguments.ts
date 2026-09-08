@@ -4,7 +4,7 @@
 import { GicError } from "../error.ts";
 import type { Token } from "../tokens.ts";
 
-export function requireNumber(
+export function requireArgumentNumber(
 	value: unknown,
 	argumentName: string,
 	callee: Token,
