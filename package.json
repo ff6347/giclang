@@ -8,6 +8,7 @@
 	"type": "module",
 	"main": "index.js",
 	"scripts": {
+		"test:compact": "node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot",
 		"test": "node --test src/tests/*.test.ts",
 		"test:e2e": "playwright test",
 		"format": "oxfmt",
