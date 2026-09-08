@@ -5,7 +5,10 @@ export type Command =
 	| BackgroundCommand
 	| CircleCommand
 	| FillCommand
-	| NoStrokeCommand;
+	| NoFillCommand
+	| NoStrokeCommand
+	| StrokeCommand
+	| StrokeWidthCommand;
 
 export type Color =
 	| {
@@ -29,6 +32,9 @@ type FillCommand = {
 	type: "fill";
 	color: Color;
 };
+type NoFillCommand = {
+	type: "noFill";
+};
 
 type CircleCommand = {
 	type: "circle";
@@ -39,4 +45,14 @@ type CircleCommand = {
 
 type NoStrokeCommand = {
 	type: "noStroke";
+};
+
+type StrokeCommand = {
+	type: "stroke";
+	color: Color;
+};
+
+type StrokeWidthCommand = {
+	type: "strokeWidth";
+	width: number;
 };

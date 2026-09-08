@@ -1,11 +1,11 @@
-// ABOUTME: Validates background function values and creates render commands.
-// ABOUTME: Keeps background command construction outside the interpreter.
+// ABOUTME: Validates CSS and numeric OKLCH colors and creates stroke commands.
+// ABOUTME: Keeps stroke command construction outside the interpreter.
 
 import type { Command } from "../commands.ts";
 import type { Token } from "../tokens.ts";
 import { requireColor } from "./color.ts";
 
-export function background({
+export function stroke({
 	values,
 	token,
 }: {
@@ -13,7 +13,7 @@ export function background({
 	token: Token;
 }): Command {
 	return {
-		type: "background",
+		type: "stroke",
 		color: requireColor(values, token),
 	};
 }

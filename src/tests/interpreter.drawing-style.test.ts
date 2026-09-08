@@ -29,6 +29,62 @@ circle(50, 50, 10);`;
 		]);
 	});
 
+	test("should record a named CSS fill color", () => {
+		const source = 'fill("tomato");';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{
+				type: "fill",
+				color: { kind: "css", value: "tomato" },
+			},
+		]);
+	});
+
+	test("should record a hexadecimal CSS fill color", () => {
+		const source = 'fill("#ff6347");';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{
+				type: "fill",
+				color: { kind: "css", value: "#ff6347" },
+			},
+		]);
+	});
+
+	test("should record a CSS background color", () => {
+		const source = 'background("tomato");';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{
+				type: "background",
+				color: { kind: "css", value: "tomato" },
+			},
+		]);
+	});
+
+	test("should record a hexadecimal CSS background color", () => {
+		const source = 'background("#ff6347");';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{
+				type: "background",
+				color: { kind: "css", value: "#ff6347" },
+			},
+		]);
+	});
+
 	test("should record background with a tagged OKLCH color", () => {
 		const source = "background(20, 30, 40);";
 		const actual = runSource(source);

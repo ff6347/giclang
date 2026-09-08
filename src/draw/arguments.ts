@@ -22,6 +22,22 @@ export function requireRange(
 	return value;
 }
 
+export function requireArgumentString(
+	value: unknown,
+	argumentName: string,
+	callee: Token,
+): string {
+	if (typeof value !== "string") {
+		throw new GicError(
+			`Function '${callee.lexeme}' requires a string for argument '${argumentName}'.`,
+			callee.line,
+			callee.start,
+			callee.end,
+		);
+	}
+	return value;
+}
+
 export function requireArgumentNumber(
 	value: unknown,
 	argumentName: string,

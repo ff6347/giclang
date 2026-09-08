@@ -29,6 +29,9 @@ import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 import { requireNumber } from "./interpreter-validation.ts";
 import { noStroke } from "./draw/no-stroke.ts";
 import { fill } from "./draw/fill.ts";
+import { noFill } from "./draw/no-fill.ts";
+import { stroke } from "./draw/stroke.ts";
+import { strokeWidth } from "./draw/stroke-width.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -386,16 +389,28 @@ export class Interpreter {
 			this.evaluateExpression(arg, commands, currentEnvironment),
 		);
 		switch (expr.callee.name.lexeme) {
+			case "noFill": {
+				commands.push(noFill());
+				return VOID;
+			}
 			case "fill": {
-				if (values.length === 3 || values.length === 4) {
-					commands.push(fill({ values, token: expr.callee.name }));
-				}
+				commands.push(fill({ values, token: expr.callee.name }));
+
 				return VOID;
 			}
 			case "noStroke": {
 				commands.push(noStroke());
 				return VOID;
 			}
+			case "stroke": {
+				commands.push(stroke({ values, token: expr.callee.name }));
+				return VOID;
+			}
+			case "strokeWidth": {
+				commands.push(strokeWidth({ values, token: expr.callee.name }));
+				return VOID;
+			}
+
 			case "circle": {
 				commands.push(
 					circle({
@@ -406,14 +421,12 @@ export class Interpreter {
 				return VOID;
 			}
 			case "background": {
-				if (values.length === 3 || values.length === 4) {
-					commands.push(
-						background({
-							values,
-							token: expr.callee.name,
-						}),
-					);
-				}
+				commands.push(
+					background({
+						values,
+						token: expr.callee.name,
+					}),
+				);
 				return VOID;
 			}
 			default:
