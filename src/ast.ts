@@ -49,6 +49,7 @@ export interface RepeatStmt {
 
 export interface IfStmt {
 	type: "IfStmt";
+	keyword: Token;
 	condition: Expression;
 	thenBranch: Statement[];
 	elseBranch?: Statement[];
@@ -170,6 +171,9 @@ export interface UnaryExpr {
 	operator: Token;
 	right: Expression;
 }
+
+export type LiteralValue = number | string | boolean;
+
 export interface LiteralExpr {
 	// example for literal expression
 	// ```gic
@@ -178,5 +182,5 @@ export interface LiteralExpr {
 	//   literal
 	// ```
 	type: "Literal";
-	value: number | string | boolean;
+	value: LiteralValue;
 }

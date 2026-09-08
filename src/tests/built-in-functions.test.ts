@@ -61,6 +61,99 @@ describe("built-in functions", () => {
 		assert.deepStrictEqual(actual, expected);
 	});
 
+	test("should reject a non-number circle x argument", () => {
+		const actual = runSource('circle("x", 50, 10);');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message: "Function 'circle' requires a number for argument 'x'.",
+					line: 0,
+					start: 0,
+					end: 6,
+				},
+			],
+		});
+	});
+
+	test("should reject a non-number circle y argument", () => {
+		const actual = runSource('circle(50, "y", 10);');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message: "Function 'circle' requires a number for argument 'y'.",
+					line: 0,
+					start: 0,
+					end: 6,
+				},
+			],
+		});
+	});
+
+	test("should reject a non-number circle radius argument", () => {
+		const actual = runSource('circle(50, 50, "radius");');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message: "Function 'circle' requires a number for argument 'radius'.",
+					line: 0,
+					start: 0,
+					end: 6,
+				},
+			],
+		});
+	});
+
+	test("should reject a non-number background lightness argument", () => {
+		const actual = runSource('background("lightness", 50, 50);');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message:
+						"Function 'background' requires a number for argument 'lightness'.",
+					line: 0,
+					start: 0,
+					end: 10,
+				},
+			],
+		});
+	});
+
+	test("should reject a non-number background chroma argument", () => {
+		const actual = runSource('background(10, "chroma", 50);');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message:
+						"Function 'background' requires a number for argument 'chroma'.",
+					line: 0,
+					start: 0,
+					end: 10,
+				},
+			],
+		});
+	});
+
+	test("should reject a non-number background hue argument", () => {
+		const actual = runSource('background(10, 50, "hue");');
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message:
+						"Function 'background' requires a number for argument 'hue'.",
+					line: 0,
+					start: 0,
+					end: 10,
+				},
+			],
+		});
+	});
+
 	test("should reject invalid circle arity", () => {
 		const source = "circle(50, 50);";
 		const actual = runSource(source);

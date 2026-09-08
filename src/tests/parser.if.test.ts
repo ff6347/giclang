@@ -8,6 +8,26 @@ import { Parser } from "../parser.ts";
 import { simplifyProgram } from "./parser-test-helpers.ts";
 
 describe("parser if statements", () => {
+	test("should retain the if keyword token", () => {
+		const tokens = new Lexer("if (true) {}").scanTokens();
+		const program = new Parser(tokens).parse();
+		const statement = program.statements[0];
+
+		assert.strictEqual(statement?.type, "IfStmt");
+		if (statement?.type !== "IfStmt") {
+			assert.fail("Expected an IfStmt.");
+		}
+		assert.deepStrictEqual(
+			{
+				lexeme: statement.keyword.lexeme,
+				line: statement.keyword.line,
+				start: statement.keyword.start,
+				end: statement.keyword.end,
+			},
+			{ lexeme: "if", line: 0, start: 0, end: 2 },
+		);
+	});
+
 	test("should parse if statement", () => {
 		const lexer = new Lexer(`
 			if (x> 10) {

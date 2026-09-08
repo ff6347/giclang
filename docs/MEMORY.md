@@ -80,12 +80,54 @@
   command output through a discriminated `RunResult`. Parser or analyzer findings
   return failure diagnostics without constructing the interpreter or exposing
   commands.
+- [decision] Interpreter expression results distinguish user-visible
+  `number | string | boolean` values from a unique internal `VOID` symbol.
+  Environments store only user-visible values; command-emitting calls return
+  `VOID` without exposing it to GIC programs.
+- [technique] Pass the current `Environment` explicitly through statement and
+  expression evaluation. Declarations write to the current environment, reads
+  search its parent chain, and assignment updates the nearest environment that
+  already owns the name.
+- [technique] Built-in call arguments are AST expressions, not values.
+  `Interpreter.onCall()` evaluates them exactly once, left-to-right, before
+  dispatch. Drawing functions under `src/draw/` accept the resulting values as
+  `unknown`, narrow them through shared guards, and create commands without
+  depending on interpreter types; checking `typeof` on an AST node only sees an
+  object.
+- [technique] Keep recursive operand evaluation and internal `VOID` rejection in
+  the interpreter while pure unary/binary application and operator-token
+  diagnostics live in `src/operators.ts`. `applyBinaryOperation()` accepts only
+  the significant `Token`, and `requireNumbers()` centralizes numeric narrowing
+  and source evidence. This boundary keeps the tree walker readable as operator
+  coverage grows.
+- [decision] Division and modulo by zero are source-located runtime errors. GIC
+  equality is strict and does not coerce: cross-type `==` is `false`, while
+  cross-type `!=` is `true`.
+- [technique] Logical expressions remain in the interpreter because they control
+  AST evaluation. Evaluate and validate the left operand first, return for
+  `false && ...` or `true || ...`, and only then evaluate and validate the right
+  operand. An invalid right expression is an effective test probe for whether
+  short-circuiting actually occurred.
+- [lesson] Prefer explicit, named source programs and result assertions for
+  language-semantics tests. A table-driven operator matrix was shorter but made
+  individual GIC behavior harder for humans to read and learn from.
+- [risk] The built-in registry accepts one-, three-, and four-argument
+  `background` signatures, but the runtime currently implements only the
+  numeric triple. The other accepted forms intentionally emit no command until
+  Slice 3; never silently ignore alpha or introduce a contradictory arity error
+  during call-dispatch refactors.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
 - [technique] Firefox browser acceptance tests fill the real textarea and compare
   corner and center Canvas pixels for opacity and visible difference, avoiding
-  test-only DOM markers.
+  test-only DOM markers. Slice 2 acceptance edits a computed variable so an
+  `if` branch stops drawing, then introduces a dynamic operand error and verifies
+  that stale Canvas output clears with a source-located diagnostic.
+- [decision] Slice 2 completes the expression, variable/assignment, and
+  conditional interpreter lessons. Keep the broader runtime value/environment
+  lesson open until later slices implement its callable-value and return-signal
+  requirements.
 - [technique] Results crossing the Web Worker boundary must be plain data.
   `core.ts` converts caught `GicError`/`ParserError` instances into
   `{message, line, start, end}` literals before `postMessage`; structured
@@ -190,10 +232,12 @@ start))` — the `Math.max` covers empty EOF spans.
   width-or-column, never both. Cover the combination space.
 
 - [decision] AST nodes retain their significant tokens (name, operator,
-  paren), which carry spans. Errors point at a single token — enough for
-  shadowing, arity, and runtime type errors. Full per-node spans are an
-  additive extension, not a prerequisite; revisit only when an error needs
-  to underline a whole expression.
+  paren), which carry spans. `IfStmt` retains its `if` keyword because
+  expressions lack a common location and runtime condition-type diagnostics
+  need source evidence. Errors point at a single token — enough for shadowing,
+  arity, and runtime type errors. Full per-node spans are an additive extension,
+  not a prerequisite; revisit only when an error needs to underline a whole
+  expression.
 
 ## Data Modeling and Types
 
