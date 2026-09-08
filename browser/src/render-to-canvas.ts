@@ -21,11 +21,18 @@ export function renderToCanvas(canvas: HTMLCanvasElement, commands: Command[]) {
 
 	for (const command of commands) {
 		switch (command.type) {
-			// case "noFill":
-			// isFilled = false;
-			// 	break;
+			case "noFill":
+				isFilled = false;
+				break;
 			case "noStroke":
 				isStroked = false;
+				break;
+			case "strokeWidth":
+				currentLineWidth = command.width;
+				break;
+			case "stroke":
+				isStroked = true;
+				currentStroke = colorToCanvasStyle(command.color);
 				break;
 			case "fill":
 				isFilled = true;
