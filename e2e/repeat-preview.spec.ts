@@ -2,6 +2,7 @@
 // ABOUTME: Covers repeated rows, nested grids, and invalid repeat execution.
 
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 test("renders a repeated row of circles", async ({ page }) => {
 	const source = `background(100, 0, 0);
@@ -145,4 +146,51 @@ repeat(column, 0, 3) {
 	await expect(page.locator("#diagnostics")).toHaveText(
 		"Line 1: Repeat step cannot be zero.",
 	);
+});
+
+test("renders the deterministic repeat example fixture", async ({ page }) => {
+	const source = await readFile(
+		new URL("../examples/repeat.gic", import.meta.url),
+		"utf8",
+	);
+	await page.goto("/");
+	await page.getByLabel("GiC").fill(source);
+
+	await expect
+		.poll(() =>
+			page.locator("#canvas").evaluate((element) => {
+				if (!(element instanceof HTMLCanvasElement)) {
+					throw new Error("Expected #canvas to be a canvas element.");
+				}
+				const context = element.getContext("2d");
+				if (context === null) {
+					throw new Error("Expected a 2D canvas context.");
+				}
+				const background = context.getImageData(3, 3, 1, 1).data;
+				const differsFromBackground = (x: number, y: number) => {
+					const pixel = context.getImageData(x, y, 1, 1).data;
+					return [0, 1, 2].some((index) => pixel[index] !== background[index]);
+				};
+				return {
+					backgroundOpaque: background[3] === 255,
+					topLeftRectVisible: differsFromBackground(1, 1),
+					nextColumnRectVisible: differsFromBackground(6, 1),
+					nextRowRectVisible: differsFromBackground(1, 6),
+					nestedRectVisible: differsFromBackground(6, 6),
+					horizontalGapClear: !differsFromBackground(3, 1),
+					verticalGapClear: !differsFromBackground(1, 3),
+					clippedBottomRightVisible: differsFromBackground(100, 100),
+				};
+			}),
+		)
+		.toEqual({
+			backgroundOpaque: true,
+			topLeftRectVisible: true,
+			nextColumnRectVisible: true,
+			nextRowRectVisible: true,
+			nestedRectVisible: true,
+			horizontalGapClear: true,
+			verticalGapClear: true,
+			clippedBottomRightVisible: true,
+		});
 });

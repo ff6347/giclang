@@ -1,0 +1,14 @@
+// ABOUTME: Demonstrates a deterministic rectangle grid using nested repeats.
+// ABOUTME: Exercises ordered drawing styles and intentionally clipped canvas edges.
+
+background(70,0,0);
+fill("darkgreen");
+stroke("lime");
+strokeWidth(1);
+
+let step = 5;
+repeat(x, 0,101,step){
+repeat(y,0,101,step){
+rect(x,y,step/3,step/3);
+}
+}
