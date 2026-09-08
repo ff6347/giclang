@@ -53,6 +53,14 @@
   the TypeScript lexer, parser, analyzer, and interpreter platform-neutral.
 - [technique] Use a recording render backend for deterministic interpreter
   tests before connecting execution to a real Canvas backend.
+- [decision] Drawing styles are separate ordered commands rather than snapshots
+  attached to shapes. Reusable `Color` values are tagged as numeric OKLCH or CSS;
+  numeric lightness, chroma, and alpha use inclusive `0`–`100` ranges, while hue
+  uses inclusive `0`–`360`.
+- [technique] Browser color conversion preserves GIC alpha percentages by
+  appending `%` in the Canvas OKLCH string. The browser currently renders tagged
+  background colors but does not yet apply recorded `fill` or `noStroke`
+  commands.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.
 - [decision] Preview execution runs in a dedicated Web Worker with termination
@@ -88,6 +96,14 @@
   expression evaluation. Declarations write to the current environment, reads
   search its parent chain, and assignment updates the nearest environment that
   already owns the name.
+- [decision] Repeat ranges use an exclusive end with sign-dependent comparison.
+  Bounds and step evaluate once in the surrounding environment; an omitted step
+  is `1`, an explicit zero step is an error, and a step pointing away from the
+  end performs zero iterations.
+- [technique] A repeat execution owns one child `Environment`, updates its
+  iterator each turn, and derives fractional values as `start + turn * step` to
+  avoid accumulated floating-point drift. Assignments still update an existing
+  outer owner through the environment chain.
 - [technique] Built-in call arguments are AST expressions, not values.
   `Interpreter.onCall()` evaluates them exactly once, left-to-right, before
   dispatch. Drawing functions under `src/draw/` accept the resulting values as
@@ -112,10 +128,9 @@
   language-semantics tests. A table-driven operator matrix was shorter but made
   individual GIC behavior harder for humans to read and learn from.
 - [risk] The built-in registry accepts one-, three-, and four-argument
-  `background` signatures, but the runtime currently implements only the
-  numeric triple. The other accepted forms intentionally emit no command until
-  Slice 3; never silently ignore alpha or introduce a contradictory arity error
-  during call-dispatch refactors.
+  `background` signatures. The runtime emits tagged colors for the numeric
+  triple and quad, including alpha, but the accepted one-argument CSS form still
+  emits no command.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
@@ -287,11 +302,11 @@ start))` — the `Math.max` covers empty EOF spans.
   `programGlobalNames` reserves every direct global name, while the scope stack
   contains only declarations visible at the current source position. A function
   is inserted immediately before its body so recursion works without hoisting.
-- [decision] Scope entries are a discriminated union: variables retain a token,
-  while functions retain a token, arity, and an optional valid `"void" | "value"`
-  return kind. The kind lets assignment reject user functions and lets calls
-  validate arity and value context; repeat-variable assignment remains deferred
-  because repeat iterators currently use `"variable"`.
+- [decision] Scope entries are a discriminated union: variables and repeat
+  variables retain a token, while functions retain a token, arity, and an
+  optional valid `"void" | "value"` return kind. The declaration kind lets
+  assignment reject both user functions and immutable repeat iterators, and lets
+  calls validate arity and value context.
 - [lesson] Analyze a variable initializer before registering its declaration,
   and analyze repeat bounds before registering the iterator. Registration-first
   ordering incorrectly permits self-reference.
