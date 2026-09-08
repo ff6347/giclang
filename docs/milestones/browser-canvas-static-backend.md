@@ -44,7 +44,7 @@ Adapt recorded/backend drawing operations to browser Canvas for one-shot renderi
 - Style state application to later shapes.
 - Documented color handling.
 - Static render-once lifecycle.
-- Fake or minimal context tests.
+- Real Firefox Canvas pixel tests.
 
 ## Non-Goals
 
@@ -89,22 +89,24 @@ A static program should execute once and render once. Tests can either feed comm
 - Style state affects later shapes.
 - Color handling is documented.
 - Static sketches render once.
-- Fake or minimal context tests cover command translation.
+- Real Firefox Canvas tests cover command translation without mocking Canvas.
 - Platform-neutral core remains DOM-free.
 
 ## Verification
 
-- Use a fake Canvas context that records method calls.
-- Assert adapter call order for background, style, and shapes.
+- Use Playwright with Firefox through the real preview UI.
+- Assert visible background, style, and shape behavior from Canvas pixels.
 - Include an import-boundary check if tooling supports it.
-- Avoid browser-only test harness assumptions until the project chooses one.
+- Keep interpreter command semantics in core tests rather than duplicating them
+  in browser assertions.
 
-## Gates and Open Questions
+## Resolved Decisions and Constraints
 
-- There is no current browser test harness.
-- OKLCH conversion choice is required for full color support.
-- DOM typings must not contaminate platform-neutral core.
-- Decide whether adapter accepts recorded commands only or streams backend calls directly.
+- Playwright with Firefox exercises the real browser Canvas preview.
+- The adapter converts tagged OKLCH values to Canvas styles and passes validated
+  CSS colors through.
+- DOM typings remain isolated from the platform-neutral core.
+- The adapter consumes the recorded ordered `Command[]` after static execution.
 
 ## Notes
 

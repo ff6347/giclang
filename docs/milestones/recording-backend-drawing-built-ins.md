@@ -59,22 +59,22 @@ Make drawing built-ins testable deterministically without Canvas.
 
 ## Runtime/Backend Boundary Shape
 
-The recording backend combines command recording with enough style state to make later shape assertions clear:
+The recording boundary is the command list returned by execution:
 
 ```txt
-RecordingBackend
-  commands
-  currentStyle
+Interpreter.interpret()
+  Command[]
 ```
 
-Whether shape commands store style snapshots or rely on prior style commands must be explicit before tests are written.
+Style operations are separate commands rather than snapshots attached to shape
+commands. Consumers reconstruct style state by replaying the list in order.
 
 ## Recording Backend Behavior
 
 - Starts with an empty command list.
-- Applies documented default style.
-- Records every backend command in call order.
-- Exposes a read-only snapshot for tests when possible.
+- Leaves documented default style application to each rendering adapter.
+- Records every drawing command in call order.
+- Exposes exact command data for tests.
 - Does not import DOM or Canvas APIs.
 
 ## Drawing Built-ins
@@ -110,11 +110,14 @@ Integration-style tests should run small GIC programs and assert the resulting c
 - Add one repeat program that draws several commands in predictable order.
 - Confirm no browser APIs are imported.
 
-## Gates and Open Questions
+## Resolved Decisions
 
-- Decide style snapshot versus separate style commands before locking test expectations.
-- Color conversion belongs to the earlier boundary or analyzer decision; do not hide it here.
-- Multiple `background()` calls must have explicit behavior.
+- Styles are separate commands in source order rather than snapshots attached to
+  shapes.
+- Colors use validated tagged OKLCH or CSS values; browser conversion belongs to
+  the Canvas adapter.
+- Each `background()` call records independently and repaints the full logical
+  canvas when rendered.
 
 ## Notes
 

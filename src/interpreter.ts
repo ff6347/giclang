@@ -14,17 +14,21 @@ import type {
 	LiteralValue,
 	LogicalExpr,
 	Program,
+	RepeatStmt,
 	Statement,
 	UnaryExpr,
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Command } from "./commands.ts";
-import { background } from "./draw/background.ts";
-import { circle } from "./draw/circle.ts";
+
 import { Environment } from "./environment.ts";
 import { GicError } from "./error.ts";
 import { requireBoolean } from "./logical.ts";
 import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
+import { requireNumber } from "./interpreter-validation.ts";
+
+import { isBuiltInName } from "./built-ins.ts";
+import { drawingCalls } from "./draw/drawing-caller.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -42,6 +46,10 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	) {
 		switch (statement.type) {
+			case "RepeatStmt": {
+				this.onRepeatStmt(statement, commands, currentEnvironment);
+				break;
+			}
 			case "IfStmt": {
 				this.onIfStmt(statement, commands, currentEnvironment);
 				break;
@@ -61,6 +69,78 @@ export class Interpreter {
 				break;
 		}
 	}
+	onRepeatStmt(
+		statement: RepeatStmt,
+		commands: Command[],
+		currentEnvironment: Environment,
+	) {
+		const start = this.evaluateExpression(
+			statement.start,
+			commands,
+			currentEnvironment,
+		);
+
+		const startValue = requireNumber(
+			start,
+			statement.startToken,
+			"Expected repeat start value to be a number.",
+		);
+
+		const end = this.evaluateExpression(
+			statement.end,
+			commands,
+			currentEnvironment,
+		);
+		const endValue = requireNumber(
+			end,
+			statement.endToken,
+			"Expected repeat end value to be a number.",
+		);
+
+		let stepValue = 1;
+		if (statement.step && statement.stepToken) {
+			const evalResult = this.evaluateExpression(
+				statement.step,
+				commands,
+				currentEnvironment,
+			);
+			stepValue = requireNumber(
+				evalResult,
+				statement.stepToken,
+				"Expected repeat step value to be a number.",
+			);
+		}
+		if (stepValue === 0 && statement.stepToken) {
+			throw new GicError(
+				"Repeat step cannot be zero.",
+				statement.stepToken.line,
+				statement.stepToken.start,
+				statement.stepToken.end,
+			);
+		}
+
+		const repeatEnv = new Environment(currentEnvironment);
+
+		/*
+		Deriving values from the iteration count avoids accumulated floating-point drift.
+		------
+		What each line does:
+ - turn always counts exactly: 0, 1, 2, 3…
+ - value is recalculated from the original start.
+ - The sign-dependent check stops before the exclusive end.
+ - The GIC iterator receives value.
+	 */
+
+		for (let turn = 0; ; turn++) {
+			const value = startValue + turn * stepValue;
+			if (!(stepValue > 0 ? value < endValue : value > endValue)) break;
+			repeatEnv.set(statement.variable.lexeme, value);
+			for (const cmd of statement.body) {
+				this.executeStatement(cmd, commands, repeatEnv);
+			}
+		}
+	}
+
 	onIfStmt(
 		statement: IfStmt,
 		commands: Command[],
@@ -305,30 +385,13 @@ export class Interpreter {
 		const values = expr.arguments.map((arg) =>
 			this.evaluateExpression(arg, commands, currentEnvironment),
 		);
-		switch (expr.callee.name.lexeme) {
-			case "circle": {
-				commands.push(
-					circle({
-						values,
-						token: expr.callee.name,
-					}),
-				);
-				return VOID;
-			}
-			case "background": {
-				if (values.length === 3) {
-					commands.push(
-						background({
-							values,
-							token: expr.callee.name,
-						}),
-					);
-				}
-				return VOID;
-			}
-			default:
-				return VOID;
+		const name = expr.callee.name.lexeme;
+		const drawingCall = isBuiltInName(name) ? drawingCalls[name] : undefined;
+		if (drawingCall) {
+			commands.push(drawingCall({ values, token: expr.callee.name }));
+			return VOID;
 		}
+		return VOID;
 	}
 	interpret(): Command[] {
 		const commands: Command[] = [];

@@ -12,6 +12,10 @@ export type Declaration =
 	  }
 	| {
 			token: Token;
+			kind: "repeat-variable";
+	  }
+	| {
+			token: Token;
 			kind: "function";
 			returnKind?: FunctionReturnKind;
 			arity: number;

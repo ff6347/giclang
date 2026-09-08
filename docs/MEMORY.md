@@ -51,8 +51,37 @@
 
 - [direction] Favor browser Canvas as the primary visual runtime while keeping
   the TypeScript lexer, parser, analyzer, and interpreter platform-neutral.
-- [technique] Use a recording render backend for deterministic interpreter
-  tests before connecting execution to a real Canvas backend.
+- [decision] The interpreter records drawing intent directly into an ordered
+  `Command[]`; this serializable list is the deterministic recording backend
+  consumed by tests and browser Canvas, without a separate mutable backend
+  object.
+- [decision] Drawing styles are separate ordered commands rather than snapshots
+  attached to shapes. Reusable `Color` values are tagged as numeric OKLCH or CSS;
+  numeric lightness, chroma, and alpha use inclusive `0`–`100` ranges, while hue
+  uses inclusive `0`–`360`.
+- [technique] Browser color conversion preserves GIC alpha percentages by
+  appending `%` in Canvas OKLCH strings and passes validated CSS color strings
+  through unchanged.
+- [decision] The static Canvas renderer keeps ordered fill, stroke, enablement,
+  and stroke-width state local to each render. Every preview starts with white
+  fill, black stroke, width `1`, and fill and stroke enabled; `fill` and `stroke`
+  re-enable styles disabled by `noFill` and `noStroke`.
+- [decision] Every registered static shape emits a platform-neutral command and
+  has real Canvas coverage: `point`, `line`, `rect`, `circle`, `ellipse`,
+  `triangle`, `quad`, and `arc`.
+- [decision] `point(x, y)` is a solid, stroke-colored round dot centered at its
+  coordinate. Its diameter is the current stroke width, and `noStroke()`
+  disables it.
+- [decision] `arc(x, y, radius, startAngle, endAngle)` is an open, stroke-only
+  clockwise curve. GIC angles are degrees and the Canvas adapter converts them
+  to radians.
+- [technique] Canvas receives a circle radius unchanged, while ellipse width and
+  height become half-width and half-height radii. Closed polygonal shapes use
+  ordered fill and stroke state; points, lines, and arcs use stroke state only.
+- [technique] `examples/repeat.gic` is the deterministic Slice 3 fixture. Its
+  nested 21×21 rectangle grid intentionally clips the final row and column at
+  the 101×101 Canvas edge, and Firefox tests load that exact file through the
+  preview UI.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.
 - [decision] Preview execution runs in a dedicated Web Worker with termination
@@ -88,6 +117,14 @@
   expression evaluation. Declarations write to the current environment, reads
   search its parent chain, and assignment updates the nearest environment that
   already owns the name.
+- [decision] Repeat ranges use an exclusive end with sign-dependent comparison.
+  Bounds and step evaluate once in the surrounding environment; an omitted step
+  is `1`, an explicit zero step is an error, and a step pointing away from the
+  end performs zero iterations.
+- [technique] A repeat execution owns one child `Environment`, updates its
+  iterator each turn, and derives fractional values as `start + turn * step` to
+  avoid accumulated floating-point drift. Assignments still update an existing
+  outer owner through the environment chain.
 - [technique] Built-in call arguments are AST expressions, not values.
   `Interpreter.onCall()` evaluates them exactly once, left-to-right, before
   dispatch. Drawing functions under `src/draw/` accept the resulting values as
@@ -111,11 +148,15 @@
 - [lesson] Prefer explicit, named source programs and result assertions for
   language-semantics tests. A table-driven operator matrix was shorter but made
   individual GIC behavior harder for humans to read and learn from.
-- [risk] The built-in registry accepts one-, three-, and four-argument
-  `background` signatures, but the runtime currently implements only the
-  numeric triple. The other accepted forms intentionally emit no command until
-  Slice 3; never silently ignore alpha or introduce a contradictory arity error
-  during call-dispatch refactors.
+- [preference] Keep GIC source programs local to their E2E tests and duplicate
+  short snippets when that keeps setup, action, and assertion readable together.
+- [lesson] Canvas antialiasing makes exact edge-pixel color assertions brittle.
+  Stroke geometry tests should assert a visible difference from the background
+  while exact colors are sampled from fully covered pixels.
+- [decision] `background`, `fill`, and `stroke` share one runtime color
+  validator. It accepts numeric OKLCH triples and percentage-alpha quads,
+  standard CSS names case-insensitively, and 3-, 4-, 6-, or 8-digit hexadecimal
+  colors; invalid strings produce source-located diagnostics.
 - [decision] GIC uses a platform-neutral tree-walking interpreter rather than
   generating JavaScript. Serializable render commands carry drawing intent to
   browser Canvas or future adapters; shells do not reimplement language execution.
@@ -287,11 +328,11 @@ start))` — the `Math.max` covers empty EOF spans.
   `programGlobalNames` reserves every direct global name, while the scope stack
   contains only declarations visible at the current source position. A function
   is inserted immediately before its body so recursion works without hoisting.
-- [decision] Scope entries are a discriminated union: variables retain a token,
-  while functions retain a token, arity, and an optional valid `"void" | "value"`
-  return kind. The kind lets assignment reject user functions and lets calls
-  validate arity and value context; repeat-variable assignment remains deferred
-  because repeat iterators currently use `"variable"`.
+- [decision] Scope entries are a discriminated union: variables and repeat
+  variables retain a token, while functions retain a token, arity, and an
+  optional valid `"void" | "value"` return kind. The declaration kind lets
+  assignment reject both user functions and immutable repeat iterators, and lets
+  calls validate arity and value context.
 - [lesson] Analyze a variable initializer before registering its declaration,
   and analyze repeat bounds before registering the iterator. Registration-first
   ordering incorrectly permits self-reference.

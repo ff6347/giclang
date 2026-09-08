@@ -474,16 +474,21 @@ Style functions set the current drawing style. They affect all subsequent shapes
 
 All coordinates are in pixels from top-left origin (0, 0). Canvas is 101×101 pixels.
 
-| Function                                   | Description                                        |
-| ------------------------------------------ | -------------------------------------------------- |
-| `point(x, y);`                             | Draw a single point                                |
-| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)                |
-| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner          |
-| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                     |
-| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)                    |
-| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices                  |
-| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices              |
-| `arc(x, y, radius, startAngle, endAngle);` | Draw arc (angles in degrees, 0 = right, clockwise) |
+| Function                                   | Description                                   |
+| ------------------------------------------ | --------------------------------------------- |
+| `point(x, y);`                             | Draw a solid round point centered at (x, y)   |
+| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)           |
+| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner     |
+| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                |
+| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)               |
+| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices             |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices         |
+| `arc(x, y, radius, startAngle, endAngle);` | Draw open arc (degrees, 0 = right, clockwise) |
+
+`rect`, `circle`, `ellipse`, `triangle`, and `quad` use the current fill and
+stroke state. `point`, `line`, and `arc` use only the current stroke state and
+are not drawn while stroke is disabled. A point's diameter equals the current
+stroke width. Arc commands remain open and are never filled.
 
 ### Console Output
 

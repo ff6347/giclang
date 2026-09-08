@@ -106,11 +106,13 @@ This fragment illustrates the effect only; students should still build the behav
 - Test that reading the loop variable after the loop fails or is rejected by the analyzer.
 - Include nested repeat tests before adding rendering loops.
 
-## Gates and Open Questions
+## Resolved Decisions
 
-- Floating-point accumulation may produce surprising final values; document comparison policy before relying on edge cases.
-- Loop-variable reassignment is analyzer-owned unless the team chooses an additional runtime guard.
-- Exact boundary tests should follow the specification's exclusive `< end` and `> end` comparisons.
+- Fractional iterator values use `start + turn * step` with an integer turn
+  counter, avoiding accumulated addition drift.
+- Loop-variable reassignment is rejected by the analyzer.
+- Repeat ends are exclusive and use `< end` for positive steps and `> end` for
+  negative steps.
 
 ## Notes
 

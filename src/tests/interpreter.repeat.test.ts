@@ -1,0 +1,228 @@
+// ABOUTME: Verifies execution of GIC repeat statements through the source pipeline.
+// ABOUTME: Starts with positive ranges using the default step and exclusive end.
+
+import assert from "node:assert";
+import test, { describe } from "node:test";
+import { runSource } from "../core.ts";
+
+describe("interpreter repeat statements", () => {
+	test("should execute a positive repeat with the default step", () => {
+		const source = `repeat(i, 0, 3) {
+	circle(i * 10, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 50, radius: 5 },
+			{ type: "circle", x: 10, y: 50, radius: 5 },
+			{ type: "circle", x: 20, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should evaluate expressions for repeat range values", () => {
+		const source = `let start = 1;
+let end = 6;
+let step = 2;
+repeat(i, start, end, step) {
+	circle(i * 10, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 10, y: 50, radius: 5 },
+			{ type: "circle", x: 30, y: 50, radius: 5 },
+			{ type: "circle", x: 50, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should report a zero repeat step", () => {
+		const source = "repeat(i, 3, 0, 0) {}";
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Repeat step cannot be zero.",
+				line: 0,
+				start: 16,
+				end: 17,
+			},
+		]);
+	});
+
+	test("should execute a descending repeat with a negative step", () => {
+		const source = `repeat(i, 3, 0, -1) {
+	circle(i * 10, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 30, y: 50, radius: 5 },
+			{ type: "circle", x: 20, y: 50, radius: 5 },
+			{ type: "circle", x: 10, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should perform zero iterations when a positive step points away from the end", () => {
+		const source = `repeat(i, 3, 0) {
+	circle(i * 10, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, []);
+	});
+
+	test("should perform zero iterations when a negative step points away from the end", () => {
+		const source = `repeat(i, 0, 3, -1) {
+	circle(i * 10, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, []);
+	});
+
+	test("should derive fractional values from the iteration count", () => {
+		const source = `repeat(t, 0, 1, 0.1) {
+	circle(t, 50, 5);
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 50, radius: 5 },
+			{ type: "circle", x: 0.1, y: 50, radius: 5 },
+			{ type: "circle", x: 0.2, y: 50, radius: 5 },
+			{ type: "circle", x: 0.30000000000000004, y: 50, radius: 5 },
+			{ type: "circle", x: 0.4, y: 50, radius: 5 },
+			{ type: "circle", x: 0.5, y: 50, radius: 5 },
+			{ type: "circle", x: 0.6000000000000001, y: 50, radius: 5 },
+			{ type: "circle", x: 0.7000000000000001, y: 50, radius: 5 },
+			{ type: "circle", x: 0.8, y: 50, radius: 5 },
+			{ type: "circle", x: 0.9, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should report a non-number repeat start", () => {
+		const source = 'repeat(i, "start", 3) {}';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Expected repeat start value to be a number.",
+				line: 0,
+				start: 10,
+				end: 17,
+			},
+		]);
+	});
+
+	test("should report a non-number repeat end", () => {
+		const source = 'repeat(i, 0, "end") {}';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Expected repeat end value to be a number.",
+				line: 0,
+				start: 13,
+				end: 18,
+			},
+		]);
+	});
+
+	test("should report a non-number repeat step", () => {
+		const source = 'repeat(i, 0, 3, "step") {}';
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, false);
+		assert.deepEqual(actual.diagnostics, [
+			{
+				message: "Expected repeat step value to be a number.",
+				line: 0,
+				start: 16,
+				end: 22,
+			},
+		]);
+	});
+
+	test("should preserve assignment to an outer variable", () => {
+		const source = `let total = 0;
+repeat(i, 1, 4) {
+	total = total + i;
+}
+circle(total, 0, 1);`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 6, y: 0, radius: 1 },
+		]);
+	});
+
+	test("should keep the repeat end fixed while the body executes", () => {
+		const source = `let end = 3;
+repeat(i, 0, end) {
+	circle(i * 10, 50, 5);
+	end = 0;
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 50, radius: 5 },
+			{ type: "circle", x: 10, y: 50, radius: 5 },
+			{ type: "circle", x: 20, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should keep the repeat step fixed while the body executes", () => {
+		const source = `let step = 1;
+repeat(i, 0, 4, step) {
+	circle(i * 10, 50, 5);
+	step = 2;
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 50, radius: 5 },
+			{ type: "circle", x: 10, y: 50, radius: 5 },
+			{ type: "circle", x: 20, y: 50, radius: 5 },
+			{ type: "circle", x: 30, y: 50, radius: 5 },
+		]);
+	});
+
+	test("should execute nested repeats in row-major order", () => {
+		const source = `repeat(row, 0, 2) {
+	repeat(column, 0, 2) {
+		circle(column * 10, row * 10, 5);
+	}
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 0, radius: 5 },
+			{ type: "circle", x: 10, y: 0, radius: 5 },
+			{ type: "circle", x: 0, y: 10, radius: 5 },
+			{ type: "circle", x: 10, y: 10, radius: 5 },
+		]);
+	});
+});

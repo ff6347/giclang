@@ -1,5 +1,5 @@
 <!-- ABOUTME: Defines the platform-neutral rendering boundary for GIC before Canvas integration. -->
-<!-- ABOUTME: Specifies command records, style data, ordering, and fake backend expectations. -->
+<!-- ABOUTME: Specifies command records, style data, ordering, and recording expectations. -->
 
 # Render Backend Interface and Command Model
 
@@ -39,7 +39,7 @@ Define a platform-neutral rendering boundary before implementing drawing.
 - Render backend interface shape.
 - Command record vocabulary for canvas, style, shape, and output operations.
 - Color and style data containers at the boundary.
-- Fake backend seam for tests.
+- Ordered command-list recording seam for tests.
 - Default fill, stroke, and stroke-width documentation.
 - Command ordering expectations.
 
@@ -53,15 +53,16 @@ Define a platform-neutral rendering boundary before implementing drawing.
 
 ## Runtime/Backend Boundary Shape
 
-The backend boundary should be small and platform neutral:
+The backend boundary is a small platform-neutral result:
 
 ```txt
-RenderBackend
-  apply(command)
-  snapshot?()
+runSource(source)
+  commands: Command[]
 ```
 
-Commands should be serializable records, not browser objects. Core interpreter and built-in code should depend on this interface, not on DOM types.
+Commands are serializable records, not browser objects. Core interpreter and
+built-in code record this list without depending on DOM types; adapters replay
+it in order.
 
 ## Command Model
 
@@ -76,11 +77,15 @@ Preserve command order exactly as calls occur in the GIC program.
 
 ## Style and Color Data
 
-Document defaults before implementing drawing tests. A student should know the initial fill, stroke, and stroke width. Color values may be kept as normalized boundary data or tagged raw input until the color policy is resolved.
+Document defaults before implementing drawing tests. A student should know the
+initial fill, stroke, and stroke width. Colors cross the boundary as validated
+tagged OKLCH or CSS values.
 
-## Fake Backend Seam
+## Recording Seam
 
-A fake backend can collect command records and expose them to tests. It should not simulate Canvas pixels or perform browser-specific normalization.
+The interpreter collects command records directly and exposes them to tests
+through `runSource()`. This recording seam does not simulate Canvas pixels or
+perform browser-specific normalization.
 
 ## TDD-Oriented Student Checklist
 
@@ -99,11 +104,13 @@ A fake backend can collect command records and expose them to tests. It should n
 - Add an import-boundary check if the project has tooling for it.
 - Keep browser rendering out of this milestone's tests.
 
-## Gates and Open Questions
+## Resolved Decisions and Constraints
 
 - Avoid Node `Buffer` in browser-neutral core unless the project explicitly decides otherwise.
-- Color normalization is unresolved.
-- Decide whether `background` is a command, a clear operation, or both.
+- Colors cross the boundary as validated tagged OKLCH or CSS values.
+- `background` is an ordered command that repaints the full logical canvas.
+- The ordered `Command[]` returned by execution is the deterministic recording
+  boundary; static execution does not need a separate mutable backend object.
 
 ## Notes
 

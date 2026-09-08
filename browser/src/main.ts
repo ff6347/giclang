@@ -1,7 +1,8 @@
 // ABOUTME: Runs the browser preview lifecycle and renders GIC commands to Canvas.
 // ABOUTME: Manages worker replacement, execution limits, and visible diagnostics.
 import Worker from "./worker.ts?worker";
-import type { RunResult, Command } from "../../src/core.ts";
+import type { RunResult } from "../../src/core.ts";
+import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
 
 document.addEventListener("DOMContentLoaded", () => {
 	const TIMEOUT_IN_MS = 500;
@@ -24,37 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	const canvasContext = canvas.getContext("2d");
 	if (!canvasContext) throw new Error("canvas#canvas context not found");
 
-	const clearCanvas = () => {
-		canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-	};
-
-	const renderToCanvas = (commands: Command[]) => {
-		clearCanvas();
-		for (const command of commands) {
-			switch (command.type) {
-				case "background":
-					canvasContext.fillStyle = `oklch(${command.lightness}% ${command.chroma}% ${command.hue % 360})`;
-					canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-					break;
-				case "circle":
-					canvasContext.beginPath();
-					canvasContext.arc(
-						command.x,
-						command.y,
-						command.radius,
-						0,
-						2 * Math.PI,
-					);
-					canvasContext.fillStyle = "white";
-					canvasContext.strokeStyle = "black";
-					canvasContext.lineWidth = 1;
-					canvasContext.fill();
-					canvasContext.stroke();
-					break;
-			}
-		}
-	};
-
 	const runPreview = (source: string) => {
 		let executionTimer: number | null = null;
 		const worker = new Worker();
@@ -66,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			diagnostics.setHTML(
 				`The preview took too long and was terminated after ${TIMEOUT_IN_MS}ms.`,
 			);
-			clearCanvas();
+			clearCanvas(canvasContext, canvas);
 		}, TIMEOUT_IN_MS);
 		worker.onerror = (error) => {
 			if (worker !== activeWorker) return;
@@ -78,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			console.error("Worker error:", error);
 			diagnostics.setHTML("The preview could not be generated.");
 			// clear canvas
-			clearCanvas();
+			clearCanvas(canvasContext, canvas);
 		};
 
 		worker.onmessage = (e: MessageEvent<RunResult>) => {
@@ -89,12 +59,12 @@ document.addEventListener("DOMContentLoaded", () => {
 			activeWorker = null;
 
 			if (e.data.ok) {
-				renderToCanvas(e.data.commands);
+				renderToCanvas(canvas, e.data.commands);
 				console.info("Result:", e.data.commands);
 				diagnostics.setHTML("");
 				// write to canvas
 			} else {
-				clearCanvas();
+				clearCanvas(canvasContext, canvas);
 				diagnostics.setHTML(
 					e.data.diagnostics
 						.map((d) => `<p>Line ${d.line + 1}: ${d.message}</p>`)

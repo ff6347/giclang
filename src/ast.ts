@@ -42,8 +42,11 @@ export interface RepeatStmt {
 	type: "RepeatStmt";
 	variable: Token;
 	start: Expression;
+	startToken: Token;
 	end: Expression;
+	endToken: Token;
 	step?: Expression;
+	stepToken?: Token;
 	body: Statement[];
 }
 
