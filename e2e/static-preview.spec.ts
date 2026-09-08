@@ -39,6 +39,106 @@ circle(50, 50, 30);`;
 		});
 });
 
+test("applies fill commands to subsequent circles", async ({ page }) => {
+	const source = `background(100, 0, 0);
+fill(0, 0, 0);
+circle(50, 50, 30);`;
+	await page.goto("/");
+	await page.getByLabel("GiC").fill(source);
+
+	await expect
+		.poll(() => sampleCanvas(page))
+		.toEqual({
+			cornerOpaque: true,
+			centerOpaque: true,
+			centerDiffersFromCorner: true,
+		});
+});
+
+test("renders background alpha", async ({ page }) => {
+	const source = "background(0, 0, 0, 50);";
+	await page.goto("/");
+	await page.getByLabel("GiC").fill(source);
+
+	await expect
+		.poll(() =>
+			page.locator("#canvas").evaluate((element) => {
+				if (!(element instanceof HTMLCanvasElement)) {
+					throw new Error("Expected #canvas to be a canvas element.");
+				}
+				const context = element.getContext("2d");
+				if (context === null) {
+					throw new Error("Expected a 2D canvas context.");
+				}
+				return context.getImageData(0, 0, 1, 1).data[3];
+			}),
+		)
+		.toBe(128);
+});
+
+test("renders fill alpha on subsequent circles", async ({ page }) => {
+	const source = `fill(0, 0, 0, 50);
+noStroke();
+circle(50, 50, 30);`;
+	await page.goto("/");
+	await page.getByLabel("GiC").fill(source);
+
+	await expect
+		.poll(() =>
+			page.locator("#canvas").evaluate((element) => {
+				if (!(element instanceof HTMLCanvasElement)) {
+					throw new Error("Expected #canvas to be a canvas element.");
+				}
+				const context = element.getContext("2d");
+				if (context === null) {
+					throw new Error("Expected a 2D canvas context.");
+				}
+				return {
+					cornerAlpha: context.getImageData(0, 0, 1, 1).data[3],
+					circleCenterAlpha: context.getImageData(50, 50, 1, 1).data[3],
+				};
+			}),
+		)
+		.toEqual({
+			cornerAlpha: 0,
+			circleCenterAlpha: 128,
+		});
+});
+
+test("does not stroke circles after noStroke", async ({ page }) => {
+	const source = `background(100, 0, 0);
+fill(0, 0, 0, 0);
+noStroke();
+circle(50, 50, 30.5);`;
+	await page.goto("/");
+	await page.getByLabel("GiC").fill(source);
+
+	await expect
+		.poll(() =>
+			page.locator("#canvas").evaluate((element) => {
+				if (!(element instanceof HTMLCanvasElement)) {
+					throw new Error("Expected #canvas to be a canvas element.");
+				}
+				const context = element.getContext("2d");
+				if (context === null) {
+					throw new Error("Expected a 2D canvas context.");
+				}
+				const corner = context.getImageData(0, 0, 1, 1).data;
+				const circleEdge = context.getImageData(80, 50, 1, 1).data;
+				return {
+					cornerOpaque: corner[3] === 255,
+					edgeDiffersFromCorner: [0, 1, 2].some(
+						(index) => circleEdge[index] !== corner[index],
+					),
+				};
+			}),
+		)
+		.toEqual({
+			cornerOpaque: true,
+			edgeDiffersFromCorner: false,
+		});
+});
+
 test("renders only the latest of rapid source edits", async ({ page }) => {
 	const initialSource = `background(20, 0, 0);
 circle(50, 50, 30);`;
