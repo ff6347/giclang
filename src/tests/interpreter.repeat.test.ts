@@ -117,4 +117,37 @@ describe("interpreter repeat statements", () => {
 			},
 		]);
 	});
+
+	test("should preserve assignment to an outer variable", () => {
+		const source = `let total = 0;
+repeat(i, 1, 4) {
+	total = total + i;
+}
+circle(total, 0, 1);`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 6, y: 0, radius: 1 },
+		]);
+	});
+
+	test("should execute nested repeats in row-major order", () => {
+		const source = `repeat(row, 0, 2) {
+	repeat(column, 0, 2) {
+		circle(column * 10, row * 10, 5);
+	}
+}`;
+		const actual = runSource(source);
+
+		assert.strictEqual(actual.ok, true);
+		assert.deepEqual(actual.diagnostics, []);
+		assert.deepEqual(actual.commands, [
+			{ type: "circle", x: 0, y: 0, radius: 5 },
+			{ type: "circle", x: 10, y: 0, radius: 5 },
+			{ type: "circle", x: 0, y: 10, radius: 5 },
+			{ type: "circle", x: 10, y: 10, radius: 5 },
+		]);
+	});
 });
