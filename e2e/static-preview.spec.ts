@@ -3,28 +3,6 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-const acceptanceSource = `background(20, 0, 0);
-circle(50, 50, 30);`;
-const backgroundOnlySource = "background(20, 0, 0);";
-const invalidSource = "circle(50, 50);";
-const computedCircleSource = `background(20, 0, 0);
-let size = 10;
-size = size * 3;
-if (size > 20) {
-	circle(50, 50, size);
-}`;
-const computedBackgroundOnlySource = `background(20, 0, 0);
-let size = 5;
-size = size * 3;
-if (size > 20) {
-	circle(50, 50, size);
-}`;
-const invalidComputedSource = `background(20, 0, 0);
-let size = "large";
-if (size > 20) {
-	circle(50, 50, size);
-}`;
-
 async function sampleCanvas(page: Page) {
 	return page.locator("#canvas").evaluate((element) => {
 		if (!(element instanceof HTMLCanvasElement)) {
@@ -47,8 +25,10 @@ async function sampleCanvas(page: Page) {
 }
 
 test("renders background and circle commands on Canvas", async ({ page }) => {
+	const source = `background(20, 0, 0);
+circle(50, 50, 30);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(acceptanceSource);
+	await page.getByLabel("GiC").fill(source);
 
 	await expect
 		.poll(() => sampleCanvas(page))
@@ -60,11 +40,14 @@ test("renders background and circle commands on Canvas", async ({ page }) => {
 });
 
 test("renders only the latest of rapid source edits", async ({ page }) => {
+	const initialSource = `background(20, 0, 0);
+circle(50, 50, 30);`;
+	const latestSource = "background(20, 0, 0);";
 	await page.goto("/");
 	const editor = page.getByLabel("GiC");
 
-	await editor.fill(acceptanceSource);
-	await editor.fill(backgroundOnlySource);
+	await editor.fill(initialSource);
+	await editor.fill(latestSource);
 
 	await expect
 		.poll(() => sampleCanvas(page))
@@ -78,10 +61,13 @@ test("renders only the latest of rapid source edits", async ({ page }) => {
 test("clears the preview and shows a source-located diagnostic", async ({
 	page,
 }) => {
+	const validSource = `background(20, 0, 0);
+circle(50, 50, 30);`;
+	const invalidSource = "circle(50, 50);";
 	await page.goto("/");
 	const editor = page.getByLabel("GiC");
 
-	await editor.fill(acceptanceSource);
+	await editor.fill(validSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -106,10 +92,22 @@ test("clears the preview and shows a source-located diagnostic", async ({
 test("updates visible geometry after editing a computed value", async ({
 	page,
 }) => {
+	const initialSource = `background(20, 0, 0);
+let size = 10;
+size = size * 3;
+if (size > 20) {
+	circle(50, 50, size);
+}`;
+	const updatedSource = `background(20, 0, 0);
+let size = 5;
+size = size * 3;
+if (size > 20) {
+	circle(50, 50, size);
+}`;
 	await page.goto("/");
 	const editor = page.getByLabel("GiC");
 
-	await editor.fill(computedCircleSource);
+	await editor.fill(initialSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -118,7 +116,7 @@ test("updates visible geometry after editing a computed value", async ({
 			centerDiffersFromCorner: true,
 		});
 
-	await editor.fill(computedBackgroundOnlySource);
+	await editor.fill(updatedSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -131,10 +129,21 @@ test("updates visible geometry after editing a computed value", async ({
 test("clears computed output after a dynamic operand error", async ({
 	page,
 }) => {
+	const validSource = `background(20, 0, 0);
+let size = 10;
+size = size * 3;
+if (size > 20) {
+	circle(50, 50, size);
+}`;
+	const invalidSource = `background(20, 0, 0);
+let size = "large";
+if (size > 20) {
+	circle(50, 50, size);
+}`;
 	await page.goto("/");
 	const editor = page.getByLabel("GiC");
 
-	await editor.fill(computedCircleSource);
+	await editor.fill(validSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -143,7 +152,7 @@ test("clears computed output after a dynamic operand error", async ({
 			centerDiffersFromCorner: true,
 		});
 
-	await editor.fill(invalidComputedSource);
+	await editor.fill(invalidSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
