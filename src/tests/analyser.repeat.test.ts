@@ -54,6 +54,44 @@ describe("Analyser repeat scopes", () => {
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
+	test("should report a repeat variable referenced as its end value", () => {
+		const source = "repeat(i,0,i){}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'i'.",
+			line: 0,
+			start: 11,
+			end: 12,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should report a repeat variable referenced as its step value", () => {
+		const source = "repeat(i,0,3,i){}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot find name 'i'.",
+			line: 0,
+			start: 13,
+			end: 14,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
+
+	test("should allow repeat range expressions to use outer names", () => {
+		const source = `let start = 0;
+let end = 3;
+let step = 1;
+repeat(i, start, end, step) { print(i); }`;
+		const result = analyseSource(source);
+
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
 	test("should report a repeat variable that reuses a visible function-local name", () => {
 		const source = "func enclosing(){\nlet i = 0;\nrepeat(i,0,3){}return;}";
 		const result = analyseSource(source);
@@ -87,6 +125,28 @@ describe("Analyser repeat scopes", () => {
 		const result = analyseSource(source);
 
 		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should allow distinct variables in nested repeats", () => {
+		const source =
+			"repeat(row,0,2){repeat(column,0,2){print(row);print(column);}}";
+		const result = analyseSource(source);
+
+		assert.strictEqual(result.diagnostics.length, 0);
+	});
+
+	test("should report a nested repeat that reuses an outer repeat variable", () => {
+		const source = "repeat(i,0,2){repeat(i,0,2){}}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot declare 'i' because that name already exists.",
+			line: 0,
+			start: 21,
+			end: 22,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
 
 	test("should report a variable in a repeat body that reuses the repeat variable", () => {
