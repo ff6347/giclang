@@ -115,4 +115,18 @@ describe("Analyser repeat scopes", () => {
 		assert.strictEqual(result.diagnostics.length, 1);
 		assert.deepStrictEqual(result.diagnostics[0], expected);
 	});
+
+	test("should report assignment to a repeat variable", () => {
+		const source = "repeat(i,0,3){i=2;}";
+		const result = analyseSource(source);
+		const expected = {
+			message: "Cannot assign to repeat variable 'i'.",
+			line: 0,
+			start: 14,
+			end: 15,
+		};
+
+		assert.strictEqual(result.diagnostics.length, 1);
+		assert.deepStrictEqual(result.diagnostics[0], expected);
+	});
 });

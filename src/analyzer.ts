@@ -24,6 +24,7 @@ import {
 	arityMismatchDiagnostic,
 	diagnosticAssignDefinedByGIC,
 	diagnosticAssignFunction,
+	diagnosticAssignRepeatVariable,
 	diagnosticDeclareAlreadyExisting,
 	diagnosticDeclareDefinedByGIC,
 	diagnosticFunctionReturn,
@@ -169,7 +170,7 @@ export class Analyser {
 			);
 		} else {
 			this.scopes.at(-1)?.declarations.set(statement.variable.lexeme, {
-				kind: "variable",
+				kind: "repeat-variable",
 				token: statement.variable,
 			});
 		}
@@ -246,6 +247,8 @@ export class Analyser {
 			this.diagnostics.push(missingNameDiagnostic(statement.name));
 		} else if (declaration.kind === "function") {
 			this.diagnostics.push(diagnosticAssignFunction(statement.name));
+		} else if (declaration.kind === "repeat-variable") {
+			this.diagnostics.push(diagnosticAssignRepeatVariable(statement.name));
 		}
 		this.walkExpression(statement.value);
 	}

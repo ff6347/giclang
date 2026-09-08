@@ -11,6 +11,16 @@ export function diagnosticAssignFunction(token: Token): Diagnostic {
 		end: token.end,
 	};
 }
+
+export function diagnosticAssignRepeatVariable(token: Token): Diagnostic {
+	return {
+		message: `Cannot assign to repeat variable '${token.lexeme}'.`,
+		line: token.line,
+		start: token.start,
+		end: token.end,
+	};
+}
+
 export function diagnosticDeclareAlreadyExisting(token: Token): Diagnostic {
 	return {
 		message: `Cannot declare '${token.lexeme}' because that name already exists.`,
