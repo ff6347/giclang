@@ -20,18 +20,15 @@ import type {
 	VarDeclStmt,
 } from "./ast.ts";
 import type { Command } from "./commands.ts";
-import { background } from "./draw/background.ts";
-import { circle } from "./draw/circle.ts";
+
 import { Environment } from "./environment.ts";
 import { GicError } from "./error.ts";
 import { requireBoolean } from "./logical.ts";
 import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 import { requireNumber } from "./interpreter-validation.ts";
-import { noStroke } from "./draw/no-stroke.ts";
-import { fill } from "./draw/fill.ts";
-import { noFill } from "./draw/no-fill.ts";
-import { stroke } from "./draw/stroke.ts";
-import { strokeWidth } from "./draw/stroke-width.ts";
+
+import { isBuiltInName } from "./built-ins.ts";
+import { drawingCalls } from "./draw/drawing-caller.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -388,50 +385,13 @@ export class Interpreter {
 		const values = expr.arguments.map((arg) =>
 			this.evaluateExpression(arg, commands, currentEnvironment),
 		);
-		switch (expr.callee.name.lexeme) {
-			case "noFill": {
-				commands.push(noFill());
-				return VOID;
-			}
-			case "fill": {
-				commands.push(fill({ values, token: expr.callee.name }));
-
-				return VOID;
-			}
-			case "noStroke": {
-				commands.push(noStroke());
-				return VOID;
-			}
-			case "stroke": {
-				commands.push(stroke({ values, token: expr.callee.name }));
-				return VOID;
-			}
-			case "strokeWidth": {
-				commands.push(strokeWidth({ values, token: expr.callee.name }));
-				return VOID;
-			}
-
-			case "circle": {
-				commands.push(
-					circle({
-						values,
-						token: expr.callee.name,
-					}),
-				);
-				return VOID;
-			}
-			case "background": {
-				commands.push(
-					background({
-						values,
-						token: expr.callee.name,
-					}),
-				);
-				return VOID;
-			}
-			default:
-				return VOID;
+		const name = expr.callee.name.lexeme;
+		const drawingCall = isBuiltInName(name) ? drawingCalls[name] : undefined;
+		if (drawingCall) {
+			commands.push(drawingCall({ values, token: expr.callee.name }));
+			return VOID;
 		}
+		return VOID;
 	}
 	interpret(): Command[] {
 		const commands: Command[] = [];
