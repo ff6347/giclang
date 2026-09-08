@@ -51,8 +51,10 @@
 
 - [direction] Favor browser Canvas as the primary visual runtime while keeping
   the TypeScript lexer, parser, analyzer, and interpreter platform-neutral.
-- [technique] Use a recording render backend for deterministic interpreter
-  tests before connecting execution to a real Canvas backend.
+- [decision] The interpreter records drawing intent directly into an ordered
+  `Command[]`; this serializable list is the deterministic recording backend
+  consumed by tests and browser Canvas, without a separate mutable backend
+  object.
 - [decision] Drawing styles are separate ordered commands rather than snapshots
   attached to shapes. Reusable `Color` values are tagged as numeric OKLCH or CSS;
   numeric lightness, chroma, and alpha use inclusive `0`–`100` ranges, while hue
@@ -64,9 +66,22 @@
   and stroke-width state local to each render. Every preview starts with white
   fill, black stroke, width `1`, and fill and stroke enabled; `fill` and `stroke`
   re-enable styles disabled by `noFill` and `noStroke`.
-- [risk] The registered `point`, `line`, `rect`, `ellipse`, `triangle`, `quad`,
-  and `arc` functions still emit no commands. Slice 3 requires their recording
-  and Canvas behavior unless its documented scope is narrowed.
+- [decision] Every registered static shape emits a platform-neutral command and
+  has real Canvas coverage: `point`, `line`, `rect`, `circle`, `ellipse`,
+  `triangle`, `quad`, and `arc`.
+- [decision] `point(x, y)` is a solid, stroke-colored round dot centered at its
+  coordinate. Its diameter is the current stroke width, and `noStroke()`
+  disables it.
+- [decision] `arc(x, y, radius, startAngle, endAngle)` is an open, stroke-only
+  clockwise curve. GIC angles are degrees and the Canvas adapter converts them
+  to radians.
+- [technique] Canvas receives a circle radius unchanged, while ellipse width and
+  height become half-width and half-height radii. Closed polygonal shapes use
+  ordered fill and stroke state; points, lines, and arcs use stroke state only.
+- [technique] `examples/repeat.gic` is the deterministic Slice 3 fixture. Its
+  nested 21×21 rectangle grid intentionally clips the final row and column at
+  the 101×101 Canvas edge, and Firefox tests load that exact file through the
+  preview UI.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.
 - [decision] Preview execution runs in a dedicated Web Worker with termination

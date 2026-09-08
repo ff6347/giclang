@@ -115,3 +115,42 @@ The registered `point`, `line`, `rect`, `ellipse`, `triangle`, `quad`, and `arc`
 shape functions still need command records, interpreter dispatch, recording
 coverage, and Canvas translation. Slice 3 also still needs its deterministic
 example `.gic` fixture and final lesson/bookkeeping audit before completion.
+
+## Shape and Example Completion
+
+The preceding remaining-work section records the earlier checkpoint. Slice 3
+subsequently completed every listed shape and its deterministic example.
+
+- [decision] The interpreter's ordered `Command[]` is the recording backend.
+  Drawing calls dispatch through a typed name-to-constructor registry and retain
+  exact source order without a separate mutable backend object.
+- [decision] `point(x, y)` draws a solid round dot centered at its coordinate,
+  using the current stroke color and stroke width as its diameter. `noStroke()`
+  suppresses points.
+- [decision] `arc()` draws an open, stroke-only clockwise curve. Commands retain
+  degree angles; the Canvas adapter converts them to radians.
+- [technique] Circle commands carry a radius unchanged. Ellipse width and height
+  become Canvas radii by division by two. Rectangles use a top-left coordinate,
+  while triangles and quadrilaterals close their paths before applying fill and
+  stroke state.
+- [technique] Firefox pixel tests distinguish filled interiors, stroke paths,
+  clear gaps, centered geometry, clockwise arcs, and the absence of arc fill
+  without mocking Canvas.
+- [decision] `examples/repeat.gic` is a deterministic nested 21×21 rectangle
+  grid. The final row and column intentionally clip against the 101×101 Canvas,
+  and the Firefox suite reads that exact fixture into the preview editor.
+
+Relevant completion commits are:
+
+- `bd9910c test(shapes): pin shape pipeline behavior`
+- `e03f924 feat(interpreter): record shape commands`
+- `23eae99 test(shapes): correct point geometry`
+- `385cd4e feat(browser): render shape commands`
+- `67d7277 feat(example): add deterministic repeat grid`
+
+The completed acceptance gate passes core and browser tests, both typechecks,
+lint, formatting, browser build, diff checks, and 27 Firefox tests. The lesson
+audit closes finite repeat execution, the serializable command/recording
+boundary, all current drawing built-ins, and static Canvas rendering. The
+combined repeat/animation semantic milestone remains open for Slice 5, and the
+broader example/visual-regression milestone remains open for Slice 6.
