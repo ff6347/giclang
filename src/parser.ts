@@ -198,12 +198,18 @@ export class Parser {
 		this.consume(LEFT_PAREN, "Expected '(' after 'repeat'.");
 		const variable = this.consume(IDENTIFIER, "Expected loop variable name.");
 		this.consume(COMMA, "Expected ',' after variable.");
+		const startToken = this.peek();
 		const start = this.expression();
 		this.consume(COMMA, "Expected ',' after start.");
+		const endToken = this.peek();
 		const end = this.expression();
-		let step: Expression | undefined = undefined;
+		let parsedStep: { expression: Expression; token: Token } | undefined;
+
 		if (this.match(COMMA)) {
-			step = this.expression();
+			parsedStep = {
+				token: this.peek(),
+				expression: this.expression(),
+			};
 		} else if (!this.check("RIGHT_PAREN")) {
 			throw new ParserError("Expected ',' after repeat end.", this.peek());
 		}
@@ -215,11 +221,14 @@ export class Parser {
 			type: "RepeatStmt",
 			variable,
 			start,
+			startToken,
 			end,
+			endToken,
 			body,
 		};
-		if (step !== undefined) {
-			stmt.step = step;
+		if (parsedStep !== undefined) {
+			stmt.step = parsedStep.expression;
+			stmt.stepToken = parsedStep.token;
 		}
 		return stmt;
 	}
@@ -518,6 +527,8 @@ export class Parser {
 	 *
 	 */
 	peek() {
-		return this.tokens.at(this.current);
+		const token = this.tokens.at(this.current);
+		if (!token) throw new ParserError("Peeked past end of input.", token);
+		return token;
 	}
 }

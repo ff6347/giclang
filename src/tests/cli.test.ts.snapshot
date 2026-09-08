@@ -1,3 +1,3 @@
 exports[`cli > should exit with 0 and print parsed program to stdout. 1`] = `
-"{\\n  type: 'Program',\\n  statements: [\\n    { type: 'VarDecl', name: [Token], initializer: [Object] },\\n    { type: 'VarDecl', name: [Token], initializer: [Object] },\\n    {\\n      type: 'RepeatStmt',\\n      variable: [Token],\\n      start: [Object],\\n      end: [Object],\\n      body: [Array]\\n    }\\n  ]\\n}\\n"
+"{\\n  type: 'Program',\\n  statements: [\\n    { type: 'VarDecl', name: [Token], initializer: [Object] },\\n    { type: 'VarDecl', name: [Token], initializer: [Object] },\\n    {\\n      type: 'RepeatStmt',\\n      variable: [Token],\\n      start: [Object],\\n      startToken: [Token],\\n      end: [Object],\\n      endToken: [Token],\\n      body: [Array]\\n    }\\n  ]\\n}\\n"
 `;
