@@ -35,13 +35,11 @@ async function sampleVisibility(page: Page, points: SamplePoint[]) {
 	}, points);
 }
 
-test("renders a square point from its top-left coordinate", async ({
-	page,
-}) => {
+test("renders a round point centred on its coordinate", async ({ page }) => {
 	const source = `background("#ffffff");
 fill("tomato");
 stroke("#000000");
-strokeWidth(3);
+strokeWidth(8);
 point(20, 20);`;
 	await page.goto("/");
 	await page.getByLabel("GiC").fill(source);
@@ -49,19 +47,21 @@ point(20, 20);`;
 	await expect
 		.poll(() =>
 			sampleVisibility(page, [
-				{ name: "topLeft", x: 20, y: 20 },
-				{ name: "bottomRight", x: 22, y: 22 },
-				{ name: "beforePoint", x: 19, y: 20 },
-				{ name: "afterPoint", x: 23, y: 20 },
+				{ name: "center", x: 20, y: 20 },
+				{ name: "insideTop", x: 20, y: 17 },
+				{ name: "insideRight", x: 23, y: 20 },
+				{ name: "outsideCorner", x: 16, y: 16 },
+				{ name: "outsideRadius", x: 20, y: 15 },
 			]),
 		)
 		.toEqual({
 			backgroundOpaque: true,
 			visible: {
-				topLeft: true,
-				bottomRight: true,
-				beforePoint: false,
-				afterPoint: false,
+				center: true,
+				insideTop: true,
+				insideRight: true,
+				outsideCorner: false,
+				outsideRadius: false,
 			},
 		});
 });
