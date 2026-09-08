@@ -1,11 +1,11 @@
-// ABOUTME: Validates background function values and creates render commands.
-// ABOUTME: Keeps background command construction outside the interpreter.
+// ABOUTME: Validates numeric OKLCH fill values and creates fill commands.
+// ABOUTME: Keeps fill command construction outside the interpreter.
 
 import type { Command } from "../commands.ts";
 import type { Token } from "../tokens.ts";
 import { requireArgumentNumber, requireRange } from "./arguments.ts";
 
-export function background({
+export function fill({
 	values,
 	token,
 }: {
@@ -19,18 +19,18 @@ export function background({
 	requireRange(lightness, "lightness", token, 0, 100);
 	requireRange(chroma, "chroma", token, 0, 100);
 	requireRange(hue, "hue", token, 0, 360);
+
 	if (values[3] !== undefined) {
 		const alpha = requireArgumentNumber(values[3], "alpha", token);
 		requireRange(alpha, "alpha", token, 0, 100);
-
 		return {
-			type: "background",
-			color: { kind: "oklch", lightness, chroma, hue, alpha },
+			type: "fill",
+			color: { lightness, chroma, hue, alpha, kind: "oklch" },
 		};
 	}
 
 	return {
-		type: "background",
-		color: { kind: "oklch", lightness, chroma, hue },
+		type: "fill",
+		color: { lightness, chroma, hue, kind: "oklch" },
 	};
 }

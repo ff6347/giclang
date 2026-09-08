@@ -4,6 +4,24 @@
 import { GicError } from "../error.ts";
 import type { Token } from "../tokens.ts";
 
+export function requireRange(
+	value: number,
+	argumentName: string,
+	callee: Token,
+	min: number,
+	max: number,
+): number {
+	if (value < min || value > max || !Number.isFinite(value)) {
+		throw new GicError(
+			`Function '${callee.lexeme}' requires argument '${argumentName}' to be between ${min} and ${max}.`,
+			callee.line,
+			callee.start,
+			callee.end,
+		);
+	}
+	return value;
+}
+
 export function requireArgumentNumber(
 	value: unknown,
 	argumentName: string,

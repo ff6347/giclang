@@ -27,6 +27,8 @@ import { GicError } from "./error.ts";
 import { requireBoolean } from "./logical.ts";
 import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 import { requireNumber } from "./interpreter-validation.ts";
+import { noStroke } from "./draw/no-stroke.ts";
+import { fill } from "./draw/fill.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -384,6 +386,16 @@ export class Interpreter {
 			this.evaluateExpression(arg, commands, currentEnvironment),
 		);
 		switch (expr.callee.name.lexeme) {
+			case "fill": {
+				if (values.length === 3 || values.length === 4) {
+					commands.push(fill({ values, token: expr.callee.name }));
+				}
+				return VOID;
+			}
+			case "noStroke": {
+				commands.push(noStroke());
+				return VOID;
+			}
 			case "circle": {
 				commands.push(
 					circle({
@@ -394,7 +406,7 @@ export class Interpreter {
 				return VOID;
 			}
 			case "background": {
-				if (values.length === 3) {
+				if (values.length === 3 || values.length === 4) {
 					commands.push(
 						background({
 							values,

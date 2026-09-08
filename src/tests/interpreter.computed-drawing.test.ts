@@ -61,7 +61,10 @@ background(tone, 50, 50);
 		assert.strictEqual(actual.ok, true);
 		assert.deepEqual(actual.diagnostics, []);
 		assert.deepEqual(actual.commands, [
-			{ type: "background", lightness: 10, chroma: 50, hue: 50 },
+			{
+				type: "background",
+				color: { kind: "oklch", lightness: 10, chroma: 50, hue: 50 },
+			},
 		]);
 	});
 
@@ -134,7 +137,10 @@ background(tone, 50, 50);
 		assert.strictEqual(actual.ok, true);
 		assert.deepEqual(actual.diagnostics, []);
 		assert.deepEqual(actual.commands, [
-			{ type: "background", lightness: 30, chroma: 50, hue: 50 },
+			{
+				type: "background",
+				color: { kind: "oklch", lightness: 30, chroma: 50, hue: 50 },
+			},
 		]);
 	});
 
@@ -146,7 +152,10 @@ background(tone, 50, 50);
 		assert.strictEqual(actual.ok, true);
 		assert.deepEqual(actual.diagnostics, []);
 		assert.deepEqual(actual.commands, [
-			{ type: "background", lightness: 30, chroma: 50, hue: 50 },
+			{
+				type: "background",
+				color: { kind: "oklch", lightness: 30, chroma: 50, hue: 50 },
+			},
 		]);
 	});
 	test("should execute an if branch when its condition is true", () => {
@@ -225,7 +234,10 @@ if (size > 20) {
 		assert.strictEqual(actual.ok, true);
 		assert.deepEqual(actual.diagnostics, []);
 		assert.deepEqual(actual.commands, [
-			{ type: "background", lightness: 20, chroma: 0, hue: 0 },
+			{
+				type: "background",
+				color: { kind: "oklch", lightness: 20, chroma: 0, hue: 0 },
+			},
 			{ type: "circle", x: 50, y: 50, radius: 30 },
 		]);
 	});

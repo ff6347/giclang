@@ -10,7 +10,12 @@ describe("built-in functions", () => {
 		const actual = runSource(source);
 		const expected = {
 			ok: true,
-			commands: [{ type: "background", lightness: 20, chroma: 0, hue: 0 }],
+			commands: [
+				{
+					type: "background",
+					color: { kind: "oklch", lightness: 20, chroma: 0, hue: 0 },
+				},
+			],
 			diagnostics: [],
 		};
 		assert.deepStrictEqual(actual, expected);
@@ -22,8 +27,14 @@ describe("built-in functions", () => {
 		const expected = {
 			ok: true,
 			commands: [
-				{ type: "background", lightness: 20, chroma: 0, hue: 0 },
-				{ type: "background", lightness: 80, chroma: 0, hue: 0 },
+				{
+					type: "background",
+					color: { kind: "oklch", lightness: 20, chroma: 0, hue: 0 },
+				},
+				{
+					type: "background",
+					color: { kind: "oklch", lightness: 80, chroma: 0, hue: 0 },
+				},
 			],
 			diagnostics: [],
 		};
@@ -53,8 +64,16 @@ describe("built-in functions", () => {
 		const expected = {
 			ok: true,
 			commands: [
-				{ type: "background", lightness: 20, chroma: 0, hue: 0 },
-				{ type: "circle", x: 50, y: 50, radius: 30 },
+				{
+					type: "background",
+					color: { kind: "oklch", lightness: 20, chroma: 0, hue: 0 },
+				},
+				{
+					type: "circle",
+					x: 50,
+					y: 50,
+					radius: 30,
+				},
 			],
 			diagnostics: [],
 		};
