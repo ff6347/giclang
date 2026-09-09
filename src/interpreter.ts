@@ -491,6 +491,10 @@ export class Interpreter {
 			return VOID;
 		}
 
+		if (callable.kind === "pure") {
+			return callable.invoke({ values, token });
+		}
+
 		if (callable.kind === "print") {
 			if (values[0] === undefined) {
 				throw new Error(`Argument ${token.lexeme} is undefined`);

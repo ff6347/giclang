@@ -5,6 +5,7 @@ import type { FuncStmt } from "./ast.ts";
 import type { Token } from "./tokens.ts";
 import type { Command } from "./commands.ts";
 import { drawingCalls } from "./draw.ts";
+import { mathCalls, type MathCall } from "./math.ts";
 export type DrawingCall = (input: CallableInput) => Command;
 
 export type CallableInput = {
@@ -17,7 +18,8 @@ export type Callable =
 	| { kind: "drawing"; invoke: DrawingCall }
 	| {
 			kind: "print";
-	  };
+	  }
+	| { kind: "pure"; invoke: MathCall };
 
 export class CallableRegistry {
 	private callables: Map<string, Callable> = new Map();
@@ -29,6 +31,10 @@ export class CallableRegistry {
 		}
 		// register print call
 		this.register("print", { kind: "print" });
+		// register math calls
+		for (const [name, invoke] of Object.entries(mathCalls)) {
+			this.register(name, { kind: "pure", invoke });
+		}
 	}
 
 	register(name: string, callable: Callable) {
