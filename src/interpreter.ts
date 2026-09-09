@@ -7,6 +7,7 @@ import type {
 	CallExpr,
 	Expression,
 	ExprStmt,
+	FuncStmt,
 	GroupingExpr,
 	IdentifierExpr,
 	IfStmt,
@@ -26,15 +27,15 @@ import { GicError } from "./error.ts";
 import { requireBoolean } from "./logical.ts";
 import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 import { requireNumber } from "./interpreter-validation.ts";
-
-import { isBuiltInName } from "./built-ins.ts";
-import { drawingCalls } from "./draw/drawing-caller.ts";
+import { CallableRegistry, type Callable } from "./callable-registry.ts";
+import type { Token } from "./tokens.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
 
 export class Interpreter {
 	private program: Program;
+	private callables: CallableRegistry = new CallableRegistry();
 	private globals: Environment = new Environment(null);
 	constructor(program: Program) {
 		this.program = program;
@@ -46,6 +47,10 @@ export class Interpreter {
 		currentEnvironment: Environment,
 	) {
 		switch (statement.type) {
+			case "FuncStmt": {
+				this.onFuncStmt(statement);
+				break;
+			}
 			case "RepeatStmt": {
 				this.onRepeatStmt(statement, commands, currentEnvironment);
 				break;
@@ -68,6 +73,18 @@ export class Interpreter {
 			default:
 				break;
 		}
+	}
+	onFuncStmt(statement: FuncStmt) {
+		// okay. As I understand it. On funcSTatement only registery a callable in the environment/callable-registry
+		// (maybe it is still smart to use the env instead of a own registry)
+		// the command evaluation should not happen here since we dont know what the arguments are. so params stay token.
+		// should the callable just wrap the func statement?
+		// onCall finds a callable, checks if it exists and executes it.
+		// evaluates all argument expressions and generates the commands
+		this.callables.register(statement.name.lexeme, {
+			kind: "user",
+			declaration: statement,
+		});
 	}
 	onRepeatStmt(
 		statement: RepeatStmt,
@@ -386,11 +403,63 @@ export class Interpreter {
 			this.evaluateExpression(arg, commands, currentEnvironment),
 		);
 		const name = expr.callee.name.lexeme;
-		const drawingCall = isBuiltInName(name) ? drawingCalls[name] : undefined;
-		if (drawingCall) {
-			commands.push(drawingCall({ values, token: expr.callee.name }));
+
+		const callable = this.callables.get(name);
+
+		if (!callable) {
+			throw new GicError(
+				`Function '${name}' not found`,
+				expr.callee.name.line,
+				expr.callee.name.start,
+				expr.callee.name.end,
+			);
+		}
+
+		return this.invokeCallable(callable, values, expr.callee.name, commands);
+	}
+	private invokeCallable(
+		callable: Callable,
+		values: EvaluationResult[],
+		token: Token,
+		commands: Command[],
+	): EvaluationResult {
+		if (callable.kind === "drawing") {
+			commands.push(callable.invoke({ values, token }));
 			return VOID;
 		}
+		const statement = callable.declaration;
+
+		const params = statement.params ?? [];
+		if (values.length !== params.length) {
+			throw new GicError(
+				`Expected ${params.length} arguments, got ${values.length}`,
+				token.line,
+				token.start,
+				token.end,
+			);
+		}
+		const funcEnv = new Environment(this.globals);
+		for (const [i, param] of params.entries()) {
+			const value = values[i];
+			if (value === VOID) {
+				throw new GicError(
+					`Argument must produce a value`,
+					token.line,
+					token.start,
+					token.end,
+				);
+			}
+
+			if (value === undefined) {
+				throw new Error(`Missing evaluated argument at index ${i}.`);
+			}
+
+			funcEnv.set(param.lexeme, value);
+		}
+		for (const bodyStmt of statement.body) {
+			this.executeStatement(bodyStmt, commands, funcEnv);
+		}
+
 		return VOID;
 	}
 	interpret(): Command[] {
