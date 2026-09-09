@@ -46,6 +46,27 @@ circle(10, 20, radius(3));`;
 		});
 	});
 
+	test("should isolate local bindings across recursive calls", () => {
+		const source = `func sum(value) {
+	if (value <= 0) {
+		return 0;
+	}
+	let current = value;
+	let remainder = sum(value - 1);
+	return current + remainder;
+}
+
+circle(10, 20, sum(3));`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "circle", x: 10, y: 20, radius: 6 }],
+			diagnostics: [],
+		});
+	});
+
 	test("should return from a repeat body and function", () => {
 		const source = `func radius() {
 	repeat(i, 0, 3) {
