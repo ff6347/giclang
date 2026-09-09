@@ -61,10 +61,14 @@ were encoded.
 
 ### Print output
 
-- Every `RunResult` includes `output: string[]`.
-- Each `print()` call appends one entry in source order.
-- Strings are unquoted; numbers use ordinary decimal representation; booleans
-  become `true` or `false`.
+- Every `RunResult` includes `output: OutputEntry[]`.
+- Each output entry contains formatted `text` plus the `print` token's 0-based
+  `line` and half-open absolute `start`/`end` offsets.
+- Each `print()` call appends one entry in source order. Strings are unquoted;
+  numbers use ordinary decimal representation; booleans become `true` or
+  `false`.
+- Output locations identify the `print` token, not the whole call or argument
+  expression. Presentation converts lines to 1-based numbering.
 - Runtime failures retain output produced before the failure. Parser and analyzer
   failures return an empty output list.
 - Failed runs continue to omit render commands.
@@ -150,6 +154,7 @@ remains the cancellation boundary for runaway recursion.
 Add public `runSource()` tests proving:
 
 - string, number, and boolean output formatting;
+- each entry carries the source location of its `print` token;
 - multiple prints preserve execution order;
 - output from nested function calls preserves ordinary side-effect order;
 - output emitted before a runtime error remains in the failed result;
