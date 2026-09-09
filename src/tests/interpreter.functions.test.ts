@@ -29,4 +29,38 @@ motif(30, 40);`;
 			diagnostics: [],
 		});
 	});
+
+	test("should use a function return value as a circle radius", () => {
+		const source = `func radius(value) {
+	return value * 2;
+}
+
+circle(10, 20, radius(3));`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "circle", x: 10, y: 20, radius: 6 }],
+			diagnostics: [],
+		});
+	});
+
+	test("should stop a function body after return", () => {
+		const source = `func draw() {
+	line(1, 2, 3, 4);
+	return;
+	circle(5, 6, 7);
+}
+
+draw();`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "line", x1: 1, y1: 2, x2: 3, y2: 4 }],
+			diagnostics: [],
+		});
+	});
 });

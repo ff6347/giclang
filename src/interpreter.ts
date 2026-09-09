@@ -16,6 +16,7 @@ import type {
 	LogicalExpr,
 	Program,
 	RepeatStmt,
+	ReturnStmt,
 	Statement,
 	UnaryExpr,
 	VarDeclStmt,
@@ -33,6 +34,11 @@ import type { Token } from "./tokens.ts";
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
 
+type ReturnSignal = {
+	kind: "return";
+	value: EvaluationResult;
+};
+
 export class Interpreter {
 	private program: Program;
 	private callables: CallableRegistry = new CallableRegistry();
@@ -45,8 +51,11 @@ export class Interpreter {
 		statement: Statement,
 		commands: Command[],
 		currentEnvironment: Environment,
-	) {
+	): ReturnSignal | undefined {
 		switch (statement.type) {
+			case "ReturnStmt": {
+				return this.onReturnStmt(statement, commands, currentEnvironment);
+			}
 			case "FuncStmt": {
 				this.onFuncStmt(statement);
 				break;
@@ -72,6 +81,23 @@ export class Interpreter {
 				break;
 			default:
 				break;
+		}
+		return undefined;
+	}
+	onReturnStmt(
+		statement: ReturnStmt,
+		commands: Command[],
+		currentEnvironment: Environment,
+	): ReturnSignal {
+		if (statement.value) {
+			const value = this.evaluateExpression(
+				statement.value,
+				commands,
+				currentEnvironment,
+			);
+			return { value, kind: "return" };
+		} else {
+			return { kind: "return", value: VOID };
 		}
 	}
 	onFuncStmt(statement: FuncStmt) {
@@ -457,7 +483,10 @@ export class Interpreter {
 			funcEnv.set(param.lexeme, value);
 		}
 		for (const bodyStmt of statement.body) {
-			this.executeStatement(bodyStmt, commands, funcEnv);
+			const res = this.executeStatement(bodyStmt, commands, funcEnv);
+			if (res) {
+				return res.value;
+			}
 		}
 
 		return VOID;
