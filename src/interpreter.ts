@@ -31,6 +31,7 @@ import { requireNumber } from "./interpreter-validation.ts";
 import { CallableRegistry, type Callable } from "./callable-registry.ts";
 import type { Token } from "./tokens.ts";
 import type { OutputEntry } from "./output.ts";
+import { builtIns, isBuiltInName } from "./built-ins.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -432,15 +433,20 @@ export class Interpreter {
 	): LiteralValue {
 		const value = currentEnvironment.get(expr.name.lexeme);
 		if (value === undefined) {
+			if (isBuiltInName(expr.name.lexeme)) {
+				const builtin = builtIns[expr.name.lexeme];
+				if (builtin.kind === "constant") {
+					return builtin.value;
+				}
+			}
 			throw new GicError(
 				`Cannot find name '${expr.name.lexeme}'`,
 				expr.name.line,
 				expr.name.start,
 				expr.name.end,
 			);
-		} else {
-			return value;
 		}
+		return value;
 	}
 
 	private onExprStmt(

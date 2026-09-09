@@ -7,10 +7,14 @@ import assert from "node:assert";
 
 describe("built-ins", () => {
 	test("should describe WIDTH, HEIGHT, PI as numeric constant in registry", () => {
-		const expected = { kind: "constant", valueKind: "number" };
+		const expected = { kind: "constant", valueKind: "number", value: 100 };
 		assert.deepStrictEqual(builtIns["WIDTH"], expected);
 		assert.deepStrictEqual(builtIns["HEIGHT"], expected);
-		assert.deepStrictEqual(builtIns["PI"], expected);
+		assert.deepStrictEqual(builtIns["PI"], {
+			kind: "constant",
+			valueKind: "number",
+			value: Math.PI,
+		});
 	});
 
 	test("should describe fill, background, stroke with multiple color signatures in registry", () => {

@@ -1,6 +1,8 @@
 // ABOUTME: Defines shared metadata for GIC built-in functions and constants.
 // ABOUTME: Provides immutable signatures for analyzer and interpreter consumers.
 
+import type { LiteralValue } from "./ast.ts";
+
 export type BuiltInKeys =
 	| "point"
 	| "line"
@@ -43,6 +45,7 @@ export type FunctionEntry = {
 type ConstantEntry = {
 	readonly kind: "constant";
 	readonly valueKind: ValueKind;
+	readonly value: LiteralValue;
 };
 type BuiltInEntry = FunctionEntry | ConstantEntry;
 
@@ -58,14 +61,17 @@ export const builtIns: BuiltInRegistry = {
 	WIDTH: {
 		kind: "constant",
 		valueKind: "number",
+		value: 100,
 	},
 	HEIGHT: {
 		kind: "constant",
 		valueKind: "number",
+		value: 100,
 	},
 	PI: {
 		kind: "constant",
 		valueKind: "number",
+		value: Math.PI,
 	},
 
 	//color+ style
