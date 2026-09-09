@@ -1,3 +1,6 @@
+// ABOUTME: Builds platform-neutral drawing commands from evaluated GIC calls.
+// ABOUTME: Validates drawing arguments and exposes the drawing-call registry.
+
 import type { BuiltInKeys } from "./built-ins.ts";
 import type { CallableInput, DrawingCall } from "./callable-registry.ts";
 import { colornames } from "./color-names.ts";
