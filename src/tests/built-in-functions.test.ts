@@ -17,6 +17,7 @@ describe("built-in functions", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
@@ -37,6 +38,7 @@ describe("built-in functions", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
@@ -54,6 +56,7 @@ describe("built-in functions", () => {
 					end: 2,
 				},
 			],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
@@ -76,6 +79,7 @@ describe("built-in functions", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
@@ -92,6 +96,7 @@ describe("built-in functions", () => {
 					end: 6,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -107,6 +112,7 @@ describe("built-in functions", () => {
 					end: 6,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -122,6 +128,7 @@ describe("built-in functions", () => {
 					end: 6,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -138,6 +145,7 @@ describe("built-in functions", () => {
 					end: 10,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -154,6 +162,7 @@ describe("built-in functions", () => {
 					end: 10,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -170,6 +179,7 @@ describe("built-in functions", () => {
 					end: 10,
 				},
 			],
+			output: [],
 		});
 	});
 
@@ -186,6 +196,7 @@ describe("built-in functions", () => {
 					end: 6,
 				},
 			],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});
@@ -204,6 +215,7 @@ describe("built-in functions", () => {
 					end: 10,
 				},
 			],
+			output: [],
 		};
 		assert.deepStrictEqual(actual, expected);
 	});

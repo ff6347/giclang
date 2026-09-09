@@ -30,6 +30,7 @@ import { applyBinaryOperation, applyUnaryOperation } from "./operators.ts";
 import { requireNumber } from "./interpreter-validation.ts";
 import { CallableRegistry, type Callable } from "./callable-registry.ts";
 import type { Token } from "./tokens.ts";
+import type { OutputEntry } from "./output.ts";
 
 const VOID = Symbol("void");
 type EvaluationResult = LiteralValue | typeof VOID;
@@ -43,8 +44,10 @@ export class Interpreter {
 	private program: Program;
 	private callables: CallableRegistry = new CallableRegistry();
 	private globals: Environment = new Environment(null);
-	constructor(program: Program) {
+	private sink: (output: OutputEntry) => void;
+	constructor(program: Program, sink: (output: OutputEntry) => void) {
 		this.program = program;
+		this.sink = sink;
 	}
 
 	private executeStatement(
@@ -481,6 +484,29 @@ export class Interpreter {
 			commands.push(callable.invoke({ values, token }));
 			return VOID;
 		}
+
+		if (callable.kind === "print") {
+			if (values[0] === undefined) {
+				throw new Error(`Argument ${token.lexeme} is undefined`);
+			}
+
+			if (values[0] === VOID) {
+				throw new GicError(
+					`Argument must produce a value`,
+					token.line,
+					token.start,
+					token.end,
+				);
+			}
+			this.sink({
+				line: token.line,
+				start: token.start,
+				end: token.end,
+				text: String(values[0]),
+			});
+			return VOID;
+		}
+
 		const statement = callable.declaration;
 
 		const params = statement.params ?? [];

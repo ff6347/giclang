@@ -27,6 +27,7 @@ motif(30, 40);`;
 				{ type: "circle", x: 30, y: 40, radius: 3 },
 			],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -43,6 +44,7 @@ circle(10, 20, radius(3));`;
 			ok: true,
 			commands: [{ type: "circle", x: 10, y: 20, radius: 6 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -64,6 +66,7 @@ circle(10, 20, sum(3));`;
 			ok: true,
 			commands: [{ type: "circle", x: 10, y: 20, radius: 6 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -83,6 +86,7 @@ circle(10, 20, radius());`;
 			ok: true,
 			commands: [{ type: "circle", x: 10, y: 20, radius: 1 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -101,6 +105,7 @@ draw();`;
 			ok: true,
 			commands: [{ type: "line", x1: 1, y1: 2, x2: 3, y2: 4 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -121,6 +126,7 @@ draw();`;
 			ok: true,
 			commands: [{ type: "line", x1: 1, y1: 2, x2: 3, y2: 4 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -140,6 +146,7 @@ draw();`;
 			ok: true,
 			commands: [{ type: "line", x1: 0, y1: 0, x2: 7, y2: 7 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -160,6 +167,7 @@ line(0, 0, position, 0);`;
 			ok: true,
 			commands: [{ type: "line", x1: 0, y1: 0, x2: 9, y2: 0 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -189,6 +197,7 @@ draw(first(), second());`;
 			ok: true,
 			commands: [{ type: "line", x1: 0, y1: 0, x2: 12, y2: 3 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 });

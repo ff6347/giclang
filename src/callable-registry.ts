@@ -4,9 +4,13 @@
 import type { FuncStmt } from "./ast.ts";
 import type { DrawingCall } from "./draw/drawing-types.ts";
 import { drawingCalls } from "./draw/drawing-caller.ts";
+
 export type Callable =
 	| { kind: "user"; declaration: FuncStmt }
-	| { kind: "drawing"; invoke: DrawingCall };
+	| { kind: "drawing"; invoke: DrawingCall }
+	| {
+			kind: "print";
+	  };
 
 export class CallableRegistry {
 	private callables: Map<string, Callable> = new Map();
@@ -16,6 +20,8 @@ export class CallableRegistry {
 		for (const [name, invoke] of Object.entries(drawingCalls)) {
 			this.register(name, { kind: "drawing", invoke });
 		}
+		// register print call
+		this.register("print", { kind: "print" });
 	}
 
 	register(name: string, callable: Callable) {

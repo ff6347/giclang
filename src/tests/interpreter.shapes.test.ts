@@ -14,6 +14,7 @@ describe("interpreter shape commands", () => {
 			ok: true,
 			commands: [{ type: "point", x: 12, y: 34 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -25,6 +26,7 @@ describe("interpreter shape commands", () => {
 			ok: true,
 			commands: [{ type: "line", x1: 10, y1: 20, x2: 30, y2: 40 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -36,6 +38,7 @@ describe("interpreter shape commands", () => {
 			ok: true,
 			commands: [{ type: "rect", x: 10, y: 20, width: 30, height: 40 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -47,6 +50,7 @@ describe("interpreter shape commands", () => {
 			ok: true,
 			commands: [{ type: "ellipse", x: 10, y: 20, width: 30, height: 40 }],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -68,6 +72,7 @@ describe("interpreter shape commands", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -91,6 +96,7 @@ describe("interpreter shape commands", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		});
 	});
 
@@ -111,6 +117,7 @@ describe("interpreter shape commands", () => {
 				},
 			],
 			diagnostics: [],
+			output: [],
 		});
 	});
 });
