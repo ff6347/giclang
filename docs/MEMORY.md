@@ -105,14 +105,41 @@
   `diagnostics` on both branches: success has `ok: true` plus a `Program`, while
   failure has `ok: false`. Keeping diagnostics present on success leaves room
   for future warnings without changing the public result shape.
-- [decision] `runSource(source)` composes parsing, analysis, interpretation, and
-  command output through a discriminated `RunResult`. Parser or analyzer findings
-  return failure diagnostics without constructing the interpreter or exposing
-  commands.
+- [decision] `runSource(source)` composes parsing, analysis, interpretation,
+  command output, and structured print output through a discriminated
+  `RunResult`. Parser or analyzer findings return failure diagnostics without
+  constructing the interpreter or exposing commands.
+- [decision] Every `RunResult` carries `output: OutputEntry[]`. Entries contain
+  formatted text and the `print` token's 0-based line plus half-open absolute
+  offsets. Output emitted before a runtime diagnostic survives, while parser and
+  analyzer failures contain an empty output list.
+- [technique] `runSource()` owns the output array and injects an output sink into
+  the interpreter. The callback remains inside the worker; only plain structured
+  output crosses the worker boundary.
 - [decision] Interpreter expression results distinguish user-visible
   `number | string | boolean` values from a unique internal `VOID` symbol.
   Environments store only user-visible values; command-emitting calls return
   `VOID` without exposing it to GIC programs.
+- [decision] Internal callables live in a separate registry rather than
+  `Environment`. Drawing, print, pure-math, and user callables resolve through
+  one invocation seam; a user callable retains its global `FuncStmt` without
+  becoming a GIC value.
+- [technique] User calls evaluate arguments once from left to right, bind them in
+  a fresh global-child environment, and execute against the original command
+  list. This preserves global reads and nearest-owner mutation without closures.
+- [technique] An internal `ReturnSignal` propagates unchanged through statement
+  lists, conditionals, and repeats. Only the user-call boundary unwraps it;
+  ordinary statement-list completion returns `undefined`, never a fabricated
+  void signal.
+- [decision] `PI`, `WIDTH`, and `HEIGHT` store their runtime values in the shared
+  built-in registry. Identifier evaluation falls back to constant entries after
+  ordinary environment lookup, without placing constants in mutable environments.
+- [decision] Math built-ins accept and produce finite numbers. Pure math handlers
+  share one callable kind; `floor`, `ceil`, and `abs` are the first implemented
+  handlers, with remaining functions and domain checks delivered incrementally.
+- [decision] Unseeded `random()` uses `Math.random()`. After `randomSeed(n)`, GIC
+  uses p5.js's 32-bit linear congruential generator and unsigned seed coercion;
+  equal or reversed random bounds are errors rather than silently swapped.
 - [technique] Pass the current `Environment` explicitly through statement and
   expression evaluation. Declarations write to the current environment, reads
   search its parent chain, and assignment updates the nearest environment that
@@ -127,7 +154,7 @@
   outer owner through the environment chain.
 - [technique] Built-in call arguments are AST expressions, not values.
   `Interpreter.onCall()` evaluates them exactly once, left-to-right, before
-  dispatch. Drawing functions under `src/draw/` accept the resulting values as
+  dispatch. Drawing functions in `src/draw.ts` accept the resulting values as
   `unknown`, narrow them through shared guards, and create commands without
   depending on interpreter types; checking `typeof` on an AST node only sees an
   object.
@@ -368,10 +395,14 @@ start))` — the `Math.max` covers empty EOF spans.
   Initializers, operators, return values, and arguments require values. Arity
   mismatch takes priority over void-value misuse at the same callee token, while
   arguments are still traversed.
-- [preference] During interactive analyzer TDD, the agent may batch agreed red
-  tests while Fabian makes each behavior green and requests hints as needed.
-  Fabian reports focused red/green state; the agent runs tests only when
-  explicitly requested.
+- [preference] During interactive language work, planning and architecture stay
+  directly between Fabian and the primary agent. The agent writes behavioral
+  tests, while Fabian implements executable behavior; cheaper subagents are
+  limited to precisely specified mechanical test work whose diffs and outcomes
+  the primary agent reviews.
+- [preference] If Fabian implements behavior before a test exists, review it
+  directly rather than requiring a red/green replay. Ask before pinning behavior
+  that may be ambiguous or wrong.
 
 ## Delivery Planning
 
