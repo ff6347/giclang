@@ -432,7 +432,7 @@ loop {
 
 ### Canvas
 
-The canvas is always 101 pixels wide and 101 pixels high, providing a visual center at (50, 50).
+The canvas is always 100 pixels wide and 100 pixels high, with its geometric center at (50, 50).
 
 | Function               | Description                                  | Default         |
 | ---------------------- | -------------------------------------------- | --------------- |
@@ -472,7 +472,7 @@ Style functions set the current drawing style. They affect all subsequent shapes
 
 ### Shape Drawing
 
-All coordinates are in pixels from top-left origin (0, 0). Canvas is 101×101 pixels.
+All coordinates are in pixels from top-left origin (0, 0). Canvas is 100×100 pixels.
 
 | Function                                   | Description                                   |
 | ------------------------------------------ | --------------------------------------------- |
@@ -522,8 +522,8 @@ stroke width. Arc commands remain open and are never filled.
 | Name         | Value      | Description                           |
 | ------------ | ---------- | ------------------------------------- |
 | `PI`         | 3.14159…   | Mathematical constant                 |
-| `WIDTH`      | 101        | Canvas width                          |
-| `HEIGHT`     | 101        | Canvas height                         |
+| `WIDTH`      | 100        | Canvas width                          |
+| `HEIGHT`     | 100        | Canvas height                         |
 | `frameCount` | 0, 1, 2, … | Current frame number (animation only) |
 
 ---
@@ -1119,8 +1119,8 @@ background(95, 5, 60);
 noStroke();
 
 repeat(i, 0, 100) {
-  let x = random(0, 101);
-  let y = random(0, 101);
+  let x = random(0, 100);
+  let y = random(0, 100);
   let size = random(1, 5);
   let l = random(40, 80);
   let c = random(30, 70);

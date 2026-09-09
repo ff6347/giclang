@@ -79,8 +79,8 @@
   height become half-width and half-height radii. Closed polygonal shapes use
   ordered fill and stroke state; points, lines, and arcs use stroke state only.
 - [technique] `examples/repeat.gic` is the deterministic Slice 3 fixture. Its
-  nested 21×21 rectangle grid intentionally clips the final row and column at
-  the 101×101 Canvas edge, and Firefox tests load that exact file through the
+  nested 20×20 rectangle grid reaches the final row and column near the
+  100×100 Canvas edge, and Firefox tests load that exact file through the
   preview UI.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.

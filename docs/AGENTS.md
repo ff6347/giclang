@@ -27,7 +27,7 @@ This project is in the **specification phase**. No implementation exists yet. Th
 
 ### Simplicity Constraints
 
-- Fixed 101x101 pixel canvas (center at 50,50)
+- Fixed 100x100 pixel canvas (geometric center at 50,50)
 - Three data types only: Number, Boolean, String
 - No arrays, objects, null, or undefined
 - One loop construct: `repeat(i, start, end)`

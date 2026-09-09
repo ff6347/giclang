@@ -12,7 +12,7 @@ beyond the current revision 2.2 shape API?
 
 ## Current Baseline
 
-Revision 2.2 defines a fixed 101×101 canvas, style functions, and shape drawing
+Revision 2.2 defines a fixed 100×100 canvas, style functions, and shape drawing
 functions for point, line, rect, circle, ellipse, triangle, quad, and arc. Its
 additional considerations ask whether extra shapes such as Bezier curves or
 arbitrary polygons are needed and whether transform functions such as rotate,
@@ -86,4 +86,4 @@ subsequent drawing command is interpreted.
 - Adding typography, image loading, 3D rendering, or interactivity.
 - Selecting a browser IDE technology.
 - Implementing backend code.
-- Changing the 101×101 canvas baseline.
+- Changing the 100×100 canvas baseline.

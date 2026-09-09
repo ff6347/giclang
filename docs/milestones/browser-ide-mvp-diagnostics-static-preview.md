@@ -15,7 +15,7 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 - A browser-neutral core API exposes checking and static preview behavior without depending on a specific UI framework.
 - The analyzer harness returns beginner-readable diagnostics.
 - Built-in call errors have stable messages and source evidence.
-- The browser Canvas static backend can draw a static 101x101 program.
+- The browser Canvas static backend can draw a static 100x100 program.
 - CLI [`check` and `run` behavior](cli-check-run-entry-points.md) is already verified against the core pipeline.
 - [Visual regression verification](example-program-visual-regression.md) exists for deterministic static output.
 
@@ -42,7 +42,7 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 
 - The selected browser shell wired to the browser-neutral check path.
 - Source-located diagnostics that appear, update, and clear in the browser IDE.
-- A static 101x101 preview path using the existing browser Canvas static backend.
+- A static 100x100 preview path using the existing browser Canvas static backend.
 - UI behavior that blocks or marks preview output as stale when checking fails.
 - Tests or smoke checks that prove the implementation follows the selected decision documents.
 
@@ -56,7 +56,7 @@ The interface boundary is browser-to-core: the selected browser shell calls core
 
 - Start with a failing browser or service test for diagnostics from invalid source.
 - Add a test proving diagnostics clear or update after the source is fixed.
-- Add a static preview smoke test for a valid 101x101 fixture.
+- Add a static preview smoke test for a valid 100x100 fixture.
 - Add behavior where preview is blocked or marked stale when errors are present.
 - Perform a manual edit-check-preview pass with a tiny static fixture.
 - Add a technology alignment check against the selected decision documents.
@@ -76,7 +76,7 @@ The interface boundary is browser-to-core: the selected browser shell calls core
 - `pnpm typecheck`
 - `pnpm fmt:check`
 - `pnpm lint`
-- Browser smoke: a valid static program produces a visible 101x101 preview.
+- Browser smoke: a valid static program produces a visible 100x100 preview.
 - Browser smoke: diagnostics carry source locations and clear after a fix.
 - Browser smoke: user-facing failures do not show raw stack traces.
 

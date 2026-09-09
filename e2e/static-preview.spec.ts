@@ -24,6 +24,12 @@ async function sampleCanvas(page: Page) {
 	});
 }
 
+test("uses a 100 by 100 Canvas", async ({ page }) => {
+	await page.goto("/");
+	await expect(page.locator("#canvas")).toHaveAttribute("width", "100");
+	await expect(page.locator("#canvas")).toHaveAttribute("height", "100");
+});
+
 test("renders background and circle commands on Canvas", async ({ page }) => {
 	const source = `background(20, 0, 0);
 circle(50, 50, 30);`;

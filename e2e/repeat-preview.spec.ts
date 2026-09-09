@@ -179,7 +179,7 @@ test("renders the deterministic repeat example fixture", async ({ page }) => {
 					nestedRectVisible: differsFromBackground(6, 6),
 					horizontalGapClear: !differsFromBackground(3, 1),
 					verticalGapClear: !differsFromBackground(1, 3),
-					clippedBottomRightVisible: differsFromBackground(100, 100),
+					bottomRightRectVisible: differsFromBackground(95, 95),
 				};
 			}),
 		)
@@ -191,6 +191,6 @@ test("renders the deterministic repeat example fixture", async ({ page }) => {
 			nestedRectVisible: true,
 			horizontalGapClear: true,
 			verticalGapClear: true,
-			clippedBottomRightVisible: true,
+			bottomRightRectVisible: true,
 		});
 });

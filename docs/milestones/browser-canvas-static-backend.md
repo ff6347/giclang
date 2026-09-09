@@ -38,7 +38,7 @@ Adapt recorded/backend drawing operations to browser Canvas for one-shot renderi
 ## Included
 
 - Browser Canvas context adapter for static rendering.
-- Logical canvas size `101 x 101`.
+- Logical canvas size `100 x 100`.
 - Full-canvas background behavior.
 - Mapping for all supported shape commands.
 - Style state application to later shapes.
@@ -67,7 +67,7 @@ Core interpreter and command model modules should not import browser DOM types. 
 
 ## Canvas Command Mapping
 
-- Logical size is `101 x 101` unless a later canvas-size decision changes it.
+- Logical size is `100 x 100`.
 - `background` should cover the full logical canvas.
 - Shape commands map to Canvas path or fill/stroke calls.
 - Style commands affect only later shapes.
@@ -83,7 +83,7 @@ A static program should execute once and render once. Tests can either feed comm
 
 ## TDD-Oriented Student Checklist
 
-- Logical canvas size is `101 x 101`.
+- Logical canvas size is `100 x 100`.
 - `background` fills the full canvas.
 - All supported shapes map to Canvas operations.
 - Style state affects later shapes.

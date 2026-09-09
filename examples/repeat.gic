@@ -7,8 +7,8 @@ stroke("lime");
 strokeWidth(1);
 
 let step = 5;
-repeat(x, 0,101,step){
-repeat(y,0,101,step){
+repeat(x, 0,100,step){
+repeat(y,0,100,step){
 rect(x,y,step/3,step/3);
 }
 }

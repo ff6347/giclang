@@ -113,7 +113,7 @@ produces visible output; an invalid call produces a source-located diagnostic.
 - validate the selected drawing calls from the shared built-in registry;
 - define the first render command records;
 - implement a recording backend for those commands;
-- translate those commands to a 101×101 browser Canvas;
+- translate those commands to a 100×100 browser Canvas;
 - connect the selected minimal browser shell to diagnostics and preview.
 
 **Acceptance criteria:**
