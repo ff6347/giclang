@@ -63,4 +63,72 @@ draw();`;
 			diagnostics: [],
 		});
 	});
+
+	test("should read a previously declared global in a drawing function", () => {
+		const source = `let size = 7;
+
+func draw() {
+	line(0, 0, size, size);
+	return;
+}
+
+draw();`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "line", x1: 0, y1: 0, x2: 7, y2: 7 }],
+			diagnostics: [],
+		});
+	});
+
+	test("should observe a global assignment after a function call", () => {
+		const source = `let position = 1;
+
+func update() {
+	position = 9;
+	return;
+}
+
+update();
+line(0, 0, position, 0);`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "line", x1: 0, y1: 0, x2: 9, y2: 0 }],
+			diagnostics: [],
+		});
+	});
+
+	test("should evaluate mutating arguments once from left to right", () => {
+		const source = `let trace = 0;
+
+func first() {
+	trace = trace + 1;
+	return 1;
+}
+
+func second() {
+	trace = trace * 10 + 2;
+	return 2;
+}
+
+func draw(firstValue, secondValue) {
+	line(0, 0, trace, firstValue + secondValue);
+	return;
+}
+
+draw(first(), second());`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "line", x1: 0, y1: 0, x2: 12, y2: 3 }],
+			diagnostics: [],
+		});
+	});
 });
