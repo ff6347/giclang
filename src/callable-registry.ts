@@ -2,8 +2,15 @@
 // ABOUTME: Keeps internal callables separate from user-visible environment values.
 
 import type { FuncStmt } from "./ast.ts";
-import type { DrawingCall } from "./draw/drawing-types.ts";
-import { drawingCalls } from "./draw/drawing-caller.ts";
+import type { Token } from "./tokens.ts";
+import type { Command } from "./commands.ts";
+import { drawingCalls } from "./draw.ts";
+export type DrawingCall = (input: CallableInput) => Command;
+
+export type CallableInput = {
+	values: readonly unknown[];
+	token: Token;
+};
 
 export type Callable =
 	| { kind: "user"; declaration: FuncStmt }

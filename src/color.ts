@@ -1,8 +1,8 @@
 // ABOUTME: Validates color-function arguments and creates tagged color values.
 // ABOUTME: Supports CSS strings and numeric OKLCH colors with optional alpha.
-import type { Color } from "../commands.ts";
-import { GicError } from "../error.ts";
-import type { Token } from "../tokens.ts";
+import type { Color } from "./commands.ts";
+import { GicError } from "./error.ts";
+import type { Token } from "./tokens.ts";
 import {
 	requireArgumentNumber,
 	requireArgumentString,

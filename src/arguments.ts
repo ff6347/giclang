@@ -1,8 +1,8 @@
 // ABOUTME: Validates evaluated drawing-function arguments before command creation.
 // ABOUTME: Produces source-located diagnostics for invalid runtime values.
 
-import { GicError } from "../error.ts";
-import type { Token } from "../tokens.ts";
+import { GicError } from "./error.ts";
+import type { Token } from "./tokens.ts";
 
 export function requireRange(
 	value: number,
