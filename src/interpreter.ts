@@ -61,8 +61,7 @@ export class Interpreter {
 				break;
 			}
 			case "RepeatStmt": {
-				this.onRepeatStmt(statement, commands, currentEnvironment);
-				break;
+				return this.onRepeatStmt(statement, commands, currentEnvironment);
 			}
 			case "IfStmt": {
 				return this.onIfStmt(statement, commands, currentEnvironment);
@@ -115,7 +114,7 @@ export class Interpreter {
 		statement: RepeatStmt,
 		commands: Command[],
 		currentEnvironment: Environment,
-	) {
+	): ReturnSignal | undefined {
 		const start = this.evaluateExpression(
 			statement.start,
 			commands,
@@ -177,10 +176,10 @@ export class Interpreter {
 			const value = startValue + turn * stepValue;
 			if (!(stepValue > 0 ? value < endValue : value > endValue)) break;
 			repeatEnv.set(statement.variable.lexeme, value);
-			for (const cmd of statement.body) {
-				this.executeStatement(cmd, commands, repeatEnv);
-			}
+			const res = this.executeStatements(statement.body, commands, repeatEnv);
+			if (res) return res;
 		}
+		return undefined;
 	}
 
 	onIfStmt(

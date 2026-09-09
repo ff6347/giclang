@@ -46,6 +46,25 @@ circle(10, 20, radius(3));`;
 		});
 	});
 
+	test("should return from a repeat body and function", () => {
+		const source = `func radius() {
+	repeat(i, 0, 3) {
+		return 1;
+	}
+	return 99;
+}
+
+circle(10, 20, radius());`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "circle", x: 10, y: 20, radius: 1 }],
+			diagnostics: [],
+		});
+	});
+
 	test("should stop a function body after return", () => {
 		const source = `func draw() {
 	line(1, 2, 3, 4);
