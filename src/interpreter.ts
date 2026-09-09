@@ -65,8 +65,7 @@ export class Interpreter {
 				break;
 			}
 			case "IfStmt": {
-				this.onIfStmt(statement, commands, currentEnvironment);
-				break;
+				return this.onIfStmt(statement, commands, currentEnvironment);
 			}
 			case "Assignment": {
 				this.onAssignment(statement, commands, currentEnvironment);
@@ -188,7 +187,7 @@ export class Interpreter {
 		statement: IfStmt,
 		commands: Command[],
 		currentEnvironment: Environment,
-	): void {
+	): ReturnSignal | undefined {
 		const condition = this.evaluateExpression(
 			statement.condition,
 			commands,
@@ -207,15 +206,45 @@ export class Interpreter {
 		}
 		if (condition) {
 			const thenEnv = new Environment(currentEnvironment);
-			for (const branch of statement.thenBranch) {
-				this.executeStatement(branch, commands, thenEnv);
+
+			const res = this.executeStatements(
+				statement.thenBranch,
+				commands,
+				thenEnv,
+			);
+			if (res) {
+				return res;
 			}
 		} else if (statement.elseBranch) {
 			const elseEnv = new Environment(currentEnvironment);
-			for (const branch of statement.elseBranch) {
-				this.executeStatement(branch, commands, elseEnv);
+
+			const res = this.executeStatements(
+				statement.elseBranch,
+				commands,
+				elseEnv,
+			);
+			if (res) {
+				return res;
 			}
 		}
+		return undefined;
+	}
+	private executeStatements(
+		statements: Statement[],
+		commands: Command[],
+		currentEnvironment: Environment,
+	): ReturnSignal | undefined {
+		for (const statement of statements) {
+			const res = this.executeStatement(
+				statement,
+				commands,
+				currentEnvironment,
+			);
+			if (res) {
+				return res;
+			}
+		}
+		return undefined;
 	}
 	onAssignment(
 		statement: Assignment,
@@ -482,11 +511,9 @@ export class Interpreter {
 
 			funcEnv.set(param.lexeme, value);
 		}
-		for (const bodyStmt of statement.body) {
-			const res = this.executeStatement(bodyStmt, commands, funcEnv);
-			if (res) {
-				return res.value;
-			}
+		const res = this.executeStatements(statement.body, commands, funcEnv);
+		if (res) {
+			return res.value;
 		}
 
 		return VOID;

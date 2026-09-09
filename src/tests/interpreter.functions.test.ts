@@ -64,6 +64,26 @@ draw();`;
 		});
 	});
 
+	test("should exit a function from a taken if", () => {
+		const source = `func draw() {
+	line(1, 2, 3, 4);
+	if (true) {
+		return;
+	}
+	circle(5, 6, 7);
+}
+
+draw();`;
+
+		const actual = runSource(source);
+
+		assert.deepStrictEqual(actual, {
+			ok: true,
+			commands: [{ type: "line", x1: 1, y1: 2, x2: 3, y2: 4 }],
+			diagnostics: [],
+		});
+	});
+
 	test("should read a previously declared global in a drawing function", () => {
 		const source = `let size = 7;
 
