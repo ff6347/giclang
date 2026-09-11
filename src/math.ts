@@ -79,15 +79,34 @@ export function max({ values, token }: CallableInput): number {
 export function sqrt({ values, token }: CallableInput): number {
 	const value = requireArgumentNumber(values[0], "value", token);
 	validateFiniteNumber(value, token);
+	if (value < 0) {
+		throw new GicError(
+			"Function 'sqrt' must produce a finite number.",
+			token.line,
+			token.start,
+			token.end,
+		);
+	}
+
 	return Math.sqrt(value);
 }
 
 export function pow({ values, token }: CallableInput): number {
-	const value = requireArgumentNumber(values[0], "value", token);
+	const base = requireArgumentNumber(values[0], "base", token);
 	const exponent = requireArgumentNumber(values[1], "exponent", token);
-	validateFiniteNumber(value, token);
+	validateFiniteNumber(base, token);
 	validateFiniteNumber(exponent, token);
-	return Math.pow(value, exponent);
+
+	const result = Math.pow(base, exponent);
+	if (!Number.isFinite(result)) {
+		throw new GicError(
+			"Function 'pow' must produce a finite number.",
+			token.line,
+			token.start,
+			token.end,
+		);
+	}
+	return result;
 }
 
 export function sin({ values, token }: CallableInput): number {
