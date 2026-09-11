@@ -45,6 +45,10 @@ export function circle({ values, token }: CallableInput): Command {
 	};
 }
 
+/**
+ * Parses and validates color arguments as a named or hexadecimal CSS color,
+ * or as an OKLCH color with optional alpha.
+ */
 export function requireColor(values: readonly unknown[], token: Token): Color {
 	if (values.length === 1) {
 		const value = requireArgumentString(values[0], "value", token);
