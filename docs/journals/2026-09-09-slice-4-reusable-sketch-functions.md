@@ -106,3 +106,69 @@ has not been rerun for this checkpoint.
    void calls used as values.
 5. Forward structured print output in the browser and complete Firefox function,
    seeded-output, and runaway-recursion acceptance.
+
+## Remaining Math Checkpoint
+
+The ordinary math surface is implemented and pushed. `round`, `min`, `max`,
+`sqrt`, `pow`, and degree-based `sin`/`cos` can feed drawing geometry. Runtime
+math guards reject non-number inputs, negative `sqrt` inputs, and `pow` results
+that become `NaN` or infinity.
+
+- [decision] Finite arguments are a precondition and a finite result is a
+  separate postcondition. A host `Math` result is only a candidate until it
+  passes the postcondition and may be returned to GIC.
+- [lesson] Blanket rejection of negative `pow` bases or exponents was incorrect:
+  `pow(-2, 3)` is `-8` and `pow(2, -3)` is `0.125`. Compute `Math.pow()` once and
+  reject only a non-finite result.
+
+Relevant pushed commits:
+
+- `3ec4e32 feat(interpreter): evaluate remaining math functions`
+- `677db10 fix(math): reject non-finite results`
+- `aadad48 docs(drawing): describe color argument validation [skip ci]`
+
+The full quality gates passed before `677db10`; both math commits and the drawing
+comment are pushed.
+
+## Seeded Randomness Red Checkpoint
+
+`src/tests/interpreter.random.test.ts` is an untracked red test file with eleven
+explicit source-level contracts. It covers an unseeded half-open range, the
+exact p5-compatible sequence for seed 42, reseeding, run isolation, unsigned
+negative/fractional seed coercion, invalid bounds, and dynamic argument types.
+Absolute diagnostic offsets for the renamed `minimum` and `maximum` fixtures are
+21..27 and 22..28 because offsets count from the beginning of the complete
+source and the end is exclusive.
+
+The current uncommitted `src/math.ts` work registers `random` and `randomSeed` in
+`mathCalls`. `random(min, max)` validates finite number arguments and uses
+`Math.random()`. `randomSeed(seed)` validates and returns the seed, but it does
+not yet own or mutate random state. Treat this as Fabian's in-progress
+implementation and do not overwrite it.
+
+Focused randomness state:
+
+- 11 tests total: 4 pass, 7 fail intentionally.
+- Passing: unseeded range and dynamic non-number minimum, maximum, and seed.
+- Failing: seeded sequence, reseeding, separate-run isolation, unsigned seed
+  coercion, and equal/reversed bound errors.
+- `pnpm typecheck`, `pnpm fmt:check`, and `git diff --check` pass in this red
+  checkpoint.
+- HEAD `aadad48` matches origin (`0 0` divergence); only `src/math.ts` and the
+  untracked randomness test differ from HEAD.
+
+The p5 reference was refreshed through the librarian cache at
+`/Users/tomato/.cache/checkouts/github.com/processing/p5.js`, commit
+`dc97a4fe885858ebe72eaa7c562ad558dda85501`. Its LCG uses modulus `4294967296`,
+multiplier `1664525`, increment `1013904223`, and unsigned seed coercion via
+`>>> 0`.
+
+## Current Next Step
+
+Stop before adding more behavior and choose the per-interpreter random-state
+boundary. A static entry in the module-level math handler map cannot by itself
+provide reseeding and run isolation. Preserve the shared callable-dispatch seam;
+do not special-case names in `Interpreter.onCall()`. After the state owner is
+settled, make the seed-42 sequence green first, then reseeding/isolation, then
+bound errors. Fabian writes production behavior; the agent reviews and runs the
+focused tests.
