@@ -172,3 +172,32 @@ do not special-case names in `Interpreter.onCall()`. After the state owner is
 settled, make the seed-42 sequence green first, then reseeding/isolation, then
 bound errors. Fabian writes production behavior; the agent reviews and runs the
 focused tests.
+
+## Seeded Randomness Green Checkpoint
+
+Seeded randomness is implemented and committed as `fed4b9e`. A random-call
+factory creates mutable state for each `CallableRegistry`, so separate
+interpreters cannot share a sequence. `randomSeed()` initializes that state with
+unsigned 32-bit coercion, while unseeded calls continue to use `Math.random()`
+without creating LCG state.
+
+- [decision] Void built-in effects have an explicit callable kind. The
+  interpreter invokes an effect through the ordinary callable seam and converts
+  host `void` to its internal `VOID` marker; it does not inspect built-in names.
+- [technique] The p5-compatible LCG advances closure-owned state before scaling
+  its unit value into the requested half-open range. Reseeding replaces the
+  state and restarts the sequence.
+- [lesson] Typing both `random()` and `randomSeed()` as one
+  `number | void` handler obscures their runtime contracts. Distinct value and
+  effect handler types let callable-kind narrowing preserve the distinction.
+- [lesson] An unseeded range test does not prove that every unseeded call uses
+  `Math.random()`. The implementation must return directly from the unseeded
+  path without initializing LCG state.
+
+All eleven focused randomness tests pass. Core tests, both TypeScript checks,
+lint, formatting, browser build, and diff validation pass. Fabian ran the full
+Firefox suite manually and reported all 28 tests passing after the sandboxed
+Firefox process could not obtain the IPC capabilities needed to start.
+
+The next checkpoint is limited analyzer diagnostics for literal built-in
+arguments, obvious domains, and void built-ins used where values are required.

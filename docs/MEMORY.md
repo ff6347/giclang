@@ -140,6 +140,8 @@
 - [decision] Unseeded `random()` uses `Math.random()`. After `randomSeed(n)`, GIC
   uses p5.js's 32-bit linear congruential generator and unsigned seed coercion;
   equal or reversed random bounds are errors rather than silently swapped.
+  A factory creates state for each callable registry, and the void seed effect
+  returns the interpreter's internal `VOID` through ordinary callable dispatch.
 - [technique] Pass the current `Environment` explicitly through statement and
   expression evaluation. Declarations write to the current environment, reads
   search its parent chain, and assignment updates the nearest environment that
