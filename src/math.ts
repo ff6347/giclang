@@ -10,6 +10,8 @@ import type { Token } from "./tokens.ts";
 
 export type MathCall = (input: CallableInput) => number;
 
+export type EffectCall = (input: CallableInput) => void;
+
 export const mathCalls: Partial<Record<BuiltInKeys, MathCall>> = {
 	floor,
 	ceil,
@@ -34,6 +36,42 @@ function validateFiniteNumber(value: number, token: Token): void {
 			token.end,
 		);
 	}
+}
+
+export function createRandomCalls(): [MathCall, EffectCall] {
+	const m = 4294967296;
+	// a - 1 should be divisible by m's prime factors
+	const a = 1664525;
+	// c and m should be co-prime
+	const c = 1013904223;
+
+	let state: number | undefined;
+
+	const random: MathCall = ({ values, token }) => {
+		const min = requireArgumentNumber(values[0], "min", token);
+		const max = requireArgumentNumber(values[1], "max", token);
+		validateFiniteNumber(min, token);
+		validateFiniteNumber(max, token);
+		if (min >= max)
+			throw new GicError(
+				"Function 'random' requires argument 'min' to be less than argument 'max'.",
+				token.line,
+				token.start,
+				token.end,
+			);
+		if (state === undefined) {
+			return Math.random() * (max - min) + min;
+		}
+		state = (a * state + c) % m;
+		return (state / m) * (max - min) + min;
+	};
+	const randomSeed: EffectCall = ({ values, token }) => {
+		const seedValue = requireArgumentNumber(values[0], "seed", token);
+		validateFiniteNumber(seedValue, token);
+		state = seedValue >>> 0;
+	};
+
+	return [random, randomSeed];
 }
 
 export function floor({ values, token }: CallableInput): number {
