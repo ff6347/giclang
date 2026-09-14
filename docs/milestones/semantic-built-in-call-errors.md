@@ -58,9 +58,11 @@ There is no grammar change. This lesson uses identifier-target `Call` nodes. Con
 
 Use analyzer tests for representative valid and invalid built-ins, including diagnostic location and message assertions. Run `pnpm test` and `pnpm typecheck` after implementation changes.
 
-## Decision Gates
+## Decisions
 
-- Decide the scope of static inference used for built-in argument checking.
-- Decide which domain ranges are semantic errors instead of runtime errors or warnings.
-- Decide whether built-in shadowing ownership remains in earlier name analysis or is revisited here.
-- Decide the animation-only policy for `frameRate` and `frameCount`.
+- Static inference is limited to direct literals and unary minus applied directly
+  to numeric literals. Variables, calls, groupings, and computed expressions are
+  deferred to runtime validation.
+- Obvious signed-literal domains are checked for `sqrt`, `pow`, and `random`.
+- Built-in shadowing remains part of the existing reserved-name analysis.
+- `frameRate` and `frameCount` remain deferred to animation work.

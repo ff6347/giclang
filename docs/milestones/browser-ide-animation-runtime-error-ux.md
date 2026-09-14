@@ -42,6 +42,8 @@ Extend the selected browser IDE from static preview to animation playback and cl
 - Browser IDE playback for programs with a `loop` block.
 - Stop, restart, or replacement behavior when source edits trigger a new preview.
 - Clear runtime-error presentation for failures that happen during setup or inside `loop`.
+- A visible output panel that presents structured `print` entries in execution order,
+  including output retained before runtime failures.
 - Source-location mapping for runtime errors when the failing AST node carries evidence.
 - Confirmation that static programs still run once through the preview path.
 - Alignment with the selected scheduler and backend boundaries from decision documents.
@@ -57,6 +59,7 @@ The milestone relies on the prior `Program` shape, including an optional `loopBl
 - Add an animated smoke test that proves repeated frames are requested.
 - Add stop-and-restart behavior for edits while animation is active.
 - Add a runtime-error case inside `loop` with source-located presentation.
+- Add ordered visible `print` output, including output before a runtime failure.
 - Add a static-program regression so non-animated programs still run once.
 - Add a `frameCount` behavior check that shows visible movement over frames.
 - Add a scheduler/backend alignment check against the selected browser decision.

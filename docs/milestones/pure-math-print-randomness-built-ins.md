@@ -102,12 +102,14 @@ Math built-ins should accept and return GIC numbers. Trigonometric functions use
 - Use known angle values for degree-based trig.
 - Call public `randomSeed(n)` in seeded random tests and run them more than once to prove determinism.
 
-## Gates and Open Questions
+## Decisions
 
-- The PRNG algorithm is unspecified.
-- `sqrt` and `pow` domain behavior is unspecified.
-- Defer `frameCount` timing to animation built-ins.
-- Decide how much constant write protection belongs in analyzer versus runtime.
+- Seeded randomness uses p5.js's 32-bit linear congruential generator with
+  unsigned 32-bit seed coercion and state isolated to one interpreter run.
+- `sqrt` rejects negative inputs. `pow` rejects only results that are `NaN` or
+  infinite; finite negative-base and negative-exponent results remain valid.
+- `frameCount` timing remains deferred to animation built-ins.
+- Reserved-name analysis rejects writes to constants before interpretation.
 
 ## Notes
 

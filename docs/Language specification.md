@@ -265,6 +265,7 @@ A function is either **value-returning** or **void**. This is determined by its 
 - A void function uses `return;` and can only be called as a standalone statement (e.g., `drawSquare(10, 20, 5);`)
 - A function cannot mix both kinds of return statements
 - Using a void function call in an expression (e.g., `let x = drawSquare(10, 20, 5);`) is a semantic error
+- Void built-ins such as `print`, `randomSeed`, and drawing functions follow the same standalone-only rule
 
 **Constraints:**
 
@@ -275,6 +276,12 @@ A function is either **value-returning** or **void**. This is determined by its 
 - Function names share the global namespace with top-level variables
 - Function names are reserved throughout the program, regardless of declaration order
 - Recursion is allowed because a function name is visible inside its own body
+
+Arguments are evaluated exactly once from left to right before the function body
+runs. Every call receives fresh parameter and local bindings whose parent is the
+global scope. A `return` taken inside an `if` or `repeat` exits the complete
+function call. Functions are not first-class values and cannot capture local
+bindings from callers.
 
 ### Scoping Rules
 
@@ -496,6 +503,13 @@ stroke width. Arc commands remain open and are never filled.
 | --------------- | --------------------------------------- |
 | `print(value);` | Output value to console (for debugging) |
 
+`print` accepts a Number, Boolean, or String. Calls append output in execution
+order and retain the source location of the `print` token. The browser developer
+console presents each entry as `Line N: text`, converting the internal line to
+1-based numbering. Output produced before a runtime failure remains available
+and is presented before the diagnostic. Parser and analyzer failures produce no
+output.
+
 **Note:** There is no built-in text rendering on the canvas. Users who need text can implement letter-drawing functions using primitives, similar to how Design by Numbers handled typography.
 
 ### Math Functions
@@ -514,6 +528,16 @@ stroke width. Arc commands remain open and are never filled.
 | `cos(degrees)`     | Cosine (input in degrees)                                |
 | `sqrt(n)`          | Square root                                              |
 | `pow(base, exp)`   | Exponentiation                                           |
+
+All math arguments must be finite numbers, and math functions may return only
+finite numbers. `sqrt` rejects negative inputs. `pow` accepts negative bases and
+exponents when their result is finite and rejects `NaN` or infinite results.
+
+`random(min, max)` requires `min < max`; equal or reversed bounds are errors.
+Before seeding, it uses ambient randomness. `randomSeed(seed)` converts the seed
+to an unsigned 32-bit integer and starts the p5.js-compatible 32-bit linear
+congruential sequence. Reseeding restarts that sequence, and random state belongs
+to one program run. Generated values are minimum-inclusive and maximum-exclusive.
 
 **Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function.
 
@@ -833,7 +857,11 @@ Responsibilities:
 - Report at most one primary diagnostic at each source location while continuing to collect independent diagnostics elsewhere
 - Check loop variables not reassigned
 - Validate all functions have return statements
-- Validate built-in function calls (argument count and types where inferrable)
+- Validate built-in function arity from registry signatures
+- Validate kinds of direct literal arguments without general type inference
+- Validate obvious signed-literal domains for `sqrt`, `pow`, and `random`
+- Reject void user and built-in calls where an expression requires a value
+- Preserve arity, literal-kind, domain, then void-value diagnostic priority
 
 Errors to detect:
 
@@ -858,7 +886,11 @@ Responsibilities:
 - Execute AST via tree-walking
 - Maintain environment (variable bindings)
 - Handle scoping (global, function-local, and block-local)
-- Execute user-defined functions with proper call stack
+- Execute user-defined functions with isolated call environments
+- Evaluate call arguments exactly once from left to right
+- Propagate internal return signals through nested statements
+- Resolve user and built-in callables through one internal registry
+- Capture ordered drawing commands and structured print output
 - Handle animation loop (if loop block present)
 - Dispatch drawing commands to render backend
 
@@ -870,11 +902,15 @@ interface Environment {
 	parent?: Environment;
 }
 
-interface FunctionValue {
-	params: string[];
-	body: Statement[];
-	kind: "value" | "void"; // Determined by semantic analysis
-	closure: Environment; // Always global environment (no closures)
+interface UserCallable {
+	declaration: FuncStmt;
+}
+
+interface OutputEntry {
+	text: string;
+	line: number;
+	start: number;
+	end: number;
 }
 
 interface RenderBackend {

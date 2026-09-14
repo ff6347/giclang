@@ -112,12 +112,13 @@ A `return` statement ends the current function call immediately:
 - Include early-return cases inside conditionals or repeat bodies.
 - Add one non-callable call diagnostic test.
 
-## Gates and Open Questions
+## Decisions
 
-- No closures in this milestone; changing that requires a semantic and runtime design decision.
-- Nested function declarations need a semantic decision before runtime behavior is finalized.
-- There is no user-visible `null` for void returns.
-- Function kind depends on semantic return-kind analysis.
+- Functions have no closures; each call environment is parented by global scope.
+- Nested function declarations are invalid.
+- Void returns use an internal marker and expose no user-visible `null`.
+- Semantic return-kind analysis determines whether a function is void or
+  value-returning.
 
 ## Notes
 
