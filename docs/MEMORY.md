@@ -381,6 +381,12 @@ start))` — the `Math.max` covers empty EOF spans.
 - [decision] User-function calls require exact arity. Built-in function arity is
   registry-driven: any signature length may match, and accepted arities are
   deduplicated and sorted for deterministic single or overloaded diagnostics.
+- [decision] Built-in signatures pair every ordered value kind with its runtime
+  parameter name. The analyzer filters overloads by arity and accepts one only
+  when all statically known argument kinds match that same candidate.
+- [decision] Built-in argument kinds are known only for direct literals and
+  unary minus applied directly to numeric literals. Variables, calls, grouped
+  values, and computed expressions remain unknown for runtime validation.
 - [lesson] Scope declarations resolve user functions and variables; built-in
   callability and signatures come from the built-in registry instead.
 - [lesson] Call-target or arity diagnostics must not stop traversal of argument

@@ -201,3 +201,30 @@ Firefox process could not obtain the IPC capabilities needed to start.
 
 The next checkpoint is limited analyzer diagnostics for literal built-in
 arguments, obvious domains, and void built-ins used where values are required.
+
+## Built-in Literal-Kind Analyzer Checkpoint
+
+Named built-in parameter metadata and static literal-kind validation are
+implemented and pushed as `33b4b44`.
+
+- [decision] Each built-in signature remains an ordered overload but stores a
+  parameter name beside each value kind. Static diagnostics can therefore match
+  runtime wording such as `value`, `min`, `max`, and drawing coordinates.
+- [decision] Static argument kinds are known only for direct literals and unary
+  minus applied directly to a numeric literal. Variables, calls, groupings, and
+  computed expressions remain unknown and are deferred to runtime validation.
+- [technique] Built-in overload checking first filters signatures by arity, then
+  accepts a call when one candidate matches every known argument kind. Unknown
+  arguments act as wildcards rather than triggering inference.
+- [lesson] Kind checking must compare complete candidate signatures. Comparing
+  each argument against unrelated overloads can incorrectly accept a
+  combination that no single overload supports.
+- [lesson] Call diagnostics do not return early. The analyzer still walks the
+  callee and every argument so independent findings remain observable.
+
+Eight focused literal-kind tests and all existing analyzer and registry tests
+pass. The full core suite, both TypeScript checks, lint, formatting, browser
+build, and diff validation passed before the checkpoint commit.
+
+The next red checkpoint covers obvious literal domains for `sqrt`, `pow`, and
+`random`, followed by built-in void calls used where a value is required.
