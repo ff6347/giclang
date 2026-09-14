@@ -228,3 +228,27 @@ build, and diff validation passed before the checkpoint commit.
 
 The next red checkpoint covers obvious literal domains for `sqrt`, `pow`, and
 `random`, followed by built-in void calls used where a value is required.
+
+## Built-in Literal-Domain Analyzer Checkpoint
+
+Obvious literal-domain validation is implemented and committed as `28773ac`.
+The analyzer extracts numeric values only from direct number literals and unary
+minus applied directly to a number literal. Groupings, calls, variables, and
+computed expressions remain unknown and are deferred to runtime validation.
+
+- [decision] Domain validation runs only after matching arity and literal kinds.
+  This preserves diagnostic priority while the existing unconditional argument
+  traversal continues to collect independent findings.
+- [decision] A direct negative `sqrt` input is invalid. `pow` computes the host
+  result only when both arguments are direct signed literals and rejects a
+  non-finite result. `random` rejects direct bounds where `min >= max`.
+- [lesson] Static and runtime validation intentionally use the same diagnostic
+  wording. The distinction is the phase: direct signed literals fail analysis,
+  while dynamic values remain the interpreter's responsibility.
+
+Nineteen focused built-in analyzer tests and all 125 analyzer/registry tests
+pass. Core tests, both TypeScript checks, lint, formatting, browser build, and
+diff validation pass. The sandboxed Firefox run started Vite but was aborted
+before completing; the known nono Firefox limitation remains.
+
+The next checkpoint is built-in void calls used where a value is required.

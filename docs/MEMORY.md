@@ -387,6 +387,11 @@ start))` — the `Math.max` covers empty EOF spans.
 - [decision] Built-in argument kinds are known only for direct literals and
   unary minus applied directly to numeric literals. Variables, calls, grouped
   values, and computed expressions remain unknown for runtime validation.
+- [decision] Built-in literal-domain checks run only after arity and kind
+  acceptance. Direct signed literals reject negative `sqrt` inputs, non-finite
+  `pow` results, and `random` bounds where `min >= max`; grouped, call, variable,
+  and computed arguments remain the interpreter's responsibility. Static and
+  runtime checks intentionally share diagnostic wording.
 - [lesson] Scope declarations resolve user functions and variables; built-in
   callability and signatures come from the built-in registry instead.
 - [lesson] Call-target or arity diagnostics must not stop traversal of argument
