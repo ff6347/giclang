@@ -405,9 +405,10 @@ start))` — the `Math.max` covers empty EOF spans.
   and repeat bodies. Attach valid return metadata before semantic body traversal
   so recursive calls see it; analyze return expressions only in the normal walk.
 - [decision] Only a direct call expression statement may discard a void result.
-  Initializers, operators, return values, and arguments require values. Arity
-  mismatch takes priority over void-value misuse at the same callee token, while
-  arguments are still traversed.
+  Initializers, operators, return values, and arguments require values for both
+  user and built-in functions. Built-ins use registry `returnKind` metadata;
+  arity, literal-kind, and literal-domain findings take priority over void-value
+  misuse at the same callee token, while arguments are still traversed.
 - [preference] During interactive language work, planning and architecture stay
   directly between Fabian and the primary agent. The agent writes behavioral
   tests, while Fabian implements executable behavior; cheaper subagents are

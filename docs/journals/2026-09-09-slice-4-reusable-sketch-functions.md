@@ -252,3 +252,26 @@ diff validation pass. The sandboxed Firefox run started Vite but was aborted
 before completing; the known nono Firefox limitation remains.
 
 The next checkpoint is built-in void calls used where a value is required.
+
+## Built-in Void-Value Analyzer Checkpoint
+
+Built-in void-value diagnostics are implemented and pushed as `9512d48`.
+
+- [decision] The analyzer reads each built-in function's registry `returnKind`;
+  no built-in name is special-cased for void behavior.
+- [decision] A direct call expression statement may discard a void result.
+  Initializers, operators, returns, and call arguments require values.
+- [decision] Void-value misuse is checked only after arity, literal-kind, and
+  literal-domain validation, preserving one diagnostic at the call token.
+  Callees and arguments remain unconditionally traversed afterward.
+
+All ten focused built-in void tests and all 135 analyzer/registry tests pass.
+The full core suite, both TypeScript checks, lint, formatting, browser build,
+and diff validation pass.
+
+Five Firefox acceptance tests are prepared in untracked files:
+`e2e/print-preview.spec.ts` covers ordered developer-console output and output
+before runtime diagnostics; `e2e/reusable-functions-preview.spec.ts` covers the
+reusable motif example, independent seeded runs, and recursion cancellation.
+The next implementation checkpoint forwards output to the console and adds
+`examples/reusable-motif.gic`, then runs all 33 Firefox tests outside nono.
