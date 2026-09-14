@@ -426,6 +426,10 @@ export class Analyser {
 						);
 						if (domainDiagnostic) {
 							this.diagnostics.push(domainDiagnostic);
+						} else if (builtIn.returnKind === "void" && valueRequired) {
+							this.diagnostics.push(
+								diagnosticVoidCallInExpression(expr.callee.name),
+							);
 						}
 					}
 				}
