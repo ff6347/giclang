@@ -82,6 +82,10 @@
   nested 20×20 rectangle grid reaches the final row and column near the
   100×100 Canvas edge, and Firefox tests load that exact file through the
   preview UI.
+- [technique] `examples/reusable-motif.gic` is the deterministic reusable-
+  function fixture. Firefox loads the exact file and observes line-and-circle
+  motifs from two calls; seeded acceptance separates identical runs with an
+  invalid preview so stale Canvas state cannot create a false positive.
 - [decision] The first browser shell uses a plain `<textarea>` and automatically
   previews source after a short idle period. The final editor remains deferred.
 - [decision] Preview execution runs in a dedicated Web Worker with termination
@@ -116,6 +120,10 @@
 - [technique] `runSource()` owns the output array and injects an output sink into
   the interpreter. The callback remains inside the worker; only plain structured
   output crosses the worker boundary.
+- [decision] The browser logs each output entry as `Line N: text` before handling
+  the worker result's success or failure branch, so output retained before a
+  runtime diagnostic remains ordered and visible. A visible on-screen output
+  panel is deferred to later browser IDE work.
 - [decision] Interpreter expression results distinguish user-visible
   `number | string | boolean` values from a unique internal `VOID` symbol.
   Environments store only user-visible values; command-emitting calls return
@@ -135,8 +143,8 @@
   built-in registry. Identifier evaluation falls back to constant entries after
   ordinary environment lookup, without placing constants in mutable environments.
 - [decision] Math built-ins accept and produce finite numbers. Pure math handlers
-  share one callable kind; `floor`, `ceil`, and `abs` are the first implemented
-  handlers, with remaining functions and domain checks delivered incrementally.
+  share one callable kind; `sin` and `cos` consume degrees, `sqrt` rejects
+  negative inputs, and `pow` rejects only non-finite results.
 - [decision] Unseeded `random()` uses `Math.random()`. After `randomSeed(n)`, GIC
   uses p5.js's 32-bit linear congruential generator and unsigned seed coercion;
   equal or reversed random bounds are errors rather than silently swapped.

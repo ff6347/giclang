@@ -275,3 +275,30 @@ before runtime diagnostics; `e2e/reusable-functions-preview.spec.ts` covers the
 reusable motif example, independent seeded runs, and recursion cancellation.
 The next implementation checkpoint forwards output to the console and adds
 `examples/reusable-motif.gic`, then runs all 33 Firefox tests outside nono.
+
+## Browser Acceptance and Slice Completion
+
+Browser output forwarding, the reusable motif fixture, and five Firefox
+acceptance tests are committed as `68b3bd1`. Specification and lesson updates
+are committed as `fff4c02`, and the completed Slice 4 plan is removed separately
+as `eba737c`.
+
+- [decision] The browser developer console presents each structured output entry
+  as `Line N: text`, converting source lines to 1-based numbering.
+- [lesson] Output forwarding belongs before the worker result success/failure
+  branch. Placing it only in the success branch would discard output retained by
+  `runSource()` before a runtime diagnostic.
+- [technique] The seeded Firefox test places an invalid preview between two
+  seed-42 runs, clears the Canvas, and then compares exact Canvas data. This
+  proves a fresh worker reproduced the image instead of accepting stale pixels.
+- [technique] The recursion acceptance program performs bounded work in each
+  recursive call so the replaceable worker's 500 ms timeout terminates it before
+  the JavaScript stack overflows.
+- [decision] `examples/reusable-motif.gic` uses one line-and-circle function at
+  two positions as the deterministic Slice 4 experiment.
+- [decision] A visible on-screen output panel remains deferred to browser IDE
+  runtime-error UX work; Slice 4 forwards output only to the developer console.
+
+All 33 Firefox tests pass in Fabian's external run. The full core suite, both
+TypeScript checks, lint, formatting, browser build, Playwright test discovery,
+and diff validation pass. Slice 4 acceptance is complete.
