@@ -1,0 +1,16 @@
+// ABOUTME: Draws a deterministic line-and-circle motif through a reusable function.
+// ABOUTME: Demonstrates two isolated calls with different positions.
+
+background("#ffffff");
+fill("#000000");
+stroke("#000000");
+strokeWidth(2);
+
+func motif(x, y) {
+	line(x, y, x + 10, y + 10);
+	circle(x, y, 4);
+	return;
+}
+
+motif(20, 20);
+motif(60, 60);

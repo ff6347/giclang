@@ -1,5 +1,5 @@
 // ABOUTME: Runs the browser preview lifecycle and renders GIC commands to Canvas.
-// ABOUTME: Manages worker replacement, execution limits, and visible diagnostics.
+// ABOUTME: Manages worker replacement, console output, and visible diagnostics.
 import Worker from "./worker.ts?worker";
 import type { RunResult } from "../../src/core.ts";
 import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
@@ -57,6 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			executionTimer = null;
 			worker.terminate();
 			activeWorker = null;
+
+			for (const entry of e.data.output) {
+				console.info(`Line ${entry.line + 1}: ${entry.text}`);
+			}
 
 			if (e.data.ok) {
 				renderToCanvas(canvas, e.data.commands);
