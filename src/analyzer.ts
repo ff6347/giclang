@@ -32,8 +32,10 @@ import {
 	diagnosticFunctionReturnMixed,
 	diagnosticReturnOutsideFunction,
 	diagnosticVoidCallInExpression,
+	finiteResultDiagnostic,
 	missingNameDiagnostic,
 	notAFunctionDiagnostic,
+	randomBoundsDiagnostic,
 } from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
 import { Scope, type Declaration } from "./scope.ts";
@@ -43,6 +45,7 @@ import {
 	type FunctionEntry,
 	type ValueKind,
 } from "./built-ins.ts";
+import type { Token } from "./tokens.ts";
 
 type FunctionReturnState = "none" | "void" | "value" | "mixed";
 
@@ -416,6 +419,15 @@ export class Analyser {
 							),
 						);
 					}
+					if (accepted) {
+						const domainDiagnostic = checkLiteralDomain(
+							expr.callee.name,
+							expr.arguments,
+						);
+						if (domainDiagnostic) {
+							this.diagnostics.push(domainDiagnostic);
+						}
+					}
 				}
 			}
 		} else if (declaration && declaration.kind === "function") {
@@ -488,6 +500,53 @@ function literalKind(expr: Expression): ValueKind | undefined {
 			} else {
 				return undefined;
 			}
+		default:
+			return undefined;
+	}
+}
+
+function literalNumber(expr: Expression | undefined): number | undefined {
+	if (expr?.type === "Literal" && typeof expr.value === "number") {
+		return expr.value;
+	}
+	if (
+		expr?.type === "Unary" &&
+		expr.operator.type === "MINUS" &&
+		expr.right.type === "Literal" &&
+		typeof expr.right.value === "number"
+	) {
+		return -expr.right.value;
+	}
+	return undefined;
+}
+
+function checkLiteralDomain(
+	name: Token,
+	args: Expression[],
+): Diagnostic | undefined {
+	switch (name.lexeme) {
+		case "sqrt": {
+			const value = literalNumber(args[0]);
+			return value !== undefined && value < 0
+				? finiteResultDiagnostic(name)
+				: undefined;
+		}
+		case "pow": {
+			const base = literalNumber(args[0]);
+			const exponent = literalNumber(args[1]);
+			return base !== undefined &&
+				exponent !== undefined &&
+				!Number.isFinite(Math.pow(base, exponent))
+				? finiteResultDiagnostic(name)
+				: undefined;
+		}
+		case "random": {
+			const min = literalNumber(args[0]);
+			const max = literalNumber(args[1]);
+			return min !== undefined && max !== undefined && min >= max
+				? randomBoundsDiagnostic(name)
+				: undefined;
+		}
 		default:
 			return undefined;
 	}

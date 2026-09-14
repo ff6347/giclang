@@ -1,5 +1,5 @@
-// ABOUTME: Tests static built-in argument-kind diagnostics from shared metadata.
-// ABOUTME: Covers named parameters, overload selection, unknown values, and traversal.
+// ABOUTME: Tests static built-in literal diagnostics from shared metadata.
+// ABOUTME: Covers argument kinds, obvious domains, unknown values, and traversal.
 
 import assert from "node:assert";
 import test, { describe } from "node:test";
@@ -100,5 +100,112 @@ floor(shade);`;
 				end: 21,
 			},
 		]);
+	});
+});
+
+describe("Analyser built-in literal domains", () => {
+	test("should report a negative literal passed to sqrt", () => {
+		const result = analyseSource(`sqrt(-1);`);
+
+		assert.deepStrictEqual(result.diagnostics, [
+			{
+				message: "Function 'sqrt' must produce a finite number.",
+				line: 0,
+				start: 0,
+				end: 4,
+			},
+		]);
+	});
+
+	test("should report a negative pow base with a fractional literal exponent", () => {
+		const result = analyseSource(`pow(-2, 0.5);`);
+
+		assert.deepStrictEqual(result.diagnostics, [
+			{
+				message: "Function 'pow' must produce a finite number.",
+				line: 0,
+				start: 0,
+				end: 3,
+			},
+		]);
+	});
+
+	test("should report a zero pow base with a negative literal exponent", () => {
+		const result = analyseSource(`pow(0, -1);`);
+
+		assert.deepStrictEqual(result.diagnostics, [
+			{
+				message: "Function 'pow' must produce a finite number.",
+				line: 0,
+				start: 0,
+				end: 3,
+			},
+		]);
+	});
+
+	test("should accept a negative pow base with an integer literal exponent", () => {
+		const result = analyseSource(`pow(-2, 3);`);
+
+		assert.deepStrictEqual(result.diagnostics, []);
+	});
+
+	test("should accept a positive pow base with a negative literal exponent", () => {
+		const result = analyseSource(`pow(2, -3);`);
+
+		assert.deepStrictEqual(result.diagnostics, []);
+	});
+
+	test("should report equal random literal bounds", () => {
+		const result = analyseSource(`random(10, 10);`);
+
+		assert.deepStrictEqual(result.diagnostics, [
+			{
+				message:
+					"Function 'random' requires argument 'min' to be less than argument 'max'.",
+				line: 0,
+				start: 0,
+				end: 6,
+			},
+		]);
+	});
+
+	test("should report reversed random literal bounds", () => {
+		const result = analyseSource(`random(10, 5);`);
+
+		assert.deepStrictEqual(result.diagnostics, [
+			{
+				message:
+					"Function 'random' requires argument 'min' to be less than argument 'max'.",
+				line: 0,
+				start: 0,
+				end: 6,
+			},
+		]);
+	});
+
+	test("should leave a grouped domain argument for runtime validation", () => {
+		const result = analyseSource(`sqrt((-1));`);
+
+		assert.deepStrictEqual(result.diagnostics, []);
+	});
+
+	test("should leave a call domain argument for runtime validation", () => {
+		const result = analyseSource(`sqrt(pow(-2, 3));`);
+
+		assert.deepStrictEqual(result.diagnostics, []);
+	});
+
+	test("should leave a variable domain argument for runtime validation", () => {
+		const source = `let value = -1;
+sqrt(value);`;
+		const result = analyseSource(source);
+
+		assert.deepStrictEqual(result.diagnostics, []);
+	});
+
+	test("should leave a computed domain argument for runtime validation", () => {
+		const result = analyseSource(`sqrt(0 - 1);`);
+
+		assert.deepStrictEqual(result.diagnostics, []);
 	});
 });

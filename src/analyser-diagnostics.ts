@@ -125,6 +125,24 @@ export function diagnosticVoidCallInExpression(token: Token): Diagnostic {
 	};
 }
 
+export function finiteResultDiagnostic(token: Token): Diagnostic {
+	return {
+		message: `Function '${token.lexeme}' must produce a finite number.`,
+		line: token.line,
+		start: token.start,
+		end: token.end,
+	};
+}
+
+export function randomBoundsDiagnostic(token: Token): Diagnostic {
+	return {
+		message: `Function '${token.lexeme}' requires argument 'min' to be less than argument 'max'.`,
+		line: token.line,
+		start: token.start,
+		end: token.end,
+	};
+}
+
 export function argumentKindDiagnostic(
 	token: Token,
 	kind: ValueKind,
