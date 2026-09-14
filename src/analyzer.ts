@@ -21,6 +21,7 @@ import type {
 } from "./ast.ts";
 import type { Diagnostic, Program } from "./core.ts";
 import {
+	argumentKindDiagnostic,
 	arityMismatchDiagnostic,
 	diagnosticAssignDefinedByGIC,
 	diagnosticAssignFunction,
@@ -36,7 +37,12 @@ import {
 } from "./analyser-diagnostics.ts";
 import { reservedNames } from "./keywords.ts";
 import { Scope, type Declaration } from "./scope.ts";
-import { builtIns, isBuiltInName, type FunctionEntry } from "./built-ins.ts";
+import {
+	builtIns,
+	isBuiltInName,
+	type FunctionEntry,
+	type ValueKind,
+} from "./built-ins.ts";
 
 type FunctionReturnState = "none" | "void" | "value" | "mixed";
 
@@ -368,11 +374,11 @@ export class Analyser {
 			if (builtIn.kind === "constant") {
 				this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
 			} else if (builtIn.kind === "function") {
-				if (
-					!builtIn.signatures.some(
-						(sig) => sig.length === expr.arguments.length,
-					)
-				) {
+				const candidates = builtIn.signatures.filter(
+					(signature) => signature.length === expr.arguments.length,
+				);
+
+				if (candidates.length === 0) {
 					// deliberately move to function for better understanding
 					const unique = (arr: FunctionEntry) => {
 						return Array.from(new Set(arr.signatures.map((sig) => sig.length)));
@@ -385,6 +391,31 @@ export class Analyser {
 							expr.arguments.length,
 						),
 					);
+				} else {
+					const kinds = expr.arguments.map(literalKind);
+
+					// A call is compatible when at least one overload accepts every argument whose type can be determined from its literal value.
+					// Unknown argument kinds are deferred because static checking cannot prove that they conflict with the parameter type.
+					const accepted = candidates.some((signature) => {
+						return signature.every((parameter, index) => {
+							return (
+								kinds[index] === undefined || kinds[index] === parameter.kind
+							);
+						});
+					});
+					const mismatch = candidates[0]?.find(
+						(parameter, index) =>
+							kinds[index] !== undefined && kinds[index] !== parameter.kind,
+					);
+					if (!accepted && mismatch) {
+						this.diagnostics.push(
+							argumentKindDiagnostic(
+								expr.callee.name,
+								mismatch.kind,
+								mismatch.name,
+							),
+						);
+					}
 				}
 			}
 		} else if (declaration && declaration.kind === "function") {
@@ -431,5 +462,33 @@ export class Analyser {
 			this.walkStatement(statement);
 		}
 		this.scopes.pop();
+	}
+}
+
+function literalKind(expr: Expression): ValueKind | undefined {
+	switch (expr.type) {
+		case "Literal": {
+			if (typeof expr.value === "number") {
+				return "number";
+			} else if (typeof expr.value === "string") {
+				return "string";
+			} else if (typeof expr.value === "boolean") {
+				return "boolean";
+			} else {
+				return undefined;
+			}
+		}
+		case "Unary":
+			if (
+				expr.operator.type === "MINUS" &&
+				expr.right.type === "Literal" &&
+				typeof expr.right.value === "number"
+			) {
+				return "number";
+			} else {
+				return undefined;
+			}
+		default:
+			return undefined;
 	}
 }

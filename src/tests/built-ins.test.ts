@@ -21,9 +21,18 @@ describe("built-ins", () => {
 		const expected = {
 			kind: "function",
 			signatures: [
-				["string"],
-				["number", "number", "number"],
-				["number", "number", "number", "number"],
+				[{ name: "value", kind: "string" }],
+				[
+					{ name: "lightness", kind: "number" },
+					{ name: "chroma", kind: "number" },
+					{ name: "hue", kind: "number" },
+				],
+				[
+					{ name: "lightness", kind: "number" },
+					{ name: "chroma", kind: "number" },
+					{ name: "hue", kind: "number" },
+					{ name: "alpha", kind: "number" },
+				],
 			],
 			returnKind: "void",
 		};
@@ -44,7 +53,7 @@ describe("built-ins", () => {
 	test("should describe strokeWidth with single parameter signatures in registry", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "width", kind: "number" }]],
 			returnKind: "void",
 		};
 		assert.deepStrictEqual(builtIns["strokeWidth"], expected);
@@ -52,7 +61,11 @@ describe("built-ins", () => {
 	test("should describe print with single parameter signatures in registry", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["string"], ["number"], ["boolean"]],
+			signatures: [
+				[{ name: "value", kind: "string" }],
+				[{ name: "value", kind: "number" }],
+				[{ name: "value", kind: "boolean" }],
+			],
 			returnKind: "void",
 		};
 		assert.deepStrictEqual(builtIns["print"], expected);
@@ -61,7 +74,12 @@ describe("built-ins", () => {
 	test("should describe point signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number"]],
+			signatures: [
+				[
+					{ name: "x", kind: "number" },
+					{ name: "y", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		assert.deepStrictEqual(builtIns["point"], expected);
@@ -70,7 +88,14 @@ describe("built-ins", () => {
 	test("should describe line signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number", "number", "number"]],
+			signatures: [
+				[
+					{ name: "x1", kind: "number" },
+					{ name: "y1", kind: "number" },
+					{ name: "x2", kind: "number" },
+					{ name: "y2", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		assert.deepStrictEqual(builtIns["line"], expected);
@@ -79,7 +104,14 @@ describe("built-ins", () => {
 	test("should describe rect signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number", "number", "number"]],
+			signatures: [
+				[
+					{ name: "x", kind: "number" },
+					{ name: "y", kind: "number" },
+					{ name: "width", kind: "number" },
+					{ name: "height", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		assert.deepStrictEqual(builtIns["rect"], expected);
@@ -88,7 +120,13 @@ describe("built-ins", () => {
 	test("should describe circle in registry and validate metadata fields", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number", "number"]],
+			signatures: [
+				[
+					{ name: "x", kind: "number" },
+					{ name: "y", kind: "number" },
+					{ name: "radius", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		const actual = builtIns["circle"];
@@ -98,7 +136,14 @@ describe("built-ins", () => {
 	test("should describe ellipse signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number", "number", "number"]],
+			signatures: [
+				[
+					{ name: "x", kind: "number" },
+					{ name: "y", kind: "number" },
+					{ name: "width", kind: "number" },
+					{ name: "height", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		const actual = builtIns["ellipse"];
@@ -109,7 +154,14 @@ describe("built-ins", () => {
 		const expected = {
 			kind: "function",
 			signatures: [
-				["number", "number", "number", "number", "number", "number"],
+				[
+					{ name: "x1", kind: "number" },
+					{ name: "y1", kind: "number" },
+					{ name: "x2", kind: "number" },
+					{ name: "y2", kind: "number" },
+					{ name: "x3", kind: "number" },
+					{ name: "y3", kind: "number" },
+				],
 			],
 			returnKind: "void",
 		};
@@ -122,14 +174,14 @@ describe("built-ins", () => {
 			kind: "function",
 			signatures: [
 				[
-					"number",
-					"number",
-					"number",
-					"number",
-					"number",
-					"number",
-					"number",
-					"number",
+					{ name: "x1", kind: "number" },
+					{ name: "y1", kind: "number" },
+					{ name: "x2", kind: "number" },
+					{ name: "y2", kind: "number" },
+					{ name: "x3", kind: "number" },
+					{ name: "y3", kind: "number" },
+					{ name: "x4", kind: "number" },
+					{ name: "y4", kind: "number" },
 				],
 			],
 			returnKind: "void",
@@ -142,7 +194,15 @@ describe("built-ins", () => {
 	test("should describe arc signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number", "number", "number", "number"]],
+			signatures: [
+				[
+					{ name: "x", kind: "number" },
+					{ name: "y", kind: "number" },
+					{ name: "radius", kind: "number" },
+					{ name: "startAngle", kind: "number" },
+					{ name: "endAngle", kind: "number" },
+				],
+			],
 			returnKind: "void",
 		};
 		const actual = builtIns["arc"];
@@ -152,7 +212,12 @@ describe("built-ins", () => {
 	test("should verify random function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number"]],
+			signatures: [
+				[
+					{ name: "min", kind: "number" },
+					{ name: "max", kind: "number" },
+				],
+			],
 			returnKind: "value",
 		};
 		const actual = builtIns["random"];
@@ -161,7 +226,7 @@ describe("built-ins", () => {
 	test("should verify randomSeed function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "seed", kind: "number" }]],
 			returnKind: "void",
 		};
 		const actual = builtIns["randomSeed"];
@@ -170,7 +235,7 @@ describe("built-ins", () => {
 	test("should verify floor function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "value", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["floor"];
@@ -179,7 +244,7 @@ describe("built-ins", () => {
 	test("should verify ceil function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "value", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["ceil"];
@@ -188,7 +253,7 @@ describe("built-ins", () => {
 	test("should verify round function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "value", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["round"];
@@ -197,7 +262,7 @@ describe("built-ins", () => {
 	test("should verify abs function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "value", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["abs"];
@@ -206,7 +271,12 @@ describe("built-ins", () => {
 	test("should verify min function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number"]],
+			signatures: [
+				[
+					{ name: "a", kind: "number" },
+					{ name: "b", kind: "number" },
+				],
+			],
 			returnKind: "value",
 		};
 		const actual = builtIns["min"];
@@ -215,7 +285,12 @@ describe("built-ins", () => {
 	test("should verify max function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number"]],
+			signatures: [
+				[
+					{ name: "a", kind: "number" },
+					{ name: "b", kind: "number" },
+				],
+			],
 			returnKind: "value",
 		};
 		const actual = builtIns["max"];
@@ -224,7 +299,7 @@ describe("built-ins", () => {
 	test("should verify sqrt function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "value", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["sqrt"];
@@ -233,7 +308,12 @@ describe("built-ins", () => {
 	test("should verify pow function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number", "number"]],
+			signatures: [
+				[
+					{ name: "base", kind: "number" },
+					{ name: "exponent", kind: "number" },
+				],
+			],
 			returnKind: "value",
 		};
 		const actual = builtIns["pow"];
@@ -242,7 +322,7 @@ describe("built-ins", () => {
 	test("should verify sin function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "degrees", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["sin"];
@@ -251,7 +331,7 @@ describe("built-ins", () => {
 	test("should verify cos function signature", () => {
 		const expected = {
 			kind: "function",
-			signatures: [["number"]],
+			signatures: [[{ name: "degrees", kind: "number" }]],
 			returnKind: "value",
 		};
 		const actual = builtIns["cos"];

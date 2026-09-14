@@ -1,5 +1,6 @@
 // ABOUTME: Builds semantic diagnostics for declaration and assignment name errors.
 // ABOUTME: Keeps analyzer message wording and source locations consistent.
+import type { ValueKind } from "./built-ins.ts";
 import type { Diagnostic } from "./core.ts";
 import type { Token } from "./tokens.ts";
 
@@ -118,6 +119,19 @@ export function diagnosticReturnOutsideFunction(keyword: Token): Diagnostic {
 export function diagnosticVoidCallInExpression(token: Token): Diagnostic {
 	return {
 		message: `Function '${token.lexeme}' does not return a value and cannot be used in an expression.`,
+		line: token.line,
+		start: token.start,
+		end: token.end,
+	};
+}
+
+export function argumentKindDiagnostic(
+	token: Token,
+	kind: ValueKind,
+	name: string,
+): Diagnostic {
+	return {
+		message: `Function '${token.lexeme}' requires a ${kind} for argument '${name}'.`,
 		line: token.line,
 		start: token.start,
 		end: token.end,

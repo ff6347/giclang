@@ -35,8 +35,9 @@ export type BuiltInKeys =
 	| "WIDTH"
 	| "HEIGHT";
 
-type ValueKind = "number" | "boolean" | "string";
-type Signature = readonly ValueKind[];
+type Parameter = { readonly name: string; readonly kind: ValueKind };
+export type ValueKind = "number" | "boolean" | "string";
+type Signature = readonly Parameter[];
 export type FunctionEntry = {
 	readonly kind: "function";
 	readonly signatures: readonly Signature[];
@@ -51,11 +52,20 @@ type BuiltInEntry = FunctionEntry | ConstantEntry;
 
 type BuiltInRegistry = Readonly<Record<BuiltInKeys, BuiltInEntry>>;
 
-const colorSignature: readonly Signature[] = [
-	["string"],
-	["number", "number", "number"],
-	["number", "number", "number", "number"],
-];
+const colorSignatures: readonly Signature[] = [
+	[{ name: "value", kind: "string" }],
+	[
+		{ name: "lightness", kind: "number" },
+		{ name: "chroma", kind: "number" },
+		{ name: "hue", kind: "number" },
+	],
+	[
+		{ name: "lightness", kind: "number" },
+		{ name: "chroma", kind: "number" },
+		{ name: "hue", kind: "number" },
+		{ name: "alpha", kind: "number" },
+	],
+] as const satisfies readonly Signature[];
 export const builtIns: BuiltInRegistry = {
 	//constant
 	WIDTH: {
@@ -77,12 +87,12 @@ export const builtIns: BuiltInRegistry = {
 	//color+ style
 	background: {
 		kind: "function",
-		signatures: [...colorSignature],
+		signatures: [...colorSignatures],
 		returnKind: "void",
 	},
 	stroke: {
 		kind: "function",
-		signatures: [...colorSignature],
+		signatures: [...colorSignatures],
 		returnKind: "void",
 	},
 	noStroke: {
@@ -97,133 +107,206 @@ export const builtIns: BuiltInRegistry = {
 	},
 	fill: {
 		kind: "function",
-		signatures: [...colorSignature],
+		signatures: [...colorSignatures],
 		returnKind: "void",
 	},
 	strokeWidth: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "width", kind: "number" }]],
 		returnKind: "void",
 	},
 	//debug
 	print: {
 		kind: "function",
-		signatures: [["string"], ["number"], ["boolean"]],
+		signatures: [
+			[{ name: "value", kind: "string" }],
+			[{ name: "value", kind: "number" }],
+			[{ name: "value", kind: "boolean" }],
+		],
 		returnKind: "void",
 	},
 	// form
 	point: {
 		kind: "function",
-		signatures: [["number", "number"]],
+		signatures: [
+			[
+				{ name: "x", kind: "number" },
+				{ name: "y", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	line: {
 		kind: "function",
-		signatures: [["number", "number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x1", kind: "number" },
+				{ name: "y1", kind: "number" },
+				{ name: "x2", kind: "number" },
+				{ name: "y2", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	rect: {
 		kind: "function",
-		signatures: [["number", "number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x", kind: "number" },
+				{ name: "y", kind: "number" },
+				{ name: "width", kind: "number" },
+				{ name: "height", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 
 	circle: {
 		kind: "function",
-		signatures: [["number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x", kind: "number" },
+				{ name: "y", kind: "number" },
+				{ name: "radius", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	ellipse: {
 		kind: "function",
-		signatures: [["number", "number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x", kind: "number" },
+				{ name: "y", kind: "number" },
+				{ name: "width", kind: "number" },
+				{ name: "height", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	triangle: {
 		kind: "function",
-		signatures: [["number", "number", "number", "number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x1", kind: "number" },
+				{ name: "y1", kind: "number" },
+				{ name: "x2", kind: "number" },
+				{ name: "y2", kind: "number" },
+				{ name: "x3", kind: "number" },
+				{ name: "y3", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	quad: {
 		kind: "function",
 		signatures: [
 			[
-				"number",
-				"number",
-				"number",
-				"number",
-				"number",
-				"number",
-				"number",
-				"number",
+				{ name: "x1", kind: "number" },
+				{ name: "y1", kind: "number" },
+				{ name: "x2", kind: "number" },
+				{ name: "y2", kind: "number" },
+				{ name: "x3", kind: "number" },
+				{ name: "y3", kind: "number" },
+				{ name: "x4", kind: "number" },
+				{ name: "y4", kind: "number" },
 			],
 		],
 		returnKind: "void",
 	},
 	arc: {
 		kind: "function",
-		signatures: [["number", "number", "number", "number", "number"]],
+		signatures: [
+			[
+				{ name: "x", kind: "number" },
+				{ name: "y", kind: "number" },
+				{ name: "radius", kind: "number" },
+				{ name: "startAngle", kind: "number" },
+				{ name: "endAngle", kind: "number" },
+			],
+		],
 		returnKind: "void",
 	},
 	// generators
 	random: {
 		kind: "function",
-		signatures: [["number", "number"]],
+		signatures: [
+			[
+				{ name: "min", kind: "number" },
+				{ name: "max", kind: "number" },
+			],
+		],
 		returnKind: "value",
 	},
 	randomSeed: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "seed", kind: "number" }]],
 		returnKind: "void",
 	},
 	// math
 	floor: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "value", kind: "number" }]],
 		returnKind: "value",
 	},
 	ceil: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "value", kind: "number" }]],
 		returnKind: "value",
 	},
 	round: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "value", kind: "number" }]],
 		returnKind: "value",
 	},
 	abs: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "value", kind: "number" }]],
 		returnKind: "value",
 	},
 	min: {
 		kind: "function",
-		signatures: [["number", "number"]],
+		signatures: [
+			[
+				{ name: "a", kind: "number" },
+				{ name: "b", kind: "number" },
+			],
+		],
 		returnKind: "value",
 	},
 	max: {
 		kind: "function",
-		signatures: [["number", "number"]],
+		signatures: [
+			[
+				{ name: "a", kind: "number" },
+				{ name: "b", kind: "number" },
+			],
+		],
 		returnKind: "value",
 	},
 	sqrt: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "value", kind: "number" }]],
 		returnKind: "value",
 	},
 	pow: {
 		kind: "function",
-		signatures: [["number", "number"]],
+		signatures: [
+			[
+				{ name: "base", kind: "number" },
+				{ name: "exponent", kind: "number" },
+			],
+		],
 		returnKind: "value",
 	},
 	sin: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "degrees", kind: "number" }]],
 		returnKind: "value",
 	},
 	cos: {
 		kind: "function",
-		signatures: [["number"]],
+		signatures: [[{ name: "degrees", kind: "number" }]],
 		returnKind: "value",
 	},
 };
