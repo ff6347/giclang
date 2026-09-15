@@ -456,9 +456,11 @@ start))` — the `Math.max` covers empty EOF spans.
   lifecycle, animation built-ins, frame scheduling, and Canvas animation remain
   a stretch slice and cannot block the release.
 - [decision] `gic check` and `gic run` are required v0.9 interfaces over the
-  shared core. CLI export, server rendering, watch mode, and `gic lsp` remain out
-  of scope; the presentation of recorded drawing commands from `gic run`
-  remains an explicit pre-implementation decision.
+  shared core. `gic run` executes headlessly with ordered `print` output by
+  default; `--show-commands` additionally emits a stable drawing-command
+  serialization. Image rendering is deferred to a separate future shell-backend
+  decision, with Skia only a candidate. CLI export, server rendering, watch mode,
+  and `gic lsp` remain out of scope.
 - [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical
   slices may implement partial milestone behavior without checking the milestone
   early.
