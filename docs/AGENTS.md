@@ -5,17 +5,17 @@ tags:
   - gic
 ---
 
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AGENTS when working with code in this repository.
 
 ## Project Overview
 
 **gic** (Gestalten In Code) is a minimal visual programming language for education, AI art generation, and artistic commentary. Inspired by Design by Numbers (John Maeda) and Processing (Ben Fry, Casey Reas).
 
-## Current State
+## Specification
 
-This project is in the **specification phase**. No implementation exists yet. The specification documents are:
+The specification documents are:
 
 - `Language specification.md` - Current specification (use this)
 - `deprecated/Language specification rev 2.1.md` - Previous revision
@@ -73,22 +73,6 @@ gic/
 
 Backends, CLI, and LSP will be added later.
 
-## Implementation Order
-
-1. **Lexer** - string → tokens
-2. **Parser** - tokens → AST
-3. **Interpreter** - AST → execution (basic)
-4. **Analyzer** - add semantic validation
-5. **Backend** - connect to canvas
-
-## Implementation Approach
-
-This is a learning project. The human implements with Claude's guidance. Every piece of code should be understood, not just copied.
-
 ## Reference
 
 "Crafting Interpreters" by Bob Nystrom (craftinginterpreters.com) - primary implementation guide.
-
-## Possible execution environments
-
-https://labs.leaningtech.com/blog/browserpod-10
