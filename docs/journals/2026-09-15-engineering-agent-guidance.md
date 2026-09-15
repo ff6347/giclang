@@ -53,3 +53,13 @@ The introspected baseline passed:
 - `pnpm fmt:check`
 - `pnpm build:browser`
 - `pnpm test:e2e` with 33 Firefox tests
+
+## Scope correction
+
+- [decision] Root agent guidance contains only durable project aim, scope,
+  structure, architecture, commands, test seams, and issue-target information.
+- [decision] Collaboration history, person-specific behavior, generic workflow,
+  and skill instructions remain in global guidance, memory, journals, or the
+  relevant skill rather than the project root directive.
+- [decision] Documentation-specific guidance is limited to the structure and
+  authority rules unique to the `docs/` tree.
