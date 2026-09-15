@@ -86,19 +86,39 @@
   function fixture. Firefox loads the exact file and observes line-and-circle
   motifs from two calls; seeded acceptance separates identical runs with an
   invalid preview so stale Canvas state cannot create a false positive.
-- [decision] The first browser shell uses a plain `<textarea>` and automatically
-  previews source after a short idle period. The final editor remains deferred.
+- [decision] Monaco is the v0.9 editor for the shared desktop/PWA UI. The
+  completed `<textarea>` shell remains the prototype baseline rather than the
+  release editor.
 - [decision] Preview execution runs in a dedicated Web Worker with termination
   for replacement and runaway-program protection. The main thread renders
   structured output to Canvas; interpreted GIC does not use an iframe.
-- [decision] The previous image remains during execution, is replaced on success,
-  and is cleared on diagnostics or timeout.
-- [decision] Playwright with Firefox is the required browser test path.
-- [decision] The browser calls the shared browser-neutral core directly and
-  exposes diagnostics only before Slice 6. LSP, VS Code, and broader language
-  assistance remain deferred.
+- [decision] The previous image remains during execution, is replaced only by
+  success for the exact current source, and is cleared on parse, analysis,
+  runtime, or timeout failure. Failed current source also disables PNG export.
+- [decision] Playwright drives the shared UI. Direct-`file://` standalone export
+  additionally requires Chromium, Firefox, and WebKit acceptance.
+- [decision] Monaco calls a direct browser-neutral service for diagnostics,
+  formatting, completion, hover, and signature help. LSP, VS Code, and
+  go-to-definition remain outside v0.9.
 - [direction] Treat Node-based image rendering as an optional export, CI, or
   dataset tool rather than the primary execution environment.
+- [decision] The primary v0.9 distribution is a dedicated-window desktop app;
+  the secondary edition is a tutor-less offline PWA. Deno Desktop is evaluated
+  first, followed by narrow Pi ports, Electron, then Tauri with a bundled Node
+  sidecar when evidence requires a fallback.
+- [decision] Desktop and PWA edit one document at a time. Explicit source saves,
+  immutable example copies, and private recovery snapshots are separate
+  workflows.
+- [decision] The optional desktop tutor is a soft dependency and contacts Codex
+  or OpenCode only after explicit submission. Each request receives ephemeral
+  source, diagnostics, runtime failure, and structured output, but no Canvas
+  image.
+- [decision] Tutor credentials live outside the webview in an atomically updated
+  app-owned plaintext `auth.json`, restricted to the owner and deleted on
+  sign-out. Credential values never enter logs, exports, prompts, or sessions.
+- [decision] The integrated tutor uses canonical Socratic guidance and no write,
+  shell, browser, or web tools. Tutor sessions are transparent local JSONL with
+  append-only compaction checkpoints.
 - [decision] The browser-neutral public language entry point is `src/core.ts`;
   its explicit name distinguishes reusable language work from the Node CLI in
   `src/main.ts`.
@@ -428,10 +448,17 @@ start))` — the `Math.max` covers empty EOF spans.
 
 ## Delivery Planning
 
-- [decision] Remaining GIC work is delivered through
-  `docs/plans/vertical-slice-roadmap.md` after the function-call analyzer
-  transition point. Return analysis was completed before Slice 0 and is consumed
-  by executable function work in Slice 4.
+- [decision] GIC v0.9 requirements are published as git-bug issue `60b2077`.
+  `docs/plans/vertical-slice-roadmap.md` decomposes the static workshop release
+  into independently testable CLI, Monaco, assistance, layout, document, export,
+  PWA, desktop, workspace, tutor, provider, and packaging slices.
+- [decision] Static generative graphics are the v0.9 release gate. Setup/loop
+  lifecycle, animation built-ins, frame scheduling, and Canvas animation remain
+  a stretch slice and cannot block the release.
+- [decision] `gic check` and `gic run` are required v0.9 interfaces over the
+  shared core. CLI export, server rendering, watch mode, and `gic lsp` remain out
+  of scope; the presentation of recorded drawing commands from `gic run`
+  remains an explicit pre-implementation decision.
 - [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical
   slices may implement partial milestone behavior without checking the milestone
   early.
