@@ -166,11 +166,13 @@ executed with `gic run` through documented, dependable commands.
 - Diagnostics include source locations and never expose raw host stack traces.
 - Package metadata exposes a usable `gic` executable.
 
-**Gate:** Decide how `gic run` presents recorded drawing commands without
-silently adding CLI export scope.
+`gic run` executes headlessly and writes ordered GIC `print` output by default.
+The `--show-commands` option additionally writes a stable serialization of the
+recorded drawing commands. Image rendering is deferred to a later explicit
+shell-backend decision; Skia is a candidate, not a v0.9 dependency.
 
-**Not included:** PNG/SVG/GIF export, server rendering, `gic lsp`, animation, or
-watch mode.
+**Not included:** Image generation or display, PNG/SVG/GIF export, server
+rendering, `gic lsp`, animation, or watch mode.
 
 ### Slice 6: Monaco static authoring shell
 
@@ -433,25 +435,24 @@ outside the static release gate.
 These questions are recorded in PRD issue `60b2077` and must be resolved by the
 owning spike or slice before dependent acceptance tests are written:
 
-1. What does `gic run` present for recorded drawing commands?
-2. Which desktop runtime/version survives the dedicated-window and Pi spikes?
-3. Which exact OpenCode endpoint and model catalog form the supported contract?
-4. Which Codex and OpenCode models comprise the curated defaults?
-5. Which single-file worker strategy passes the three-engine `file://` matrix?
-6. Which installer formats, architectures, signing identities, and CI runners
+1. Which desktop runtime/version survives the dedicated-window and Pi spikes?
+2. Which exact OpenCode endpoint and model catalog form the supported contract?
+3. Which Codex and OpenCode models comprise the curated defaults?
+4. Which single-file worker strategy passes the three-engine `file://` matrix?
+5. Which installer formats, architectures, signing identities, and CI runners
    form the release matrix?
-7. How are Windows owner-only credential ACLs created, replaced, and repaired?
-8. How are modified managed support files compared and presented?
-9. What JSONL session schema and partial-write recovery policy are used?
-10. How are renamed, moved, deleted, Save As, and PWA-only documents related to
-    sessions?
-11. What is the recovery snapshot creation, expiry, dismissal, and
+6. How are Windows owner-only credential ACLs created, replaced, and repaired?
+7. How are modified managed support files compared and presented?
+8. What JSONL session schema and partial-write recovery policy are used?
+9. How are renamed, moved, deleted, Save As, and PWA-only documents related to
+   sessions?
+10. What is the recovery snapshot creation, expiry, dismissal, and
     multiple-instance policy?
-12. Which browser/OS versions define PWA support?
-13. How are absent external Codex/OpenCode applications detected and explained?
-14. Which keyboard, screen-reader, focus, zoom, contrast, and reduced-motion
+11. Which browser/OS versions define PWA support?
+12. How are absent external Codex/OpenCode applications detected and explained?
+13. Which keyboard, screen-reader, focus, zoom, contrast, and reduced-motion
     checks form release accessibility acceptance?
-15. Is an explicit local diagnostic-export workflow needed when automatic
+14. Is an explicit local diagnostic-export workflow needed when automatic
     telemetry is absent?
 
 ## Release Gate

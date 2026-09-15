@@ -31,8 +31,10 @@ the v0.9 CLI contract.
 ## Included
 
 - `gic check <file>` for parse and semantic validation without execution.
-- `gic run <file>` for execution through the shared static core.
-- Structured `print` entries presented in execution order.
+- `gic run <file>` for headless execution through the shared static core.
+- Structured `print` entries presented in execution order by default.
+- `gic run <file> --show-commands` for the same execution plus a stable
+  serialization of recorded drawing commands.
 - Valid, parse-invalid, analysis-invalid, runtime-invalid, missing-file,
   unsupported-command, missing-argument, and extra-argument behavior.
 - Package metadata that exposes a usable `gic` executable.
@@ -47,14 +49,13 @@ file and receives the shared execution result, including recorded drawing
 commands and structured output. The CLI formats those plain results; it does not
 instantiate a separate parser, analyzer, or interpreter.
 
-Before implementation, select and test one presentation contract for drawing
-commands:
+`run` is headless in v0.9. Default stdout contains ordered GIC `print` output;
+`--show-commands` additionally exposes a documented stable serialization of the
+recorded commands. It creates no image or display window.
 
-1. headless execution with `print` output only;
-2. a textual representation of recorded commands; or
-3. a display backend.
-
-The choice must not silently add PNG, SVG, GIF, server rendering, or watch mode.
+A future shell renderer may use Skia or another backend, but image behavior
+requires a separate decision. It must not silently change this command's output
+contract or add PNG, SVG, GIF, server rendering, or watch mode.
 
 ## TDD-oriented Student Checklist
 
@@ -62,6 +63,7 @@ The choice must not silently add PNG, SVG, GIF, server rendering, or watch mode.
 - Add parse-invalid and analysis-invalid tests with source-located diagnostics.
 - Prove `check` does not execute by using source that would fail only at runtime.
 - Add a valid `run` fixture with ordered structured `print` output.
+- Add `--show-commands` coverage with a stable ordered command serialization.
 - Add a runtime failure that preserves prior output and returns a failure status.
 - Add file-not-found, unsupported-command, missing-argument, and extra-argument
   tests before implementing dispatch.
@@ -89,9 +91,9 @@ The choice must not silently add PNG, SVG, GIF, server rendering, or watch mode.
 
 ## Notes / Decision Gates
 
-The only remaining product decision is how `gic run` presents recorded drawing
-commands. Resolve it before writing acceptance tests; do not infer export or
-server scope from the word “run.”
+The v0.9 `gic run` presentation is fixed as headless `print` output with an
+optional `--show-commands` command serialization. Image rendering remains a
+future shell-backend decision.
 
 This milestone is v0.9 roadmap Slice 5 and precedes Monaco migration so the CLI
 contract protects core behavior during later host integration.
