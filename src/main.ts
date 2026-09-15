@@ -1,59 +1,88 @@
-import { argv, exit, cwd } from "node:process";
-import { existsSync, readFileSync } from "node:fs";
-import { styleText } from "node:util";
+#!/usr/bin/env node
+
+import { argv, cwd } from "node:process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { report } from "./message-formatter.ts";
-import { parseSource } from "./core.ts";
+import { checkSource, type Diagnostic } from "./core.ts";
 
-async function main() {
-	const args = argv.slice(2);
-	if (args.length > 1) {
-		helpAndExit();
-	} else if (args.length === 1 && args[0] !== undefined) {
-		runFile(args[0]);
-	} else {
-		runPrompt();
-	}
-}
+const USAGE = "Usage: gic check <file>\n       gic help";
+const HELP = `${USAGE}
 
-await main();
+Commands:
+  check <file>  Parse and analyze a GIC file without running it.
+  help          Show this help.`;
 
-function helpAndExit() {
-	console.info("Usage: gic [script]");
-	exit(64);
-}
+function main(args: string[]): number {
+	const [command, ...commandArgs] = args;
 
-async function runFile(pathToFile: string): Promise<void> {
-	let source: string = "";
-
-	const absolutePath = resolve(cwd(), pathToFile);
-	if (existsSync(absolutePath)) {
-		source = readFileSync(absolutePath, "utf-8");
-		const result = parseSource(source);
-		if (!result.ok) {
-			result.diagnostics.forEach((diagnostic) => {
-				console.error(
-					styleText(
-						["red"],
-						report({
-							start: diagnostic.start,
-							end: diagnostic.end,
-							message: diagnostic.message,
-							source,
-						}),
-					),
-				);
-			});
-			exit(1);
-		} else {
-			console.info(result.program);
+	if (command === "help") {
+		if (commandArgs.length > 0) {
+			console.error(USAGE);
+			return 64;
 		}
+		console.info(HELP);
+		return 0;
+	}
+
+	if (command === "check") {
+		if (commandArgs.length !== 1 || commandArgs[0] === undefined) {
+			console.error(USAGE);
+			return 64;
+		}
+		return checkFile(commandArgs[0]);
+	}
+
+	if (command === undefined) {
+		console.error(USAGE);
 	} else {
+		console.error(`Unknown command: ${command}\n\n${USAGE}`);
+	}
+	return 64;
+}
+
+function checkFile(pathToFile: string): number {
+	const absolutePath = resolve(cwd(), pathToFile);
+	let source: string;
+	try {
+		source = readFileSync(absolutePath, "utf-8");
+	} catch (error: unknown) {
+		if (isMissingFileError(error)) {
+			console.error(`File not found: ${absolutePath}`);
+		} else {
+			console.error(`Cannot read file: ${absolutePath}`);
+		}
+		return 2;
+	}
+
+	const result = checkSource(source);
+	if (!result.ok) {
+		printDiagnostics(result.diagnostics, source);
+		return 1;
+	}
+
+	return 0;
+}
+
+function printDiagnostics(diagnostics: Diagnostic[], source: string): void {
+	for (const diagnostic of diagnostics) {
 		console.error(
-			styleText(["black", "bgWhiteBright"], `File not found: ${absolutePath}`),
+			report({
+				start: diagnostic.start,
+				end: diagnostic.end,
+				message: diagnostic.message,
+				source,
+			}),
 		);
-		exit(2);
 	}
 }
 
-async function runPrompt(): Promise<void> {}
+function isMissingFileError(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		"code" in error &&
+		(error.code === "ENOENT" || error.code === "ENOTDIR")
+	);
+}
+
+process.exitCode = main(argv.slice(2));

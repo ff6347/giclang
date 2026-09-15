@@ -20,6 +20,10 @@ export type ParseResult =
 	| { ok: true; program: Program; diagnostics: Diagnostic[] }
 	| { ok: false; diagnostics: Diagnostic[] };
 
+export type CheckResult =
+	| { ok: true; diagnostics: Diagnostic[] }
+	| { ok: false; diagnostics: Diagnostic[] };
+
 export type RunResult =
 	| {
 			ok: true;
@@ -52,22 +56,38 @@ export function parseSource(source: string): ParseResult {
 	}
 }
 
+function prepareSource(source: string): ParseResult {
+	const parsedSource = parseSource(source);
+	if (!parsedSource.ok) {
+		return parsedSource;
+	}
+
+	const diagnostics = [
+		...parsedSource.diagnostics,
+		...new Analyser(parsedSource.program).analyze(),
+	];
+	if (diagnostics.length > 0) {
+		return { ok: false, diagnostics };
+	}
+
+	return { ok: true, program: parsedSource.program, diagnostics };
+}
+
+export function checkSource(source: string): CheckResult {
+	const result = prepareSource(source);
+	return { ok: result.ok, diagnostics: result.diagnostics };
+}
+
 export function runSource(source: string): RunResult {
 	const diagnostics: Diagnostic[] = [];
 	const output: OutputEntry[] = [];
 	try {
-		const parsedSource = parseSource(source);
-		diagnostics.push(...parsedSource.diagnostics);
-		if (!parsedSource.ok) {
+		const checkedSource = prepareSource(source);
+		diagnostics.push(...checkedSource.diagnostics);
+		if (!checkedSource.ok) {
 			return { ok: false, diagnostics, output };
 		} else {
-			const { program } = parsedSource;
-			const analyser = new Analyser(program);
-			const analysedResult = analyser.analyze();
-			diagnostics.push(...analysedResult);
-			if (diagnostics.length > 0) {
-				return { ok: false, diagnostics, output };
-			}
+			const { program } = checkedSource;
 			const interpreter = new Interpreter(program, (entry) => {
 				output.push(entry);
 			});

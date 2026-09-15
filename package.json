@@ -5,9 +5,19 @@
 	"keywords": [],
 	"license": "CC BY-NC-SA 4.0",
 	"author": "ff6347 <hash@ff6347.email> (https://github.com/ff6347)",
+	"bin": {
+		"gic": "./dist/main.js"
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"type": "module",
-	"main": "index.js",
+	"main": "./dist/core.js",
+	"types": "./dist/core.d.ts",
 	"scripts": {
+		"build:cli": "tsc --project tsconfig.build.json",
+		"prepack": "pnpm build:cli",
 		"test:compact": "node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot",
 		"test": "node --test src/tests/*.test.ts",
 		"test:e2e": "playwright test",

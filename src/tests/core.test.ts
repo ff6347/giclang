@@ -1,5 +1,5 @@
 import test, { describe } from "node:test";
-import { parseSource } from "../core.ts";
+import { checkSource, parseSource } from "../core.ts";
 import assert from "node:assert";
 import type { Program } from "../core.ts";
 
@@ -35,5 +35,29 @@ describe("core.parseSource", () => {
 		assert.strictEqual(result.ok, true);
 		const program: Program = result.program;
 		assert.strictEqual(program.type, "Program");
+	});
+});
+
+describe("core.checkSource", () => {
+	test("should analyze valid source without executing it", () => {
+		const actual = checkSource("let value = 1 / 0;");
+
+		assert.deepStrictEqual(actual, { ok: true, diagnostics: [] });
+	});
+
+	test("should return source-located analysis diagnostics", () => {
+		const actual = checkSource("ghost = 1;");
+
+		assert.deepStrictEqual(actual, {
+			ok: false,
+			diagnostics: [
+				{
+					message: "Cannot find name 'ghost'.",
+					line: 0,
+					start: 0,
+					end: 5,
+				},
+			],
+		});
 	});
 });

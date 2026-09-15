@@ -4,6 +4,25 @@ gic-lang is a small c style language with the narrow purpose of creating two dim
 
 It has the deliberately narrow surface. Things like interactivity, typography, or image loading are left out on purpose. It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount of way of doing things. Once students have grasp the basic constructs of programming they are encouraged to move on to more complex tool kits like p5.js, Processing or or even leave the c style languages behind and use VVVV or cables.gl to name a few.
 
+## Command Line
+
+The installed package exposes a `gic` executable. Validate a file without running it:
+
+```sh
+gic check path/to/sketch.gic
+```
+
+`gic check` prints source-located parse and analysis diagnostics to standard error. It uses these stable exit statuses:
+
+| Status | Meaning                                       |
+| ------ | --------------------------------------------- |
+| `0`    | The file is valid.                            |
+| `1`    | The GIC source has a parse or analysis error. |
+| `2`    | The file cannot be read.                      |
+| `64`   | The command usage is invalid.                 |
+
+Run `gic help` for the complete command usage.
+
 ## Credits
 
 Technically the language is based on lox-lang from [craftinginterpreters.com](https://craftinginterpreters.com/) by Robert Nystrom. Conceptually it inherits a lot from [Design by Numbers](https://dbn.media.mit.edu/whatisdbn.html) by [John Maeda](https://maedastudio.com/), [Processing](https://processing.org/) by [Ben Fry](https://www.benfry.com/) and [Casey Reas](https://reas.com/), [p5.js](https://p5js.org/) by [Lauren McCarthy](https://get-lauren.net/), [Basil.js](https://basiljs2.netlify.app/) by [Benedikt Groß](https://benedikt-gross.de/), [Ludwig Zeller](https://www.ludwigzeller.net/), [Ted Davis](https://teddavis.org/).
