@@ -7,51 +7,36 @@ Status: Unresolved
 
 ## Decision Question
 
-Should GIC add more drawing primitives, helper variants, or transform functions
-beyond the current revision 2.2 shape API?
+Should GIC add more drawing primitives, helper variants, or transform functions beyond the current revision 2.2 shape API?
 
 ## Current Baseline
 
-Revision 2.2 defines a fixed 100×100 canvas, style functions, and shape drawing
-functions for point, line, rect, circle, ellipse, triangle, quad, and arc. Its
-additional considerations ask whether extra shapes such as Bezier curves or
-arbitrary polygons are needed and whether transform functions such as rotate,
-translate, or scale should exist.
+Revision 2.2 defines a fixed 100×100 canvas, style functions, and shape drawing functions for point, line, rect, circle, ellipse, triangle, quad, and arc. Its additional considerations ask whether extra shapes such as Bezier curves or arbitrary polygons are needed and whether transform functions such as rotate, translate, or scale should exist.
 
 ## Why This Is a Gate
 
-Drawing APIs define the render backend command model, recording backend
-fixtures, Canvas backend behavior, examples, visual regression coverage, and
-reserved built-in names. Stateful transforms in particular change how every
-subsequent drawing command is interpreted.
+Drawing APIs define the render backend command model, recording backend fixtures, Canvas backend behavior, examples, visual regression coverage, and reserved built-in names. Stateful transforms in particular change how every subsequent drawing command is interpreted.
 
 ## Options and Consequences
 
 - **No expansion**
   - Keeps the drawing surface aligned with revision 2.2.
-  - Requires complex shapes and coordinate reuse to be built from existing
-    primitives.
+  - Requires complex shapes and coordinate reuse to be built from existing primitives.
 - **Extra primitives**
   - Adds selected primitives such as curves, polygons, or paths if chosen.
-  - Requires command-model, backend, and visual-regression updates for each
-    primitive.
+  - Requires command-model, backend, and visual-regression updates for each primitive.
 - **Stateful transforms**
-  - Adds transform state such as translate, rotate, scale, and possibly stack
-    operations.
-  - Introduces ordering and state-reset questions that affect teaching and
-    backend implementation.
+  - Adds transform state such as translate, rotate, scale, and possibly stack operations.
+  - Introduces ordering and state-reset questions that affect teaching and backend implementation.
 - **Limited helper variants**
   - Adds convenience functions or modes without a full transform stack.
-  - May improve common sketches while creating another category of built-in
-    behavior to document.
+  - May improve common sketches while creating another category of built-in behavior to document.
 
 ## Questions Before Choosing
 
 - Which missing drawing operations are needed for early curriculum examples?
-- Should transforms be global state like style functions, scoped to blocks, or
-  unavailable?
-- If transforms exist, is there a stack, reset operation, or per-frame reset
-  rule?
+- Should transforms be global state like style functions, scoped to blocks, or unavailable?
+- If transforms exist, is there a stack, reset operation, or per-frame reset rule?
 - How should angle units interact with arc and trigonometric degree behavior?
 - How many backend test fixtures are needed per new primitive or state rule?
 
@@ -61,16 +46,13 @@ subsequent drawing command is interpreted.
 - Define signatures, coordinate conventions, and state behavior.
 - Update the render command model before backend implementations depend on it.
 - Add recording backend expectations for each selected operation.
-- Add Canvas backend and visual-regression coverage after command behavior is
-  stable.
+- Add Canvas backend and visual-regression coverage after command behavior is stable.
 - Update built-in reserved-name data for any new functions.
 
 ## Unblocks
 
-- Future implementation milestones for any selected extra primitives, helper
-  variants, or transform operations.
-- Future backend fixtures and visual-regression coverage for selected drawing
-  API expansion.
+- Future implementation milestones for any selected extra primitives, helper variants, or transform operations.
+- Future backend fixtures and visual-regression coverage for selected drawing API expansion.
 
 ## Related Guidance
 

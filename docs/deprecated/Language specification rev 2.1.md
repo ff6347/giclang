@@ -66,15 +66,9 @@ All control flow and data flow should be visible in the code. No hoisting, no im
 
 #### Proposed Documentation Comments
 
-GIC should support a small JSDoc-style documentation format for user-defined
-functions, parameters, return values, variables, and reusable library code. The
-planned IDE could display this documentation in hover and completion
-information.
+GIC should support a small JSDoc-style documentation format for user-defined functions, parameters, return values, variables, and reusable library code. The planned IDE could display this documentation in hover and completion information.
 
-This is a proposed feature, not part of the current syntax. GIC-specific
-documentation comments should remain smaller than full JavaScript JSDoc. The
-comment syntax, supported metadata, and representation in the AST or analyzer
-must be specified before implementation.
+This is a proposed feature, not part of the current syntax. GIC-specific documentation comments should remain smaller than full JavaScript JSDoc. The comment syntax, supported metadata, and representation in the AST or analyzer must be specified before implementation.
 
 ### Data Types
 
@@ -275,11 +269,11 @@ A function is either **value-returning** or **void**. This is determined by its 
 
 gic has a simple, flat scoping model:
 
-| Scope          | Description                                                        |
-| -------------- | ------------------------------------------------------------------ |
-| Global         | Top-level variables and functions; names are reserved program-wide |
-| Function-local | Parameters and variables declared inside a function                |
-| Loop-local     | Loop variable in `repeat` (scoped to loop body)                    |
+| Scope | Description |
+| --- | --- |
+| Global | Top-level variables and functions; names are reserved program-wide |
+| Function-local | Parameters and variables declared inside a function |
+| Loop-local | Loop variable in `repeat` (scoped to loop body) |
 
 **Rules:**
 
@@ -387,10 +381,10 @@ loop {
 
 ### Animation Built-ins
 
-| Name             | Type     | Description                                               |
-| ---------------- | -------- | --------------------------------------------------------- |
-| `frameCount`     | Constant | Current frame number (starts at 0, increments each frame) |
-| `frameRate(fps)` | Function | Set target frames per second (default: 60)                |
+| Name | Type | Description |
+| --- | --- | --- |
+| `frameCount` | Constant | Current frame number (starts at 0, increments each frame) |
+| `frameRate(fps)` | Function | Set target frames per second (default: 60) |
 
 **Example using frameCount:**
 
@@ -414,8 +408,8 @@ loop {
 
 The canvas is always 101 pixels wide and 101 pixels high, providing a visual center at (50, 50).
 
-| Function               | Description                                  | Default         |
-| ---------------------- | -------------------------------------------- | --------------- |
+| Function | Description | Default |
+| --- | --- | --- |
 | `background(l, c, h);` | Fill entire canvas with color in OKLCH space | Black (0, 0, 0) |
 
 `background()` can be called multiple times (clears and repaints).
@@ -440,29 +434,29 @@ Color functions are overloaded and accept:
 
 Style functions set the current drawing style. They affect all subsequent shapes until changed.
 
-| Function               | Description                         | Default           |
-| ---------------------- | ----------------------------------- | ----------------- |
-| `fill(l, c, h);`       | Set fill color for shapes           | White (100, 0, 0) |
-| `fill(l, c, h, a);`    | Set fill color with alpha (0-100)   | —                 |
-| `noFill();`            | Disable fill                        | —                 |
-| `stroke(l, c, h);`     | Set stroke (outline) color          | Black (0, 0, 0)   |
-| `stroke(l, c, h, a);`  | Set stroke color with alpha (0-100) | —                 |
-| `noStroke();`          | Disable stroke                      | —                 |
-| `strokeWidth(weight);` | Set stroke thickness in pixels      | 1                 |
+| Function | Description | Default |
+| --- | --- | --- |
+| `fill(l, c, h);` | Set fill color for shapes | White (100, 0, 0) |
+| `fill(l, c, h, a);` | Set fill color with alpha (0-100) | — |
+| `noFill();` | Disable fill | — |
+| `stroke(l, c, h);` | Set stroke (outline) color | Black (0, 0, 0) |
+| `stroke(l, c, h, a);` | Set stroke color with alpha (0-100) | — |
+| `noStroke();` | Disable stroke | — |
+| `strokeWidth(weight);` | Set stroke thickness in pixels | 1 |
 
 ### Shape Drawing
 
 All coordinates are in pixels from top-left origin (0, 0). Canvas is 101×101 pixels.
 
-| Function                                   | Description                                        |
-| ------------------------------------------ | -------------------------------------------------- |
-| `point(x, y);`                             | Draw a single point                                |
-| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)                |
-| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner          |
-| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                     |
-| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)                    |
-| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices                  |
-| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices              |
+| Function | Description |
+| --- | --- |
+| `point(x, y);` | Draw a single point |
+| `line(x1, y1, x2, y2);` | Draw line from (x1, y1) to (x2, y2) |
+| `rect(x, y, width, height);` | Draw rectangle, (x, y) is top-left corner |
+| `circle(x, y, radius);` | Draw circle centered at (x, y) |
+| `ellipse(x, y, width, height);` | Draw ellipse centered at (x, y) |
+| `triangle(x1, y1, x2, y2, x3, y3);` | Draw triangle with three vertices |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);` | Draw quadrilateral with four vertices |
 | `arc(x, y, radius, startAngle, endAngle);` | Draw arc (angles in degrees, 0 = right, clockwise) |
 
 ### Console Output
@@ -475,20 +469,20 @@ All coordinates are in pixels from top-left origin (0, 0). Canvas is 101×101 pi
 
 ### Math Functions
 
-| Function           | Description                                              |
-| ------------------ | -------------------------------------------------------- |
+| Function | Description |
+| --- | --- |
 | `random(min, max)` | Random float between min (inclusive) and max (exclusive) |
-| `randomSeed(n)`    | Set random seed for reproducible outputs                 |
-| `floor(n)`         | Round down to integer                                    |
-| `ceil(n)`          | Round up to integer                                      |
-| `round(n)`         | Round to nearest integer                                 |
-| `abs(n)`           | Absolute value                                           |
-| `min(a, b)`        | Smaller of two values                                    |
-| `max(a, b)`        | Larger of two values                                     |
-| `sin(degrees)`     | Sine (input in degrees)                                  |
-| `cos(degrees)`     | Cosine (input in degrees)                                |
-| `sqrt(n)`          | Square root                                              |
-| `pow(base, exp)`   | Exponentiation                                           |
+| `randomSeed(n)` | Set random seed for reproducible outputs |
+| `floor(n)` | Round down to integer |
+| `ceil(n)` | Round up to integer |
+| `round(n)` | Round to nearest integer |
+| `abs(n)` | Absolute value |
+| `min(a, b)` | Smaller of two values |
+| `max(a, b)` | Larger of two values |
+| `sin(degrees)` | Sine (input in degrees) |
+| `cos(degrees)` | Cosine (input in degrees) |
+| `sqrt(n)` | Square root |
+| `pow(base, exp)` | Exponentiation |
 
 **Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function.
 

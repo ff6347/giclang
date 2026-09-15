@@ -49,11 +49,7 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 
 No grammar or AST changes belong in this milestone.
 
-The interface boundary is browser-to-core: the prototype browser shell calls
-direct core diagnostics and static preview APIs through disposable workers. The
-completed textarea implementation proves this boundary. Monaco replaces the
-input surface in v0.9 roadmap Slice 6 without replacing the core or worker
-pipeline.
+The interface boundary is browser-to-core: the prototype browser shell calls direct core diagnostics and static preview APIs through disposable workers. The completed textarea implementation proves this boundary. Monaco replaces the input surface in v0.9 roadmap Slice 6 without replacing the core or worker pipeline.
 
 ## TDD-oriented Student Checklist
 
@@ -85,6 +81,4 @@ pipeline.
 
 ## Notes / Decision Gates
 
-Both required decisions are accepted, and the textarea-based static milestone
-is complete. Monaco migration and broader assistance remain separate v0.9
-slices so the working source-to-Canvas behavior stays pinned during replacement.
+Both required decisions are accepted, and the textarea-based static milestone is complete. Monaco migration and broader assistance remain separate v0.9 slices so the working source-to-Canvas behavior stays pinned during replacement.

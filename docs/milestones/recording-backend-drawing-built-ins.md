@@ -66,8 +66,7 @@ Interpreter.interpret()
   Command[]
 ```
 
-Style operations are separate commands rather than snapshots attached to shape
-commands. Consumers reconstruct style state by replaying the list in order.
+Style operations are separate commands rather than snapshots attached to shape commands. Consumers reconstruct style state by replaying the list in order.
 
 ## Recording Backend Behavior
 
@@ -112,12 +111,9 @@ Integration-style tests should run small GIC programs and assert the resulting c
 
 ## Resolved Decisions
 
-- Styles are separate commands in source order rather than snapshots attached to
-  shapes.
-- Colors use validated tagged OKLCH or CSS values; browser conversion belongs to
-  the Canvas adapter.
-- Each `background()` call records independently and repaints the full logical
-  canvas when rendered.
+- Styles are separate commands in source order rather than snapshots attached to shapes.
+- Colors use validated tagged OKLCH or CSS values; browser conversion belongs to the Canvas adapter.
+- Each `background()` call records independently and repaints the full logical canvas when rendered.
 
 ## Notes
 

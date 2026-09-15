@@ -77,8 +77,7 @@ x = x + 10;  // Reassignment allowed
 - Variable names: start with letter or underscore, followed by letters, digits, or underscores
 - No `const` or `var` keywords
 
-**Reserved words cannot be used as variable names:**
-`let`, `if`, `else`, `repeat`, `true`, `false`, and all built-in function names.
+**Reserved words cannot be used as variable names:** `let`, `if`, `else`, `repeat`, `true`, `false`, and all built-in function names.
 
 ### Operators
 
@@ -180,11 +179,11 @@ This is equivalent to `for (let i = 0; i < 10; i++)` in JavaScript.
 
 The canvas is always 101 pixel wide and heigh so the canvas has a visual center.
 
-| Function                                                          | Description                                  | Default         |
-| ----------------------------------------------------------------- | -------------------------------------------- | --------------- |
-|                                                                   |                                              |                 |
-| `background(l, c, h);`                                            | Fill entire canvas with color in oklch space | Black (0, 0, 0) |
-|                                                                   |                                              |                 |
+| Function | Description | Default |
+| --- | --- | --- |
+|  |  |  |
+| `background(l, c, h);` | Fill entire canvas with color in oklch space | Black (0, 0, 0) |
+|  |  |  |
 | `background()` can be called multiple times (clears and repaints) |
 
 ### Colors
@@ -199,46 +198,46 @@ The canvas is always 101 pixel wide and heigh so the canvas has a visual center.
 
 Style functions set the current drawing style. They affect all subsequent shapes until changed.
 
-| Function               | Description                       | Default               |
-| ---------------------- | --------------------------------- | --------------------- |
-| `fill(r, g, b);`       | Set fill color for shapes         | White (255, 255, 255) |
-| `fill(r, g, b, a);`    | Set fill color with alpha (0-255) | —                     |
-| `noFill();`            | Disable fill                      | —                     |
-| `stroke(r, g, b);`     | Set stroke (outline) color        | Black (0, 0, 0)       |
-| `stroke(r, g, b, a);`  | Set stroke color with alpha       | —                     |
-| `noStroke();`          | Disable stroke                    | —                     |
-| `strokeWidth(weight);` | Set stroke thickness in pixels    | 1                     |
+| Function | Description | Default |
+| --- | --- | --- |
+| `fill(r, g, b);` | Set fill color for shapes | White (255, 255, 255) |
+| `fill(r, g, b, a);` | Set fill color with alpha (0-255) | — |
+| `noFill();` | Disable fill | — |
+| `stroke(r, g, b);` | Set stroke (outline) color | Black (0, 0, 0) |
+| `stroke(r, g, b, a);` | Set stroke color with alpha | — |
+| `noStroke();` | Disable stroke | — |
+| `strokeWidth(weight);` | Set stroke thickness in pixels | 1 |
 
 ### Shape Drawing
 
 All coordinates are in pixels from top-left origin (0, 0).
 
-| Function                                   | Description                                        |
-| ------------------------------------------ | -------------------------------------------------- |
-| `point(x, y);`                             | Draw a single point                                |
-| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)                |
-| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner          |
-| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                     |
-| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)                    |
-| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices                  |
-| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices              |
+| Function | Description |
+| --- | --- |
+| `point(x, y);` | Draw a single point |
+| `line(x1, y1, x2, y2);` | Draw line from (x1, y1) to (x2, y2) |
+| `rect(x, y, width, height);` | Draw rectangle, (x, y) is top-left corner |
+| `circle(x, y, radius);` | Draw circle centered at (x, y) |
+| `ellipse(x, y, width, height);` | Draw ellipse centered at (x, y) |
+| `triangle(x1, y1, x2, y2, x3, y3);` | Draw triangle with three vertices |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);` | Draw quadrilateral with four vertices |
 | `arc(x, y, radius, startAngle, endAngle);` | Draw arc (angles in degrees, 0 = right, clockwise) |
 
 ### Math Functions
 
-| Function           | Description                                              |
-| ------------------ | -------------------------------------------------------- |
+| Function | Description |
+| --- | --- |
 | `random(min, max)` | Random float between min (inclusive) and max (exclusive) |
-| `floor(n)`         | Round down to integer                                    |
-| `ceil(n)`          | Round up to integer                                      |
-| `round(n)`         | Round to nearest integer                                 |
-| `abs(n)`           | Absolute value                                           |
-| `min(a, b)`        | Smaller of two values                                    |
-| `max(a, b)`        | Larger of two values                                     |
-| `sin(degrees)`     | Sine (input in degrees)                                  |
-| `cos(degrees)`     | Cosine (input in degrees)                                |
-| `sqrt(n)`          | Square root                                              |
-| `pow(base, exp)`   | Exponentiation                                           |
+| `floor(n)` | Round down to integer |
+| `ceil(n)` | Round up to integer |
+| `round(n)` | Round to nearest integer |
+| `abs(n)` | Absolute value |
+| `min(a, b)` | Smaller of two values |
+| `max(a, b)` | Larger of two values |
+| `sin(degrees)` | Sine (input in degrees) |
+| `cos(degrees)` | Cosine (input in degrees) |
+| `sqrt(n)` | Square root |
+| `pow(base, exp)` | Exponentiation |
 
 **Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function.
 

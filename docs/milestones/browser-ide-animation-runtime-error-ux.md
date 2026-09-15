@@ -44,8 +44,7 @@ Extend the selected browser IDE from static preview to animation playback and cl
 - Browser IDE playback for programs with a `loop` block.
 - Stop, restart, or replacement behavior when source edits trigger a new preview.
 - Clear runtime-error presentation for failures that happen during setup or inside `loop`.
-- A visible output panel that presents structured `print` entries in execution order,
-  including output retained before runtime failures.
+- A visible output panel that presents structured `print` entries in execution order, including output retained before runtime failures.
 - Source-location mapping for runtime errors when the failing AST node carries evidence.
 - Confirmation that static programs still run once through the preview path.
 - Alignment with the selected scheduler and backend boundaries from decision documents.
@@ -90,6 +89,4 @@ The milestone relies on the prior `Program` shape, including an optional `loopBl
 
 The browser technology and sandbox decision remains mandatory. If language-service infrastructure is used to move runtime messages through the IDE, the language-service decision governs that routing.
 
-Do not use this milestone to revisit animation syntax, change `loop` lifecycle
-rules, or add export behavior. The static v0.9 desktop and PWA release may ship
-while this milestone remains open.
+Do not use this milestone to revisit animation syntax, change `loop` lifecycle rules, or add export behavior. The static v0.9 desktop and PWA release may ship while this milestone remains open.

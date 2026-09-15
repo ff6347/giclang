@@ -108,11 +108,9 @@ This fragment illustrates the effect only; students should still build the behav
 
 ## Resolved Decisions
 
-- Fractional iterator values use `start + turn * step` with an integer turn
-  counter, avoiding accumulated addition drift.
+- Fractional iterator values use `start + turn * step` with an integer turn counter, avoiding accumulated addition drift.
 - Loop-variable reassignment is rejected by the analyzer.
-- Repeat ends are exclusive and use `< end` for positive steps and `> end` for
-  negative steps.
+- Repeat ends are exclusive and use `< end` for positive steps and `> end` for negative steps.
 
 ## Notes
 

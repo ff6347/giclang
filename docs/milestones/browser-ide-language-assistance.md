@@ -5,19 +5,15 @@
 
 ## Learning Goal
 
-Provide beginner-friendly completion, hover, signature help, syntax
-highlighting, and formatting through Monaco and a browser-neutral GIC service.
+Provide beginner-friendly completion, hover, signature help, syntax highlighting, and formatting through Monaco and a browser-neutral GIC service.
 
 ## Prerequisites
 
-- [Language-service scope](../decisions/language-service-lsp-vscode-scope.md)
-  selects direct diagnostics, formatting, completion, hover, and signature help.
-- [Browser IDE technology](../decisions/browser-ide-technology-sandbox.md)
-  selects Monaco and worker-isolated preview.
+- [Language-service scope](../decisions/language-service-lsp-vscode-scope.md) selects direct diagnostics, formatting, completion, hover, and signature help.
+- [Browser IDE technology](../decisions/browser-ide-technology-sandbox.md) selects Monaco and worker-isolated preview.
 - Monaco static editing, diagnostics, and preview behavior are working.
 - Built-in signatures and reserved names have one shared source of truth.
-- Analyzer-visible declarations and source locations are available at requested
-  positions.
+- Analyzer-visible declarations and source locations are available at requested positions.
 
 ## Concepts to Understand
 
@@ -29,8 +25,7 @@ highlighting, and formatting through Monaco and a browser-neutral GIC service.
 
 ## Included
 
-- Browser-neutral APIs for diagnostics, formatting, completion, hover, and
-  signature help.
+- Browser-neutral APIs for diagnostics, formatting, completion, hover, and signature help.
 - GIC syntax highlighting in Monaco without introducing a second parser.
 - Keyword and built-in completion.
 - Completion for user functions and variables visible at the cursor.
@@ -45,10 +40,7 @@ highlighting, and formatting through Monaco and a browser-neutral GIC service.
 
 No grammar or AST changes belong in this milestone.
 
-Service inputs are source text and source positions. Outputs are plain
-editor-neutral values. Monaco translates those values into its provider APIs.
-No LSP process, transport, filesystem, desktop, or provider dependency enters
-the service.
+Service inputs are source text and source positions. Outputs are plain editor-neutral values. Monaco translates those values into its provider APIs. No LSP process, transport, filesystem, desktop, or provider dependency enters the service.
 
 ## TDD-oriented Student Checklist
 
@@ -58,8 +50,7 @@ the service.
 - Pin hover at valid, incomplete, and unrelated positions.
 - Pin formatting idempotence and parse-equivalent output.
 - Integrate one capability at a time through Monaco and Playwright.
-- Add explicit-format and format-on-save acceptance, including the disabled
-  setting.
+- Add explicit-format and format-on-save acceptance, including the disabled setting.
 
 ## Non-Goals
 
@@ -78,15 +69,12 @@ the service.
 - `pnpm fmt:check`
 - `pnpm lint`
 - Service tests cover all selected capability results and edge cases.
-- Playwright drives Monaco completion, hover, signature help, explicit format,
-  and format-on-save.
+- Playwright drives Monaco completion, hover, signature help, explicit format, and format-on-save.
 - Reserved and out-of-scope names are not offered incorrectly.
 - Formatted valid programs retain equivalent parsed behavior.
 
 ## Notes / Decision Gates
 
-Capability scope is fixed by the accepted decision. Exact Monaco provider
-registration and worker placement are implementation details; they must not
-change service semantics or introduce editor-specific core types.
+Capability scope is fixed by the accepted decision. Exact Monaco provider registration and worker placement are implementation details; they must not change service semantics or introduce editor-specific core types.
 
 This milestone corresponds to v0.9 roadmap Slice 7.

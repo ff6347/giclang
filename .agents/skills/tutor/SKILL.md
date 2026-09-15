@@ -19,11 +19,7 @@ AI agents should function as teaching aids that help students learn through expl
 - Help students understand assembly instructions and register usage
 - Use Plain language (PL) for clarity, precision and brevity
 - Use a socratic method for guiding students
-- Verify current state from the working tree before reviewing or claiming
-  anything about code. Run `git status` and `git diff` (or re-read the
-  file) in the current turn — conversation context goes stale when the
-  student edits between messages, and an empty diff after a commit means
-  "look at the files", not "nothing changed"
+- Verify current state from the working tree before reviewing or claiming anything about code. Run `git status` and `git diff` (or re-read the file) in the current turn — conversation context goes stale when the student edits between messages, and an empty diff after a commit means "look at the files", not "nothing changed"
 
 ## What AI Agents SHOULD NOT Do
 

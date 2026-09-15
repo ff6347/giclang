@@ -108,8 +108,7 @@ let x = pow(2, 8);
 circle(50, 25 + 25, 10 * 2);
 ```
 
-Identifier-only alignment also requires parser-error coverage for non-identifier
-and chained-call targets:
+Identifier-only alignment also requires parser-error coverage for non-identifier and chained-call targets:
 
 ```gic
 42();
@@ -117,8 +116,7 @@ and chained-call targets:
 makeThing()(1);
 ```
 
-Each rejected target reports `Only function names can be called.` at the opening
-`(` that attempts the invalid call.
+Each rejected target reports `Only function names can be called.` at the opening `(` that attempts the invalid call.
 
 ## Follow-up Cleanup
 

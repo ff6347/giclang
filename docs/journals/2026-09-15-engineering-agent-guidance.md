@@ -5,42 +5,22 @@
 
 ## Outcome
 
-The root agent guidance now describes GIC as an active application project
-rather than a specification exercise. Student-tutoring behavior remains
-available as an optional project skill and no longer constrains ordinary
-implementation work.
+The root agent guidance now describes GIC as an active application project rather than a specification exercise. Student-tutoring behavior remains available as an optional project skill and no longer constrains ordinary implementation work.
 
-The documentation-specific guide now reflects the actual specification,
-decision, milestone, plan, journal, and memory structure instead of the early
-unimplemented project layout.
+The documentation-specific guide now reflects the actual specification, decision, milestone, plan, journal, and memory structure instead of the early unimplemented project layout.
 
 ## Repository observations
 
-- [decision] Normal project work uses direct, end-to-end engineering ownership.
-  `.agents/skills/tutor/SKILL.md` is loaded only for explicit tutoring work or
-  the product's Socratic tutor policy.
-- [decision] Static v0.9 application delivery is the active priority; animation
-  remains a non-blocking stretch goal.
-- [technique] The host-neutral public seam is `parseSource`/`runSource` in the
-  core. Recorded drawing commands, structured output, and diagnostics remain
-  plain data across CLI, worker, browser, and future desktop boundaries.
-- [technique] `pnpm test` runs the core suite, while `pnpm test:compact`
-  discovers core and browser-local Node tests. Browser TypeScript has a separate
-  project check.
-- [technique] Browser acceptance uses real Firefox, worker execution, and Canvas
-  pixels. It currently passes 33 tests without test-only DOM markers.
-- [technique] The production browser build loads a separate bundled worker and
-  succeeds independently of the development server.
-- [decision] Source-level acceptance through public seams precedes focused unit
-  behavior. CLI acceptance spawns the real command; browser acceptance drives
-  the real editor and Canvas.
-- [lesson] Exact pixel checks belong on fully covered Canvas regions. Stroke
-  edges need visible-difference assertions because antialiasing is expected.
-- [lesson] Old journal “current state” sections are historical checkpoints.
-  Accepted decisions, active specification, tests, and the assigned git-bug
-  issue take precedence.
-- [decision] Git-bug is the authoritative project issue store; its configured
-  bridge synchronizes rather than creating a parallel issue system.
+- [decision] Normal project work uses direct, end-to-end engineering ownership. `.agents/skills/tutor/SKILL.md` is loaded only for explicit tutoring work or the product's Socratic tutor policy.
+- [decision] Static v0.9 application delivery is the active priority; animation remains a non-blocking stretch goal.
+- [technique] The host-neutral public seam is `parseSource`/`runSource` in the core. Recorded drawing commands, structured output, and diagnostics remain plain data across CLI, worker, browser, and future desktop boundaries.
+- [technique] `pnpm test` runs the core suite, while `pnpm test:compact` discovers core and browser-local Node tests. Browser TypeScript has a separate project check.
+- [technique] Browser acceptance uses real Firefox, worker execution, and Canvas pixels. It currently passes 33 tests without test-only DOM markers.
+- [technique] The production browser build loads a separate bundled worker and succeeds independently of the development server.
+- [decision] Source-level acceptance through public seams precedes focused unit behavior. CLI acceptance spawns the real command; browser acceptance drives the real editor and Canvas.
+- [lesson] Exact pixel checks belong on fully covered Canvas regions. Stroke edges need visible-difference assertions because antialiasing is expected.
+- [lesson] Old journal “current state” sections are historical checkpoints. Accepted decisions, active specification, tests, and the assigned git-bug issue take precedence.
+- [decision] Git-bug is the authoritative project issue store; its configured bridge synchronizes rather than creating a parallel issue system.
 
 ## Baseline verification
 
@@ -56,10 +36,6 @@ The introspected baseline passed:
 
 ## Scope correction
 
-- [decision] Root agent guidance contains only durable project aim, scope,
-  structure, architecture, commands, test seams, and issue-target information.
-- [decision] Collaboration history, person-specific behavior, generic workflow,
-  and skill instructions remain in global guidance, memory, journals, or the
-  relevant skill rather than the project root directive.
-- [decision] Documentation-specific guidance is limited to the structure and
-  authority rules unique to the `docs/` tree.
+- [decision] Root agent guidance contains only durable project aim, scope, structure, architecture, commands, test seams, and issue-target information.
+- [decision] Collaboration history, person-specific behavior, generic workflow, and skill instructions remain in global guidance, memory, journals, or the relevant skill rather than the project root directive.
+- [decision] Documentation-specific guidance is limited to the structure and authority rules unique to the `docs/` tree.

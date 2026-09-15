@@ -60,9 +60,7 @@ Use analyzer tests for representative valid and invalid built-ins, including dia
 
 ## Decisions
 
-- Static inference is limited to direct literals and unary minus applied directly
-  to numeric literals. Variables, calls, groupings, and computed expressions are
-  deferred to runtime validation.
+- Static inference is limited to direct literals and unary minus applied directly to numeric literals. Variables, calls, groupings, and computed expressions are deferred to runtime validation.
 - Obvious signed-literal domains are checked for `sqrt`, `pow`, and `random`.
 - Built-in shadowing remains part of the existing reserved-name analysis.
 - `frameRate` and `frameCount` remain deferred to animation work.

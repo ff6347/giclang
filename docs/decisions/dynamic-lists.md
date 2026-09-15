@@ -7,48 +7,34 @@ Status: Unresolved
 
 ## Decision Question
 
-Should GIC add a dynamic collection type, and if so, what syntax or API should
-it use?
+Should GIC add a dynamic collection type, and if so, what syntax or API should it use?
 
 ## Current Baseline
 
-Rev 2 has three user-visible data types: Number, Boolean, and String. It
-explicitly says there are no arrays, objects, or null. Project memory records
-that creative-coding sketches involving palettes, trails, particles, proximity
-graphs, or retained generated values need some form of collection if they are to
-be expressed directly in GIC.
+Rev 2 has three user-visible data types: Number, Boolean, and String. It explicitly says there are no arrays, objects, or null. Project memory records that creative-coding sketches involving palettes, trails, particles, proximity graphs, or retained generated values need some form of collection if they are to be expressed directly in GIC.
 
 ## Why This Is a Gate
 
-Collections affect the runtime value model, grammar, analyzer diagnostics,
-memory behavior, examples, possible library design, and future import decisions.
-Adding them late may require reworking value representation, built-in
-signatures, and teaching order.
+Collections affect the runtime value model, grammar, analyzer diagnostics, memory behavior, examples, possible library design, and future import decisions. Adding them late may require reworking value representation, built-in signatures, and teaching order.
 
 ## Options and Consequences
 
 - **No lists**
   - Preserves the current minimal value model and avoids new syntax.
-  - Leaves retained multi-value creative-coding patterns outside core GIC or
-    dependent on repeated scalar variables.
+  - Leaves retained multi-value creative-coding patterns outside core GIC or dependent on repeated scalar variables.
 - **Built-in list API**
-  - Adds collections through functions such as creation, append, indexed access,
-    replacement, and length.
-  - Avoids new literal/index grammar but may make common operations more
-    verbose.
+  - Adds collections through functions such as creation, append, indexed access, replacement, and length.
+  - Avoids new literal/index grammar but may make common operations more verbose.
 - **Array-like syntax**
   - Adds familiar list literals and indexing syntax.
   - Requires grammar, parser, analyzer, runtime, and error-message expansion.
 - **Fixed or shape-specific collections**
-  - Adds narrow data structures for specific creative-coding needs, such as
-    palettes or point sequences.
-  - Limits generality but may keep the teaching surface smaller than a full list
-    type.
+  - Adds narrow data structures for specific creative-coding needs, such as palettes or point sequences.
+  - Limits generality but may keep the teaching surface smaller than a full list type.
 
 ## Questions Before Choosing
 
-- What minimum operations are required: creation, append, indexed read, indexed
-  replacement, length, iteration, or removal?
+- What minimum operations are required: creation, append, indexed read, indexed replacement, length, iteration, or removal?
 - Are lists homogeneous, heterogeneous, or restricted by operation?
 - Are nested lists valid?
 - How should out-of-range access fail?
@@ -58,8 +44,7 @@ signatures, and teaching order.
 ## Decision Checklist
 
 - Define whether lists are part of core syntax, built-ins, a library, or absent.
-- Specify user-visible value behavior and any internal representation
-  constraints.
+- Specify user-visible value behavior and any internal representation constraints.
 - Define analyzer and runtime errors for invalid operations.
 - Decide whether list operations are reserved built-in names.
 - Update grammar and parser milestones if syntax changes.
@@ -67,8 +52,7 @@ signatures, and teaching order.
 
 ## Unblocks
 
-- Future implementation milestones for selected dynamic-list syntax, built-in
-  API, or library surface.
+- Future implementation milestones for selected dynamic-list syntax, built-in API, or library surface.
 - Future examples that require retained multi-value creative-coding state.
 - [Decide the standard-library and import model](standard-library-import-model.md)
 

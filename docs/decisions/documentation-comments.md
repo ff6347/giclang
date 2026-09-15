@@ -7,53 +7,37 @@ Status: Unresolved
 
 ## Decision Question
 
-Should GIC support documentation comments, and if so, what syntax, metadata, and
-IDE behavior should they have?
+Should GIC support documentation comments, and if so, what syntax, metadata, and IDE behavior should they have?
 
 ## Current Baseline
 
-Revision 2.2 currently supports `//` single-line comments only and says proposed
-documentation comments are not part of the current syntax. The proposal mentions
-a small GIC-specific documentation format for functions, parameters, return
-values, variables, and reusable library code. Open git-bug `0885b28` tracks
-documentation-comment support.
+Revision 2.2 currently supports `//` single-line comments only and says proposed documentation comments are not part of the current syntax. The proposal mentions a small GIC-specific documentation format for functions, parameters, return values, variables, and reusable library code. Open git-bug `0885b28` tracks documentation-comment support.
 
 ## Why This Is a Gate
 
-Documentation comments affect lexing, parsing or comment retention, AST
-association, analyzer metadata, hover text, completions, examples, and possible
-library documentation. Implementing editor assistance before the format is
-chosen may duplicate or contradict later metadata rules.
+Documentation comments affect lexing, parsing or comment retention, AST association, analyzer metadata, hover text, completions, examples, and possible library documentation. Implementing editor assistance before the format is chosen may duplicate or contradict later metadata rules.
 
 ## Options and Consequences
 
 - **`///` line documentation comments**
   - Keeps comments line-oriented and close to the existing `//` syntax.
-  - Requires rules for grouping adjacent lines and attaching them to
-    declarations.
+  - Requires rules for grouping adjacent lines and attaching them to declarations.
 - **`/** */` block documentation comments**
-  - Provides a familiar documentation-comment shape from JavaScript-like
-    ecosystems.
+  - Provides a familiar documentation-comment shape from JavaScript-like ecosystems.
   - Adds multi-line comment lexing that revision 2.2 currently excludes.
 - **Structured ordinary `//` comments**
-  - Reuses the existing comment form with conventions for tags or declaration
-    proximity.
+  - Reuses the existing comment form with conventions for tags or declaration proximity.
   - May make ordinary comments and documentation metadata harder to distinguish.
 - **External metadata only**
   - Keeps the language syntax unchanged.
-  - Moves documentation association into tools, examples, or library metadata
-    outside `.gic` source.
+  - Moves documentation association into tools, examples, or library metadata outside `.gic` source.
 
 ## Questions Before Choosing
 
-- Which declarations can receive documentation: functions, parameters,
-  variables, built-ins, libraries, or examples?
-- Is metadata free text only, or are tags for parameters and return values
-  supported?
-- Does the lexer preserve documentation comments while discarding ordinary
-  comments?
-- How are comments associated with declarations across blank lines or
-  intervening ordinary comments?
+- Which declarations can receive documentation: functions, parameters, variables, built-ins, libraries, or examples?
+- Is metadata free text only, or are tags for parameters and return values supported?
+- Does the lexer preserve documentation comments while discarding ordinary comments?
+- How are comments associated with declarations across blank lines or intervening ordinary comments?
 - What should hover, completion, or signature help display in the browser IDE?
 
 ## Decision Checklist
@@ -67,10 +51,8 @@ chosen may duplicate or contradict later metadata rules.
 
 ## Unblocks
 
-- Future documentation-comment implementation milestones if documentation
-  comments are selected.
-- Future hover, completion, signature-help, built-in documentation, or library
-  documentation work that chooses to consume documentation-comment metadata.
+- Future documentation-comment implementation milestones if documentation comments are selected.
+- Future hover, completion, signature-help, built-in documentation, or library documentation work that chooses to consume documentation-comment metadata.
 
 ## Related Guidance
 

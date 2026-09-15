@@ -1,14 +1,12 @@
 ## Lexer/ Scanner
 
-The Lexer is also the scanner. It scans the text it gets for tokens. A token is a piece of text with a specific meaning. For example: `,` or `let` or `func` or `(` or `"Hello"`. Whitespace is ignored and also comments. They are only identified by `//`
-The lexer uses a regular language (like in regular expressions) to create tokens from our text. Here we already throw things like `unexpected token` when we for example have a `,` where there shouldn't be one.
+The Lexer is also the scanner. It scans the text it gets for tokens. A token is a piece of text with a specific meaning. For example: `,` or `let` or `func` or `(` or `"Hello"`. Whitespace is ignored and also comments. They are only identified by `//` The lexer uses a regular language (like in regular expressions) to create tokens from our text. Here we already throw things like `unexpected token` when we for example have a `,` where there shouldn't be one.
 
 ## Parser
 
 These tokens are then passed on to the parser. The parser looks for the meaning of the tokens. For example, variables or operators. From these it builds a "tree", also called a "syntax tree" or "abstract syntax tree" (AST). This tree represents the flow of the logic in the language. If there is a problem, the parser reports a `syntax error`.
 
-> [!Important] **recursive descent**??
-> [current location](https://craftinginterpreters.com/parsing-expressions.html#:~:text=A%20recursive%20descent%20parser%20is%20a%20literal%20translation%20of%20the%20grammar%E2%80%99s%20rules%20straight%20into%20imperative%20code%2E%20Each%20rule%20becomes%20a%20function%2E%20The%20body%20of%20the%20rule%20translates%20to%20code%20roughly%20like)
+> [!Important] **recursive descent**?? [current location](https://craftinginterpreters.com/parsing-expressions.html#:~:text=A%20recursive%20descent%20parser%20is%20a%20literal%20translation%20of%20the%20grammar%E2%80%99s%20rules%20straight%20into%20imperative%20code%2E%20Each%20rule%20becomes%20a%20function%2E%20The%20body%20of%20the%20rule%20translates%20to%20code%20roughly%20like)
 
 ## Resolver
 
@@ -16,8 +14,7 @@ The resolver takes care of tracking which variable has which value in which envi
 
 ### Possible enhancements:
 
-> The way the interpreter assumes the variable is in that map feels like flying blind. The interpreter code trusts that the resolver did its job and resolved the variable correctly. This implies a deep coupling between these two classes. In the resolver, each line of code that touches a scope must have its exact match in the interpreter for modifying an environment.
-> I felt that coupling firsthand because as I wrote the code for the book, I ran into a couple of subtle bugs where the resolver and interpreter code were slightly out of sync. Tracking those down was difficult. One tool to make that easier is to have the interpreter explicitly assert—using Java’s assert statements or some other validation tool—the contract it expects the resolver to have already upheld.
+> The way the interpreter assumes the variable is in that map feels like flying blind. The interpreter code trusts that the resolver did its job and resolved the variable correctly. This implies a deep coupling between these two classes. In the resolver, each line of code that touches a scope must have its exact match in the interpreter for modifying an environment. I felt that coupling firsthand because as I wrote the code for the book, I ran into a couple of subtle bugs where the resolver and interpreter code were slightly out of sync. Tracking those down was difficult. One tool to make that easier is to have the interpreter explicitly assert—using Java’s assert statements or some other validation tool—the contract it expects the resolver to have already upheld.
 
 After checking top level return
 
@@ -31,10 +28,7 @@ This is the position where also a type checker could come in.
 
 interpreter takes the code, walks the AST executes it. using the scope depth information from the resolver.
 
-> I love crafting interpreters and mention it on grugbrain:
->  https://grugbrain.dev/#grug-on-parsing
-> but the visitor pattern is nearly always a bad idea IMO: you should just encode the operation in the tree if you control it or create a recursive function that manually dispatches on the argument type if you don't
-> https://news.ycombinator.com/item?id=44304648
+> I love crafting interpreters and mention it on grugbrain:  https://grugbrain.dev/#grug-on-parsing but the visitor pattern is nearly always a bad idea IMO: you should just encode the operation in the tree if you control it or create a recursive function that manually dispatches on the argument type if you don't https://news.ycombinator.com/item?id=44304648
 
 # Visitor Pattern & Writing Interpreters in TypeScript
 

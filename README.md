@@ -2,14 +2,11 @@
 
 gic-lang is a small c style language with the narrow purpose of creating two dimensional generative art. It is born as part of my research in speculative software design at the university of applied science Potsdam. Inspired by the simplicity of Design by Numbers and Processing and the malcontent of the complexity modern software development presents to beginners gic-lang is aimed as a small learning tool in the area of creative coding.
 
-It has the deliberately narrow surface. Things like interactivity, typography, or image loading are left out on purpose.
-It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount of way of doing things.
-Once students have grasp the basic constructs of programming they are encouraged to move on to more complex tool kits like p5.js, Processing or or even leave the c style languages behind and use VVVV or cables.gl to name a few.
+It has the deliberately narrow surface. Things like interactivity, typography, or image loading are left out on purpose. It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount of way of doing things. Once students have grasp the basic constructs of programming they are encouraged to move on to more complex tool kits like p5.js, Processing or or even leave the c style languages behind and use VVVV or cables.gl to name a few.
 
 ## Credits
 
-Technically the language is based on lox-lang from [craftinginterpreters.com](https://craftinginterpreters.com/) by Robert Nystrom.
-Conceptually it inherits a lot from [Design by Numbers](https://dbn.media.mit.edu/whatisdbn.html) by [John Maeda](https://maedastudio.com/), [Processing](https://processing.org/) by [Ben Fry](https://www.benfry.com/) and [Casey Reas](https://reas.com/), [p5.js](https://p5js.org/) by [Lauren McCarthy](https://get-lauren.net/), [Basil.js](https://basiljs2.netlify.app/) by [Benedikt Groß](https://benedikt-gross.de/), [Ludwig Zeller](https://www.ludwigzeller.net/), [Ted Davis](https://teddavis.org/).
+Technically the language is based on lox-lang from [craftinginterpreters.com](https://craftinginterpreters.com/) by Robert Nystrom. Conceptually it inherits a lot from [Design by Numbers](https://dbn.media.mit.edu/whatisdbn.html) by [John Maeda](https://maedastudio.com/), [Processing](https://processing.org/) by [Ben Fry](https://www.benfry.com/) and [Casey Reas](https://reas.com/), [p5.js](https://p5js.org/) by [Lauren McCarthy](https://get-lauren.net/), [Basil.js](https://basiljs2.netlify.app/) by [Benedikt Groß](https://benedikt-gross.de/), [Ludwig Zeller](https://www.ludwigzeller.net/), [Ted Davis](https://teddavis.org/).
 
 ## AI in this Project
 

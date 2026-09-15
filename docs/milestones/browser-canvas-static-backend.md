@@ -97,14 +97,12 @@ A static program should execute once and render once. Tests can either feed comm
 - Use Playwright with Firefox through the real preview UI.
 - Assert visible background, style, and shape behavior from Canvas pixels.
 - Include an import-boundary check if tooling supports it.
-- Keep interpreter command semantics in core tests rather than duplicating them
-  in browser assertions.
+- Keep interpreter command semantics in core tests rather than duplicating them in browser assertions.
 
 ## Resolved Decisions and Constraints
 
 - Playwright with Firefox exercises the real browser Canvas preview.
-- The adapter converts tagged OKLCH values to Canvas styles and passes validated
-  CSS colors through.
+- The adapter converts tagged OKLCH values to Canvas styles and passes validated CSS colors through.
 - DOM typings remain isolated from the platform-neutral core.
 - The adapter consumes the recorded ordered `Command[]` after static execution.
 

@@ -104,10 +104,8 @@ Math built-ins should accept and return GIC numbers. Trigonometric functions use
 
 ## Decisions
 
-- Seeded randomness uses p5.js's 32-bit linear congruential generator with
-  unsigned 32-bit seed coercion and state isolated to one interpreter run.
-- `sqrt` rejects negative inputs. `pow` rejects only results that are `NaN` or
-  infinite; finite negative-base and negative-exponent results remain valid.
+- Seeded randomness uses p5.js's 32-bit linear congruential generator with unsigned 32-bit seed coercion and state isolated to one interpreter run.
+- `sqrt` rejects negative inputs. `pow` rejects only results that are `NaN` or infinite; finite negative-base and negative-exponent results remain valid.
 - `frameCount` timing remains deferred to animation built-ins.
 - Reserved-name analysis rejects writes to constants before interpretation.
 

@@ -117,8 +117,7 @@ A `return` statement ends the current function call immediately:
 - Functions have no closures; each call environment is parented by global scope.
 - Nested function declarations are invalid.
 - Void returns use an internal marker and expose no user-visible `null`.
-- Semantic return-kind analysis determines whether a function is void or
-  value-returning.
+- Semantic return-kind analysis determines whether a function is void or value-returning.
 
 ## Notes
 

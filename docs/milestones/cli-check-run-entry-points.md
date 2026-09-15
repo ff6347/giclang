@@ -5,27 +5,23 @@
 
 ## Learning Goal
 
-Expose stable `check` and `run` commands over the browser-neutral core so GIC
-files can be validated and executed without duplicating language behavior.
+Expose stable `check` and `run` commands over the browser-neutral core so GIC files can be validated and executed without duplicating language behavior.
 
 ## Prerequisites
 
 - Source locations survive parsing, analysis, and runtime failures.
-- The browser-neutral core exposes parsing, analysis, execution, recorded render
-  commands, and structured `print` output.
+- The browser-neutral core exposes parsing, analysis, execution, recorded render commands, and structured `print` output.
 - Recording backend behavior is deterministic.
 - Static browser fixtures provide parity examples.
 
-Animation setup/loop lifecycle and Canvas animation are not prerequisites for
-the v0.9 CLI contract.
+Animation setup/loop lifecycle and Canvas animation are not prerequisites for the v0.9 CLI contract.
 
 ## Concepts to Understand
 
 - A CLI command is an interface boundary, not a second language pipeline.
 - `check` stops after parse and semantic analysis.
 - `run` executes through the same core used by the IDE.
-- Usage, stdout/stderr routing, diagnostic formatting, and exit status are public
-  behavior.
+- Usage, stdout/stderr routing, diagnostic formatting, and exit status are public behavior.
 - Expected GIC failures must not leak raw host-language stack traces.
 
 ## Included
@@ -33,10 +29,8 @@ the v0.9 CLI contract.
 - `gic check <file>` for parse and semantic validation without execution.
 - `gic run <file>` for headless execution through the shared static core.
 - Structured `print` entries presented in execution order by default.
-- `gic run <file> --show-commands` for the same execution plus a stable
-  serialization of recorded drawing commands.
-- Valid, parse-invalid, analysis-invalid, runtime-invalid, missing-file,
-  unsupported-command, missing-argument, and extra-argument behavior.
+- `gic run <file> --show-commands` for the same execution plus a stable serialization of recorded drawing commands.
+- Valid, parse-invalid, analysis-invalid, runtime-invalid, missing-file, unsupported-command, missing-argument, and extra-argument behavior.
 - Package metadata that exposes a usable `gic` executable.
 - Stable help, usage, diagnostics, and success/failure statuses.
 
@@ -44,18 +38,11 @@ the v0.9 CLI contract.
 
 No grammar or AST changes belong in this milestone.
 
-`check` reads one source file and returns after analysis. `run` reads one source
-file and receives the shared execution result, including recorded drawing
-commands and structured output. The CLI formats those plain results; it does not
-instantiate a separate parser, analyzer, or interpreter.
+`check` reads one source file and returns after analysis. `run` reads one source file and receives the shared execution result, including recorded drawing commands and structured output. The CLI formats those plain results; it does not instantiate a separate parser, analyzer, or interpreter.
 
-`run` is headless in v0.9. Default stdout contains ordered GIC `print` output;
-`--show-commands` additionally exposes a documented stable serialization of the
-recorded commands. It creates no image or display window.
+`run` is headless in v0.9. Default stdout contains ordered GIC `print` output; `--show-commands` additionally exposes a documented stable serialization of the recorded commands. It creates no image or display window.
 
-A future shell renderer may use Skia or another backend, but image behavior
-requires a separate decision. It must not silently change this command's output
-contract or add PNG, SVG, GIF, server rendering, or watch mode.
+A future shell renderer may use Skia or another backend, but image behavior requires a separate decision. It must not silently change this command's output contract or add PNG, SVG, GIF, server rendering, or watch mode.
 
 ## TDD-oriented Student Checklist
 
@@ -65,8 +52,7 @@ contract or add PNG, SVG, GIF, server rendering, or watch mode.
 - Add a valid `run` fixture with ordered structured `print` output.
 - Add `--show-commands` coverage with a stable ordered command serialization.
 - Add a runtime failure that preserves prior output and returns a failure status.
-- Add file-not-found, unsupported-command, missing-argument, and extra-argument
-  tests before implementing dispatch.
+- Add file-not-found, unsupported-command, missing-argument, and extra-argument tests before implementing dispatch.
 - Pin help text and status codes without matching unstable implementation detail.
 - Add package-executable smoke coverage.
 
@@ -85,15 +71,10 @@ contract or add PNG, SVG, GIF, server rendering, or watch mode.
 - `pnpm fmt:check`
 - `pnpm lint`
 - Spawned CLI acceptance covers all included outcomes and exact exit statuses.
-- A valid fixture passes `gic check`; invalid source fails clearly; `gic run`
-  executes through the shared core and follows the selected drawing-command
-  presentation.
+- A valid fixture passes `gic check`; invalid source fails clearly; `gic run` executes through the shared core and follows the selected drawing-command presentation.
 
 ## Notes / Decision Gates
 
-The v0.9 `gic run` presentation is fixed as headless `print` output with an
-optional `--show-commands` command serialization. Image rendering remains a
-future shell-backend decision.
+The v0.9 `gic run` presentation is fixed as headless `print` output with an optional `--show-commands` command serialization. Image rendering remains a future shell-backend decision.
 
-This milestone is v0.9 roadmap Slice 5 and precedes Monaco migration so the CLI
-contract protects core behavior during later host integration.
+This milestone is v0.9 roadmap Slice 5 and precedes Monaco migration so the CLI contract protects core behavior during later host integration.

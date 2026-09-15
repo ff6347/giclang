@@ -60,9 +60,7 @@ runSource(source)
   commands: Command[]
 ```
 
-Commands are serializable records, not browser objects. Core interpreter and
-built-in code record this list without depending on DOM types; adapters replay
-it in order.
+Commands are serializable records, not browser objects. Core interpreter and built-in code record this list without depending on DOM types; adapters replay it in order.
 
 ## Command Model
 
@@ -77,15 +75,11 @@ Preserve command order exactly as calls occur in the GIC program.
 
 ## Style and Color Data
 
-Document defaults before implementing drawing tests. A student should know the
-initial fill, stroke, and stroke width. Colors cross the boundary as validated
-tagged OKLCH or CSS values.
+Document defaults before implementing drawing tests. A student should know the initial fill, stroke, and stroke width. Colors cross the boundary as validated tagged OKLCH or CSS values.
 
 ## Recording Seam
 
-The interpreter collects command records directly and exposes them to tests
-through `runSource()`. This recording seam does not simulate Canvas pixels or
-perform browser-specific normalization.
+The interpreter collects command records directly and exposes them to tests through `runSource()`. This recording seam does not simulate Canvas pixels or perform browser-specific normalization.
 
 ## TDD-Oriented Student Checklist
 
@@ -109,8 +103,7 @@ perform browser-specific normalization.
 - Avoid Node `Buffer` in browser-neutral core unless the project explicitly decides otherwise.
 - Colors cross the boundary as validated tagged OKLCH or CSS values.
 - `background` is an ordered command that repaints the full logical canvas.
-- The ordered `Command[]` returned by execution is the deterministic recording
-  boundary; static execution does not need a separate mutable backend object.
+- The ordered `Command[]` returned by execution is the deterministic recording boundary; static execution does not need a separate mutable backend object.
 
 ## Notes
 
