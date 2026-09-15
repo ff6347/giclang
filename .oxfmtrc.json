@@ -11,6 +11,12 @@
 			"options": {
 				"useTabs": false
 			}
+		},
+		{
+			"files": ["AGENTS.md", "docs/AGENTS.md"],
+			"options": {
+				"proseWrap": "never"
+			}
 		}
 	]
 }
