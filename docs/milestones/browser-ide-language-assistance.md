@@ -1,72 +1,74 @@
-<!-- ABOUTME: Explains browser IDE language-assistance features for GIC. -->
-<!-- ABOUTME: Defines language-service decision gates, capability scope, non-goals, and verification. -->
+<!-- ABOUTME: Explains Monaco language assistance and formatting for GIC v0.9. -->
+<!-- ABOUTME: Defines direct service capabilities, shared metadata, non-goals, and verification. -->
 
 # Milestone: Browser IDE Language Assistance
 
 ## Learning Goal
 
-Add beginner-friendly completions, hover or signature help, and definition features only as selected by the language-service decision.
+Provide beginner-friendly completion, hover, signature help, syntax
+highlighting, and formatting through Monaco and a browser-neutral GIC service.
 
 ## Prerequisites
 
-- `../decisions/language-service-lsp-vscode-scope.md` is a blocking decision document for LSP, direct service APIs, and VS Code scope.
-- `../decisions/browser-ide-technology-sandbox.md` is a blocking decision document for the browser integration boundary.
-- [Browser IDE MVP diagnostics and static preview](browser-ide-mvp-diagnostics-static-preview.md) is complete.
-- [Browser IDE animation and runtime-error UX](browser-ide-animation-runtime-error-ux.md) is complete.
-- Built-in signatures and reserved names have a stable source of truth.
-- Semantic function analysis is available for selected user-defined function assistance capabilities.
-- Return analysis is available for selected value-returning and void function assistance capabilities.
-- Variable declaration, assignment, and no-shadowing rules are enforced by the analyzer for selected scope-aware capabilities.
+- [Language-service scope](../decisions/language-service-lsp-vscode-scope.md)
+  selects direct diagnostics, formatting, completion, hover, and signature help.
+- [Browser IDE technology](../decisions/browser-ide-technology-sandbox.md)
+  selects Monaco and worker-isolated preview.
+- Monaco static editing, diagnostics, and preview behavior are working.
+- Built-in signatures and reserved names have one shared source of truth.
+- Analyzer-visible declarations and source locations are available at requested
+  positions.
 
 ## Concepts to Understand
 
-- Language assistance is useful only when it reflects the actual parser and analyzer state.
-- Capability scope must come from the decision document, not from hidden implementation preference.
-- Built-in signatures should be shared data, not duplicated strings in the UI.
-- Scope-aware suggestions should avoid names that are not visible at the cursor.
-- Unselected capabilities should be documented as absent instead of half-implemented.
-
-## Relevant Specification Links
-
-- [LSP Server component](<../Language specification.md#6-lsp-server-lspserverts>)
-- [VS Code Extension](<../Language specification.md#vs-code-extension>)
-- [Syntax Highlighting](<../Language specification.md#syntax-highlighting>)
-- [Built-in Functions](<../Language specification.md#built-in-functions>)
-- [User-Defined Functions](<../Language specification.md#user-defined-functions>)
-- [Scoping Rules](<../Language specification.md#scoping-rules>)
-- [Error Message Guidelines](<../Language specification.md#error-message-guidelines>)
+- Assistance must reflect the actual parser and analyzer state.
+- Monaco is an adapter, not the owner of GIC language knowledge.
+- Built-in signatures and descriptions must not be duplicated in UI code.
+- Scope-aware suggestions exclude declarations that are not visible.
+- Formatting is language behavior and must be deterministic and idempotent.
 
 ## Included
 
-- Built-in completions if the language-service decision selects completion support.
-- Signature or help presentation for built-ins and user-defined calls if selected.
-- User symbol assistance based on analyzer-visible declarations if the language-service decision selects it.
-- Scope-aware exclusion of unavailable or reserved names for selected suggestion or navigation capabilities.
-- Hover and definition behavior only if selected by the language-service decision.
-- Browser smoke coverage for the selected capability set.
+- Browser-neutral APIs for diagnostics, formatting, completion, hover, and
+  signature help.
+- GIC syntax highlighting in Monaco without introducing a second parser.
+- Keyword and built-in completion.
+- Completion for user functions and variables visible at the cursor.
+- Exclusion of reserved or unavailable names where declarations are expected.
+- Concise hover for resolvable GIC symbols and language elements.
+- Active signature and parameter help for built-ins and user-defined calls.
+- Explicit Format Document.
+- Format-on-save enabled by default and configurable.
+- Shared-UI Playwright acceptance for every visible capability.
 
-## Grammar and AST Shape / Interface Boundary
+## Interface Boundary
 
 No grammar or AST changes belong in this milestone.
 
-The service boundary exposes only the selected language-assistance capabilities. Data comes from lexer, parser, analyzer symbols, and built-in signature tables. Do not silently choose between LSP, a direct browser API, or VS Code integration; that choice must come from `../decisions/language-service-lsp-vscode-scope.md`.
+Service inputs are source text and source positions. Outputs are plain
+editor-neutral values. Monaco translates those values into its provider APIs.
+No LSP process, transport, filesystem, desktop, or provider dependency enters
+the service.
 
 ## TDD-oriented Student Checklist
 
-- Start with a failing built-in completion test if completions are selected.
-- Add signature or help behavior for a selected built-in call if selected.
-- Add user symbol assistance for functions or variables that are visible at the cursor only if selected.
-- Add scope-aware exclusion cases for unavailable names and reserved words only for selected capabilities.
-- Add hover or definition tests only when those capabilities are selected.
-- Add a browser smoke check showing suggestions through the selected IDE boundary.
+- Start with failing service tests for each selected capability.
+- Pin built-in completion and signature help from shared metadata.
+- Pin visible and hidden user symbols at nested positions.
+- Pin hover at valid, incomplete, and unrelated positions.
+- Pin formatting idempotence and parse-equivalent output.
+- Integrate one capability at a time through Monaco and Playwright.
+- Add explicit-format and format-on-save acceptance, including the disabled
+  setting.
 
 ## Non-Goals
 
-- Deciding whether the implementation uses LSP, direct service calls, or VS Code APIs.
-- Documentation comments.
-- Fuzzy prompt mode or natural-language code generation.
+- LSP, `gic lsp`, or a VS Code extension.
+- Go-to-definition.
+- Documentation-comment syntax or rendering.
+- Natural-language generation.
 - New built-ins or imports.
-- Extra type inference beyond the analyzer's existing information.
+- Type inference beyond analyzer-owned information.
 - Desktop packaging.
 
 ## Verification
@@ -75,13 +77,16 @@ The service boundary exposes only the selected language-assistance capabilities.
 - `pnpm typecheck`
 - `pnpm fmt:check`
 - `pnpm lint`
-- Service tests cover every selected capability.
-- Browser smoke shows suggestions or help through the selected UI path.
-- Reserved names are excluded from inappropriate suggestions when selected capabilities expose suggestions.
-- Unselected capabilities are documented as absent rather than silently exposed.
+- Service tests cover all selected capability results and edge cases.
+- Playwright drives Monaco completion, hover, signature help, explicit format,
+  and format-on-save.
+- Reserved and out-of-scope names are not offered incorrectly.
+- Formatted valid programs retain equivalent parsed behavior.
 
 ## Notes / Decision Gates
 
-This milestone is blocked until `../decisions/language-service-lsp-vscode-scope.md` selects the language-service shape and capability scope. It also depends on `../decisions/browser-ide-technology-sandbox.md` for browser integration.
+Capability scope is fixed by the accepted decision. Exact Monaco provider
+registration and worker placement are implementation details; they must not
+change service semantics or introduce editor-specific core types.
 
-Documentation comments remain a separate decision or milestone. Do not add them here as a shortcut for hover text.
+This milestone corresponds to v0.9 roadmap Slice 7.

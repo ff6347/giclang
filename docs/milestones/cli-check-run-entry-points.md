@@ -1,74 +1,80 @@
-<!-- ABOUTME: Explains the CLI check and run milestone for the GIC curriculum. -->
-<!-- ABOUTME: Defines command boundaries, prerequisites, non-goals, and verification for student implementation. -->
+<!-- ABOUTME: Explains the required `gic check` and `gic run` command contracts. -->
+<!-- ABOUTME: Keeps CLI validation and execution aligned with the shared static core. -->
 
 # Milestone: CLI Check and Run Entry Points
 
 ## Learning Goal
 
-Expose `check` and `run` command entry points over the completed browser-neutral core pipeline so students can validate and execute `.gic` files from a terminal.
+Expose stable `check` and `run` commands over the browser-neutral core so GIC
+files can be validated and executed without duplicating language behavior.
 
 ## Prerequisites
 
-- Source locations are preserved from lexer and parser output into diagnostics.
-- A browser-neutral core API exists for parse, analyze, interpret, and render-facing execution.
-- The analyzer harness reports syntax and semantic diagnostics in a testable shape.
-- Built-in call errors are defined for wrong names, arity, and argument types.
-- The runtime value, environment, and error model is complete.
-- Setup and `loop` lifecycle behavior is defined by the interpreter lessons.
-- A render backend interface is available for the already-selected CLI `run` backend.
-- A recording backend exists for deterministic non-browser assertions.
-- Browser Canvas static and animation backends exist if the already-selected `run` backend is browser display behavior.
+- Source locations survive parsing, analysis, and runtime failures.
+- The browser-neutral core exposes parsing, analysis, execution, recorded render
+  commands, and structured `print` output.
+- Recording backend behavior is deterministic.
+- Static browser fixtures provide parity examples.
+
+Animation setup/loop lifecycle and Canvas animation are not prerequisites for
+the v0.9 CLI contract.
 
 ## Concepts to Understand
 
-- A CLI command is an interface boundary, not a new language feature.
-- `check` should stop after syntax and semantic validation.
-- `run` should execute the same core pipeline used by tests and browser-facing integrations.
-- Exit status, diagnostics, and usage errors are part of the public contract.
-- Terminal behavior should not hide analyzer or runtime failures behind raw stack traces.
-
-## Relevant Specification Links
-
-- [File Extension](<../Language specification.md#file-extension>)
-- [Implementation Architecture](<../Language specification.md#implementation-architecture>)
-- [Semantic Analyzer component](<../Language specification.md#3-semantic-analyzer-analyzerts>)
-- [Interpreter component](<../Language specification.md#4-interpreter-interpreterts>)
-- [Render Backends](<../Language specification.md#5-render-backends>)
-- [CLI Tool](<../Language specification.md#cli-tool>)
-- [Error Message Guidelines](<../Language specification.md#error-message-guidelines>)
-- [Integration Tests](<../Language specification.md#integration-tests>)
+- A CLI command is an interface boundary, not a second language pipeline.
+- `check` stops after parse and semantic analysis.
+- `run` executes through the same core used by the IDE.
+- Usage, stdout/stderr routing, diagnostic formatting, and exit status are public
+  behavior.
+- Expected GIC failures must not leak raw host-language stack traces.
 
 ## Included
 
-- A `gic check` entry point for validating a `.gic` file without drawing.
-- A `gic run` entry point for executing a `.gic` file through the completed interpreter and an already-selected backend.
-- File-not-found, invalid usage, and help behavior appropriate for a beginner-facing tool.
-- Diagnostic formatting that preserves source evidence from earlier pipeline stages.
-- Tests that prove commands call the existing core pipeline instead of duplicating language logic.
+- `gic check <file>` for parse and semantic validation without execution.
+- `gic run <file>` for execution through the shared static core.
+- Structured `print` entries presented in execution order.
+- Valid, parse-invalid, analysis-invalid, runtime-invalid, missing-file,
+  unsupported-command, missing-argument, and extra-argument behavior.
+- Package metadata that exposes a usable `gic` executable.
+- Stable help, usage, diagnostics, and success/failure statuses.
 
-## Grammar and AST Shape / Interface Boundary
+## Interface Boundary
 
 No grammar or AST changes belong in this milestone.
 
-The boundary is command-oriented: `check` accepts source input and reports syntax or semantic results without creating render output, while `run` accepts source input and executes through the interpreter and an already-selected backend. Exit codes, stdout or stderr routing, and diagnostic formatting are observable CLI interface behavior.
+`check` reads one source file and returns after analysis. `run` reads one source
+file and receives the shared execution result, including recorded drawing
+commands and structured output. The CLI formats those plain results; it does not
+instantiate a separate parser, analyzer, or interpreter.
+
+Before implementation, select and test one presentation contract for drawing
+commands:
+
+1. headless execution with `print` output only;
+2. a textual representation of recorded commands; or
+3. a display backend.
+
+The choice must not silently add PNG, SVG, GIF, server rendering, or watch mode.
 
 ## TDD-oriented Student Checklist
 
-- Start with a failing test where a valid fixture succeeds under `check`.
-- Add a failing test where an invalid fixture fails under `check` with a source-located diagnostic.
-- Add a `run` smoke test that proves execution reaches the already-selected backend.
-- Add file-not-found behavior before polishing happy-path output.
-- Add invalid usage and help behavior for missing or extra arguments.
-- Add assertions for diagnostic formatting without matching an entire long paragraph.
+- Add a failing process-level test for a valid `check` fixture.
+- Add parse-invalid and analysis-invalid tests with source-located diagnostics.
+- Prove `check` does not execute by using source that would fail only at runtime.
+- Add a valid `run` fixture with ordered structured `print` output.
+- Add a runtime failure that preserves prior output and returns a failure status.
+- Add file-not-found, unsupported-command, missing-argument, and extra-argument
+  tests before implementing dispatch.
+- Pin help text and status codes without matching unstable implementation detail.
+- Add package-executable smoke coverage.
 
 ## Non-Goals
 
 - `gic render` or export commands.
 - `gic lsp` or editor integration.
-- Browser IDE behavior.
-- Deno Desktop packaging.
-- New syntax, semantics, built-ins, or runtime rules.
-- A REPL.
+- Browser or desktop window behavior.
+- New syntax, semantics, built-ins, animation behavior, or runtime rules.
+- A REPL or watch mode.
 
 ## Verification
 
@@ -76,10 +82,16 @@ The boundary is command-oriented: `check` accepts source input and reports synta
 - `pnpm typecheck`
 - `pnpm fmt:check`
 - `pnpm lint`
-- Manual fixture behavior: a valid file passes `gic check`, an invalid file fails clearly, and `gic run` executes through the already-selected backend.
+- Spawned CLI acceptance covers all included outcomes and exact exit statuses.
+- A valid fixture passes `gic check`; invalid source fails clearly; `gic run`
+  executes through the shared core and follows the selected drawing-command
+  presentation.
 
 ## Notes / Decision Gates
 
-No new decision gate is required for `check` and `run` if the prior core and backend milestones are complete.
+The only remaining product decision is how `gic run` presents recorded drawing
+commands. Resolve it before writing acceptance tests; do not infer export or
+server scope from the word “run.”
 
-Defer LSP startup and render/export commands to their own decision documents or later milestones. Do not silently add `gic lsp`, PNG, GIF, SVG, or server rendering behavior while implementing this lesson.
+This milestone is v0.9 roadmap Slice 5 and precedes Monaco migration so the CLI
+contract protects core behavior during later host integration.

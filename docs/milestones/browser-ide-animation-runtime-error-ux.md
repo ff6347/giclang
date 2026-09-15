@@ -3,6 +3,8 @@
 
 # Milestone: Browser IDE Animation and Runtime-Error UX
 
+Status: v0.9 stretch; not a static release blocker
+
 ## Learning Goal
 
 Extend the selected browser IDE from static preview to animation playback and clear runtime-error presentation without changing the language model.
@@ -88,4 +90,6 @@ The milestone relies on the prior `Program` shape, including an optional `loopBl
 
 The browser technology and sandbox decision remains mandatory. If language-service infrastructure is used to move runtime messages through the IDE, the language-service decision governs that routing.
 
-Do not use this milestone to revisit animation syntax, change `loop` lifecycle rules, or add export behavior.
+Do not use this milestone to revisit animation syntax, change `loop` lifecycle
+rules, or add export behavior. The static v0.9 desktop and PWA release may ship
+while this milestone remains open.

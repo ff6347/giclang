@@ -16,8 +16,7 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 - The analyzer harness returns beginner-readable diagnostics.
 - Built-in call errors have stable messages and source evidence.
 - The browser Canvas static backend can draw a static 100x100 program.
-- CLI [`check` and `run` behavior](cli-check-run-entry-points.md) is already verified against the core pipeline.
-- [Visual regression verification](example-program-visual-regression.md) exists for deterministic static output.
+- Deterministic browser acceptance verifies static Canvas output through the real editor and worker path.
 
 ## Concepts to Understand
 
@@ -50,7 +49,11 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 
 No grammar or AST changes belong in this milestone.
 
-The interface boundary is browser-to-core: the selected browser shell calls core diagnostics and static preview APIs. Do not assume Monaco, iframes, workers, a bundler, or any other technology unless `../decisions/browser-ide-technology-sandbox.md` explicitly selected it. Do not assume LSP or a direct language-service API unless `../decisions/language-service-lsp-vscode-scope.md` selected that route.
+The interface boundary is browser-to-core: the prototype browser shell calls
+direct core diagnostics and static preview APIs through disposable workers. The
+completed textarea implementation proves this boundary. Monaco replaces the
+input surface in v0.9 roadmap Slice 6 without replacing the core or worker
+pipeline.
 
 ## TDD-oriented Student Checklist
 
@@ -82,6 +85,6 @@ The interface boundary is browser-to-core: the selected browser shell calls core
 
 ## Notes / Decision Gates
 
-This milestone is blocked until both `../decisions/browser-ide-technology-sandbox.md` and `../decisions/language-service-lsp-vscode-scope.md` exist and select the relevant boundaries.
-
-If either decision is unresolved, keep the lesson in planning state. Do not silently choose Monaco, CodeMirror, iframes, workers, LSP, direct APIs, or bundler details inside this milestone.
+Both required decisions are accepted, and the textarea-based static milestone
+is complete. Monaco migration and broader assistance remain separate v0.9
+slices so the working source-to-Canvas behavior stays pinned during replacement.

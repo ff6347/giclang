@@ -1,72 +1,85 @@
-<!-- ABOUTME: Explains conditional Deno Desktop packaging for the completed GIC browser IDE. -->
-<!-- ABOUTME: Defines desktop-shell prerequisites, filesystem boundaries, non-goals, and verification. -->
+<!-- ABOUTME: Explains Deno-first desktop packaging for the shared GIC v0.9 IDE. -->
+<!-- ABOUTME: Defines runtime spikes, narrow bridge behavior, package smoke tests, and fallbacks. -->
 
-# Milestone: Package IDE with Deno Desktop
+# Milestone: Package the IDE with a Deno-First Desktop Shell
 
 ## Learning Goal
 
-Package the completed browser IDE as a desktop app only if the desktop decision explicitly selects Deno Desktop.
+Package the shared static GIC IDE as one dedicated-window application without
+requiring students to manage a terminal, server, or companion process.
 
 ## Prerequisites
 
-- `../decisions/desktop-shell-filesystem.md` is blocking and must explicitly select Deno Desktop before this milestone can proceed.
-- `../decisions/browser-ide-technology-sandbox.md` exists and still applies to the packaged browser IDE.
-- [Browser IDE MVP diagnostics and static preview](browser-ide-mvp-diagnostics-static-preview.md) is complete.
-- [Browser IDE animation and runtime-error UX](browser-ide-animation-runtime-error-ux.md) is complete.
-- [Browser IDE language assistance](browser-ide-language-assistance.md) is complete for the selected capability set.
-- [Visual regression verification](example-program-visual-regression.md) exists for static and any selected animated fixtures.
-- CLI [`check` and `run` behavior](cli-check-run-entry-points.md) is available for comparison and project workflows.
+- [Desktop shell and filesystem](../decisions/desktop-shell-filesystem.md)
+  defines the Deno-first path, narrow bridge, file model, credentials, and
+  fallback order.
+- [Browser IDE technology](../decisions/browser-ide-technology-sandbox.md)
+  defines the shared Monaco and worker boundaries.
+- The dedicated-shell spike proves the selected runtime and version on macOS
+  and Windows.
+- Monaco static preview, language assistance, layout, files, recovery, examples,
+  and exports are complete through the shared UI.
+- CLI `check` and `run` behavior is available for core parity.
+
+Animation is not a prerequisite for the static v0.9 package.
 
 ## Concepts to Understand
 
-- Desktop packaging should wrap the existing browser IDE instead of forking behavior.
-- Filesystem permissions are a product boundary, not an implementation detail to guess.
-- Open, save, and project-root behavior must follow the desktop-shell decision.
-- A packaged app should preserve diagnostics, preview, animation, and language assistance behavior.
-- If Deno Desktop is not selected, this lesson remains blocked or must be renamed and re-scoped.
-
-## Relevant Specification Links
-
-- [Project Structure](<../Language specification.md#project-structure>)
-- [Implementation Architecture](<../Language specification.md#implementation-architecture>)
-- [File Extension](<../Language specification.md#file-extension>)
-- [Example Programs](<../Language specification.md#example-programs>)
-- [Live Preview Panel](<../Language specification.md#live-preview-panel>)
-- [CLI Tool](<../Language specification.md#cli-tool>)
+- Packaging hosts the shared IDE; it does not create a desktop fork.
+- Privileged filesystem and credential operations cross one narrow typed bridge.
+- The webview must not receive raw credentials or broad shell access.
+- A built package must work without development assets or a separately started
+  process.
+- Runtime evidence, not preference, controls movement through the fallback
+  order.
 
 ## Included
 
-- A packaging path for the existing browser IDE when Deno Desktop is explicitly selected.
-- Packaged asset loading smoke coverage.
-- `.gic` file open and save behavior following the selected filesystem model.
-- Diagnostics, static preview, animation, runtime-error UX, and language assistance smoke checks inside the packaged app.
-- Packaging metadata and version checks appropriate to the selected desktop shell.
-- Permission checks that confirm filesystem access stays within the decision boundary.
+- Deno-first packaging for macOS and Windows, with Linux best-effort.
+- Packaged asset loading and application metadata.
+- Native Open, Save, and Save As dialogs for one `.gic` document.
+- Recent files, dirty state, discard warnings, format-on-save, examples, and
+  private recovery.
+- Narrow settings, recovery, workspace, credential, external-launch, and
+  lifecycle operations.
+- Shared diagnostics, static preview, output, language assistance, layout, PNG,
+  and standalone HTML behavior.
+- Packaged smoke tests that use real files and no development server.
+- A recorded switch to the next fallback if Deno evidence fails.
 
-## Grammar and AST Shape / Interface Boundary
+Tutor provider implementation and signed release installers remain later slices,
+but the bridge must reserve only their accepted privileged operations.
+
+## Interface Boundary
 
 No grammar or AST changes belong in this milestone.
 
-The interface boundary is shell-to-IDE: the desktop shell packages the existing browser IDE without changing language behavior. Filesystem permissions, open-save flows, project-root rules, and any native bridge surface must follow `../decisions/desktop-shell-filesystem.md`.
+The webview requests specific user actions and receives operation-specific plain
+data. The host owns dialogs, authorized file paths, settings/recovery storage,
+workspace files, credential persistence, callback handling, and application
+lifecycle. No generic shell command or unrestricted read/write method is
+exposed.
 
 ## TDD-oriented Student Checklist
 
-- Confirm the desktop decision explicitly selects Deno Desktop before writing packaging work.
-- Add a failing packaged-asset smoke test or checklist item before wiring the shell.
-- Add file open and save smoke coverage for `.gic` files.
-- Add diagnostics and static preview smoke checks in the packaged app.
-- Add animation and runtime-error smoke checks in the packaged app.
-- Add packaging metadata and version checks.
+- Complete the disposable shell spike before production bridge work.
+- Start with bridge contract tests against temporary real directories.
+- Package built UI assets and launch without a development server.
+- Add native `.gic` open/save round trips and cancellation cases.
+- Add recovery and settings restart coverage.
+- Prove webview code cannot request arbitrary credentials or shell execution.
+- Run the same static source through CLI and packaged UI for result parity.
+- Run clean macOS and Windows package smoke checks.
 
 ## Non-Goals
 
-- Selecting Deno Desktop.
-- Broad filesystem access outside the selected permissions model.
 - Rebuilding or forking the IDE for desktop.
+- Animation as a static release prerequisite.
+- A built-in updater.
+- Final provider login implementation.
+- Broad filesystem or shell access.
 - Mobile packaging.
-- Auto-update systems or installers.
-- Node or server render export.
-- VS Code extension packaging.
+- CLI export or server rendering.
 
 ## Verification
 
@@ -74,14 +87,20 @@ The interface boundary is shell-to-IDE: the desktop shell packages the existing 
 - `pnpm typecheck`
 - `pnpm fmt:check`
 - `pnpm lint`
-- The packaged app launches according to the desktop-shell decision.
-- `.gic` open and save behavior follows the selected filesystem model.
-- Static and animated examples match browser IDE behavior.
-- Diagnostics and selected language assistance still work after packaging.
-- Permissions remain limited to the documented desktop boundary.
+- The package launches without a development server.
+- Real `.gic` open/save, recovery, examples, layout, and exports match shared UI
+  behavior.
+- Static diagnostics, output, preview, and language assistance survive
+  packaging.
+- macOS and Windows smoke checks pass; Linux results are recorded.
+- Bridge and credential boundaries match the accepted desktop decision.
 
 ## Notes / Decision Gates
 
-`../decisions/desktop-shell-filesystem.md` is mandatory and must explicitly choose Deno Desktop. If the decision is absent, unresolved, or chooses a different shell, this milestone remains blocked or must be renamed and re-scoped.
+Deno remains the implementation target only while Spikes A and B in the
+[v0.9 roadmap](../plans/vertical-slice-roadmap.md) support it. If evidence fails,
+record the reason and move through the accepted narrow-port, Electron, then
+Tauri-plus-sidecar order without rewriting the shared UI.
 
-Do not use this lesson to choose a desktop technology or expand filesystem access beyond the decision document.
+This milestone corresponds primarily to v0.9 roadmap Slice 12. Signing and final
+installers belong to Slice 17.

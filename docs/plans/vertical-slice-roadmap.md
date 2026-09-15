@@ -1,407 +1,462 @@
-<!-- ABOUTME: Plans the transition from layer-by-layer implementation to executable vertical product slices. -->
-<!-- ABOUTME: Preserves every planned capability while delivering an experimentable browser runtime early. -->
-
-# Vertical Slice Roadmap
-
-## Purpose
-
-Reorder the remaining GIC work around user-visible capabilities rather than
-finishing the analyzer, interpreter, rendering, and editor as separate layers.
-Each slice must leave a real program working through every layer it needs.
-
-This roadmap changes delivery order, not product scope. The open items in
-[`docs/LESSONS.md`](../LESSONS.md) remain the feature-completeness ledger. A
-feature stays unchecked there until its full milestone criteria are satisfied,
-even when an earlier slice implements part of it.
-
-Decision documents also remain in scope. Because several decisions present
-mutually exclusive options, preserving them means resolving each gate
-explicitly and implementing the selected capability where applicable; it does
-not mean implementing every option in a decision document.
-
-## Transition Point
-
-The horizontal analyzer phase ends after
-[functions, calls, and arity](../milestones/semantic-functions-calls-arity.md).
-Return and function-kind analysis was also completed before vertical slicing
-began; Slice 4 consumes that completed analyzer behavior rather than rebuilding
-it. At this point GIC has:
-
-- a lexer, parser, AST, and source-located parser diagnostics;
-- a browser-neutral parsing API;
-- built-in signature metadata and reserved names;
-- semantic traversal, lexical scopes, variable rules, and user-function call
-  resolution;
-- parser support for variables, expressions, conditionals, `repeat`, functions,
-  returns, and the program-level `loop` tail.
-
-Do not finish the remaining semantic milestones as another horizontal phase.
-Move their rules into the slices that make those rules observable:
-
-- return analysis belongs with executable functions;
-- repeat immutability and numeric rules belong with executable repetition;
-- built-in argument analysis belongs with executable built-ins;
-- animation-specific analysis belongs with executable animation.
-
-## Delivery Rules
-
-1. Start each slice with a failing acceptance test expressed as GIC source and
-   an observable result: diagnostics, runtime values, render commands, or
-   browser behavior.
-2. Add only the lower-level tests needed to isolate the next behavior. Avoid
-   repeating the same contract at every layer.
-3. Use real parser, analyzer, interpreter, and backend paths in integration
-   tests. The recording backend is a real deterministic backend, not a mock.
-4. Keep the language core free of DOM, Canvas, editor, and desktop APIs.
-5. Do not generalize a boundary beyond the current slice unless the next known
-   slice already requires it.
-6. Keep all quality gates green between behaviors. User-facing slices also need
-   browser verification following the `e2e-testing` skill.
-7. Keep `docs/LESSONS.md` truthful: record partial work in the session journal,
-   not by checking an incomplete horizontal milestone.
-8. Finish each slice with an experiment Fabian can run, a small example, updated
-   durable documentation, atomic commits, and a pushed branch.
-9. Work in a feature branch/worktree, never directly in `main`. Follow the
-   `worktree`, `commit`, `reflect`, and `review` skills.
-10. Preserve the teaching boundary: Fabian writes and understands language
-    behavior. Agents guide TDD, review code, and handle agreed mechanical work.
-
-## Slice 0: Choose the Thin Browser Path
-
-**Goal:** Make the minimum architecture decisions needed to deliver visible
-output without deciding every future integration.
-
-Resolve, with Fabian, the blocking parts of:
-
-- [browser IDE technology and sandbox](../decisions/browser-ide-technology-sandbox.md);
-- [language-service, LSP, and VS Code scope](../decisions/language-service-lsp-vscode-scope.md).
-
-Timebox this gate to one working session. The decisions need only state:
-
-- the first editor shell;
-- a provisional main-thread, worker, or iframe execution boundary;
-- the cancellation seam needed before recursion and animation arrive;
-- how source changes trigger and replace a preview;
-- whether the browser calls a direct shared service API first;
-- the first browser test harness.
-
-Prefer the smallest reversible route that can later gain language assistance.
-Explicitly defer policies that Slice 1 cannot exercise; revisit cancellation
-before functions and animation. Do not add LSP, VS Code, desktop packaging, or
-a sophisticated editor merely to produce the first preview.
-
-**Done when:** the two decision documents select enough provisional boundaries
-for Slice 1, and a future agent no longer needs to choose browser architecture
-while writing runtime code.
-
-**Estimate:** 1 active day.
-
-## Slice 1: First Static Drawing
-
-**Experiment:** A valid program containing `background(...)` and `circle(...)`
-produces visible output; an invalid call produces a source-located diagnostic.
+<!-- ABOUTME: Defines independently testable vertical slices for the GIC v0.9 workshop release. -->
+<!-- ABOUTME: Separates static release gates, risk spikes, optional tutor work, and deferred animation. -->
 
-**Work through the stack:**
+# GIC v0.9 Vertical Slice Roadmap
 
-- expose a browser-neutral check/analyze entry point;
-- establish the minimal runtime value and runtime-error vocabulary;
-- establish one ordinary callable-dispatch seam that selected built-ins use and
-  later user functions can join without a syntax exception;
-- interpret literals, expression statements, identifier call targets, and
-  selected built-in calls;
-- expose a static run-once lifecycle entry point that animation can extend;
-- validate the selected drawing calls from the shared built-in registry;
-- define the first render command records;
-- implement a recording backend for those commands;
-- translate those commands to a 100×100 browser Canvas;
-- connect the selected minimal browser shell to diagnostics and preview.
-
-**Acceptance criteria:**
-
-- the acceptance program produces exact recording commands;
-- the same program renders visibly in the real browser path;
-- wrong built-in arity is reported without executing or showing stale output;
-- browser-facing errors contain no raw JavaScript stack trace;
-- the core has no browser imports;
-- parsing, analysis, runtime, recording, and Canvas use one shared pipeline.
-
-Only the built-ins needed by the acceptance program must work. Do not claim the
-full built-in, recording-backend, Canvas, or browser-IDE milestones yet.
-
-**Estimate:** 5–8 active days.
-
-## Slice 2: Computed Static Drawing
-
-**Experiment:** A sketch computes shape properties with variables, arithmetic,
-assignment, and an `if` branch, then updates the static preview.
+## Product Target
 
-**Work through the stack:**
-
-- complete the runtime environment and nearest-owner assignment behavior;
-- interpret literals, grouping, unary, binary, logical, and identifier
-  expressions;
-- execute declarations, assignments, and conditionals with revision 2.2 block
-  scopes; the active specification overrides the stale no-block-scope wording
-  in `interpreter-conditionals.md`;
-- add runtime operand and condition diagnostics;
-- extend analysis only where this slice needs inferable operand or call checks;
-- refresh or invalidate browser output after an edit.
-
-**Acceptance criteria:**
-
-- computed values affect recorded and visible geometry;
-- only the selected conditional branch emits commands;
-- block-local declarations do not leak;
-- invalid dynamic operands fail through GIC runtime diagnostics;
-- editing valid source changes the preview, while invalid source marks or clears
-  stale output according to Slice 0's decision.
-
-This slice should complete the runtime value/environment model and the
-expression, variable, assignment, and conditional interpreter milestones.
-
-**Estimate:** 5–8 active days.
-
-## Slice 3: Repeated Pattern
-
-**Experiment:** A `repeat` statement draws a deterministic row or grid of
-shapes.
-
-**Work through the stack:**
-
-- finish repeat-variable semantic rules, including read-only iteration values;
-- execute positive, negative, default, and fractional steps;
-- evaluate bounds exactly once and reject zero step at runtime;
-- complete current style, color, canvas, and shape built-ins;
-- complete recording-backend command behavior and static Canvas translation;
-- add a deterministic example fixture.
-
-**Acceptance criteria:**
-
-- a nested or repeated drawing fixture produces exact ordered commands;
-- the browser shows the same static result represented by those commands;
-- assignment to the repeat variable is diagnosed;
-- loop-local values do not leak and outer mutations persist;
-- valid and invalid fixtures behave consistently through the browser check and
-  preview path;
-- all current drawing commands have recording and Canvas coverage.
-
-The combined repeat/animation semantic milestone remains open until Slice 5
-completes its `loop` and `frameCount` rules.
-
-**Estimate:** 5–8 active days.
-
-## Slice 4: Reusable Sketch Functions
-
-**Experiment:** A user-defined function computes or draws a repeated motif, and
-a seeded random program reproduces the same result.
+GIC v0.9 is a workshop-ready environment for static generative graphics:
 
-**Work through the stack:**
+- a dedicated-window desktop IDE for macOS and Windows;
+- a tutor-less installable offline PWA;
+- a browser-neutral language core and language service;
+- Monaco editing, Canvas preview, diagnostics, and structured output;
+- one-document `.gic` file, recovery, example, PNG, and standalone HTML
+  workflows;
+- optional Socratic tutoring through Codex or OpenCode; and
+- stable `gic check` and `gic run` CLI entry points.
 
-- use the completed return-placement, required-return, and void/value-kind analysis;
-- execute function declarations, argument binding, calls, recursion, and early
-  returns;
-- preserve return propagation through conditionals and repeats;
-- reject void calls in value contexts;
-- complete built-in arity, literal-type, and confidently inferable domain
-  diagnostics;
-- implement `PI`, `WIDTH`, `HEIGHT`, math, print, and seeded randomness through
-  the ordinary callable path;
-- add runtime guards matching static built-in contracts.
-
-**Acceptance criteria:**
-
-- a drawing helper can be declared and called through normal GIC source;
-- local call environments do not leak and globals behave according to the
-  specification;
-- early return exits nested control flow;
-- void/value misuse is diagnosed before execution when inferable;
-- seeded random output is repeatable;
-- every current pure built-in is exercised through normal call dispatch.
+Animation is a stretch goal. It does not block v0.9.
 
-This slice consumes the completed return-analysis milestone and should close the
-function interpreter and pure built-in milestones. It completes non-animation
-built-in call analysis, but the combined
-built-in semantic milestone remains open until Slice 5 resolves `frameCount`
-and `frameRate` policy.
-
-**Estimate:** 7–10 active days.
-
-## Slice 5: Animated Sketch
-
-**Experiment:** Setup runs once and a `loop` block draws changing frames using
-`frameCount`.
-
-**Work through the stack:**
-
-- finish semantic rules for the unique tail loop and animation-only names;
-- finish the animation portion of built-in call analysis, then close that
-  combined semantic milestone;
-- separate setup from manually driven frame execution;
-- preserve globals while recreating loop-block locals each frame;
-- implement `frameCount`, `frameRate`, and the test scheduler seam;
-- add the browser animation adapter over the tested lifecycle;
-- define stop, replacement, restart, throttling, and per-frame command behavior;
-- present setup and frame runtime errors at source locations;
-- stop old execution when source changes.
-
-**Acceptance criteria:**
-
-- setup side effects happen once;
-- manually stepping frames is deterministic in core tests;
-- visible browser frames change using `frameCount`;
-- editing an animated sketch does not leave duplicate schedulers running;
-- stop and restart follow the selected policy;
-- runtime failure stops or continues animation according to the documented
-  decision and never crashes the editor shell.
-
-This slice should close loop semantics, setup/frame lifecycle, animation
-built-ins, animated Canvas, and browser animation/runtime-error milestones.
-
-**Estimate:** 7–12 active days.
-
-## Slice 6: Experiment-Ready Browser IDE
-
-**Goal:** Turn the thin shell grown by Slices 1–5 into the coherent environment
-Fabian will use for experiments.
-
-**Work through the stack:**
-
-Complete prerequisites in this order before claiming the browser IDE milestone:
-
-- finish `gic check` and `gic run` over the shared core and selected backend;
-- curate static and animated examples, then add deterministic command and
-  selected visual-regression coverage;
-- complete diagnostics update/clear behavior and static-preview UX;
-- add only the language-assistance capabilities selected in Slice 0;
-- derive built-in assistance from the shared registry;
-- derive user-symbol assistance from parser/analyzer information rather than a
-  duplicate symbol model;
-- document the normal experiment workflow.
-
-**Acceptance criteria:**
-
-- a beginner can edit, diagnose, run, stop, and restart static and animated
-  sketches without using developer tools;
-- selected completion, signature, hover, or definition capabilities reflect
-  actual scope and signatures;
-- examples pass `gic check` and produce documented deterministic output;
-- browser smoke coverage exercises the real shell and preview path.
-
-This slice should close the browser IDE MVP, selected language assistance, and
-example/visual-regression milestones.
-
-**Estimate:** 5–10 active days, depending on the assistance selected in Slice 0.
-
-## Slice 7: Distribution and Export
-
-Treat distribution as user workflows, not platform layers.
-
-1. Resolve the
-   [desktop shell and filesystem decision](../decisions/desktop-shell-filesystem.md).
-2. If Deno Desktop is selected, package the existing browser IDE without
-   forking its language behavior; verify open, edit, preview, save, and restart
-   as one workflow.
-3. Resolve the
-   [optional export/server-render decision](../decisions/cli-export-server-render-backends.md).
-4. If export is selected, implement one end-to-end export workflow from GIC
-   source to the selected artifact before adding another format.
-
-Desktop and export remain independent: selecting or rejecting one must not
-silently decide the other.
-
-## Slice 8: Language Growth
-
-The remaining design gates become separate vertical product slices after the
-revision 2.2 experiment environment works. Do not combine them into one
-horizontal “revision 3” implementation phase.
-
-Recommended order:
-
-1. [Dynamic lists](../decisions/dynamic-lists.md): choose the model, then make
-   one retained-state sketch work through syntax/API, analysis, runtime,
-   diagnostics, editor assistance, and examples.
-2. [Built-in math expansion](../decisions/built-in-math-expansion.md): add only
-   the selected helpers through registry, analysis, runtime, assistance, and an
-   example that needs them.
-3. [Drawing APIs and transforms](../decisions/additional-drawing-apis-transforms.md):
-   add each selected command through recording, Canvas, animation policy, and
-   visual verification.
-4. [Documentation comments](../decisions/documentation-comments.md): carry one
-   documented function from source retention through analyzer metadata to
-   hover/signature presentation.
-5. [Standard library and imports](../decisions/standard-library-import-model.md):
-   decide after lists, then make one reusable helper cross the selected module
-   boundary through browser and CLI workflows.
-6. [Fuzzy prompt-oriented mode](../decisions/fuzzy-prompt-oriented-language-mode.md):
-   keep strict `.gic` deterministic and implement the selected assistant or
-   conversion workflow as a visibly separate mode.
-
-Each accepted extension needs its own plan after its decision is resolved.
-Rejecting or deferring an option must be recorded explicitly rather than
-silently dropping it.
-
-## Feature-to-Slice Map
-
-| Existing open area                                | Delivery slice                                        |
-| ------------------------------------------------- | ----------------------------------------------------- |
-| Return and function-kind analysis                 | Completed before Slice 0; consumed by 4               |
-| Repeat and program-loop analysis                  | 3 and 5                                               |
-| Built-in call analysis                            | 1 incrementally; non-animation rules in 4; close in 5 |
-| Runtime value, environment, and errors            | 1 incrementally; complete in 2                        |
-| Expressions, variables, assignments, conditionals | 2                                                     |
-| Repeat execution                                  | 3                                                     |
-| Functions and returns                             | 4                                                     |
-| Setup and frame lifecycle                         | 5                                                     |
-| Pure built-ins                                    | 4                                                     |
-| Render interface and recording backend            | 1 incrementally; complete in 3                        |
-| Drawing/style/canvas built-ins                    | 1 incrementally; complete in 3                        |
-| Animation built-ins and browser animation         | 5                                                     |
-| Static Canvas                                     | 1 incrementally; complete in 3                        |
-| CLI check/run                                     | 6, after runtime and animation prerequisites          |
-| Examples and visual regression                    | Begin in 3; complete in 6                             |
-| Browser technology and service decisions          | 0                                                     |
-| Browser IDE static preview                        | Begin in 1; complete in 6                             |
-| Browser IDE animation/runtime UX                  | 5                                                     |
-| Browser IDE language assistance                   | 6                                                     |
-| Desktop decision and packaging                    | 7                                                     |
-| Lists, math, drawing, docs, imports, fuzzy mode   | 8, one slice each                                     |
-| Optional export/server rendering                  | 7                                                     |
-
-## Expected Checkpoints
-
-The roadmap preserves the full long-term scope while moving useful feedback
-forward:
-
-- after Slice 1, Fabian can see the first real GIC drawing in a browser;
-- after Slice 3, Fabian can experiment with useful static generative patterns;
-- after Slice 5, Fabian can experiment with the revision 2.2 animation model;
-- after Slice 6, the browser environment is a coherent first product;
-- Slices 7 and 8 extend distribution and language scope without blocking that
-  product.
-
-Slices 0–1 should take roughly 6–10 active days. Slices 0–3 should take roughly
-16–26 active days. An experiment-ready animated browser product through Slice 6
-should take roughly 35–58 active days. These are planning ranges, not deadlines;
-review them after every completed slice using observed delivery time.
-
-## First Actions for the Implementing Agent
-
-1. Verify the current worktree and recent commits; do not rely on this plan's
-   transition snapshot.
-2. Confirm the function-call analyzer milestone is committed, pushed, and green.
-3. Review the active specification and every milestone linked by Slice 0 and
-   Slice 1. Reconcile stale milestone wording against revision 2.2 before tests
-   are written.
-4. Facilitate the Slice 0 decisions with Fabian; do not choose the browser or
-   sandbox architecture silently.
-5. Convert Slice 1 into a small, testable implementation plan with one acceptance
-   program and explicit browser verification.
-6. Ask Fabian to review that slice plan before implementation begins.
-
-## Plan Completion
-
-This roadmap is complete when every current `docs/LESSONS.md` item has been
-resolved and all selected capabilities have shipped through an experimentable
-workflow. Once complete, remove this plan as required for completed files under
-`docs/plans/`; consolidate durable architectural decisions into the
-specification, decision records, and `docs/MEMORY.md`.
+The full product requirements are tracked by git-bug issue `60b2077`,
+**PRD: GIC v0.9 workshop environment**.
+
+## Current Baseline
+
+Slices 0 through 4 are complete. The shared TypeScript core parses, analyses,
+and executes static GIC programs, records drawing commands, captures structured
+`print` output, and supports reusable functions, returns, recursion, math, and
+seeded randomness. The browser preview runs programs in disposable workers and
+renders recorded commands to Canvas with timeout protection.
+
+The existing textarea browser surface is an implementation baseline, not the
+v0.9 editor.
+
+## Accepted Product Boundaries
+
+- The desktop IDE is the primary distribution; the PWA is secondary.
+- Deno Desktop is the first shell candidate. Runtime evidence may trigger the
+  documented narrow-port, Electron, or Tauri-plus-sidecar fallback order.
+- The core authoring experience never depends on tutor availability.
+- Desktop and PWA reuse one shared UI and browser-neutral core.
+- The language service is direct and browser-neutral; LSP and VS Code are later
+  adapters, not v0.9 deliverables.
+- The desktop and PWA each edit one document at a time.
+- Explicit saving and private recovery snapshots are separate operations.
+- Standalone HTML is one offline, editable, direct-`file://` artifact.
+- Tutor providers are contacted only after explicit question submission.
+- Tutor policy is Socratic and reinforced by having no write, shell, or web
+  tools.
+- User-modified managed support files are never overwritten.
+- CLI export and server-render commands remain out of scope, but `gic check`
+  and `gic run` are required.
+
+## Shared Test Seams
+
+Every production slice must terminate at one or more of these seams:
+
+1. **Core and CLI:** deterministic unit/integration tests plus spawned CLI
+   processes asserting output, diagnostics, and exit status.
+2. **Shared UI:** Playwright drives Monaco and visible application behavior.
+3. **Desktop boundary:** narrow bridge contract tests use temporary real files;
+   packaged builds receive macOS and Windows smoke tests.
+4. **Standalone export:** generated files open directly through `file://` in
+   Chromium, Firefox, and WebKit.
+5. **Tutor boundary:** deterministic provider tests cover context, policy,
+   sessions, and credentials; real providers receive explicit login smoke tests.
+6. **PWA lifecycle:** install, offline restart, recovery, and controlled update
+   activation are tested as application behavior.
+
+Tests must use real parser, analyzer, interpreter, storage, worker, and Canvas
+boundaries where practical. Expected failures must be captured and asserted;
+raw stack traces and unhandled errors are not acceptable output.
+
+## Completed Foundations
+
+### Slice 0: Core language platform
+
+**Outcome:** Source locations, parser coverage, analyzer foundations, runtime
+contracts, render-command boundaries, and browser-neutral core APIs.
+
+### Slice 1: First static Canvas sketch
+
+**Outcome:** A student types a static sketch and sees Canvas output through the
+shared command model.
+
+### Slice 2: Expressions, variables, conditionals, and diagnostics
+
+**Outcome:** Computed sketches rerender correctly and invalid source produces
+source-located diagnostics without stale Canvas output.
+
+### Slice 3: Repeated patterns and style
+
+**Outcome:** `repeat` and style commands produce deterministic repeated Canvas
+artwork.
+
+### Slice 4: Reusable sketch functions
+
+**Outcome:** User-defined functions, returns, recursion, math, randomness, and
+structured `print` output work through the shared preview path.
+
+## Risk Spikes
+
+Spikes establish evidence and decisions. They are timeboxed, disposable, and do
+not become production code automatically.
+
+### Spike A: Dedicated desktop shell
+
+**Question:** Can Deno Desktop provide a stable dedicated window, built asset
+loading, native dialogs, application lifecycle hooks, callback handling, and a
+narrow privileged bridge on macOS and Windows?
+
+**Evidence:** Minimal packaged artifacts launch without a development server,
+round-trip one temporary file through a native dialog, and report their runtime
+and webview versions.
+
+**Decision:** Continue with Deno Desktop or select the next documented fallback.
+
+### Spike B: Pi streaming and authentication in the packaged runtime
+
+**Question:** Can the browser-compatible Pi agent/provider libraries stream
+responses, complete Codex OAuth and refresh, accept OpenCode credentials, and
+resume after restart without the Node-oriented coding-agent runtime?
+
+**Evidence:** A packaged spike streams one response per provider, refreshes or
+reloads credentials after restart, signs out cleanly, and records every runtime
+incompatibility.
+
+**Decision:** Use Pi modules directly, port only identified boundaries, or move
+to the next desktop fallback.
+
+### Spike C: Direct-`file://` standalone workers
+
+**Question:** Can one generated HTML file create and replace Blob workers when
+opened directly from disk in Chromium, Firefox, and WebKit?
+
+**Evidence:** One artifact reruns after edits, cancels an active run, times out
+an infinite run, and reports diagnostics/output in each engine.
+
+**Decision:** Adopt Blob workers or select another single-file isolation method.
+
+### Spike D: Signing and installer path
+
+**Question:** Which package formats, architectures, signing identities,
+notarization steps, Windows signing steps, and CI runners can produce
+workshop-installable artifacts?
+
+**Evidence:** Install, launch, replace with a later build, and uninstall on clean
+macOS and Windows test environments.
+
+**Decision:** Record the release matrix and the manual or automated signing
+procedure. A built-in updater remains out of scope.
+
+## v0.9 Production Slices
+
+### Slice 5: Stable CLI check and run
+
+**Student-visible outcome:** A file can be validated with `gic check` and
+executed with `gic run` through documented, dependable commands.
+
+**Acceptance:**
+
+- `gic check` parses and analyses without executing.
+- `gic run` uses the same parse, analysis, and execution pipeline as the IDE.
+- Valid, parse-invalid, analysis-invalid, runtime-invalid, missing-file, and
+  invalid-command cases have pinned stdout, stderr, and exit statuses.
+- Diagnostics include source locations and never expose raw host stack traces.
+- Package metadata exposes a usable `gic` executable.
+
+**Gate:** Decide how `gic run` presents recorded drawing commands without
+silently adding CLI export scope.
+
+**Not included:** PNG/SVG/GIF export, server rendering, `gic lsp`, animation, or
+watch mode.
+
+### Slice 6: Monaco static authoring shell
+
+**Student-visible outcome:** Monaco replaces the textarea while preserving the
+working static preview, diagnostics, worker cancellation, timeout, and output.
+
+**Acceptance:**
+
+- Monaco edits real GIC source and triggers one preview 100 ms after typing
+  stops.
+- Current-source success updates Canvas and Output.
+- Current-source parse, analysis, runtime, or timeout failure clears Canvas.
+- Diagnostics mark their Monaco ranges and appear in Problems.
+- Existing static sketch browser acceptance remains green.
+
+**Dependencies:** Existing core/worker/render path.
+
+### Slice 7: Language assistance and formatting
+
+**Student-visible outcome:** The editor offers GIC-aware completion, hover,
+signature help, Format Document, and configurable format-on-save.
+
+**Acceptance:**
+
+- A browser-neutral service returns deterministic diagnostics, completion,
+  hover, signature, and formatting results for source strings and positions.
+- Monaco consumes those results without an LSP process.
+- Built-ins and reserved names come from shared definitions.
+- Visible user symbols respect analyzer scope.
+- Save applies formatting when the setting is enabled; the explicit format
+  action works regardless of that setting.
+
+**Not included:** LSP, VS Code, go-to-definition, documentation comments, or new
+language semantics.
+
+### Slice 8: Workspace layout and status behavior
+
+**Student-visible outcome:** The IDE has persistent resizable editor,
+preview/output, and tutor regions with recoverable layout state.
+
+![GIC IDE layout sketch](../bin/ide-layout-scribble.png)
+
+**Acceptance:**
+
+- Editor, middle, and tutor regions resize and hide through visible controls.
+- Canvas and a lower Problems/Output tab panel occupy the middle region.
+- Sizes, hidden states, and selected lower tab survive restart.
+- Reset Layout restores defaults.
+- An error reopens a minimized lower panel with Problems selected.
+- When the panel is visible, reruns preserve its selected tab and update badges.
+
+**Dependency:** Slice 6.
+
+### Slice 9: One-document files, examples, and recovery
+
+**Student-visible outcome:** One `.gic` sketch can be opened, saved, renamed,
+recovered, or started from an example without accidental data loss.
+
+**Acceptance:**
+
+- Open, Save, Save As, recent files, dirty state, and discard warnings work
+  through a platform-neutral document adapter.
+- Desktop behavior uses native dialogs and real files.
+- PWA behavior uses portable upload/open and download/save operations without
+  persistent file handles.
+- Bundled examples open as editable unsaved copies requiring Save As.
+- Recovery restores an unsaved copy and never silently writes the `.gic` file.
+- Format-on-save runs exactly once before an explicit save.
+
+**Gate:** Resolve recovery expiry, multiple-instance behavior, and moved/deleted
+recent-file presentation.
+
+### Slice 10: PNG and standalone HTML export
+
+**Student-visible outcome:** A successful sketch exports as native-size PNG or
+as one editable offline HTML file.
+
+**Acceptance:**
+
+- PNG is enabled only for the exact current successful render.
+- PNG dimensions equal Canvas dimensions.
+- Any current-source failure disables PNG and clears stale Canvas output.
+- Standalone HTML includes preloaded editable source, Canvas, diagnostics,
+  runtime errors, structured output, a 100 ms debounce, worker replacement, and
+  timeout protection.
+- The HTML contains no Monaco, storage, Reset button, CDN, or network request.
+- Direct-`file://` acceptance passes in Chromium, Firefox, and WebKit.
+
+**Dependency:** Spike C.
+
+### Slice 11: Tutor-less offline PWA
+
+**Student-visible outcome:** The shared editor installs as a PWA, restarts
+offline, recovers work, and activates updates only after confirmation.
+
+**Acceptance:**
+
+- The PWA installs from a supported browser.
+- After one online load it restarts offline with Monaco, core, examples,
+  recovery, preview, diagnostics, output, and exports available.
+- Download/open workflows remain functional offline.
+- A waiting application update is visible but cannot activate until confirmed.
+- The PWA contains no integrated tutor or provider credentials.
+
+**Dependencies:** Slices 6 through 10.
+
+### Slice 12: Desktop shell, bridge, and core file workflows
+
+**Student-visible outcome:** The shared IDE runs in one desktop window with real
+file and recovery workflows and no companion process.
+
+**Acceptance:**
+
+- Built packages launch without a development server.
+- The shell bridge exposes only file, settings, recovery, workspace, credential,
+  and lifecycle operations required by accepted stories.
+- Webview code cannot read arbitrary credential content or unrestricted files.
+- Open, Save, Save As, recent files, recovery, examples, layout, and exports
+  match shared-UI behavior.
+- macOS and Windows packaged smoke tests pass; Linux results are recorded.
+
+**Dependencies:** Spike A and Slices 6 through 10.
+
+### Slice 13: Processing-style workspace and external tutor support
+
+**Student-visible outcome:** First run prepares a familiar sketches workspace
+and consistent Socratic guidance for external Codex and OpenCode sessions.
+
+**Acceptance:**
+
+- The workspace contains sketches, sessions, short root agent guidance, one
+  canonical GIC tutor skill, and bundled documentation/example references.
+- Shipped examples/references remain immutable sources.
+- First run installs managed support; Settings offers Repair/Reinstall and
+  Uninstall.
+- Unmodified managed files update automatically.
+- Modified managed files are flagged and never overwritten.
+- External tools launch in the workspace when installed; absence produces clear
+  fallback instructions.
+
+**Gate:** Decide how modified managed files are compared and presented.
+
+### Slice 14: Deterministic Socratic tutor and local sessions
+
+**Student-visible outcome:** The desktop tutor can conduct and resume a
+constrained local teaching conversation against a deterministic test provider.
+
+**Acceptance:**
+
+- The tutor is a soft dependency with visible offline, unauthenticated, retry,
+  and hidden states.
+- No provider call occurs before explicit submission.
+- Each submission receives current source, diagnostics, runtime error, and
+  structured output, but no Canvas image.
+- The integrated agent loads canonical Socratic policy and references and has no
+  write, shell, browser, or web tools.
+- Sessions are transparent JSONL with names, start dates, related sketches,
+  provider/model changes, messages, and append-only compaction checkpoints.
+- Context snapshots are not copied into message history.
+- Rename updates relationships; continuing with another sketch clones the
+  session.
+- Tutor response selection/copying is blocked by default and restored by an
+  accessibility setting.
+
+**Gate:** Fix the session entry schema, partial-write recovery, and durable file
+relationship identifier.
+
+### Slice 15: OpenCode provider
+
+**Student-visible outcome:** A student can enter an OpenCode API key, choose a
+supported model, stream tutor responses, restart, and sign out.
+
+**Acceptance:**
+
+- Credentials cross only the privileged provider boundary.
+- Protected `auth.json` updates atomically and uses owner-only platform access.
+- Credentials never appear in webview storage, logs, exports, prompts, or
+  sessions.
+- Curated models are the default; an advanced setting reveals broader models.
+- Invalid, revoked, offline, and unavailable-model states are actionable and do
+  not disable the IDE.
+- Deterministic coverage and an explicit real-key smoke check both pass.
+
+**Dependencies:** Slices 12 and 14; Spike B establishes the protocol contract.
+
+### Slice 16: Codex OAuth provider
+
+**Student-visible outcome:** A Codex subscriber can sign in, choose a supported
+model, stream tutor responses, restart with refreshed credentials, and sign
+out.
+
+**Acceptance:**
+
+- Login callback, refresh, restart, account switch, and sign-out behavior pass
+  against the selected packaged runtime boundary.
+- Credential storage and redaction satisfy Slice 15's contract.
+- Curated and advanced model behavior matches the shared provider UI.
+- Cancelled, expired, revoked, offline, and unavailable-model states are
+  actionable and do not disable the IDE.
+- Deterministic coverage and an explicit real-subscription smoke check both
+  pass.
+
+**Dependencies:** Slices 12 and 14 plus Spike B.
+
+### Slice 17: Workshop release packages
+
+**Student-visible outcome:** Students receive installable, replaceable macOS and
+Windows packages with the complete static authoring experience.
+
+**Acceptance:**
+
+- Clean-machine install, launch, first-run workspace, file round-trip, offline
+  core use, optional tutor setup, replacement install, and uninstall pass.
+- Package metadata and application version are correct.
+- macOS signing/notarization and Windows signing match the accepted release
+  matrix.
+- No built-in updater or companion process is introduced.
+- Linux packaging is attempted and documented but does not block release.
+
+**Dependencies:** Spike D and all selected v0.9 production slices.
+
+## Stretch Slice
+
+### Slice 18: Static-safe animation
+
+**Student-visible outcome:** `setup` and `loop` sketches animate with deterministic
+scheduling and cancellation without weakening static behavior.
+
+**Acceptance:** Semantic `repeat`/`loop` rules, setup/loop interpreter lifecycle,
+animation built-ins, scheduler hooks, Canvas frame rendering, worker
+cancellation, runtime UX, and visual regression all pass.
+
+This slice may move before release only when it is independently green and does
+not delay the static v0.9 package.
+
+## Dependency Order
+
+```text
+Completed Slices 0-4
+  -> Slice 5 CLI
+  -> Slice 6 Monaco static shell
+      -> Slice 7 language assistance
+      -> Slice 8 layout
+      -> Slice 9 files and recovery
+          -> Slice 10 exports (after Spike C)
+              -> Slice 11 PWA
+              -> Slice 12 desktop (after Spike A)
+                  -> Slice 13 workspace
+                  -> Slice 14 tutor foundation
+                      -> Slice 15 OpenCode (after Spike B)
+                      -> Slice 16 Codex (after Spike B)
+                          -> Slice 17 release packages (after Spike D)
+
+Stretch Slice 18 depends on the existing animation milestones and remains
+outside the static release gate.
+```
+
+## Open Product and Implementation Questions
+
+These questions are recorded in PRD issue `60b2077` and must be resolved by the
+owning spike or slice before dependent acceptance tests are written:
+
+1. What does `gic run` present for recorded drawing commands?
+2. Which desktop runtime/version survives the dedicated-window and Pi spikes?
+3. Which exact OpenCode endpoint and model catalog form the supported contract?
+4. Which Codex and OpenCode models comprise the curated defaults?
+5. Which single-file worker strategy passes the three-engine `file://` matrix?
+6. Which installer formats, architectures, signing identities, and CI runners
+   form the release matrix?
+7. How are Windows owner-only credential ACLs created, replaced, and repaired?
+8. How are modified managed support files compared and presented?
+9. What JSONL session schema and partial-write recovery policy are used?
+10. How are renamed, moved, deleted, Save As, and PWA-only documents related to
+    sessions?
+11. What is the recovery snapshot creation, expiry, dismissal, and
+    multiple-instance policy?
+12. Which browser/OS versions define PWA support?
+13. How are absent external Codex/OpenCode applications detected and explained?
+14. Which keyboard, screen-reader, focus, zoom, contrast, and reduced-motion
+    checks form release accessibility acceptance?
+15. Is an explicit local diagnostic-export workflow needed when automatic
+    telemetry is absent?
+
+## Release Gate
+
+v0.9 is releasable when selected static production slices pass their shared
+quality gates and packaged macOS and Windows smoke tests. Open animation work,
+Linux package gaps, later LSP/VS Code work, and CLI export backends cannot block
+that release.
