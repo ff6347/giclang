@@ -455,6 +455,14 @@ start))` — the `Math.max` covers empty EOF spans.
 - [decision] Static generative graphics are the v0.9 release gate. Setup/loop
   lifecycle, animation built-ins, frame scheduling, and Canvas animation remain
   a stretch slice and cannot block the release.
+- [decision] Normal work now uses direct end-to-end engineering ownership for
+  faster application delivery. The project tutor skill applies only when Fabian
+  explicitly requests teaching behavior or when implementing the product's
+  Socratic tutor policy.
+- [technique] `pnpm test` runs the core test glob. `pnpm test:compact` uses Node
+  discovery to include core and browser-local unit tests; browser TypeScript,
+  production assets, and Firefox behavior still require their separate
+  typecheck, build, and E2E commands.
 - [decision] `gic check` and `gic run` are required v0.9 interfaces over the
   shared core. `gic run` executes headlessly with ordered `print` output by
   default; `--show-commands` additionally emits a stable drawing-command
