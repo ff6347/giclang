@@ -47,3 +47,6 @@ Git-bug issue `184f8de` replaces the prototype textarea with a packaged Monaco e
 - [decision] Monaco registers the formatter as a document formatting provider and imports its packaged editor features. F1 therefore opens the local command palette, where Format Document and the other applicable editor commands are available.
 - [risk] Registering Monaco's editor feature command graph increases the production application bundle to 3.83 MB minified (977 kB gzip). All assets remain locally packaged, and Vite continues to report the expected generic 500 kB chunk warning.
 - [verification] The follow-up passes 406 core tests, compact core and browser tests, both TypeScript projects, lint, formatting, the browser production build, and 39 Firefox acceptance tests.
+- [decision] The single-editor shell focuses Monaco on launch so F1 opens the command palette without a preceding click.
+- [technique] The source writer buffers output fragments and pending whitespace instead of repeatedly replacing the accumulated string. Formatting an 88 kB probe fell from 1.87 seconds to 31 milliseconds.
+- [verification] Review follow-up passes 407 core tests and 40 Firefox acceptance tests in addition to the compact suite, type checks, lint, formatting, and production build.

@@ -37,7 +37,7 @@
 - [decision] Playwright drives the shared UI. Direct-`file://` standalone export additionally requires Chromium, Firefox, and WebKit acceptance.
 - [decision] Monaco calls a direct browser-neutral service for diagnostics, formatting, completion, hover, and signature help. LSP, VS Code, and go-to-definition remain outside v0.9.
 - [decision] `formatSource` formats only parser-valid GIC. It reconstructs line comments from gaps between token offsets, emits tabs and canonical whitespace with a final newline, and returns invalid source unchanged.
-- [decision] Monaco's packaged editor feature graph supplies the F1 command palette and applicable editor commands, including Format Document; it does not introduce a runtime CDN dependency.
+- [decision] Monaco's packaged editor feature graph supplies the F1 command palette and applicable editor commands, including Format Document; the single-editor shell focuses Monaco on launch, and no runtime CDN dependency is introduced.
 - [direction] Treat Node-based image rendering as an optional export, CI, or dataset tool rather than the primary execution environment.
 - [decision] The primary v0.9 distribution is a Tauri 2 dedicated-window desktop app; the secondary edition is a tutor-less offline PWA. Operation-specific native Rust commands own dialogs, files, credentials, and provider calls. Electron is the fallback; Deno Desktop was rejected because it lacked first-class native Open/Save APIs, and no Node sidecar is currently required.
 - [decision] Desktop and PWA edit one document at a time. Explicit source saves, immutable example copies, and private recovery snapshots are separate workflows.
