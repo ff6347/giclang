@@ -6,15 +6,15 @@ The packaged Tauri UI is the only live-test path. It selects Zen's current free 
 
 The current [official Zen documentation](https://opencode.ai/docs/zen/) is the source for the selected free model and `/chat/completions` endpoint. OpenCode Go has distinct models and a paid subscription; it is not used or described as free here.
 
-ChatGPT/Codex displays `gpt-5.3-instant`. A Sign in click starts Rig's actual device flow and Rig supplies the structured non-secret verification URL and user code; its opener takes no renderer URL and accepts no arguments. Rig reads and writes its auth record at an app-owned platform config location selected solely in Rust; neither the location nor tokens are exposed to the renderer. This record is reused on restart and Sign out removes it. Rig owns persistence writes, so atomicity and file-permission guarantees are intentionally not claimed.
+ChatGPT/Codex displays `gpt-5.3-instant`. GIC owns a deliberately narrow device-authorization port because Rig 0.42's public OAuth entry point couples device-flow startup to a completion stream. A Sign in click calls only the inspected Codex device-code, polling, and OAuth-token endpoints; it does not construct or touch a completion/model URL. It displays the response's verification URL and user code, stores only the private token record in the Rust-selected app config path, and deletes it on Sign out. On explicit Send, the adapter reloads/refreshes that record, then passes only its in-memory access token and account ID to Rig's ChatGPT/Codex client for real streaming. Tokens, raw auth responses, secrets, and the auth path are neither emitted, rendered, logged, nor returned. The authorization opener has no renderer URL argument and opens only the exact active response URL.
 
 | Check | Result |
 | --- | --- |
 | `cargo fmt --check` | pass |
-| `cargo check` / `cargo test` | pass; 5 deterministic adapter-contract tests make no network calls |
+| `cargo fmt --check`, `cargo check` / `cargo test` | pass; five deterministic local HTTP tests cover device request, pending poll, exchange, refresh, redaction, sign-out, and the no-completion-URL invariant |
 | `pnpm --dir ui typecheck` / `build` | pass |
-| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable |
+| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable (not launched) |
 | packaged app launch without Vite | unrun in this automated session |
 | live OpenCode and ChatGPT tests | explicitly unrun; human UI test only |
 
-Prior evidence recorded an 8.5 MB one-executable Tauri package (not the older Tauri-shell spike). Electron's recorded package was 365 MB. Record this revision's artifact path and size after packaging.
+This revision packaged a 15 MB app at `target/release/bundle/macos/GIC Tutor Rig Spike.app` (not launched). Electron's recorded package was 365 MB.

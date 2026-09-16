@@ -1,5 +1,8 @@
 //! Privileged application boundary: credentials and Rig stay out of the webview.
 
+mod chatgpt_auth;
+
+use chatgpt_auth::ChatGptAuth;
 use futures_util::StreamExt;
 use gic_tutor_spike_core::{RequestGate, TutorEvent, safe_error};
 use rig_core::{
@@ -20,7 +23,7 @@ use tokio_util::sync::CancellationToken;
 const ZEN_FREE_MODEL: &str = "mimo-v2.5-free";
 const CODEX_MODEL: &str = "gpt-5.3-instant";
 const ZEN_BASE_URL: &str = "https://opencode.ai/zen/v1";
-const CHATGPT_AUTH_FILE: &str = "chatgpt-rig-auth.json";
+const CHATGPT_AUTH_FILE: &str = "chatgpt-auth.json";
 
 struct Session {
     // Zen credentials are memory-only and never serialized.
@@ -96,7 +99,7 @@ fn begin_chatgpt_sign_in(
     app: AppHandle,
     state: tauri::State<'_, Arc<Mutex<Session>>>,
 ) -> Result<(), String> {
-    let auth_file = auth_file(&app)?;
+    let auth = ChatGptAuth::new(auth_file(&app)?);
     let cancel = begin_request(&state)?;
     let app_for_task = app.clone();
     let session = state.inner().clone();
@@ -107,44 +110,30 @@ fn begin_chatgpt_sign_in(
                 message: "Starting ChatGPT device authorization.".into(),
             },
         );
-        // Rig starts its device flow when it obtains OAuth credentials. Its
-        // callback supplies the verification URL and one-time user code; no
-        // renderer input can choose either value.
         let callback_app = app_for_task.clone();
         let callback_state = session.clone();
-        let client = chatgpt::Client::builder()
-            .oauth()
-            .auth_file(auth_file)
-            .on_device_code(move |prompt| {
+        let result = auth
+            .sign_in(cancel, move |prompt| {
                 if let Ok(mut session) = callback_state.lock() {
-                    session.authorization_url = Some(prompt.verification_uri.clone());
+                    session.authorization_url = Some(prompt.verification_url.clone());
                 }
                 emit(
                     &callback_app,
                     TutorEvent::DeviceAuthorization {
-                        url: prompt.verification_uri,
+                        url: prompt.verification_url,
                         user_code: prompt.user_code,
                     },
                 );
             })
-            .allow_device_flow(true)
-            .build();
-        let outcome = match client {
-            Ok(client) => {
-                let model = client.completion_model(CODEX_MODEL);
-                // This starts Rig's OAuth flow immediately after the explicit
-                // Sign in click. The authentication probe's completion is
-                // discarded and never presented as a tutor reply.
-                consume_stream(model.stream(model.completion_request("").build()), cancel).await
-            }
-            Err(_) => Err(StreamFailure::Provider),
-        };
-        match outcome {
-            Ok(_) => emit(&app_for_task, TutorEvent::SignedIn),
-            Err(StreamFailure::Cancelled) => emit(&app_for_task, TutorEvent::Cancelled),
-            Err(StreamFailure::Provider) => {
-                emit(&app_for_task, safe_error("ChatGPT sign-in failed"))
-            }
+            .await;
+        match result {
+            Ok(()) => emit(&app_for_task, TutorEvent::SignedIn),
+            Err(error) => emit(
+                &app_for_task,
+                TutorEvent::Error {
+                    message: error.message().into(),
+                },
+            ),
         }
         finish_request(&session);
     });
@@ -169,10 +158,9 @@ fn sign_out_chatgpt(
     app: AppHandle,
     state: tauri::State<'_, Arc<Mutex<Session>>>,
 ) -> Result<(), String> {
-    let file = auth_file(&app)?;
-    if file.exists() {
-        fs::remove_file(file).map_err(|_| "Could not sign out of ChatGPT.")?;
-    }
+    ChatGptAuth::new(auth_file(&app)?)
+        .sign_out()
+        .map_err(|_| "Could not sign out of ChatGPT.")?;
     let mut session = state.lock().map_err(|_| "Tutor state is unavailable.")?;
     session.authorization_url = None;
     emit(&app, TutorEvent::SignedOut);
@@ -311,20 +299,26 @@ async fn send_chatgpt_prompt(
                 message: format!("Streaming from ChatGPT/Codex ({CODEX_MODEL})."),
             },
         );
-        let outcome = match chatgpt::Client::builder()
-            .oauth()
-            .auth_file(auth_file)
-            .allow_device_flow(false)
-            .build()
-        {
-            Ok(client) => {
-                let model = client.completion_model(CODEX_MODEL);
-                consume_stream(
-                    model.stream(model.completion_request(prompt).build()),
-                    cancel,
-                )
-                .await
-            }
+        // Refresh/load remains in the app-owned auth port. Rig is used only
+        // after Send, with the non-persisted access context it returns.
+        let outcome = match ChatGptAuth::new(auth_file).context().await {
+            Ok(auth) => match chatgpt::Client::builder()
+                .api_key(chatgpt::ChatGPTAuth::AccessToken {
+                    access_token: auth.access_token,
+                    account_id: auth.account_id,
+                })
+                .build()
+            {
+                Ok(client) => {
+                    let model = client.completion_model(CODEX_MODEL);
+                    consume_stream(
+                        model.stream(model.completion_request(prompt).build()),
+                        cancel,
+                    )
+                    .await
+                }
+                Err(_) => Err(StreamFailure::Provider),
+            },
             Err(_) => Err(StreamFailure::Provider),
         };
         emit_stream_outcome(&app_for_task, outcome, "ChatGPT request failed");
