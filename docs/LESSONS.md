@@ -46,7 +46,7 @@
 - [ ] [Add browser IDE animation and runtime-error UX (v0.9 stretch)](milestones/browser-ide-animation-runtime-error-ux.md)
 - [ ] [Add browser IDE language assistance](milestones/browser-ide-language-assistance.md)
 - [x] [Decide the desktop shell and filesystem model](decisions/desktop-shell-filesystem.md)
-- [ ] [Package the IDE with a Deno-first desktop shell](milestones/deno-desktop-packaging.md)
+- [ ] [Package the IDE with Tauri](milestones/tauri-desktop-packaging.md)
 - [ ] [Design dynamic lists](decisions/dynamic-lists.md)
 - [ ] [Decide built-in math expansion](decisions/built-in-math-expansion.md)
 - [ ] [Decide additional drawing APIs and transforms](decisions/additional-drawing-apis-transforms.md)

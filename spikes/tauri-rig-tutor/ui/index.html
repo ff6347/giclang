@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>GIC Tutor Spike</title>
+	</head>
+	<body>
+		<main>
+			<h1>GIC Tutor</h1>
+			<section>
+				<h2>OpenCode Zen</h2>
+				<p>Model: <strong>mimo-v2.5-free</strong></p>
+				<label
+					>API key
+					<input id="api-key" type="password" autocomplete="off" /></label
+				><button id="connect">Connect / Save</button>
+			</section>
+			<section>
+				<h2>ChatGPT / Codex</h2>
+				<p>Model: <strong>gpt-5.6-luna</strong></p>
+				<button id="sign-in">Sign in with ChatGPT</button
+				><button id="open-auth" disabled>Open authorization page</button
+				><button id="sign-out">Sign out</button>
+				<output id="device-code" aria-live="polite"></output>
+			</section>
+			<label>Prompt <textarea id="prompt" rows="3"></textarea></label>
+			<button id="send-zen">Send with OpenCode Zen</button
+			><button id="send-chatgpt">Send with ChatGPT</button
+			><button id="cancel" disabled>Cancel</button>
+			<p id="status" aria-live="polite"></p>
+			<output id="reply" aria-live="polite"></output>
+			<details open>
+				<summary>Diagnostic log</summary>
+				<p>
+					Safe lifecycle and provider diagnostics only. Credentials, tokens,
+					account IDs, headers, paths, and prompt text are excluded.
+				</p>
+				<textarea
+					id="diagnostics"
+					rows="10"
+					readonly
+					aria-label="Diagnostic log"
+				></textarea>
+				<button id="clear-diagnostics">Clear diagnostics</button>
+			</details>
+		</main>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
