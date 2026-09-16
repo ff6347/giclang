@@ -1,1 +1,1 @@
-{"author":{"id":"86dc3c885e4fa466d19699d4a5e74c240f1c9d6b23f4e62ea2d2d8e359bd1711"},"ops":[{"type":4,"timestamp":1789561607,"nonce":"4xokFntpQ7HWpX07FflEkVgWmQY=","status":2}]}
+{"author":{"id":"86dc3c885e4fa466d19699d4a5e74c240f1c9d6b23f4e62ea2d2d8e359bd1711"},"ops":[{"type":8,"timestamp":1789561612,"nonce":"d1zy9yxFd7QJO4omnI8IIzItJJg=","target":"3a4253893dd8cddd108ba761b11384e3cb0f96d24a1fb7efdaca12b01565489b","new_metadata":{"github-id":"I_kwDOUKdEis8AAAABRjuOug","github-url":"https://github.com/ff6347/gic-lang/issues/38"}}]}
