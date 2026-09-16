@@ -39,3 +39,11 @@ Git-bug issue `184f8de` replaces the prototype textarea with a packaged Monaco e
 ## Tooling Resolution
 
 - [lesson] The git-bug release was not the cause. Delta commands must both set `GIT_DIR` to the `local` remote and run from the primary checkout; using the primary Git directory with the Delta worktree as the current directory leaves identity and issue resolution empty.
+
+## Formatting Follow-up
+
+- [decision] `formatSource` validates with the browser-neutral lexer and parser before formatting. Invalid documents remain unchanged, while valid documents receive deterministic tabs, spacing, line breaks, and a final newline.
+- [technique] The formatter combines lexer tokens with line comments recovered from the gaps between token offsets. This preserves comments without adding them to the executable AST.
+- [decision] Monaco registers the formatter as a document formatting provider and imports its packaged editor features. F1 therefore opens the local command palette, where Format Document and the other applicable editor commands are available.
+- [risk] Registering Monaco's editor feature command graph increases the production application bundle to 3.83 MB minified (977 kB gzip). All assets remain locally packaged, and Vite continues to report the expected generic 500 kB chunk warning.
+- [verification] The follow-up passes 406 core tests, compact core and browser tests, both TypeScript projects, lint, formatting, the browser production build, and 39 Firefox acceptance tests.
