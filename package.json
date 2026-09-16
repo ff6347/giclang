@@ -19,7 +19,7 @@
 		"build": "pnpm build:cli && pnpm build:browser",
 		"build:cli": "tsc --project tsconfig.build.json",
 		"prepack": "pnpm build:cli",
-		"test:compact": "node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot",
+		"test:compact": "node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot src/tests/*.test.ts browser/src/*.test.ts",
 		"test": "node --test src/tests/*.test.ts",
 		"test:e2e": "playwright test",
 		"format": "oxfmt",
