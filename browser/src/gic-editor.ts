@@ -2,9 +2,11 @@
 // ABOUTME: Converts GIC diagnostic offsets into Monaco markers and problem text.
 
 import * as monaco from "monaco-editor/editor/editor.api.js";
+import "monaco-editor/features/register.all.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
 import type { Diagnostic } from "../../src/core.ts";
 import { builtIns } from "../../src/built-ins.ts";
+import { formatSource } from "../../src/formatter.ts";
 import { keywords } from "../../src/keywords.ts";
 
 globalThis.MonacoEnvironment = {
@@ -46,6 +48,21 @@ function registerGicLanguage() {
 				[/[+\-*/%<>=!&|]+/, "operator"],
 				[/[;,]/, "delimiter"],
 			],
+		},
+	});
+	monaco.languages.registerDocumentFormattingEditProvider(LANGUAGE_ID, {
+		provideDocumentFormattingEdits(model) {
+			const source = model.getValue();
+			const formattedSource = formatSource(source);
+			if (formattedSource === source) {
+				return [];
+			}
+			return [
+				{
+					range: model.getFullModelRange(),
+					text: formattedSource,
+				},
+			];
 		},
 	});
 }

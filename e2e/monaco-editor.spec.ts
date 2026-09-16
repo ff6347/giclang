@@ -126,3 +126,33 @@ forever();`;
 	await expect(page.locator("#problems")).toHaveText("");
 	await expect.poll(() => cornerAlpha(page)).toBe(255);
 });
+
+test("opens the command palette and formats the GIC document", async ({
+	page,
+}) => {
+	const source = "if(true){circle(50,50,10);}";
+	const formatted = `if (true) {
+\tcircle(50, 50, 10);
+}
+`;
+
+	await page.goto("/");
+	await setEditorSource(page, source);
+	await page.keyboard.press("F1");
+
+	const palette = page.locator(".quick-input-widget");
+	await expect(palette).toBeVisible();
+	await expect(palette.locator(".monaco-list-row")).not.toHaveCount(0);
+	await palette.locator("input").pressSequentially("Format Document");
+	await expect(
+		palette.getByText("Format Document", { exact: true }),
+	).toBeVisible();
+	await page.keyboard.press("Enter");
+
+	await expect(palette).toBeHidden();
+	await page.locator(".view-lines").click({ position: { x: 5, y: 5 } });
+	await page.keyboard.press("Control+A");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		formatted,
+	);
+});
