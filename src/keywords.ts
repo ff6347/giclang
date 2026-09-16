@@ -30,6 +30,19 @@ export const keywords: Keywords = {
 	null: "NULL",
 };
 
+export const keywordDescriptions: Readonly<Record<SyntaxKeywords, string>> = {
+	else: "Run a block when the preceding if condition is false.",
+	false: "The boolean false value.",
+	func: "Declare a reusable function.",
+	if: "Run a block when a condition is true.",
+	let: "Declare a variable.",
+	loop: "Run a block once per animation frame.",
+	null: "The null value.",
+	repeat: "Run a block over a numeric range.",
+	return: "Leave a function with an optional value.",
+	true: "The boolean true value.",
+};
+
 export const reservedNames: ReadonlySet<string> = new Set([
 	...Object.keys(builtIns),
 	...Object.keys(keywords),

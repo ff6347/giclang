@@ -52,6 +52,39 @@ type BuiltInEntry = FunctionEntry | ConstantEntry;
 
 type BuiltInRegistry = Readonly<Record<BuiltInKeys, BuiltInEntry>>;
 
+export const builtInDescriptions: Readonly<Record<BuiltInKeys, string>> = {
+	HEIGHT: "Canvas height in pixels.",
+	PI: "The mathematical constant π.",
+	WIDTH: "Canvas width in pixels.",
+	abs: "Return the absolute value.",
+	arc: "Draw an open clockwise arc using degrees.",
+	background: "Fill the entire canvas with a color.",
+	ceil: "Round a number up to an integer.",
+	circle: "Draw a circle centered at (x, y).",
+	cos: "Return the cosine of an angle in degrees.",
+	ellipse: "Draw an ellipse centered at (x, y).",
+	fill: "Set the fill color for subsequent shapes.",
+	floor: "Round a number down to an integer.",
+	line: "Draw a line between two points.",
+	max: "Return the larger of two values.",
+	min: "Return the smaller of two values.",
+	noFill: "Disable fill for subsequent shapes.",
+	noStroke: "Disable stroke for subsequent shapes.",
+	point: "Draw a solid round point centered at (x, y).",
+	pow: "Raise a base to an exponent.",
+	print: "Write a value to the program output.",
+	quad: "Draw a quadrilateral from four vertices.",
+	random: "Return a random number between minimum and maximum.",
+	randomSeed: "Set the seed used for reproducible random values.",
+	rect: "Draw a rectangle from its top-left corner.",
+	round: "Round a number to the nearest integer.",
+	sin: "Return the sine of an angle in degrees.",
+	sqrt: "Return the square root of a number.",
+	stroke: "Set the stroke color for subsequent shapes.",
+	strokeWidth: "Set the stroke thickness in pixels.",
+	triangle: "Draw a triangle from three vertices.",
+};
+
 const colorSignatures: readonly Signature[] = [
 	[{ name: "value", kind: "string" }],
 	[

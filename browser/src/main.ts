@@ -8,6 +8,7 @@ import "./styles.css";
 
 document.addEventListener("DOMContentLoaded", () => {
 	const TIMEOUT_IN_MS = 500;
+	const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
 
 	let activeWorker: Worker | null = null;
 	let debounceTimer: number | null = null;
@@ -16,12 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		document.querySelector("#code");
 	const problems: HTMLDivElement | null = document.querySelector("#problems");
 	const output: HTMLDivElement | null = document.querySelector("#output");
+	const formatOnSave: HTMLInputElement | null =
+		document.querySelector("#format-on-save");
 	const canvas: HTMLCanvasElement | null =
 		document.querySelector("canvas#canvas");
 
 	if (!editorContainer) throw new Error("#code not found");
 	if (!problems) throw new Error("#problems not found");
 	if (!output) throw new Error("#output not found");
+	if (!formatOnSave) throw new Error("#format-on-save not found");
 	if (!canvas) throw new Error("canvas#canvas not found");
 	const canvasContext = canvas.getContext("2d");
 	if (!canvasContext) throw new Error("canvas#canvas context not found");
@@ -35,6 +39,15 @@ document.addEventListener("DOMContentLoaded", () => {
 			}),
 		);
 	};
+
+	formatOnSave.checked =
+		localStorage.getItem(FORMAT_ON_SAVE_STORAGE_KEY) !== "false";
+	formatOnSave.addEventListener("change", () => {
+		localStorage.setItem(
+			FORMAT_ON_SAVE_STORAGE_KEY,
+			String(formatOnSave.checked),
+		);
+	});
 
 	let editor: ReturnType<typeof createGicEditor>;
 
@@ -108,5 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}, 100);
 	};
 
-	editor = createGicEditor(editorContainer, inputHandler);
+	editor = createGicEditor(editorContainer, inputHandler, () => ({
+		formatOnSave: formatOnSave.checked,
+	}));
 });

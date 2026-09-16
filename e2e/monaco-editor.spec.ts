@@ -170,3 +170,127 @@ test("opens the command palette and formats the GIC document", async ({
 		formatted,
 	);
 });
+
+test("offers GIC completion through Monaco", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, "cir");
+	await page.keyboard.press("Control+Space");
+
+	const suggestions = page.locator(".suggest-widget");
+	await expect(suggestions).toBeVisible();
+	await expect(
+		suggestions.getByText("circle", { exact: true }).first(),
+	).toBeVisible();
+	await page.keyboard.press("Control+Space");
+	await expect(page.locator(".suggest-details")).toContainText(
+		"Draw a circle centered at (x, y).",
+	);
+});
+
+test("shows GIC hover information through Monaco", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, "circle(50, 50, 10);");
+	await page.keyboard.press("Home");
+	await page.keyboard.press("ArrowRight");
+	await page.keyboard.press("Control+K");
+	await page.keyboard.press("Control+I");
+
+	const hover = page.locator(".monaco-hover:not(.hidden)");
+	await expect(hover).toBeVisible();
+	await expect(hover).toContainText(
+		"circle(x: number, y: number, radius: number)",
+	);
+	await expect(hover).toContainText("Draw a circle centered at (x, y).");
+});
+
+test("shows active GIC signature help through Monaco", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, "circle(50, ");
+	await page.keyboard.press("Control+Shift+Space");
+
+	const signatureHelp = page.locator(".parameter-hints-widget");
+	await expect(signatureHelp).toBeVisible();
+	await expect(signatureHelp).toContainText(
+		"circle(x: number, y: number, radius: number)",
+	);
+	await expect(signatureHelp.locator(".parameter.active")).toHaveText(
+		"y: number",
+	);
+});
+
+test("surfaces visible user symbols through Monaco", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(
+		page,
+		`func motif(size) {
+	let radius = size;
+	rad`,
+	);
+	await page.keyboard.press("Control+Space");
+
+	const suggestions = page.locator(".suggest-widget");
+	await expect(suggestions).toBeVisible();
+	await expect(
+		suggestions.getByText("radius", { exact: true }).first(),
+	).toBeVisible();
+
+	await page.keyboard.press("Escape");
+	await setEditorSource(
+		page,
+		`func motif(size, count) {
+	return size;
+}
+motif(10, `,
+	);
+	await page.keyboard.press("Control+Shift+Space");
+	const signatureHelp = page.locator(".parameter-hints-widget");
+	await expect(signatureHelp).toContainText("motif(size, count)");
+	await expect(signatureHelp.locator(".parameter.active")).toHaveText("count");
+
+	await page.keyboard.press("Escape");
+	await setEditorSource(
+		page,
+		`let radius = 10;
+radius;`,
+	);
+	await page.keyboard.press("Home");
+	await page.keyboard.press("ArrowRight");
+	await page.keyboard.press("Control+K");
+	await page.keyboard.press("Control+I");
+	const hover = page.locator(".monaco-hover:not(.hidden)");
+	await expect(hover).toContainText("variable radius");
+});
+
+test("persists configurable format-on-save behavior", async ({ page }) => {
+	const source = "if(true){circle(50,50,10);}";
+	const formatted = `if (true) {
+	circle(50, 50, 10);
+}
+`;
+
+	await page.goto("/");
+	await page.evaluate(() => localStorage.clear());
+	await page.reload();
+	const setting = page.getByRole("checkbox", { name: "Format on save" });
+	await expect(setting).toBeChecked();
+	await setEditorSource(page, source);
+	await page.keyboard.press("Control+S");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		formatted,
+	);
+
+	await setting.uncheck();
+	await page.reload();
+	await expect(setting).not.toBeChecked();
+	await setEditorSource(page, source);
+	await page.keyboard.press("Control+S");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
+
+	await page.keyboard.press("F1");
+	const palette = page.locator(".quick-input-widget");
+	await palette.locator("input").pressSequentially("Format Document");
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		formatted,
+	);
+});

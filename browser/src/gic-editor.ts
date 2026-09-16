@@ -6,7 +6,14 @@ import "monaco-editor/features/register.all.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
 import type { Diagnostic } from "../../src/core.ts";
 import { builtIns } from "../../src/built-ins.ts";
-import { formatSource } from "../../src/formatter.ts";
+import {
+	applySaveFormatting,
+	completeSource,
+	formatSourceDocument,
+	hoverSource,
+	signatureHelpSource,
+	type LanguageServiceSettings,
+} from "../../src/language-service.ts";
 import { keywords } from "../../src/keywords.ts";
 
 globalThis.MonacoEnvironment = {
@@ -19,6 +26,22 @@ const LANGUAGE_ID = "gic";
 const MARKER_OWNER = "gic";
 
 export type GicEditor = monaco.editor.IStandaloneCodeEditor;
+
+function completionKind(
+	kind: "constant" | "function" | "keyword" | "user-function" | "variable",
+): monaco.languages.CompletionItemKind {
+	switch (kind) {
+		case "constant":
+			return monaco.languages.CompletionItemKind.Constant;
+		case "function":
+		case "user-function":
+			return monaco.languages.CompletionItemKind.Function;
+		case "keyword":
+			return monaco.languages.CompletionItemKind.Keyword;
+		case "variable":
+			return monaco.languages.CompletionItemKind.Variable;
+	}
+}
 
 function registerGicLanguage() {
 	if (monaco.languages.getLanguages().some(({ id }) => id === LANGUAGE_ID)) {
@@ -53,7 +76,7 @@ function registerGicLanguage() {
 	monaco.languages.registerDocumentFormattingEditProvider(LANGUAGE_ID, {
 		provideDocumentFormattingEdits(model) {
 			const source = model.getValue();
-			const formattedSource = formatSource(source);
+			const formattedSource = formatSourceDocument(source);
 			if (formattedSource === source) {
 				return [];
 			}
@@ -65,11 +88,88 @@ function registerGicLanguage() {
 			];
 		},
 	});
+	monaco.languages.registerCompletionItemProvider(LANGUAGE_ID, {
+		provideCompletionItems(model, position) {
+			const suggestions = completeSource(
+				model.getValue(),
+				model.getOffsetAt(position),
+			).map((completion) => {
+				const start = model.getPositionAt(completion.replacement.start);
+				const end = model.getPositionAt(completion.replacement.end);
+				return {
+					insertText: completion.label,
+					kind: completionKind(completion.kind),
+					label: completion.label,
+					range: new monaco.Range(
+						start.lineNumber,
+						start.column,
+						end.lineNumber,
+						end.column,
+					),
+					...(completion.documentation === undefined
+						? {}
+						: { documentation: completion.documentation }),
+					...(completion.signature === undefined
+						? {}
+						: { detail: completion.signature }),
+				};
+			});
+			return { suggestions };
+		},
+	});
+	monaco.languages.registerHoverProvider(LANGUAGE_ID, {
+		provideHover(model, position) {
+			const hover = hoverSource(model.getValue(), model.getOffsetAt(position));
+			if (hover === undefined) {
+				return undefined;
+			}
+			const start = model.getPositionAt(hover.range.start);
+			const end = model.getPositionAt(hover.range.end);
+			return {
+				contents: hover.contents.map((value) => ({ value })),
+				range: new monaco.Range(
+					start.lineNumber,
+					start.column,
+					end.lineNumber,
+					end.column,
+				),
+			};
+		},
+	});
+	monaco.languages.registerSignatureHelpProvider(LANGUAGE_ID, {
+		signatureHelpTriggerCharacters: ["(", ","],
+		provideSignatureHelp(model, position) {
+			const help = signatureHelpSource(
+				model.getValue(),
+				model.getOffsetAt(position),
+			);
+			if (help === undefined) {
+				return undefined;
+			}
+			return {
+				dispose() {},
+				value: {
+					activeParameter: help.activeParameter,
+					activeSignature: help.activeSignature,
+					signatures: help.signatures.map((signature) => {
+						return {
+							label: signature.label,
+							parameters: signature.parameters.map(({ label }) => ({ label })),
+							...(signature.documentation === undefined
+								? {}
+								: { documentation: signature.documentation }),
+						};
+					}),
+				},
+			};
+		},
+	});
 }
 
 export function createGicEditor(
 	container: HTMLElement,
 	onSourceChange: (source: string) => void,
+	getSettings: () => LanguageServiceSettings,
 ): GicEditor {
 	registerGicLanguage();
 	const editor = monaco.editor.create(container, {
@@ -80,7 +180,7 @@ export function createGicEditor(
 		minimap: { enabled: false },
 		scrollBeyondLastLine: false,
 		detectIndentation: true,
-		wordBasedSuggestions: "currentDocument",
+		wordBasedSuggestions: "off",
 		colorDecorators: true,
 		value: "",
 		lineNumbers: "on",
@@ -98,6 +198,22 @@ export function createGicEditor(
 	});
 	editor.onDidChangeModelContent(() => {
 		onSourceChange(editor.getValue());
+	});
+	editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+		const model = editor.getModel();
+		if (model === null) {
+			return;
+		}
+		const source = model.getValue();
+		const formattedSource = applySaveFormatting(source, getSettings());
+		if (formattedSource !== source) {
+			editor.executeEdits("gic.format-on-save", [
+				{
+					range: model.getFullModelRange(),
+					text: formattedSource,
+				},
+			]);
+		}
 	});
 	editor.focus();
 	return editor;
