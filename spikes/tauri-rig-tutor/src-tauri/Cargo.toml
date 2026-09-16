@@ -1,0 +1,30 @@
+[package]
+name = "gic-tauri-rig-tutor-spike"
+version = "0.0.0"
+edition.workspace = true
+default-run = "gic-tauri-rig-tutor-spike"
+autobins = false
+
+[[bin]]
+name = "gic-tauri-rig-tutor-spike"
+path = "src/main.rs"
+
+[[example]]
+name = "live-opencode"
+path = "examples/live-opencode.rs"
+
+[[example]]
+name = "chatgpt-device-login"
+path = "examples/chatgpt-device-login.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.5.1", features = [] }
+
+[dependencies]
+futures-util = "0.3.31"
+gic-tutor-spike-core = { path = "../crates/tutor-core" }
+rig-core = "0.42.0"
+serde.workspace = true
+tauri = { version = "2.9.5", features = [] }
+tokio.workspace = true
+tokio-util.workspace = true
