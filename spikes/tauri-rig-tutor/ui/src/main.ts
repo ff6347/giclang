@@ -8,23 +8,49 @@ const reply = byId<HTMLOutputElement>("reply");
 const status = byId<HTMLParagraphElement>("status");
 const deviceCode = byId<HTMLOutputElement>("device-code");
 const openAuth = byId<HTMLButtonElement>("open-auth");
+const signIn = byId<HTMLButtonElement>("sign-in");
+const signOut = byId<HTMLButtonElement>("sign-out");
+const cancel = byId<HTMLButtonElement>("cancel");
+
+function requestState(active: boolean) {
+	cancel.disabled = !active;
+	byId<HTMLButtonElement>("send-zen").disabled = active;
+	byId<HTMLButtonElement>("send-chatgpt").disabled = active;
+	signIn.disabled = active;
+	signOut.disabled = active;
+}
 
 function error(error: unknown) {
 	status.textContent =
 		error instanceof Error
 			? error.message
 			: "The action could not be completed.";
+	requestState(false);
 }
 function present(event: TutorEvent) {
 	if (event.kind === "text") reply.value += event.text ?? "";
 	if (event.kind === "status" || event.kind === "error")
 		status.textContent = event.message ?? "";
-	if (event.kind === "complete") status.textContent = "Response complete.";
-	if (event.kind === "cancelled") status.textContent = "Response cancelled.";
+	if (event.kind === "complete") {
+		status.textContent = "Response complete.";
+		requestState(false);
+	}
+	if (event.kind === "cancelled") {
+		status.textContent = "Response cancelled.";
+		requestState(false);
+	}
+	if (event.kind === "error") requestState(false);
+	if (event.kind === "signed_in") {
+		status.textContent = "ChatGPT sign-in complete.";
+		deviceCode.value = "";
+		openAuth.disabled = true;
+		requestState(false);
+	}
 	if (event.kind === "signed_out") {
 		status.textContent = "Signed out.";
 		deviceCode.value = "";
 		openAuth.disabled = true;
+		requestState(false);
 	}
 	if (event.kind === "device_authorization") {
 		deviceCode.value = `User code: ${event.user_code}`;
@@ -34,6 +60,7 @@ function present(event: TutorEvent) {
 }
 function send(action: (text: string) => Promise<void>) {
 	reply.value = "";
+	requestState(true);
 	void action(prompt.value).catch(error);
 }
 
@@ -47,10 +74,10 @@ byId<HTMLButtonElement>("connect").addEventListener("click", async () => {
 		key.value = "";
 	}
 });
-byId<HTMLButtonElement>("sign-in").addEventListener(
-	"click",
-	() => void tutorBridge.beginChatGptSignIn().catch(error),
-);
+byId<HTMLButtonElement>("sign-in").addEventListener("click", () => {
+	requestState(true);
+	void tutorBridge.beginChatGptSignIn().catch(error);
+});
 byId<HTMLButtonElement>("open-auth").addEventListener(
 	"click",
 	() => void tutorBridge.openChatGptAuthorization().catch(error),
@@ -59,10 +86,7 @@ byId<HTMLButtonElement>("sign-out").addEventListener(
 	"click",
 	() => void tutorBridge.signOutChatGpt().catch(error),
 );
-byId<HTMLButtonElement>("cancel").addEventListener(
-	"click",
-	() => void tutorBridge.cancel(),
-);
+cancel.addEventListener("click", () => void tutorBridge.cancel());
 byId<HTMLButtonElement>("send-zen").addEventListener("click", () =>
 	send(tutorBridge.sendOpenCode),
 );
@@ -70,3 +94,4 @@ byId<HTMLButtonElement>("send-chatgpt").addEventListener("click", () =>
 	send(tutorBridge.sendChatGpt),
 );
 void tutorBridge.onEvent(present);
+requestState(false);

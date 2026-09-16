@@ -15,8 +15,10 @@ tauri-build = { version = "2.5.1", features = [] }
 [dependencies]
 futures-util = "0.3.31"
 gic-tutor-spike-core = { path = "../crates/tutor-core" }
+http = "1.4.0"
 open = "5.3.2"
 rig-core = "0.42.0"
 tauri = { version = "2.9.5", features = [] }
 tokio.workspace = true
 tokio-util.workspace = true
+uuid = { version = "1.18.1", features = ["v4"] }

@@ -1,17 +1,19 @@
 # Evidence: Tauri + Rig Tutor Provider Spike
 
-Status: deterministic packaged-UI work is ready for validation. No API key, ChatGPT login, provider request, token, raw provider response, or paid request has been made.
+Status: the packaged UI is wired to real Rig providers and is ready for human validation. No API key, ChatGPT login, provider request, token, raw provider response, or paid request has been made.
 
-The packaged Tauri UI is the only live-test path. OpenCode Zen displays the documented-free `mimo-v2.5-free` model. Its password field crosses only `connect_opencode` after a click, then clears immediately; it is not emitted, rendered, logged, returned, or stored in browser storage. Rust retains it only in memory. Renderer IPC is a small named bridge with no path, shell, environment, provider configuration, or arbitrary URL opener.
+The packaged Tauri UI is the only live-test path. It selects Zen's current free `mimo-v2.5-free` through Rig's OpenAI-compatible `/chat/completions` client and uses a stable app-generated `x-opencode-session` header for the UI conversation. Its password field crosses only `connect_opencode` after a click, then clears immediately; it is not emitted, rendered, logged, returned, or stored in browser storage. Rust retains it only in memory. Renderer IPC is a small named bridge with no path, shell, environment, provider configuration, or arbitrary URL opener.
 
-ChatGPT/Codex displays `gpt-5.3-instant`. Device authorization is structured non-secret UI state, and its opener takes no renderer URL. This revision does not persist OAuth credentials, avoiding exposed Rig auth-file paths and any unverified atomic-token-write claim. Sign-out clears app authorization state.
+The current [official Zen documentation](https://opencode.ai/docs/zen/) is the source for the selected free model and `/chat/completions` endpoint. OpenCode Go has distinct models and a paid subscription; it is not used or described as free here.
+
+ChatGPT/Codex displays `gpt-5.3-instant`. A Sign in click starts Rig's actual device flow and Rig supplies the structured non-secret verification URL and user code; its opener takes no renderer URL and accepts no arguments. Rig reads and writes its auth record at an app-owned platform config location selected solely in Rust; neither the location nor tokens are exposed to the renderer. This record is reused on restart and Sign out removes it. Rig owns persistence writes, so atomicity and file-permission guarantees are intentionally not claimed.
 
 | Check | Result |
 | --- | --- |
 | `cargo fmt --check` | pass |
-| `cargo check` / `cargo test` | pass; 4 deterministic core tests |
+| `cargo check` / `cargo test` | pass; 5 deterministic adapter-contract tests make no network calls |
 | `pnpm --dir ui typecheck` / `build` | pass |
-| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, 8.1 MB, one executable |
+| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable |
 | packaged app launch without Vite | unrun in this automated session |
 | live OpenCode and ChatGPT tests | explicitly unrun; human UI test only |
 

@@ -13,6 +13,7 @@ pub enum TutorEvent {
     Cancelled,
     Error { message: String },
     DeviceAuthorization { url: String, user_code: String },
+    SignedIn,
     SignedOut,
 }
 
@@ -49,6 +50,30 @@ pub async fn submit(
 pub fn safe_error(context: &str) -> TutorEvent {
     TutorEvent::Error {
         message: format!("{context}. Check your connection or sign in again."),
+    }
+}
+
+/// Shared no-overlap state for every provider operation.
+#[derive(Debug, Default)]
+pub struct RequestGate {
+    active: bool,
+}
+
+impl RequestGate {
+    pub fn begin(&mut self) -> bool {
+        if self.active {
+            return false;
+        }
+        self.active = true;
+        true
+    }
+
+    pub fn finish(&mut self) {
+        self.active = false;
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active
     }
 }
 
@@ -145,5 +170,15 @@ mod tests {
                 message: "OpenCode request failed. Check your connection or sign in again.".into()
             }
         );
+    }
+
+    #[test]
+    fn request_gate_rejects_overlap_and_recovers_after_a_terminal_outcome() {
+        let mut gate = RequestGate::default();
+        assert!(gate.begin());
+        assert!(gate.is_active());
+        assert!(!gate.begin());
+        gate.finish();
+        assert!(gate.begin());
     }
 }

@@ -1259,12 +1259,14 @@ version = "0.0.0"
 dependencies = [
  "futures-util",
  "gic-tutor-spike-core",
+ "http",
  "open",
  "rig-core",
  "tauri",
  "tauri-build",
  "tokio",
  "tokio-util",
+ "uuid",
 ]
 
 [[package]]
