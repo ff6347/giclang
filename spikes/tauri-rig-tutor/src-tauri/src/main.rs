@@ -7,9 +7,9 @@ use futures_util::StreamExt;
 use gic_tutor_spike_core::{RequestGate, TutorEvent, safe_error};
 use rig_core::{
     client::CompletionClient,
-    completion::{AssistantContent, CompletionModel},
+    completion::CompletionModel,
     providers::{chatgpt, openai},
-    streaming::StreamingCompletionResponse,
+    streaming::{StreamedAssistantContent, StreamingCompletionResponse},
 };
 use std::{
     fs,
@@ -184,7 +184,8 @@ enum StreamFailure {
 async fn consume_stream<F>(
     request: F,
     cancel: CancellationToken,
-) -> Result<Vec<String>, StreamFailure>
+    app: &AppHandle,
+) -> Result<(), StreamFailure>
 where
     F: Future<Output = Result<StreamingCompletionResponse, rig_core::completion::CompletionError>>,
 {
@@ -197,20 +198,16 @@ where
         tokio::select! {
             _ = cancel.cancelled() => return Err(StreamFailure::Cancelled),
             chunk = response.next() => match chunk {
+                Some(Ok(StreamedAssistantContent::Text(text))) => {
+                    emit(app, TutorEvent::Text { text: text.text });
+                }
                 Some(Ok(_)) => {}
                 Some(Err(_)) => return Err(StreamFailure::Provider),
                 None => break,
             }
         }
     }
-    Ok(response
-        .choice
-        .into_iter()
-        .filter_map(|content| match content {
-            AssistantContent::Text(text) => Some(text.text),
-            _ => None,
-        })
-        .collect())
+    Ok(())
 }
 
 #[tauri::command]
@@ -257,6 +254,10 @@ async fn send_opencode_prompt(
             }
         };
         headers.insert("x-opencode-session", session_header);
+        headers.insert(
+            http::header::USER_AGENT,
+            http::HeaderValue::from_static("gic-tutor-spike/0.0.0"),
+        );
         let outcome = match openai::Client::builder()
             .api_key(key)
             .base_url(ZEN_BASE_URL)
@@ -268,6 +269,7 @@ async fn send_opencode_prompt(
                 consume_stream(
                     model.stream(model.completion_request(prompt).build()),
                     cancel,
+                    &app_for_task,
                 )
                 .await
             }
@@ -314,6 +316,7 @@ async fn send_chatgpt_prompt(
                     consume_stream(
                         model.stream(model.completion_request(prompt).build()),
                         cancel,
+                        &app_for_task,
                     )
                     .await
                 }
@@ -327,18 +330,9 @@ async fn send_chatgpt_prompt(
     Ok(())
 }
 
-fn emit_stream_outcome(
-    app: &AppHandle,
-    outcome: Result<Vec<String>, StreamFailure>,
-    context: &str,
-) {
+fn emit_stream_outcome(app: &AppHandle, outcome: Result<(), StreamFailure>, context: &str) {
     match outcome {
-        Ok(texts) => {
-            for text in texts {
-                emit(app, TutorEvent::Text { text });
-            }
-            emit(app, TutorEvent::Complete);
-        }
+        Ok(()) => emit(app, TutorEvent::Complete),
         Err(StreamFailure::Cancelled) => emit(app, TutorEvent::Cancelled),
         Err(StreamFailure::Provider) => emit(app, safe_error(context)),
     }

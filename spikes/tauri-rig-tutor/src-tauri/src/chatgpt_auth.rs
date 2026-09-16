@@ -16,6 +16,7 @@ use tokio_util::sync::CancellationToken;
 const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
 const AUTH_BASE: &str = "https://auth.openai.com";
 const VERIFY_URL: &str = "https://auth.openai.com/codex/device";
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Clone)]
 pub struct ChatGptAuth {
@@ -72,7 +73,7 @@ struct DeviceCode {
     user_code: String,
     #[serde(default, alias = "verification_url")]
     verification_uri: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_optional_u64")]
     interval: Option<u64>,
 }
 #[derive(Deserialize)]
@@ -99,7 +100,11 @@ impl ChatGptAuth {
         Self {
             file,
             endpoints: Endpoints::production(),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .connect_timeout(REQUEST_TIMEOUT)
+                .timeout(REQUEST_TIMEOUT)
+                .build()
+                .expect("static HTTP client configuration must be valid"),
         }
     }
 
@@ -230,9 +235,32 @@ impl ChatGptAuth {
                 device_token: format!("{base}/poll"),
                 oauth_token: format!("{base}/token"),
             },
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .connect_timeout(REQUEST_TIMEOUT)
+                .timeout(REQUEST_TIMEOUT)
+                .build()
+                .unwrap(),
         }
     }
+}
+
+fn deserialize_optional_u64<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Number {
+        Integer(u64),
+        String(String),
+    }
+
+    Option::<Number>::deserialize(deserializer)?
+        .map(|number| match number {
+            Number::Integer(value) => Ok(value),
+            Number::String(value) => value.parse().map_err(serde::de::Error::custom),
+        })
+        .transpose()
 }
 
 fn build_record(tokens: TokenResponse, old_refresh: Option<String>) -> TokenRecord {
@@ -327,7 +355,7 @@ mod tests {
     }
     #[tokio::test]
     async fn device_flow_polls_exchanges_and_never_calls_completion() {
-        let (base,handle)=server(vec![r#"{"device_auth_id":"id","user_code":"ABCD","verification_uri":"https://auth.example/verify","interval":0}"#,r#"{"authorization_code":"code","code_verifier":"verifier"}"#,r#"{"access_token":"a","refresh_token":"r"}"#]).await;
+        let (base,handle)=server(vec![r#"{"device_auth_id":"id","user_code":"ABCD","verification_uri":"https://auth.example/verify","interval":"0"}"#,r#"{"authorization_code":"code","code_verifier":"verifier"}"#,r#"{"access_token":"a","refresh_token":"r"}"#]).await;
         let auth = ChatGptAuth::test_port(file("flow"), &base);
         let mut shown = None;
         auth.sign_in(CancellationToken::new(), |p| shown = Some(p))

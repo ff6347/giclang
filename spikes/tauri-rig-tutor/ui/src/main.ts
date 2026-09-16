@@ -8,11 +8,13 @@ const reply = byId<HTMLOutputElement>("reply");
 const status = byId<HTMLParagraphElement>("status");
 const deviceCode = byId<HTMLOutputElement>("device-code");
 const openAuth = byId<HTMLButtonElement>("open-auth");
+const connect = byId<HTMLButtonElement>("connect");
 const signIn = byId<HTMLButtonElement>("sign-in");
 const signOut = byId<HTMLButtonElement>("sign-out");
 const cancel = byId<HTMLButtonElement>("cancel");
 
 function requestState(active: boolean) {
+	connect.disabled = active;
 	cancel.disabled = !active;
 	byId<HTMLButtonElement>("send-zen").disabled = active;
 	byId<HTMLButtonElement>("send-chatgpt").disabled = active;
@@ -64,7 +66,7 @@ function send(action: (text: string) => Promise<void>) {
 	void action(prompt.value).catch(error);
 }
 
-byId<HTMLButtonElement>("connect").addEventListener("click", async () => {
+connect.addEventListener("click", async () => {
 	try {
 		await tutorBridge.connectOpenCode(key.value);
 		status.textContent = "OpenCode Zen connected for this app session.";
@@ -93,5 +95,6 @@ byId<HTMLButtonElement>("send-zen").addEventListener("click", () =>
 byId<HTMLButtonElement>("send-chatgpt").addEventListener("click", () =>
 	send(tutorBridge.sendChatGpt),
 );
-void tutorBridge.onEvent(present);
+await tutorBridge.onEvent(present);
 requestState(false);
+status.textContent = "Ready.";
