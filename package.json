@@ -16,6 +16,7 @@
 	"main": "./dist/core.js",
 	"types": "./dist/core.d.ts",
 	"scripts": {
+		"build": "pnpm build:cli && pnpm build:browser",
 		"build:cli": "tsc --project tsconfig.build.json",
 		"prepack": "pnpm build:cli",
 		"test:compact": "node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot",
