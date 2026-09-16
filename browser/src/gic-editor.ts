@@ -56,12 +56,28 @@ export function createGicEditor(
 ): GicEditor {
 	registerGicLanguage();
 	const editor = monaco.editor.create(container, {
+		theme: "vs",
 		ariaLabel: "GiC",
 		automaticLayout: true,
 		language: LANGUAGE_ID,
 		minimap: { enabled: false },
 		scrollBeyondLastLine: false,
+		detectIndentation: true,
+		wordBasedSuggestions: "currentDocument",
+		colorDecorators: true,
 		value: "",
+		lineNumbers: "on",
+		formatOnPaste: true,
+		fontFamily: "IBM Plex Mono, monospace",
+		fontSize: 18,
+		tabSize: 2,
+		insertSpaces: false,
+		rulers: [50],
+		accessibilitySupport: "on",
+		roundedSelection: false,
+		cursorStyle: "line",
+		fontLigatures: false,
+		cursorBlinking: "blink",
 	});
 	editor.onDidChangeModelContent(() => {
 		onSourceChange(editor.getValue());
