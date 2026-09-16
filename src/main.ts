@@ -5,22 +5,32 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { report } from "./message-formatter.ts";
-import { checkSource, type Diagnostic } from "./core.ts";
+import { checkSource, runSource, type Diagnostic } from "./core.ts";
 
-const USAGE = "Usage: gic check <file>\n       gic help";
+const USAGE =
+	"Usage: gic check <file>\n       gic run <file> [--commands]\n       gic help";
 const HELP = `${USAGE}
 
 Commands:
-  check <file>  Parse and analyze a GIC file without running it.
-  help          Show this help.`;
+  check <file>             Parse and analyze a GIC file without running it.
+  run <file>               Execute a GIC file headlessly.
+  run <file> --commands    Write recorded drawing commands as JSON.
+  help                     Show this help.`;
 
 function main(args: string[]): number {
 	let positionals: string[];
+	let commands: boolean | undefined;
 	try {
-		({ positionals } = parseArgs({
+		({
+			positionals,
+			values: { commands },
+		} = parseArgs({
 			args,
 			allowPositionals: true,
 			strict: true,
+			options: {
+				commands: { type: "boolean" },
+			},
 		}));
 	} catch (error: unknown) {
 		if (isParseArgsError(error)) {
@@ -33,7 +43,7 @@ function main(args: string[]): number {
 	const [command, ...commandArgs] = positionals;
 
 	if (command === "help") {
-		if (commandArgs.length > 0) {
+		if (commandArgs.length > 0 || commands !== undefined) {
 			console.error(USAGE);
 			return 64;
 		}
@@ -42,11 +52,23 @@ function main(args: string[]): number {
 	}
 
 	if (command === "check") {
-		if (commandArgs.length !== 1 || commandArgs[0] === undefined) {
+		if (
+			commandArgs.length !== 1 ||
+			commandArgs[0] === undefined ||
+			commands !== undefined
+		) {
 			console.error(USAGE);
 			return 64;
 		}
 		return checkFile(commandArgs[0]);
+	}
+
+	if (command === "run") {
+		if (commandArgs.length !== 1 || commandArgs[0] === undefined) {
+			console.error(USAGE);
+			return 64;
+		}
+		return runFile(commandArgs[0], commands === true);
 	}
 
 	if (command === undefined) {
@@ -58,16 +80,8 @@ function main(args: string[]): number {
 }
 
 function checkFile(pathToFile: string): number {
-	const absolutePath = resolve(cwd(), pathToFile);
-	let source: string;
-	try {
-		source = readFileSync(absolutePath, "utf-8");
-	} catch (error: unknown) {
-		if (isMissingFileError(error)) {
-			console.error(`File not found: ${absolutePath}`);
-		} else {
-			console.error(`Cannot read file: ${absolutePath}`);
-		}
+	const source = readSource(pathToFile);
+	if (source === undefined) {
 		return 2;
 	}
 
@@ -78,6 +92,42 @@ function checkFile(pathToFile: string): number {
 	}
 
 	return 0;
+}
+
+function runFile(pathToFile: string, showCommands: boolean): number {
+	const source = readSource(pathToFile);
+	if (source === undefined) {
+		return 2;
+	}
+
+	const result = runSource(source);
+	if (!showCommands) {
+		for (const entry of result.output) {
+			console.info(entry.text);
+		}
+	}
+	if (!result.ok) {
+		printDiagnostics(result.diagnostics, source);
+		return 1;
+	}
+	if (showCommands) {
+		console.info(JSON.stringify(result.commands));
+	}
+	return 0;
+}
+
+function readSource(pathToFile: string): string | undefined {
+	const absolutePath = resolve(cwd(), pathToFile);
+	try {
+		return readFileSync(absolutePath, "utf-8");
+	} catch (error: unknown) {
+		if (isMissingFileError(error)) {
+			console.error(`File not found: ${absolutePath}`);
+		} else {
+			console.error(`Cannot read file: ${absolutePath}`);
+		}
+		return undefined;
+	}
 }
 
 function printDiagnostics(diagnostics: Diagnostic[], source: string): void {
