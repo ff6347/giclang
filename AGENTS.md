@@ -132,3 +132,15 @@ pnpm test:e2e
 ## Issue Target
 
 Publish project work as git-bug objects in this repository. The configured bridge synchronizes those objects; do not create a separate set of issues directly on GitHub.
+
+### Delta.app git-bug access
+
+Delta.app clones do not copy the primary checkout's git-bug refs and repository-local configuration. Do not invoke git-bug directly in a fresh Delta worktree because that builds an empty cache and prevents identity and bridge discovery.
+
+Run git-bug against the primary checkout through Delta's `local` remote instead. Prefix every git-bug command, including mutation-helper invocations required by the `git-bug` skill, with:
+
+```bash
+GIT_DIR="$(git remote get-url local)"
+```
+
+Keep `GIT_DIR` scoped to that single command; do not export it or use it for source-control commands.
