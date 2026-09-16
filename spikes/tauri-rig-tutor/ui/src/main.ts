@@ -12,6 +12,7 @@ const connect = byId<HTMLButtonElement>("connect");
 const signIn = byId<HTMLButtonElement>("sign-in");
 const signOut = byId<HTMLButtonElement>("sign-out");
 const cancel = byId<HTMLButtonElement>("cancel");
+let eventsReady = false;
 
 function requestState(active: boolean) {
 	connect.disabled = active;
@@ -60,7 +61,20 @@ function present(event: TutorEvent) {
 		status.textContent = "Open the authorization page, then return here.";
 	}
 }
+function withEvents(action: () => void) {
+	if (!eventsReady) {
+		status.textContent =
+			"The tutor connection is still starting. Try again in a moment.";
+		return;
+	}
+	action();
+}
 function send(action: (text: string) => Promise<void>) {
+	if (!eventsReady) {
+		status.textContent =
+			"The tutor connection is still starting. Try again in a moment.";
+		return;
+	}
 	reply.value = "";
 	requestState(true);
 	void action(prompt.value).catch(error);
@@ -77,16 +91,19 @@ connect.addEventListener("click", async () => {
 	}
 });
 byId<HTMLButtonElement>("sign-in").addEventListener("click", () => {
-	requestState(true);
-	void tutorBridge.beginChatGptSignIn().catch(error);
+	withEvents(() => {
+		requestState(true);
+		void tutorBridge.beginChatGptSignIn().catch(error);
+	});
 });
 byId<HTMLButtonElement>("open-auth").addEventListener(
 	"click",
 	() => void tutorBridge.openChatGptAuthorization().catch(error),
 );
-byId<HTMLButtonElement>("sign-out").addEventListener(
-	"click",
-	() => void tutorBridge.signOutChatGpt().catch(error),
+byId<HTMLButtonElement>("sign-out").addEventListener("click", () =>
+	withEvents(() => {
+		void tutorBridge.signOutChatGpt().catch(error);
+	}),
 );
 cancel.addEventListener("click", () => void tutorBridge.cancel());
 byId<HTMLButtonElement>("send-zen").addEventListener("click", () =>
@@ -95,6 +112,23 @@ byId<HTMLButtonElement>("send-zen").addEventListener("click", () =>
 byId<HTMLButtonElement>("send-chatgpt").addEventListener("click", () =>
 	send(tutorBridge.sendChatGpt),
 );
-await tutorBridge.onEvent(present);
 requestState(false);
-status.textContent = "Ready.";
+status.textContent = "Starting tutor connection…";
+const eventSetupTimeout = window.setTimeout(() => {
+	if (!eventsReady) {
+		status.textContent =
+			"Tutor event connection did not start. Restart the application.";
+	}
+}, 5_000);
+void tutorBridge
+	.onEvent(present)
+	.then(() => {
+		eventsReady = true;
+		window.clearTimeout(eventSetupTimeout);
+		status.textContent = "Ready.";
+	})
+	.catch(() => {
+		window.clearTimeout(eventSetupTimeout);
+		status.textContent =
+			"Tutor event connection failed. Restart the application.";
+	});
