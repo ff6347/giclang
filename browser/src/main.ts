@@ -1,8 +1,10 @@
-// ABOUTME: Runs the browser preview lifecycle and renders GIC commands to Canvas.
-// ABOUTME: Manages worker replacement, console output, and visible diagnostics.
+// ABOUTME: Runs the browser authoring lifecycle and renders GIC commands to Canvas.
+// ABOUTME: Manages Monaco changes, worker replacement, output, and diagnostics.
 import Worker from "./worker.ts?worker";
 import type { RunResult } from "../../src/core.ts";
+import { createGicEditor, setEditorDiagnostics } from "./gic-editor.ts";
 import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
+import "./styles.css";
 
 document.addEventListener("DOMContentLoaded", () => {
 	const TIMEOUT_IN_MS = 500;
@@ -10,20 +12,31 @@ document.addEventListener("DOMContentLoaded", () => {
 	let activeWorker: Worker | null = null;
 	let debounceTimer: number | null = null;
 
-	// get dom elements
-	const textarea: HTMLTextAreaElement | null =
-		document.querySelector("textarea#code");
-	const diagnostics: HTMLDivElement | null =
-		document.querySelector("#diagnostics");
+	const editorContainer: HTMLDivElement | null =
+		document.querySelector("#code");
+	const problems: HTMLDivElement | null = document.querySelector("#problems");
+	const output: HTMLDivElement | null = document.querySelector("#output");
 	const canvas: HTMLCanvasElement | null =
 		document.querySelector("canvas#canvas");
 
-	// defense against missing elements
-	if (!textarea) throw new Error("textarea#code not found");
-	if (!diagnostics) throw new Error("#diagnostics not found");
+	if (!editorContainer) throw new Error("#code not found");
+	if (!problems) throw new Error("#problems not found");
+	if (!output) throw new Error("#output not found");
 	if (!canvas) throw new Error("canvas#canvas not found");
 	const canvasContext = canvas.getContext("2d");
 	if (!canvasContext) throw new Error("canvas#canvas context not found");
+
+	const renderEntries = (element: HTMLElement, entries: string[]) => {
+		element.replaceChildren(
+			...entries.map((entry) => {
+				const paragraph = document.createElement("p");
+				paragraph.textContent = entry;
+				return paragraph;
+			}),
+		);
+	};
+
+	let editor: ReturnType<typeof createGicEditor>;
 
 	const runPreview = (source: string) => {
 		let executionTimer: number | null = null;
@@ -33,9 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (worker !== activeWorker) return;
 			worker.terminate();
 			activeWorker = null;
-			diagnostics.setHTML(
+			setEditorDiagnostics(editor, []);
+			renderEntries(problems, [
 				`The preview took too long and was terminated after ${TIMEOUT_IN_MS}ms.`,
-			);
+			]);
 			clearCanvas(canvasContext, canvas);
 		}, TIMEOUT_IN_MS);
 		worker.onerror = (error) => {
@@ -46,8 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			activeWorker = null;
 
 			console.error("Worker error:", error);
-			diagnostics.setHTML("The preview could not be generated.");
-			// clear canvas
+			setEditorDiagnostics(editor, []);
+			renderEntries(problems, ["The preview could not be generated."]);
 			clearCanvas(canvasContext, canvas);
 		};
 
@@ -61,32 +75,38 @@ document.addEventListener("DOMContentLoaded", () => {
 			for (const entry of e.data.output) {
 				console.info(`Line ${entry.line + 1}: ${entry.text}`);
 			}
+			renderEntries(
+				output,
+				e.data.output.map((entry) => `Line ${entry.line + 1}: ${entry.text}`),
+			);
 
 			if (e.data.ok) {
 				renderToCanvas(canvas, e.data.commands);
 				console.info("Result:", e.data.commands);
-				diagnostics.setHTML("");
-				// write to canvas
+				setEditorDiagnostics(editor, []);
+				renderEntries(problems, []);
 			} else {
 				clearCanvas(canvasContext, canvas);
-				diagnostics.setHTML(
-					e.data.diagnostics
-						.map((d) => `<p>Line ${d.line + 1}: ${d.message}</p>`)
-						.join("\n"),
+				renderEntries(
+					problems,
+					setEditorDiagnostics(editor, e.data.diagnostics),
 				);
 			}
 		};
 		worker.postMessage({ source });
 	};
 
-	const inputHandler = () => {
+	const inputHandler = (source: string) => {
 		if (debounceTimer) clearTimeout(debounceTimer);
 		activeWorker?.terminate();
 		activeWorker = null;
+		setEditorDiagnostics(editor, []);
+		renderEntries(problems, []);
+		renderEntries(output, []);
 		debounceTimer = window.setTimeout(() => {
-			runPreview(textarea.value);
+			runPreview(source);
 		}, 100);
 	};
 
-	textarea.addEventListener("input", inputHandler);
+	editor = createGicEditor(editorContainer, inputHandler);
 });

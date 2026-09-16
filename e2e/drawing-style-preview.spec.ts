@@ -2,6 +2,7 @@
 // ABOUTME: Covers fill toggles, stroke colors, stroke width, alpha, and defaults.
 
 import { expect, test } from "@playwright/test";
+import { setEditorSource } from "./editor.ts";
 
 test("disables fill until a later fill command re-enables it", async ({
 	page,
@@ -15,7 +16,7 @@ circle(50, 50, 10);
 fill("tomato");
 circle(80, 50, 10);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -56,7 +57,7 @@ circle(50, 50, 10);
 stroke("#000000");
 circle(80, 50, 10);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -90,7 +91,7 @@ stroke(0, 0, 0, 50);
 strokeWidth(4);
 circle(50, 50, 20);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -121,7 +122,7 @@ stroke("#000000");
 strokeWidth(10);
 circle(50, 50, 15);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -158,9 +159,8 @@ circle(50, 50, 20);`;
 	const defaultSource = `background("#000000");
 circle(50, 50, 20);`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(styledSource);
+	await setEditorSource(page, styledSource);
 	await expect
 		.poll(() =>
 			page.locator("#canvas").evaluate((element) => {
@@ -176,7 +176,7 @@ circle(50, 50, 20);`;
 		)
 		.toEqual([255, 255, 255, 255]);
 
-	await editor.fill(defaultSource);
+	await setEditorSource(page, defaultSource);
 	await expect
 		.poll(() =>
 			page.locator("#canvas").evaluate((element) => {

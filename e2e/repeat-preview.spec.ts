@@ -3,6 +3,7 @@
 
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { setEditorSource } from "./editor.ts";
 
 test("renders a repeated row of circles", async ({ page }) => {
 	const source = `background(100, 0, 0);
@@ -12,7 +13,7 @@ repeat(column, 0, 3) {
 	circle(20 + column * 30, 50, 8);
 }`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -59,7 +60,7 @@ repeat(row, 0, 2) {
 	}
 }`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -109,7 +110,6 @@ repeat(column, 0, 3) {
 	circle(20 + column * 30, 50, 8);
 }`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 	const sampleCanvas = () =>
 		page.locator("#canvas").evaluate((element) => {
 			if (!(element instanceof HTMLCanvasElement)) {
@@ -130,21 +130,21 @@ repeat(column, 0, 3) {
 			};
 		});
 
-	await editor.fill(validSource);
+	await setEditorSource(page, validSource);
 	await expect.poll(sampleCanvas).toEqual({
 		cornerOpaque: true,
 		circleCenterOpaque: true,
 		circleDiffersFromCorner: true,
 	});
 
-	await editor.fill(invalidSource);
+	await setEditorSource(page, invalidSource);
 	await expect.poll(sampleCanvas).toEqual({
 		cornerOpaque: false,
 		circleCenterOpaque: false,
 		circleDiffersFromCorner: false,
 	});
-	await expect(page.locator("#diagnostics")).toHaveText(
-		"Line 1: Repeat step cannot be zero.",
+	await expect(page.locator("#problems")).toContainText(
+		"Repeat step cannot be zero.",
 	);
 });
 
@@ -154,7 +154,7 @@ test("renders the deterministic repeat example fixture", async ({ page }) => {
 		"utf8",
 	);
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>

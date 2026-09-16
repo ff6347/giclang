@@ -3,6 +3,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { setEditorSource } from "./editor.ts";
 
 async function canvasData(page: Page) {
 	return page.locator("#canvas").evaluate((element) => {
@@ -59,7 +60,7 @@ test("renders the reusable motif example through function calls", async ({
 		"utf8",
 	);
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() => sampleMotif(page))
@@ -84,22 +85,21 @@ repeat(i, 0, 8) {
 	circle(random(10, 90), random(10, 90), 4);
 }`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 	const emptyCanvas = await canvasData(page);
 
-	await editor.fill(source);
+	await setEditorSource(page, source);
 	await expect.poll(() => canvasData(page)).not.toBe(emptyCanvas);
 	const firstRun = await canvasData(page);
 
-	await editor.fill("circle(1);");
-	await expect(page.locator("#diagnostics")).toHaveText(
-		"Line 1: Function 'circle' expects 3 arguments, but got 1.",
+	await setEditorSource(page, "circle(1);");
+	await expect(page.locator("#problems")).toContainText(
+		"Function 'circle' expects 3 arguments, but got 1.",
 	);
 	await expect.poll(() => canvasData(page)).toBe(emptyCanvas);
 
-	await editor.fill(source);
+	await setEditorSource(page, source);
 	await expect.poll(() => canvasData(page)).toBe(firstRun);
-	await expect(page.locator("#diagnostics")).toHaveText("");
+	await expect(page.locator("#problems")).toHaveText("");
 });
 
 test("terminates runaway recursion and clears stale Canvas output", async ({
@@ -115,13 +115,12 @@ circle(50, 50, 20);`;
 }
 forever();`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(validSource);
+	await setEditorSource(page, validSource);
 	await expect.poll(() => centerAlpha(page)).toBe(255);
 
-	await editor.fill(runawaySource);
-	await expect(page.locator("#diagnostics")).toHaveText(
+	await setEditorSource(page, runawaySource);
+	await expect(page.locator("#problems")).toHaveText(
 		"The preview took too long and was terminated after 500ms.",
 	);
 	await expect.poll(() => centerAlpha(page)).toBe(0);

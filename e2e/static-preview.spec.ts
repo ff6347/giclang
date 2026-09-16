@@ -2,6 +2,7 @@
 // ABOUTME: Exercises static and computed drawing updates through the browser shell.
 
 import { expect, test, type Page } from "@playwright/test";
+import { setEditorSource } from "./editor.ts";
 
 async function sampleCanvas(page: Page) {
 	return page.locator("#canvas").evaluate((element) => {
@@ -34,7 +35,7 @@ test("renders background and circle commands on Canvas", async ({ page }) => {
 	const source = `background(20, 0, 0);
 circle(50, 50, 30);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() => sampleCanvas(page))
@@ -50,7 +51,7 @@ test("applies fill commands to subsequent circles", async ({ page }) => {
 fill(0, 0, 0);
 circle(50, 50, 30);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() => sampleCanvas(page))
@@ -64,7 +65,7 @@ circle(50, 50, 30);`;
 test("renders background alpha", async ({ page }) => {
 	const source = "background(0, 0, 0, 50);";
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -87,7 +88,7 @@ test("renders fill alpha on subsequent circles", async ({ page }) => {
 noStroke();
 circle(50, 50, 30);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -117,7 +118,7 @@ fill(0, 0, 0, 0);
 noStroke();
 circle(50, 50, 30.5);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -150,10 +151,10 @@ test("renders only the latest of rapid source edits", async ({ page }) => {
 circle(50, 50, 30);`;
 	const latestSource = "background(20, 0, 0);";
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(initialSource);
-	await editor.fill(latestSource);
+	await setEditorSource(page, initialSource);
+	await setEditorSource(page, latestSource);
+	await expect(page.locator(".view-line")).toHaveText(latestSource.split("\n"));
 
 	await expect
 		.poll(() => sampleCanvas(page))
@@ -171,9 +172,8 @@ test("clears the preview and shows a source-located diagnostic", async ({
 circle(50, 50, 30);`;
 	const invalidSource = "circle(50, 50);";
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(validSource);
+	await setEditorSource(page, validSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -182,7 +182,7 @@ circle(50, 50, 30);`;
 			centerDiffersFromCorner: true,
 		});
 
-	await editor.fill(invalidSource);
+	await setEditorSource(page, invalidSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -190,8 +190,8 @@ circle(50, 50, 30);`;
 			centerOpaque: false,
 			centerDiffersFromCorner: false,
 		});
-	await expect(page.locator("#diagnostics")).toHaveText(
-		"Line 1: Function 'circle' expects 3 arguments, but got 2.",
+	await expect(page.locator("#problems")).toContainText(
+		"Function 'circle' expects 3 arguments, but got 2.",
 	);
 });
 
@@ -211,9 +211,8 @@ if (size > 20) {
 	circle(50, 50, size);
 }`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(initialSource);
+	await setEditorSource(page, initialSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -222,7 +221,7 @@ if (size > 20) {
 			centerDiffersFromCorner: true,
 		});
 
-	await editor.fill(updatedSource);
+	await setEditorSource(page, updatedSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -247,9 +246,8 @@ if (size > 20) {
 	circle(50, 50, size);
 }`;
 	await page.goto("/");
-	const editor = page.getByLabel("GiC");
 
-	await editor.fill(validSource);
+	await setEditorSource(page, validSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -258,7 +256,7 @@ if (size > 20) {
 			centerDiffersFromCorner: true,
 		});
 
-	await editor.fill(invalidSource);
+	await setEditorSource(page, invalidSource);
 	await expect
 		.poll(() => sampleCanvas(page))
 		.toEqual({
@@ -266,7 +264,7 @@ if (size > 20) {
 			centerOpaque: false,
 			centerDiffersFromCorner: false,
 		});
-	await expect(page.locator("#diagnostics")).toHaveText(
-		"Line 3: Cannot compare non-number values.",
+	await expect(page.locator("#problems")).toContainText(
+		"Cannot compare non-number values.",
 	);
 });

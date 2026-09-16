@@ -2,11 +2,12 @@
 // ABOUTME: Covers named and hexadecimal colors for backgrounds and fills.
 
 import { expect, test } from "@playwright/test";
+import { setEditorSource } from "./editor.ts";
 
 test("renders a named CSS background color", async ({ page }) => {
 	const source = 'background("tomato");';
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -34,7 +35,7 @@ circle(25, 50, 10);
 fill("#000000");
 circle(75, 50, 10);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>

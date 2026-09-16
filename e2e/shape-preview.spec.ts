@@ -2,6 +2,7 @@
 // ABOUTME: Pins shape geometry, style behavior, point pixels, and open arcs.
 
 import { expect, test, type Page } from "@playwright/test";
+import { setEditorSource } from "./editor.ts";
 
 type SamplePoint = {
 	name: string;
@@ -42,7 +43,7 @@ stroke("#000000");
 strokeWidth(8);
 point(20, 20);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -73,7 +74,7 @@ stroke("#000000");
 strokeWidth(3);
 line(10, 20, 40, 20);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -101,7 +102,7 @@ fill("#000000");
 noStroke();
 rect(10, 10, 20, 15);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -129,7 +130,7 @@ fill("#000000");
 noStroke();
 ellipse(50, 50, 30, 10);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -161,7 +162,7 @@ fill("#000000");
 noStroke();
 triangle(10, 80, 30, 20, 50, 80);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -191,7 +192,7 @@ fill("#000000");
 noStroke();
 quad(60, 20, 90, 30, 80, 70, 55, 60);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>
@@ -220,7 +221,7 @@ stroke("tomato");
 strokeWidth(3);
 arc(50, 50, 20, 0, 90);`;
 	await page.goto("/");
-	await page.getByLabel("GiC").fill(source);
+	await setEditorSource(page, source);
 
 	await expect
 		.poll(() =>

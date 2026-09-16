@@ -1,0 +1,7 @@
+/* ABOUTME: Gives the Monaco editor a visible responsive editing area. */
+/* ABOUTME: Keeps the static authoring shell usable without prescribing visual styling. */
+
+#code {
+	height: 20rem;
+	width: 100%;
+}

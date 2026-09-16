@@ -31,6 +31,9 @@
 		"build:browser": "vite build",
 		"dev:browser": "vite"
 	},
+	"dependencies": {
+		"monaco-editor": "0.56.0"
+	},
 	"devDependencies": {
 		"@playwright/test": "1.62.1",
 		"@types/node": "25.7.0",
