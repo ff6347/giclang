@@ -1,0 +1,9 @@
+#!/bin/sh
+# ABOUTME: Prepares Delta-managed checkouts for GIC development.
+# ABOUTME: Trusts the mise configuration and installs locked pnpm dependencies.
+set -eu
+
+cd "$(dirname "$0")/.."
+
+mise trust
+mise exec -- pnpm install --frozen-lockfile
