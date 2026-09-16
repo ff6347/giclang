@@ -100,27 +100,31 @@ function validTokens(source: string): Token[] | undefined {
 class SourceWriter {
 	private indentation = 0;
 	private lineStart = true;
-	private output = "";
+	private output: string[] = [];
 	private previousToken: TokenType | undefined;
+	private spacePending = false;
 
 	format(items: FormatItem[]): string {
-		for (const [index, item] of items.entries()) {
+		const followingTokens = new Map<FormatItem, TokenType | undefined>();
+		let nextToken: TokenType | undefined;
+		for (const item of [...items].reverse()) {
+			followingTokens.set(item, nextToken);
+			if (item.kind === "token") {
+				nextToken = item.token.type;
+			}
+		}
+
+		for (const item of items) {
 			if (item.kind === "comment") {
 				this.writeComment(item.text);
 				continue;
 			}
 
-			const nextToken = items
-				.slice(index + 1)
-				.find(
-					(candidate): candidate is Extract<FormatItem, { kind: "token" }> =>
-						candidate.kind === "token",
-				)?.token.type;
-			this.writeToken(item.token, nextToken);
+			this.writeToken(item.token, followingTokens.get(item));
 		}
 
-		this.output = this.output.trimEnd();
-		return this.output.length === 0 ? "" : `${this.output}\n`;
+		const formattedSource = this.output.join("").trimEnd();
+		return formattedSource.length === 0 ? "" : `${formattedSource}\n`;
 	}
 
 	private writeToken(token: Token, nextToken: TokenType | undefined): void {
@@ -221,32 +225,32 @@ class SourceWriter {
 
 	private write(text: string): void {
 		if (this.lineStart) {
-			this.output += "\t".repeat(this.indentation);
+			this.output.push("\t".repeat(this.indentation));
 			this.lineStart = false;
 		}
-		this.output += text;
+		if (this.spacePending) {
+			this.output.push(" ");
+			this.spacePending = false;
+		}
+		this.output.push(text);
 	}
 
 	private space(): void {
-		if (
-			!this.lineStart &&
-			!this.output.endsWith(" ") &&
-			!this.output.endsWith("\n")
-		) {
-			this.output += " ";
+		if (!this.lineStart) {
+			this.spacePending = true;
 		}
 	}
 
 	private newline(): void {
 		this.trimLineEnd();
-		if (!this.output.endsWith("\n")) {
-			this.output += "\n";
+		if (!this.lineStart) {
+			this.output.push("\n");
 		}
 		this.lineStart = true;
 	}
 
 	private trimLineEnd(): void {
-		this.output = this.output.replace(/[ \t]+$/u, "");
+		this.spacePending = false;
 	}
 }
 
