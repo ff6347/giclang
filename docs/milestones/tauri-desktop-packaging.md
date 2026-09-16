@@ -1,7 +1,7 @@
-<!-- ABOUTME: Explains Deno-first desktop packaging for the shared GIC v0.9 IDE. -->
+<!-- ABOUTME: Explains Tauri desktop packaging for the shared GIC v0.9 IDE. -->
 <!-- ABOUTME: Defines runtime spikes, narrow bridge behavior, package smoke tests, and fallbacks. -->
 
-# Milestone: Package the IDE with a Deno-First Desktop Shell
+# Milestone: Package the IDE with Tauri
 
 ## Learning Goal
 
@@ -9,9 +9,9 @@ Package the shared static GIC IDE as one dedicated-window application without re
 
 ## Prerequisites
 
-- [Desktop shell and filesystem](../decisions/desktop-shell-filesystem.md) defines the Deno-first path, narrow bridge, file model, credentials, and fallback order.
+- [Desktop shell and filesystem](../decisions/desktop-shell-filesystem.md) selects Tauri 2, a narrow native Rust bridge, the file model, credentials, and the Electron fallback.
 - [Browser IDE technology](../decisions/browser-ide-technology-sandbox.md) defines the shared Monaco and worker boundaries.
-- The dedicated-shell spike proves the selected runtime and version on macOS and Windows.
+- The retained shell and tutor spikes prove built-asset packaging, the restricted host boundary, and provider streaming on macOS. Windows packaging remains a release check.
 - Monaco static preview, language assistance, layout, files, recovery, examples, and exports are complete through the shared UI.
 - CLI `check` and `run` behavior is available for core parity.
 
@@ -27,16 +27,16 @@ Animation is not a prerequisite for the static v0.9 package.
 
 ## Included
 
-- Deno-first packaging for macOS and Windows, with Linux best-effort.
+- Tauri 2 packaging for macOS and Windows, with Linux best-effort.
 - Packaged asset loading and application metadata.
 - Native Open, Save, and Save As dialogs for one `.gic` document.
 - Recent files, dirty state, discard warnings, format-on-save, examples, and private recovery.
 - Narrow settings, recovery, workspace, credential, external-launch, and lifecycle operations.
 - Shared diagnostics, static preview, output, language assistance, layout, PNG, and standalone HTML behavior.
 - Packaged smoke tests that use real files and no development server.
-- A recorded switch to the next fallback if Deno evidence fails.
+- The provider-neutral native Rust event boundary established by the retained tutor spike.
 
-Tutor provider implementation and signed release installers remain later slices, but the bridge must reserve only their accepted privileged operations.
+Tutor production integration and signed release installers remain later slices, but the bridge must expose only their accepted privileged operations.
 
 ## Interface Boundary
 
@@ -46,7 +46,7 @@ The webview requests specific user actions and receives operation-specific plain
 
 ## TDD-oriented Student Checklist
 
-- Complete the disposable shell spike before production bridge work.
+- Use the retained [Tauri shell](../../spikes/tauri-app-shell/) and [Tauri/Rig tutor](../../spikes/tauri-rig-tutor/) spikes as evidence, not production modules.
 - Start with bridge contract tests against temporary real directories.
 - Package built UI assets and launch without a development server.
 - Add native `.gic` open/save round trips and cancellation cases.
@@ -79,6 +79,6 @@ The webview requests specific user actions and receives operation-specific plain
 
 ## Notes / Decision Gates
 
-Deno remains the implementation target only while Spikes A and B in the [v0.9 roadmap](../plans/vertical-slice-roadmap.md) support it. If evidence fails, record the reason and move through the accepted narrow-port, Electron, then Tauri-plus-sidecar order without rewriting the shared UI.
+Tauri is the implementation target established by Spikes A and B in the [v0.9 roadmap](../plans/vertical-slice-roadmap.md). Electron remains the fallback if a production requirement cannot fit the accepted narrow native boundary. Do not add a Node sidecar without a new accepted decision and evidence of a concrete need.
 
 This milestone corresponds primarily to v0.9 roadmap Slice 12. Signing and final installers belong to Slice 17.

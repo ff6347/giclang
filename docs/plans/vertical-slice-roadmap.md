@@ -28,7 +28,7 @@ The existing textarea browser surface is an implementation baseline, not the v0.
 ## Accepted Product Boundaries
 
 - The desktop IDE is the primary distribution; the PWA is secondary.
-- Deno Desktop is the first shell candidate. Runtime evidence may trigger the documented narrow-port, Electron, or Tauri-plus-sidecar fallback order.
+- Tauri 2 is the selected desktop shell. Static authoring stays in one process, and operation-specific Rust commands own native dialogs, files, credentials, and provider calls. Electron is the fallback.
 - The core authoring experience never depends on tutor availability.
 - Desktop and PWA reuse one shared UI and browser-neutral core.
 - The language service is direct and browser-neutral; LSP and VS Code are later adapters, not v0.9 deliverables.
@@ -81,19 +81,19 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 ### Spike A: Dedicated desktop shell
 
-**Question:** Can Deno Desktop provide a stable dedicated window, built asset loading, native dialogs, application lifecycle hooks, callback handling, and a narrow privileged bridge on macOS and Windows?
+**Question:** Can a small desktop shell provide a stable dedicated window, built asset loading, native dialogs, application lifecycle hooks, callback handling, and a narrow privileged bridge on macOS and Windows?
 
-**Evidence:** Minimal packaged artifacts launch without a development server, round-trip one temporary file through a native dialog, and report their runtime and webview versions.
+**Evidence:** The retained Tauri artifact packages and launches built assets without a development server or companion process, exercises Rust/webview callbacks and lifecycle, tests an opaque-document-ID file adapter, and records exact macOS runtime and webview versions. Native dialog clicks and Windows packaging remain production checks.
 
-**Decision:** Continue with Deno Desktop or select the next documented fallback.
+**Decision:** Use Tauri 2 with an operation-specific native Rust bridge. Keep Electron as the fallback.
 
-### Spike B: Pi streaming and authentication in the packaged runtime
+### Spike B: Tutor streaming and authentication in the packaged runtime
 
-**Question:** Can the browser-compatible Pi agent/provider libraries stream responses, complete Codex OAuth and refresh, accept OpenCode credentials, and resume after restart without the Node-oriented coding-agent runtime?
+**Question:** Can a native Rust provider boundary stream responses, complete ChatGPT/Codex device authorization and refresh, accept OpenCode credentials, and resume after restart without the Node-oriented coding-agent runtime?
 
-**Evidence:** A packaged spike streams one response per provider, refreshes or reloads credentials after restart, signs out cleanly, and records every runtime incompatibility.
+**Evidence:** The retained Tauri/Rig artifact streamed OpenCode Zen and ChatGPT subscription responses through the packaged UI. Human testing completed device authorization, reused persisted authentication after a rebuilt launch, and exposed the Tauri capability and model-catalog failures recorded in the accepted desktop decision.
 
-**Decision:** Use Pi modules directly, port only identified boundaries, or move to the next desktop fallback.
+**Decision:** Use a GIC-owned provider-neutral Rust interface backed by Rig. Keep the narrow GIC-owned device-authorization port required by Rig 0.42. Do not add a Node sidecar without evidence of a concrete production need.
 
 ### Spike C: Direct-`file://` standalone workers
 

@@ -17,7 +17,7 @@ ChatGPT device authorization is a narrow GIC-owned privileged port because Rig 0
 
 The webview has a small named bridge: no credential storage, filesystem, shell, environment, generic IPC, generic provider configuration, or arbitrary URL opening. Its selectable diagnostic log records UI and Rust lifecycle stages, model and endpoint names, whether an account ID was available, HTTP status, and whitelisted provider error fields. It records prompt length rather than prompt text and excludes credentials, tokens, account IDs, headers, paths, and raw authentication data. No validation command makes a provider call.
 
-The live OpenCode path passed human validation. ChatGPT device authentication passed, but its first completion request failed; use the packaged UI's diagnostic log to identify the provider rejection without weakening the credential boundary.
+The live OpenCode path, ChatGPT device authentication, authentication reuse after a rebuilt launch, and a ChatGPT subscription completion with `gpt-5.6-luna` passed human validation. The diagnostic log remains available for provider failures without weakening the credential boundary.
 
 The [official Zen documentation](https://opencode.ai/docs/zen/) is the source for the selected free model and endpoint. OpenCode Go is a separate paid subscription provider and is not used by this spike.
 

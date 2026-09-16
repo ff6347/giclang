@@ -1,6 +1,6 @@
 # Evidence: Tauri + Rig Tutor Provider Spike
 
-Status: OpenCode Zen streaming and ChatGPT device authentication passed human validation after granting Tauri's event-listener capability. The first authenticated ChatGPT completion failed with the generic safe error, so the current package adds a credential-safe diagnostic console for the next validation pass. No successful ChatGPT provider response has been observed.
+Status: OpenCode Zen streaming, ChatGPT device authentication, persisted authentication reuse, and ChatGPT subscription streaming passed human validation in the packaged Tauri application.
 
 The packaged Tauri UI is the only live-test path. It selects Zen's current free `mimo-v2.5-free` through Rig's OpenAI-compatible `/chat/completions` client and uses a stable app-generated `x-opencode-session` header for the UI conversation. Its password field crosses only `connect_opencode` after a click, then clears immediately; it is not emitted, rendered, logged, returned, or stored in browser storage. Rust retains it only in memory. Renderer IPC is a small named bridge with no path, shell, environment, provider configuration, or arbitrary URL opener.
 
@@ -10,7 +10,7 @@ ChatGPT/Codex displays `gpt-5.6-luna`, selected from the tester's working Pi `op
 
 The first live UI passes exposed client defects rather than credential failures. The event listener was not ready before controls became usable, Rig stream chunks were buffered until completion instead of emitted as they arrived, and OpenAI's production device response encodes `interval` as a JSON string while the port accepted only a number. Blocking module startup on event readiness then left every control disabled. A non-blocking listener made the underlying cause observable: unlike registered application commands, Tauri's core event command requires an explicit capability. The corrected build grants only `core:event:allow-listen` to the `main` window, and OpenCode plus ChatGPT authentication subsequently worked.
 
-The remaining ChatGPT completion failure was over-redacted for diagnosis. The current build adds a selectable in-app log of UI and Rust lifecycle stages, the provider/model/endpoint, account-ID presence as a boolean, HTTP status, and only `code`, `type`, `message`, or `detail` from JSON provider errors. It records prompt length instead of text and never records credentials, tokens, account IDs, request headers, auth-file paths, or raw authentication responses. Non-JSON completion error text is capped at 1,000 characters.
+The first ChatGPT completion failure was over-redacted for diagnosis. The corrected build adds a selectable in-app log of UI and Rust lifecycle stages, the provider/model/endpoint, account-ID presence as a boolean, HTTP status, and only `code`, `type`, `message`, or `detail` from JSON provider errors. It records prompt length instead of text and never records credentials, tokens, account IDs, request headers, auth-file paths, or raw authentication responses. Non-JSON completion error text is capped at 1,000 characters. That log exposed the unsupported `gpt-5.3-instant` selection without exposing credentials; selecting `gpt-5.6-luna` from the tester's working subscription catalog then produced a successful response.
 
 | Check | Result |
 | --- | --- |
@@ -25,6 +25,6 @@ The remaining ChatGPT completion failure was over-redacted for diagnosis. The cu
 | corrected OpenCode Zen UI pass | pass; human observed a streamed response |
 | corrected ChatGPT device authentication | pass; human completed sign-in |
 | first authenticated ChatGPT completion | fail; HTTP 400 reported `gpt-5.3-instant` is unsupported with a ChatGPT account |
-| subscription-catalog `gpt-5.6-luna` ChatGPT completion | pending human retest |
+| subscription-catalog `gpt-5.6-luna` ChatGPT completion | pass; human observed a response through the packaged UI |
 
 This revision packaged a 15 MB app at `target/release/bundle/macos/GIC Tutor Rig Spike.app` (not launched). Electron's recorded package was 365 MB.

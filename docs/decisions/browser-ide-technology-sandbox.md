@@ -67,7 +67,7 @@ Monaco integration, worker construction, preview lifecycle, stale-result handlin
 ## Unblocks
 
 - [Browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
-- [Deno Desktop packaging](../milestones/deno-desktop-packaging.md)
+- [Tauri desktop packaging](../milestones/tauri-desktop-packaging.md)
 - v0.9 roadmap Slices 6 through 12
 
 ## Related Guidance
