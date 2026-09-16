@@ -21,7 +21,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio_util::sync::CancellationToken;
 
 const ZEN_FREE_MODEL: &str = "mimo-v2.5-free";
-const CODEX_MODEL: &str = "gpt-5.5";
+const CODEX_MODEL: &str = "gpt-5.6-luna";
 const ZEN_BASE_URL: &str = "https://opencode.ai/zen/v1";
 const CHATGPT_AUTH_FILE: &str = "chatgpt-auth.json";
 
