@@ -127,6 +127,20 @@ forever();`;
 	await expect.poll(() => cornerAlpha(page)).toBe(255);
 });
 
+test("opens the command palette with F1 immediately after launch", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.keyboard.press("F1");
+
+	const palette = page.locator(".quick-input-widget");
+	await expect(palette).toBeVisible();
+	await palette.locator("input").pressSequentially("Add Cursor Above");
+	await expect(
+		palette.getByText("Add Cursor Above", { exact: true }),
+	).toBeVisible();
+});
+
 test("opens the command palette and formats the GIC document", async ({
 	page,
 }) => {

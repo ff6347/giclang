@@ -99,6 +99,7 @@ export function createGicEditor(
 	editor.onDidChangeModelContent(() => {
 		onSourceChange(editor.getValue());
 	});
+	editor.focus();
 	return editor;
 }
 
