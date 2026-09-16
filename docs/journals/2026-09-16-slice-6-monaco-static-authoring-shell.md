@@ -35,3 +35,7 @@ Git-bug issue `184f8de` replaces the prototype textarea with a packaged Monaco e
 ## Tooling
 
 - [blocked] The installed git-bug `v0.10.1` rebuilds the primary checkout cache but lists no issues and rejects existing issue `184f8de` as nonexistent, although its `refs/bugs/...` object and operations are present. Issue mutation must not bypass the required `mutate.sh` synchronization helper.
+
+## Tooling Resolution
+
+- [lesson] The git-bug release was not the cause. Delta commands must both set `GIT_DIR` to the `local` remote and run from the primary checkout; using the primary Git directory with the Delta worktree as the current directory leaves identity and issue resolution empty.

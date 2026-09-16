@@ -135,12 +135,17 @@ Publish project work as git-bug objects in this repository. The configured bridg
 
 ### Delta.app git-bug access
 
-Delta.app clones do not copy the primary checkout's git-bug refs and repository-local configuration. Do not invoke git-bug directly in a fresh Delta worktree because that builds an empty cache and prevents identity and bridge discovery.
+Delta.app clones do not copy the primary checkout's git-bug refs and repository-local configuration. Git-bug resolves repository state from both `GIT_DIR` and its current working directory; setting only `GIT_DIR` while remaining in a Delta worktree produces an empty issue list and prevents identity discovery.
 
-Run git-bug against the primary checkout through Delta's `local` remote instead. Prefix every git-bug command, including mutation-helper invocations required by the `git-bug` skill, with:
+Resolve the primary checkout through Delta's `local` remote, run from that checkout, and scope `GIT_DIR` to each git-bug command:
 
 ```bash
-GIT_DIR="$(git remote get-url local)"
+PRIMARY_GIT_DIR="$(git remote get-url local)"
+PRIMARY_WORKTREE="${PRIMARY_GIT_DIR%/.git}"
+(
+	cd "$PRIMARY_WORKTREE"
+	GIT_DIR="$PRIMARY_GIT_DIR" git-bug bug
+)
 ```
 
-Keep `GIT_DIR` scoped to that single command; do not export it or use it for source-control commands.
+Use the same subshell and scoped `GIT_DIR` when invoking the mutation helper required by the `git-bug` skill. Do not export `GIT_DIR` or use it for source-control commands.
