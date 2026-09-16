@@ -52,8 +52,22 @@ repeat(i, 0, 3) {
 		assert.equal(formatSource(expressionSource), formattedExpressionSource);
 	});
 
-	test("returns invalid source unchanged", () => {
-		const invalidSource = "func broken(";
-		assert.equal(formatSource(invalidSource), invalidSource);
+	test("preserves comment text and order without treating slashes in strings as comments", () => {
+		const commentSource = `// first
+print("https://example.test");// second
+// third`;
+		const formattedCommentSource = `// first
+print("https://example.test");
+// second
+// third
+`;
+
+		assert.equal(formatSource(commentSource), formattedCommentSource);
+	});
+
+	test("returns lexer-invalid and parser-invalid source unchanged", () => {
+		for (const invalidSource of ['"unterminated', "@", "func broken("]) {
+			assert.equal(formatSource(invalidSource), invalidSource);
+		}
 	});
 });
