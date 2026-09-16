@@ -38,7 +38,7 @@
 - [ ] [Implement animation built-ins and scheduler hooks](milestones/animation-built-ins-scheduler-hooks.md)
 - [x] [Add the browser Canvas backend for static sketches](milestones/browser-canvas-static-backend.md)
 - [ ] [Add the browser Canvas animation backend](milestones/browser-canvas-animation-backend.md)
-- [ ] [Add CLI check and run entry points](milestones/cli-check-run-entry-points.md)
+- [x] [Add CLI check and run entry points](milestones/cli-check-run-entry-points.md)
 - [ ] [Add example-program and visual-regression verification](milestones/example-program-visual-regression.md)
 - [x] [Decide the browser IDE technology and sandbox model](decisions/browser-ide-technology-sandbox.md)
 - [x] [Decide language-service, LSP, and VS Code extension scope](decisions/language-service-lsp-vscode-scope.md)

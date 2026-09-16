@@ -125,7 +125,7 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 - Diagnostics include source locations and never expose raw host stack traces.
 - Package metadata exposes a usable `gic` executable.
 
-`gic run` executes headlessly and writes ordered GIC `print` output by default. The `--show-commands` option additionally writes a stable serialization of the recorded drawing commands. Image rendering is deferred to a later explicit shell-backend decision; Skia is a candidate, not a v0.9 dependency.
+`gic run` executes headlessly and writes ordered GIC `print` output by default. The `--commands` option instead writes only a stable JSON serialization of the recorded drawing commands. Image rendering is deferred to a later explicit shell-backend decision; Skia is a candidate, not a v0.9 dependency.
 
 **Not included:** Image generation or display, PNG/SVG/GIF export, server rendering, `gic lsp`, animation, or watch mode.
 
