@@ -44,7 +44,7 @@
 - [x] [Decide language-service, LSP, and VS Code extension scope](decisions/language-service-lsp-vscode-scope.md)
 - [x] [Build the browser IDE MVP with diagnostics and static preview](milestones/browser-ide-mvp-diagnostics-static-preview.md)
 - [ ] [Add browser IDE animation and runtime-error UX (v0.9 stretch)](milestones/browser-ide-animation-runtime-error-ux.md)
-- [ ] [Add browser IDE language assistance](milestones/browser-ide-language-assistance.md)
+- [x] [Add browser IDE language assistance](milestones/browser-ide-language-assistance.md)
 - [x] [Decide the desktop shell and filesystem model](decisions/desktop-shell-filesystem.md)
 - [ ] [Package the IDE with Tauri](milestones/tauri-desktop-packaging.md)
 - [ ] [Design dynamic lists](decisions/dynamic-lists.md)
