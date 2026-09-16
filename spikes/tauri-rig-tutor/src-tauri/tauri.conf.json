@@ -1,0 +1,17 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "GIC Tutor Rig Spike",
+	"version": "0.0.0",
+	"identifier": "org.gic.spike.tauririgtutor",
+	"build": { "frontendDist": "../ui/dist" },
+	"app": {
+		"windows": [
+			{ "title": "GIC Tutor Rig Spike", "width": 640, "height": 720 }
+		],
+		"security": {
+			"csp": "default-src 'self'; connect-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline'",
+			"capabilities": ["tutor-events"]
+		}
+	},
+	"bundle": { "active": true, "targets": "app", "icon": ["icons/icon.png"] }
+}

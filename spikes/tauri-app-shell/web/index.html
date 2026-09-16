@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>GIC Tauri Shell Spike</title>
+		<style>
+			body {
+				font:
+					16px/1.5 system-ui,
+					sans-serif;
+				margin: 2rem;
+				max-width: 50rem;
+			}
+			textarea {
+				box-sizing: border-box;
+				display: block;
+				font: inherit;
+				height: 16rem;
+				margin-block: 1rem;
+				width: 100%;
+			}
+			button {
+				font: inherit;
+				margin-inline-end: 0.5rem;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>GIC Tauri shell spike</h1>
+		<p id="status">Loading packaged assets…</p>
+		<textarea id="source">circle(50, 50, 20);</textarea>
+		<button id="open" type="button">Open…</button>
+		<button id="save" type="button">Save</button>
+		<button id="save-as" type="button">Save As…</button>
+		<script type="module" src="./app.js"></script>
+	</body>
+</html>

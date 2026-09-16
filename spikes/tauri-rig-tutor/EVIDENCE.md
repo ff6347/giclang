@@ -1,0 +1,30 @@
+# Evidence: Tauri + Rig Tutor Provider Spike
+
+Status: OpenCode Zen streaming, ChatGPT device authentication, persisted authentication reuse, and ChatGPT subscription streaming passed human validation in the packaged Tauri application.
+
+The packaged Tauri UI is the only live-test path. It selects Zen's current free `mimo-v2.5-free` through Rig's OpenAI-compatible `/chat/completions` client and uses a stable app-generated `x-opencode-session` header for the UI conversation. Its password field crosses only `connect_opencode` after a click, then clears immediately; it is not emitted, rendered, logged, returned, or stored in browser storage. Rust retains it only in memory. Renderer IPC is a small named bridge with no path, shell, environment, provider configuration, or arbitrary URL opener.
+
+The current [official Zen documentation](https://opencode.ai/docs/zen/) is the source for the selected free model and `/chat/completions` endpoint. OpenCode Go has distinct models and a paid subscription; it is not used or described as free here.
+
+ChatGPT/Codex displays `gpt-5.6-luna`, selected from the tester's working Pi `openai-codex` subscription catalog. That live catalog also includes `gpt-5.3-codex-spark`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-6-astra`; it is newer than the public Codex model page consulted during the spike. The first completion test used `gpt-5.3-instant`; the authenticated Codex backend returned HTTP 400 and stated that model is unsupported with a ChatGPT account. GIC owns a deliberately narrow device-authorization port because Rig 0.42's public OAuth entry point couples device-flow startup to a completion stream. A Sign in click calls only the inspected Codex device-code, polling, and OAuth-token endpoints; it does not construct or touch a completion/model URL. It displays the response's verification URL and user code, stores only the private token record in the Rust-selected app config path, and deletes it on Sign out. On explicit Send, the adapter reloads/refreshes that record, then passes only its in-memory access token and account ID to Rig's ChatGPT/Codex client for real streaming. Tokens, raw auth responses, secrets, and the auth path are neither emitted, rendered, logged, nor returned. The authorization opener has no renderer URL argument and opens only the exact active response URL.
+
+The first live UI passes exposed client defects rather than credential failures. The event listener was not ready before controls became usable, Rig stream chunks were buffered until completion instead of emitted as they arrived, and OpenAI's production device response encodes `interval` as a JSON string while the port accepted only a number. Blocking module startup on event readiness then left every control disabled. A non-blocking listener made the underlying cause observable: unlike registered application commands, Tauri's core event command requires an explicit capability. The corrected build grants only `core:event:allow-listen` to the `main` window, and OpenCode plus ChatGPT authentication subsequently worked.
+
+The first ChatGPT completion failure was over-redacted for diagnosis. The corrected build adds a selectable in-app log of UI and Rust lifecycle stages, the provider/model/endpoint, account-ID presence as a boolean, HTTP status, and only `code`, `type`, `message`, or `detail` from JSON provider errors. It records prompt length instead of text and never records credentials, tokens, account IDs, request headers, auth-file paths, or raw authentication responses. Non-JSON completion error text is capped at 1,000 characters. That log exposed the unsupported `gpt-5.3-instant` selection without exposing credentials; selecting `gpt-5.6-luna` from the tester's working subscription catalog then produced a successful response.
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --check` | pass |
+| `cargo fmt --check`, `cargo check` / `cargo test` | pass; five deterministic local HTTP tests cover device request, pending poll, exchange, refresh, redaction, sign-out, and the no-completion-URL invariant |
+| `pnpm --dir ui typecheck` / `build` | pass |
+| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable (not launched) |
+| packaged app launch without Vite | unrun in this automated session |
+| first live OpenCode and ChatGPT UI pass | fail; no visible OpenCode progress and no ChatGPT device code |
+| first replacement package | fail; provider controls remained disabled during event-listener startup |
+| second replacement package | fail; status exposed that Tauri event registration never completed because its capability was missing |
+| corrected OpenCode Zen UI pass | pass; human observed a streamed response |
+| corrected ChatGPT device authentication | pass; human completed sign-in |
+| first authenticated ChatGPT completion | fail; HTTP 400 reported `gpt-5.3-instant` is unsupported with a ChatGPT account |
+| subscription-catalog `gpt-5.6-luna` ChatGPT completion | pass; human observed a response through the packaged UI |
+
+This revision packaged a 15 MB app at `target/release/bundle/macos/GIC Tutor Rig Spike.app` (not launched). Electron's recorded package was 365 MB.

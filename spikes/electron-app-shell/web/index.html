@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>GIC Electron and Pi Spike</title>
+		<style>
+			body {
+				font:
+					16px/1.5 system-ui,
+					sans-serif;
+				margin: 2rem;
+				max-width: 50rem;
+			}
+			textarea {
+				box-sizing: border-box;
+				display: block;
+				font: inherit;
+				height: 14rem;
+				margin-block: 1rem;
+				width: 100%;
+			}
+			button {
+				font: inherit;
+				margin: 0 0.5rem 0.5rem 0;
+			}
+			pre {
+				white-space: pre-wrap;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>GIC Electron and Pi spike</h1>
+		<p id="status">Loading packaged assets…</p>
+		<textarea id="source">circle(50, 50, 20);</textarea>
+		<button id="open" type="button">Open…</button>
+		<button id="save" type="button">Save</button>
+		<button id="save-as" type="button">Save As…</button>
+		<h2>Deterministic Pi probe</h2>
+		<pre id="tutor-output"></pre>
+		<script type="module" src="./app.js"></script>
+	</body>
+</html>

@@ -1,0 +1,14 @@
+{
+	"private": true,
+	"scripts": {
+		"build": "vite build",
+		"typecheck": "tsc --noEmit",
+		"package": "cd ../src-tauri && ../ui/node_modules/.bin/tauri build"
+	},
+	"devDependencies": {
+		"@tauri-apps/api": "2.8.0",
+		"@tauri-apps/cli": "2.9.5",
+		"typescript": "5.9.2",
+		"vite": "7.1.7"
+	}
+}
