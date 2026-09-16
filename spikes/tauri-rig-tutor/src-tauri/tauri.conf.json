@@ -9,7 +9,8 @@
 			{ "title": "GIC Tutor Rig Spike", "width": 640, "height": 400 }
 		],
 		"security": {
-			"csp": "default-src 'self'; connect-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline'"
+			"csp": "default-src 'self'; connect-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline'",
+			"capabilities": ["tutor-events"]
 		}
 	},
 	"bundle": { "active": true, "targets": "app", "icon": ["icons/icon.png"] }
