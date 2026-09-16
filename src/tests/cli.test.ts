@@ -99,6 +99,21 @@ describe("gic check", () => {
 		);
 	});
 
+	test("rejects unsupported options without a stack trace", () => {
+		const result = runCli(["check", "--unknown"]);
+
+		assert.strictEqual(result.status, 64);
+		assert.strictEqual(result.stdout, "");
+		assert.strictEqual(
+			result.stderr,
+			"Unknown option '--unknown'. To specify a positional argument starting " +
+				"with a '-', place it at the end of the command after '--', as in " +
+				`'-- "--unknown"\n\n` +
+				"Usage: gic check <file>\n" +
+				"       gic help\n",
+		);
+	});
+
 	test("prints stable help", () => {
 		const result = runCli(["help"]);
 

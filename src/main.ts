@@ -3,6 +3,7 @@
 import { argv, cwd } from "node:process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseArgs } from "node:util";
 import { report } from "./message-formatter.ts";
 import { checkSource, type Diagnostic } from "./core.ts";
 
@@ -14,7 +15,22 @@ Commands:
   help          Show this help.`;
 
 function main(args: string[]): number {
-	const [command, ...commandArgs] = args;
+	let positionals: string[];
+	try {
+		({ positionals } = parseArgs({
+			args,
+			allowPositionals: true,
+			strict: true,
+		}));
+	} catch (error: unknown) {
+		if (isParseArgsError(error)) {
+			console.error(`${error.message}\n\n${USAGE}`);
+			return 64;
+		}
+		throw error;
+	}
+
+	const [command, ...commandArgs] = positionals;
 
 	if (command === "help") {
 		if (commandArgs.length > 0) {
@@ -82,6 +98,15 @@ function isMissingFileError(error: unknown): boolean {
 		error instanceof Error &&
 		"code" in error &&
 		(error.code === "ENOENT" || error.code === "ENOTDIR")
+	);
+}
+
+function isParseArgsError(error: unknown): error is Error {
+	return (
+		error instanceof TypeError &&
+		"code" in error &&
+		typeof error.code === "string" &&
+		error.code.startsWith("ERR_PARSE_ARGS_")
 	);
 }
 
