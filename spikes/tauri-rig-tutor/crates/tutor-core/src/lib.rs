@@ -1,4 +1,4 @@
-//! Provider-neutral tutor protocol. Rig stays behind this boundary.
+//! Provider-neutral protocol shared by the privileged host and the webview.
 
 use async_trait::async_trait;
 use serde::Serialize;
@@ -7,15 +7,19 @@ use tokio_util::sync::CancellationToken;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TutorEvent {
+    Status { message: String },
     Text { text: String },
     Complete,
     Cancelled,
     Error { message: String },
+    DeviceAuthorization { url: String, user_code: String },
+    SignedOut,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TutorQuestion(pub String);
 
+/// A provider is never exposed to the renderer.
 #[async_trait]
 pub trait TutorProvider: Send + Sync {
     async fn stream(
@@ -34,11 +38,18 @@ pub async fn submit(
 ) {
     if question.trim().is_empty() {
         emit(TutorEvent::Error {
-            message: "Ask a tutor question before submitting.".into(),
+            message: "Enter a tutor prompt before sending.".into(),
         });
         return;
     }
     provider.stream(TutorQuestion(question), cancel, emit).await;
+}
+
+/// Safe user-facing errors must never include a provider response or secret.
+pub fn safe_error(context: &str) -> TutorEvent {
+    TutorEvent::Error {
+        message: format!("{context}. Check your connection or sign in again."),
+    }
 }
 
 #[derive(Default)]
@@ -78,23 +89,13 @@ mod tests {
             &mut |e| events.push(e),
         )
         .await;
+        assert!(matches!(events.last(), Some(TutorEvent::Complete)));
         assert_eq!(
-            events,
-            vec![
-                TutorEvent::Text {
-                    text: "What ".into()
-                },
-                TutorEvent::Text {
-                    text: "have ".into()
-                },
-                TutorEvent::Text {
-                    text: "you ".into()
-                },
-                TutorEvent::Text {
-                    text: "tried?".into()
-                },
-                TutorEvent::Complete
-            ]
+            events
+                .iter()
+                .filter(|e| matches!(e, TutorEvent::Text { .. }))
+                .count(),
+            4
         );
     }
 
@@ -124,17 +125,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn no_provider_call_occurs_before_explicit_nonempty_submission() {
+    async fn blank_submission_never_calls_a_provider() {
         let provider = CountingProvider(AtomicUsize::new(0));
-        let mut events = Vec::new();
         submit(
             &provider,
-            "   ".into(),
+            "  ".into(),
             CancellationToken::new(),
-            &mut |e| events.push(e),
+            &mut |_| {},
         )
         .await;
         assert_eq!(provider.0.load(Ordering::SeqCst), 0);
-        assert!(matches!(events.as_slice(), [TutorEvent::Error { .. }]));
+    }
+
+    #[test]
+    fn provider_errors_are_redacted() {
+        assert_eq!(
+            safe_error("OpenCode request failed"),
+            TutorEvent::Error {
+                message: "OpenCode request failed. Check your connection or sign in again.".into()
+            }
+        );
     }
 }

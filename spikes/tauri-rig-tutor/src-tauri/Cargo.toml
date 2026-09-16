@@ -9,22 +9,14 @@ autobins = false
 name = "gic-tauri-rig-tutor-spike"
 path = "src/main.rs"
 
-[[example]]
-name = "live-opencode"
-path = "examples/live-opencode.rs"
-
-[[example]]
-name = "chatgpt-device-login"
-path = "examples/chatgpt-device-login.rs"
-
 [build-dependencies]
 tauri-build = { version = "2.5.1", features = [] }
 
 [dependencies]
 futures-util = "0.3.31"
 gic-tutor-spike-core = { path = "../crates/tutor-core" }
+open = "5.3.2"
 rig-core = "0.42.0"
-serde.workspace = true
 tauri = { version = "2.9.5", features = [] }
 tokio.workspace = true
 tokio-util.workspace = true

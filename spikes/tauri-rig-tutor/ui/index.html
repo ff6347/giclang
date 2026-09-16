@@ -1,11 +1,35 @@
 <!doctype html>
-<html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>GIC Tutor Spike</title>
+	</head>
 	<body>
 		<main>
-			<h1>GIC tutor spike</h1>
-			<label>Question <input id="question" /></label
-			><button id="ask">Ask</button><button id="cancel">Cancel</button
-			><output id="reply"></output>
+			<h1>GIC Tutor</h1>
+			<section>
+				<h2>OpenCode Zen</h2>
+				<p>Model: <strong>mimo-v2.5-free</strong> (documented free model)</p>
+				<label
+					>API key
+					<input id="api-key" type="password" autocomplete="off" /></label
+				><button id="connect">Connect / Save</button>
+			</section>
+			<section>
+				<h2>ChatGPT / Codex</h2>
+				<p>Model: <strong>gpt-5.3-instant</strong></p>
+				<button id="sign-in">Sign in with ChatGPT</button
+				><button id="open-auth" disabled>Open authorization page</button
+				><button id="sign-out">Sign out</button>
+				<output id="device-code" aria-live="polite"></output>
+			</section>
+			<label>Prompt <textarea id="prompt" rows="3"></textarea></label>
+			<button id="send-zen">Send with OpenCode Zen</button
+			><button id="send-chatgpt">Send with ChatGPT</button
+			><button id="cancel">Cancel</button>
+			<p id="status" aria-live="polite"></p>
+			<output id="reply" aria-live="polite"></output>
 		</main>
 		<script type="module" src="/src/main.ts"></script>
 	</body>
