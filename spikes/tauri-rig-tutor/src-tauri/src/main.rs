@@ -4,10 +4,10 @@ mod chatgpt_auth;
 
 use chatgpt_auth::ChatGptAuth;
 use futures_util::StreamExt;
-use gic_tutor_spike_core::{RequestGate, TutorEvent, safe_error};
+use gic_tutor_spike_core::{RequestGate, TutorEvent, provider_diagnostic, safe_error};
 use rig_core::{
     client::CompletionClient,
-    completion::CompletionModel,
+    completion::{CompletionError, CompletionModel},
     providers::{chatgpt, openai},
     streaming::{StreamedAssistantContent, StreamingCompletionResponse},
 };
@@ -178,13 +178,40 @@ fn cancel_tutor_request(state: tauri::State<'_, Arc<Mutex<Session>>>) {
 
 enum StreamFailure {
     Cancelled,
-    Provider,
+    Provider(String),
+}
+
+fn completion_failure(provider: &str, error: CompletionError) -> StreamFailure {
+    let category = match &error {
+        CompletionError::HttpError(_) => "HTTP transport or provider response",
+        CompletionError::JsonError(_) => "JSON encoding or decoding",
+        CompletionError::UrlError(_) => "request URL",
+        CompletionError::RequestError(_) => "request construction",
+        CompletionError::ResponseError(_) => "response parsing",
+        CompletionError::ProviderError(_) => "provider stream",
+        CompletionError::ProviderResponse(_) => "provider response",
+    };
+    let fallback_response = match &error {
+        CompletionError::ResponseError(message) | CompletionError::ProviderError(message) => {
+            Some(message.as_str())
+        }
+        _ => None,
+    };
+    StreamFailure::Provider(provider_diagnostic(
+        provider,
+        category,
+        error
+            .provider_response_status()
+            .map(|status| status.as_u16()),
+        error.provider_response_body().or(fallback_response),
+    ))
 }
 
 async fn consume_stream<F>(
     request: F,
     cancel: CancellationToken,
     app: &AppHandle,
+    provider: &str,
 ) -> Result<(), StreamFailure>
 where
     F: Future<Output = Result<StreamingCompletionResponse, rig_core::completion::CompletionError>>,
@@ -192,7 +219,7 @@ where
     tokio::pin!(request);
     let mut response = tokio::select! {
         _ = cancel.cancelled() => return Err(StreamFailure::Cancelled),
-        response = &mut request => response.map_err(|_| StreamFailure::Provider)?,
+        response = &mut request => response.map_err(|error| completion_failure(provider, error))?,
     };
     loop {
         tokio::select! {
@@ -202,7 +229,7 @@ where
                     emit(app, TutorEvent::Text { text: text.text });
                 }
                 Some(Ok(_)) => {}
-                Some(Err(_)) => return Err(StreamFailure::Provider),
+                Some(Err(error)) => return Err(completion_failure(provider, error)),
                 None => break,
             }
         }
@@ -246,7 +273,9 @@ async fn send_opencode_prompt(
             Err(_) => {
                 emit_stream_outcome(
                     &app_for_task,
-                    Err(StreamFailure::Provider),
+                    Err(StreamFailure::Provider(
+                        "OpenCode Zen: invalid session header".into(),
+                    )),
                     "OpenCode request failed",
                 );
                 finish_request(&session);
@@ -270,10 +299,13 @@ async fn send_opencode_prompt(
                     model.stream(model.completion_request(prompt).build()),
                     cancel,
                     &app_for_task,
+                    "OpenCode Zen",
                 )
                 .await
             }
-            Err(_) => Err(StreamFailure::Provider),
+            Err(_) => Err(StreamFailure::Provider(
+                "OpenCode Zen: client construction failed".into(),
+            )),
         };
         emit_stream_outcome(&app_for_task, outcome, "OpenCode request failed");
         finish_request(&session);
@@ -304,25 +336,41 @@ async fn send_chatgpt_prompt(
         // Refresh/load remains in the app-owned auth port. Rig is used only
         // after Send, with the non-persisted access context it returns.
         let outcome = match ChatGptAuth::new(auth_file).context().await {
-            Ok(auth) => match chatgpt::Client::builder()
-                .api_key(chatgpt::ChatGPTAuth::AccessToken {
-                    access_token: auth.access_token,
-                    account_id: auth.account_id,
-                })
-                .build()
-            {
-                Ok(client) => {
-                    let model = client.completion_model(CODEX_MODEL);
-                    consume_stream(
-                        model.stream(model.completion_request(prompt).build()),
-                        cancel,
-                        &app_for_task,
-                    )
-                    .await
+            Ok(auth) => {
+                emit(
+                    &app_for_task,
+                    TutorEvent::Diagnostic {
+                        message: format!(
+                            "ChatGPT: preparing Rig request; model={CODEX_MODEL}; endpoint=/backend-api/codex/responses; account ID present={}",
+                            auth.account_id.is_some()
+                        ),
+                    },
+                );
+                match chatgpt::Client::builder()
+                    .api_key(chatgpt::ChatGPTAuth::AccessToken {
+                        access_token: auth.access_token,
+                        account_id: auth.account_id,
+                    })
+                    .build()
+                {
+                    Ok(client) => {
+                        let model = client.completion_model(CODEX_MODEL);
+                        consume_stream(
+                            model.stream(model.completion_request(prompt).build()),
+                            cancel,
+                            &app_for_task,
+                            "ChatGPT",
+                        )
+                        .await
+                    }
+                    Err(_) => Err(StreamFailure::Provider(
+                        "ChatGPT: Rig client construction failed".into(),
+                    )),
                 }
-                Err(_) => Err(StreamFailure::Provider),
-            },
-            Err(_) => Err(StreamFailure::Provider),
+            }
+            Err(_) => Err(StreamFailure::Provider(
+                "ChatGPT: saved authentication context could not be loaded or refreshed".into(),
+            )),
         };
         emit_stream_outcome(&app_for_task, outcome, "ChatGPT request failed");
         finish_request(&session);
@@ -334,7 +382,15 @@ fn emit_stream_outcome(app: &AppHandle, outcome: Result<(), StreamFailure>, cont
     match outcome {
         Ok(()) => emit(app, TutorEvent::Complete),
         Err(StreamFailure::Cancelled) => emit(app, TutorEvent::Cancelled),
-        Err(StreamFailure::Provider) => emit(app, safe_error(context)),
+        Err(StreamFailure::Provider(diagnostic)) => {
+            emit(
+                app,
+                TutorEvent::Diagnostic {
+                    message: diagnostic,
+                },
+            );
+            emit(app, safe_error(context));
+        }
     }
 }
 

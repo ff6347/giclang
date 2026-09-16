@@ -30,6 +30,20 @@
 			><button id="cancel" disabled>Cancel</button>
 			<p id="status" aria-live="polite"></p>
 			<output id="reply" aria-live="polite"></output>
+			<details open>
+				<summary>Diagnostic log</summary>
+				<p>
+					Safe lifecycle and provider diagnostics only. Credentials, tokens,
+					account IDs, headers, paths, and prompt text are excluded.
+				</p>
+				<textarea
+					id="diagnostics"
+					rows="10"
+					readonly
+					aria-label="Diagnostic log"
+				></textarea>
+				<button id="clear-diagnostics">Clear diagnostics</button>
+			</details>
 		</main>
 		<script type="module" src="/src/main.ts"></script>
 	</body>

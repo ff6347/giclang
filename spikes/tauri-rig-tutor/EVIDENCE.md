@@ -1,6 +1,6 @@
 # Evidence: Tauri + Rig Tutor Provider Spike
 
-Status: the packaged UI is wired to real Rig providers and needs another human validation pass. The first pass supplied a valid OpenCode key but produced no visible response, and ChatGPT Sign in disabled the controls without presenting a device code. The next packages exposed that Tauri rejected the frontend event listener because the spike did not grant `core:event:allow-listen`. No successful provider response or ChatGPT login was observed.
+Status: OpenCode Zen streaming and ChatGPT device authentication passed human validation after granting Tauri's event-listener capability. The first authenticated ChatGPT completion failed with the generic safe error, so the current package adds a credential-safe diagnostic console for the next validation pass. No successful ChatGPT provider response has been observed.
 
 The packaged Tauri UI is the only live-test path. It selects Zen's current free `mimo-v2.5-free` through Rig's OpenAI-compatible `/chat/completions` client and uses a stable app-generated `x-opencode-session` header for the UI conversation. Its password field crosses only `connect_opencode` after a click, then clears immediately; it is not emitted, rendered, logged, returned, or stored in browser storage. Rust retains it only in memory. Renderer IPC is a small named bridge with no path, shell, environment, provider configuration, or arbitrary URL opener.
 
@@ -8,7 +8,9 @@ The current [official Zen documentation](https://opencode.ai/docs/zen/) is the s
 
 ChatGPT/Codex displays `gpt-5.3-instant`. GIC owns a deliberately narrow device-authorization port because Rig 0.42's public OAuth entry point couples device-flow startup to a completion stream. A Sign in click calls only the inspected Codex device-code, polling, and OAuth-token endpoints; it does not construct or touch a completion/model URL. It displays the response's verification URL and user code, stores only the private token record in the Rust-selected app config path, and deletes it on Sign out. On explicit Send, the adapter reloads/refreshes that record, then passes only its in-memory access token and account ID to Rig's ChatGPT/Codex client for real streaming. Tokens, raw auth responses, secrets, and the auth path are neither emitted, rendered, logged, nor returned. The authorization opener has no renderer URL argument and opens only the exact active response URL.
 
-The first live UI pass exposed three client defects rather than a credential failure. The event listener was not ready before controls became usable, Rig stream chunks were buffered until completion instead of emitted as they arrived, and OpenAI's production device response encodes `interval` as a JSON string while the port accepted only a number. Blocking module startup on event readiness then exposed a fourth defect: every control remained disabled. A non-blocking listener made the underlying cause observable: unlike registered application commands, Tauri's core event command requires an explicit capability. The current build grants only `core:event:allow-listen` to the `main` window, registers the listener without blocking module startup, keeps Connect / Save available, reports listener startup or failure in the status region, and refuses provider actions with an explicit message until events are ready. It also emits each text delta immediately, accepts both documented device-response shapes, and uses finite authentication request timeouts.
+The first live UI passes exposed client defects rather than credential failures. The event listener was not ready before controls became usable, Rig stream chunks were buffered until completion instead of emitted as they arrived, and OpenAI's production device response encodes `interval` as a JSON string while the port accepted only a number. Blocking module startup on event readiness then left every control disabled. A non-blocking listener made the underlying cause observable: unlike registered application commands, Tauri's core event command requires an explicit capability. The corrected build grants only `core:event:allow-listen` to the `main` window, and OpenCode plus ChatGPT authentication subsequently worked.
+
+The remaining ChatGPT completion failure was over-redacted for diagnosis. The current build adds a selectable in-app log of UI and Rust lifecycle stages, the provider/model/endpoint, account-ID presence as a boolean, HTTP status, and only `code`, `type`, `message`, or `detail` from JSON provider errors. It records prompt length instead of text and never records credentials, tokens, account IDs, request headers, auth-file paths, or raw authentication responses. Non-JSON completion error text is capped at 1,000 characters.
 
 | Check | Result |
 | --- | --- |
@@ -20,6 +22,9 @@ The first live UI pass exposed three client defects rather than a credential fai
 | first live OpenCode and ChatGPT UI pass | fail; no visible OpenCode progress and no ChatGPT device code |
 | first replacement package | fail; provider controls remained disabled during event-listener startup |
 | second replacement package | fail; status exposed that Tauri event registration never completed because its capability was missing |
-| corrected live OpenCode and ChatGPT UI pass | pending human retest |
+| corrected OpenCode Zen UI pass | pass; human observed a streamed response |
+| corrected ChatGPT device authentication | pass; human completed sign-in |
+| first authenticated ChatGPT completion | fail; generic error hid the provider reason |
+| diagnostic ChatGPT completion pass | pending human retest |
 
 This revision packaged a 15 MB app at `target/release/bundle/macos/GIC Tutor Rig Spike.app` (not launched). Electron's recorded package was 365 MB.

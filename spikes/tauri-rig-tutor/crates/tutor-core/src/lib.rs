@@ -8,6 +8,7 @@ use tokio_util::sync::CancellationToken;
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TutorEvent {
     Status { message: String },
+    Diagnostic { message: String },
     Text { text: String },
     Complete,
     Cancelled,
@@ -50,6 +51,50 @@ pub async fn submit(
 pub fn safe_error(context: &str) -> TutorEvent {
     TutorEvent::Error {
         message: format!("{context}. Check your connection or sign in again."),
+    }
+}
+
+pub fn provider_diagnostic(
+    provider: &str,
+    category: &str,
+    status: Option<u16>,
+    response: Option<&str>,
+) -> String {
+    let mut parts = vec![format!("{provider}: {category}")];
+    if let Some(status) = status {
+        parts.push(format!("HTTP {status}"));
+    }
+    if let Some(response) = response.and_then(summarize_provider_response) {
+        parts.push(response);
+    }
+    parts.join("; ")
+}
+
+fn summarize_provider_response(response: &str) -> Option<String> {
+    let response = response.trim();
+    if response.is_empty() {
+        return None;
+    }
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(response) {
+        let error = value.get("error").unwrap_or(&value);
+        let mut fields = Vec::new();
+        for name in ["code", "type", "message", "detail"] {
+            if let Some(value) = error.get(name).and_then(serde_json::Value::as_str) {
+                fields.push(format!("{name}={}", truncate(value, 500)));
+            }
+        }
+        return (!fields.is_empty()).then(|| fields.join(", "));
+    }
+    Some(truncate(response, 1_000))
+}
+
+fn truncate(value: &str, limit: usize) -> String {
+    let mut chars = value.chars();
+    let truncated: String = chars.by_ref().take(limit).collect();
+    if chars.next().is_some() {
+        format!("{truncated}…")
+    } else {
+        truncated
     }
 }
 
@@ -170,6 +215,24 @@ mod tests {
                 message: "OpenCode request failed. Check your connection or sign in again.".into()
             }
         );
+    }
+
+    #[test]
+    fn provider_diagnostics_include_safe_error_fields_but_not_tokens() {
+        let diagnostic = provider_diagnostic(
+            "ChatGPT",
+            "provider response",
+            Some(400),
+            Some(
+                r#"{"error":{"code":"unsupported_model","message":"Use a Codex model"},"access_token":"secret"}"#,
+            ),
+        );
+        assert_eq!(
+            diagnostic,
+            "ChatGPT: provider response; HTTP 400; code=unsupported_model, message=Use a Codex model"
+        );
+        assert!(!diagnostic.contains("secret"));
+        assert!(!diagnostic.contains("access_token"));
     }
 
     #[test]
