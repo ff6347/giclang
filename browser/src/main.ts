@@ -2,6 +2,8 @@
 // ABOUTME: Manages Monaco changes, worker replacement, output, and diagnostics.
 import Worker from "./worker.ts?worker";
 import type { RunResult } from "../../src/core.ts";
+import { BrowserDocumentAdapter } from "./browser-document-adapter.ts";
+import { createDocumentControls } from "./document-controls.ts";
 import { createGicEditor, setEditorDiagnostics } from "./gic-editor.ts";
 import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
 import "./styles.css";
@@ -50,6 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	let editor: ReturnType<typeof createGicEditor>;
+	const documentControls = createDocumentControls({
+		adapter: new BrowserDocumentAdapter(),
+		formatOnSave: () => formatOnSave.checked,
+		getSource: () => editor.getValue(),
+		setSource: (source) => editor.setValue(source),
+	});
 
 	const runPreview = (source: string) => {
 		let executionTimer: number | null = null;
@@ -110,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const inputHandler = (source: string) => {
+		documentControls.onSourceChange(source);
 		if (debounceTimer) clearTimeout(debounceTimer);
 		activeWorker?.terminate();
 		activeWorker = null;
@@ -121,7 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		}, 100);
 	};
 
-	editor = createGicEditor(editorContainer, inputHandler, () => ({
-		formatOnSave: formatOnSave.checked,
-	}));
+	editor = createGicEditor(
+		editorContainer,
+		inputHandler,
+		documentControls.save,
+	);
 });

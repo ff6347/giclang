@@ -9,6 +9,26 @@
 	</head>
 	<body>
 		<h1>GiC</h1>
+		<p id="document-status" aria-live="polite">Untitled sketch</p>
+		<nav aria-label="Document actions">
+			<button id="open" type="button">Open</button>
+			<button id="save" type="button">Save</button>
+			<button id="save-as" type="button">Save As</button>
+			<label>
+				Example
+				<select id="example">
+					<option value="">Choose an example</option>
+					<option value="connected-nodes.gic">Connected nodes</option>
+					<option value="repeat.gic">Repeat</option>
+					<option value="reusable-motif.gic">Reusable motif</option>
+				</select>
+			</label>
+			<details>
+				<summary>Recent files</summary>
+				<ul id="recent-files"></ul>
+			</details>
+		</nav>
+		<input id="open-file" type="file" accept=".gic" hidden />
 		<label>
 			<input id="format-on-save" type="checkbox" />
 			Format on save
@@ -23,6 +43,29 @@
 			<h2 id="output-heading">Output</h2>
 			<div id="output" aria-live="polite"></div>
 		</section>
+		<dialog id="save-as-dialog" aria-labelledby="save-as-heading">
+			<h2 id="save-as-heading">Save sketch as</h2>
+			<form id="save-as-form">
+				<label>
+					File name
+					<input id="file-name" required />
+				</label>
+				<button type="submit">Save copy</button>
+				<button id="cancel-save-as" type="button">Cancel</button>
+			</form>
+		</dialog>
+		<dialog id="discard-dialog" aria-labelledby="discard-heading">
+			<h2 id="discard-heading">Discard changes?</h2>
+			<p>Your unsaved changes will be discarded.</p>
+			<button id="confirm-discard" type="button">Discard changes</button>
+			<button id="cancel-discard" type="button">Keep editing</button>
+		</dialog>
+		<dialog id="recovery-dialog" aria-labelledby="recovery-heading">
+			<h2 id="recovery-heading">Recover unsaved sketch?</h2>
+			<p>A copy of unsaved work is available from a previous session.</p>
+			<button id="restore-recovery" type="button">Restore</button>
+			<button id="dismiss-recovery" type="button">Discard recovery</button>
+		</dialog>
 		<script src="src/main.ts" type="module"></script>
 	</body>
 </html>

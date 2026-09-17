@@ -275,15 +275,21 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await expect(setting).toBeChecked();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
-		formatted,
-	);
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
 	await setting.uncheck();
 	await page.reload();
+	await page
+		.getByRole("dialog", { name: "Recover unsaved sketch?" })
+		.getByRole("button", { name: "Discard recovery" })
+		.click();
 	await expect(setting).not.toBeChecked();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
+	await page.getByLabel("File name").fill("unformatted");
+	await page.getByRole("button", { name: "Save copy" }).click();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 
 	await page.keyboard.press("F1");
