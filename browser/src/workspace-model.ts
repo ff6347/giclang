@@ -13,13 +13,12 @@ import {
 export const EDITOR_ID = "editor";
 export const PREVIEW_ID = "preview";
 export const PREVIEW_TABSET_ID = "preview-tabset";
-export const SETTINGS_ID = "settings";
 export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
 export const TUTOR_ID = "tutor";
 
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -103,12 +102,6 @@ function defaultLayout(): IJsonModel {
 							name: "Preview",
 							component: PREVIEW_ID,
 						},
-						{
-							type: "tab",
-							id: SETTINGS_ID,
-							name: "Settings",
-							component: SETTINGS_ID,
-						},
 					],
 				},
 			],
@@ -176,15 +169,13 @@ function validateWorkspace(model: Model): void {
 	if (!(previewTabset instanceof TabSetNode)) {
 		throw new Error("Workspace preview is invalid.");
 	}
-	for (const panelId of [PREVIEW_ID, SETTINGS_ID]) {
-		const panel = model.getNodeById(panelId);
-		if (
-			!(panel instanceof TabNode) ||
-			panel.getComponent() !== panelId ||
-			panel.getParent() !== previewTabset
-		) {
-			throw new Error(`Workspace panel '${panelId}' is invalid.`);
-		}
+	const preview = model.getNodeById(PREVIEW_ID);
+	if (
+		!(preview instanceof TabNode) ||
+		preview.getComponent() !== PREVIEW_ID ||
+		preview.getParent() !== previewTabset
+	) {
+		throw new Error(`Workspace panel '${PREVIEW_ID}' is invalid.`);
 	}
 }
 

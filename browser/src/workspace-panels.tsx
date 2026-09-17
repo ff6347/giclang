@@ -1,13 +1,7 @@
 // ABOUTME: Renders the editor, preview, status, and tutor workspace panels.
 // ABOUTME: Adapts the existing Monaco lifecycle to React without a Monaco binding.
 
-import {
-	useEffect,
-	useRef,
-	useState,
-	type ChangeEvent,
-	type RefObject,
-} from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
 import type { LanguageServiceSettings } from "../../src/language-service.ts";
 
@@ -117,53 +111,6 @@ export function TutorPanel() {
 			>
 				Retry tutor setup
 			</button>
-		</section>
-	);
-}
-
-export function FormatOnSaveControl({
-	checked,
-	onChange,
-}: {
-	checked: boolean;
-	onChange: (checked: boolean) => void;
-}) {
-	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-		onChange(event.target.checked);
-	};
-
-	return (
-		<label>
-			<input checked={checked} type="checkbox" onChange={handleChange} />
-			Format on save
-		</label>
-	);
-}
-
-export function SettingsPanel({
-	formatOnSave,
-	onFormatOnSaveChange,
-	onResetLayout,
-}: {
-	formatOnSave: boolean;
-	onFormatOnSaveChange: (checked: boolean) => void;
-	onResetLayout: () => void;
-}) {
-	return (
-		<section aria-label="Settings" className="workspace-panel padded-panel">
-			<h2>Workspace</h2>
-			<FormatOnSaveControl
-				checked={formatOnSave}
-				onChange={onFormatOnSaveChange}
-			/>
-			<button type="button" onClick={onResetLayout}>
-				Reset Layout
-			</button>
-			<h2>Tutor provider</h2>
-			<p>
-				Tutor provider configuration is available in the desktop application
-				when tutor support is installed.
-			</p>
 		</section>
 	);
 }

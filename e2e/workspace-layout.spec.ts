@@ -4,22 +4,29 @@
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "./editor.ts";
 
-test("shows workspace tabs without a duplicated header or controls", async ({
+test("shows the top-level application tabs and Code workspace", async ({
 	page,
 }) => {
 	await page.goto("/");
 
+	const applicationTabs = page.getByRole("tablist", { name: "Application" });
 	await expect(page.getByRole("heading", { name: "GiC" })).toHaveCount(0);
 	await expect(
 		page.getByRole("navigation", { name: "Workspace controls" }),
 	).toHaveCount(0);
+	for (const name of ["Code", "Settings", "Examples", "Docs", "About"]) {
+		await expect(applicationTabs.getByRole("tab", { name })).toBeVisible();
+	}
+	await expect(
+		applicationTabs.getByRole("tab", { name: "Code" }),
+	).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
-	await expect(page.getByRole("tab", { name: "Settings" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
@@ -72,9 +79,13 @@ test("places application preferences and provider guidance in Settings", async (
 	page,
 }) => {
 	await page.goto("/");
-	await page.getByRole("tab", { name: "Settings" }).click();
+	await page
+		.getByRole("tablist", { name: "Application" })
+		.getByRole("tab", { name: "Settings" })
+		.click();
 
 	await expect(page.getByRole("region", { name: "Settings" })).toBeVisible();
+	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeHidden();
 	await expect(
 		page.getByRole("checkbox", { name: "Format on save" }),
 	).toBeVisible();
@@ -89,12 +100,29 @@ test("places application preferences and provider guidance in Settings", async (
 	);
 });
 
+test("shows explicit placeholders for Examples, Docs, and About", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const applicationTabs = page.getByRole("tablist", { name: "Application" });
+	const placeholders = [
+		{ name: "Examples", text: "one-document workflow" },
+		{ name: "Docs", text: "Language reference and help" },
+		{ name: "About", text: "Gestalten in Code" },
+	];
+
+	for (const { name, text } of placeholders) {
+		await applicationTabs.getByRole("tab", { name }).click();
+		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
+	}
+});
+
 test("recovers from invalid persisted layout state", async ({ page }) => {
 	await page.addInitScript(() => {
 		localStorage.setItem(
 			"gic.workspaceLayout",
 			JSON.stringify({
-				version: 2,
+				version: 3,
 				layout: {
 					global: {},
 					borders: [],
@@ -225,8 +253,15 @@ test("Reset Layout restores visible regions and the default lower tab", async ({
 	await expect(page.getByRole("region", { name: "Preview" })).toBeHidden();
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
 
-	await page.getByRole("tab", { name: "Settings" }).click();
+	await page
+		.getByRole("tablist", { name: "Application" })
+		.getByRole("tab", { name: "Settings" })
+		.click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
+	await page
+		.getByRole("tablist", { name: "Application" })
+		.getByRole("tab", { name: "Code" })
+		.click();
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();

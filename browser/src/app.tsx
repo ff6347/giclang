@@ -17,6 +17,13 @@ import {
 	type TabNode,
 } from "flexlayout-react";
 import "flexlayout-react/style/light.scss";
+import { ApplicationTabs, type ApplicationTabId } from "./application-tabs.tsx";
+import {
+	AboutView,
+	DocsView,
+	ExamplesView,
+	SettingsView,
+} from "./application-pages.tsx";
 import {
 	createDefaultWorkspace,
 	collapseSelectedCentralTab,
@@ -27,7 +34,6 @@ import {
 	PREVIEW_ID,
 	PROBLEMS_ID,
 	saveWorkspace,
-	SETTINGS_ID,
 	showProblemsWhenLowerPanelIsHidden,
 	TUTOR_ID,
 } from "./workspace-model.ts";
@@ -36,7 +42,6 @@ import {
 	OutputPanel,
 	PreviewPanel,
 	ProblemsPanel,
-	SettingsPanel,
 	TutorPanel,
 } from "./workspace-panels.tsx";
 import { usePreview } from "./use-preview.ts";
@@ -59,6 +64,8 @@ function tabIdForEventTarget(target: EventTarget | null): string | undefined {
 }
 
 export function App() {
+	const [activeApplicationTab, setActiveApplicationTab] =
+		useState<ApplicationTabId>("code");
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
 	const [model, setModel] = useState(loadWorkspace);
 	const [source, setSource] = useState("");
@@ -154,14 +161,6 @@ export function App() {
 				return <OutputPanel entries={preview.state.output} />;
 			case TUTOR_ID:
 				return <TutorPanel />;
-			case SETTINGS_ID:
-				return (
-					<SettingsPanel
-						formatOnSave={formatOnSave}
-						onFormatOnSaveChange={updateFormatOnSave}
-						onResetLayout={resetLayout}
-					/>
-				);
 			default:
 				throw new Error(`Unknown workspace panel '${node.getComponent()}'.`);
 		}
@@ -169,19 +168,37 @@ export function App() {
 
 	return (
 		<main className="app-shell">
-			<div
-				className="workspace"
-				onClickCapture={handleCentralTabClick}
-				onKeyDownCapture={handleCentralTabKeyDown}
-			>
-				<Layout
-					factory={panelFactory}
-					model={model}
-					onAction={handleLayoutAction}
-					onModelChange={layoutChanged}
-					onRenderTab={renderTab}
-				/>
-			</div>
+			<ApplicationTabs
+				activeTab={activeApplicationTab}
+				onSelect={setActiveApplicationTab}
+				panels={{
+					code: (
+						<div
+							className="workspace"
+							onClickCapture={handleCentralTabClick}
+							onKeyDownCapture={handleCentralTabKeyDown}
+						>
+							<Layout
+								factory={panelFactory}
+								model={model}
+								onAction={handleLayoutAction}
+								onModelChange={layoutChanged}
+								onRenderTab={renderTab}
+							/>
+						</div>
+					),
+					settings: (
+						<SettingsView
+							formatOnSave={formatOnSave}
+							onFormatOnSaveChange={updateFormatOnSave}
+							onResetLayout={resetLayout}
+						/>
+					),
+					examples: <ExamplesView />,
+					docs: <DocsView />,
+					about: <AboutView />,
+				}}
+			/>
 		</main>
 	);
 }
