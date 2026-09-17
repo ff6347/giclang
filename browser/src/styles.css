@@ -29,6 +29,18 @@ input {
 	min-height: 0;
 	position: relative;
 }
+.flexlayout__tab_button--selected {
+	background-color: #ffffff;
+}
+
+.flexlayout__tab_button--unselected {
+	background-color: #cccccc;
+}
+
+.flexlayout__tabset_tabbar_inner {
+	background-color: #f0f0f0;
+	/*background-image: url("/images/striped-tile.svg");*/
+}
 
 .flexlayout__splitter::after {
 	content: "";
@@ -37,14 +49,14 @@ input {
 }
 
 .flexlayout__splitter_horz::after {
-	border-left: 1px dotted black;
+	border-left: 2px dashed black;
 	bottom: 0;
 	left: 50%;
 	top: 0;
 }
 
 .flexlayout__splitter_vert::after {
-	border-top: 1px dotted black;
+	border-top: 2px dashed black;
 	left: 0;
 	right: 0;
 	top: 50%;

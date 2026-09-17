@@ -75,7 +75,7 @@ function Entries({
 	label: string;
 }) {
 	return (
-		<section aria-label={label} className="workspace-panel">
+		<section aria-label={label} className="workspace-panel padded-panel">
 			<div id={id} aria-live="polite">
 				{entries.map((entry, index) => (
 					<p key={`${index}:${entry}`}>{entry}</p>
