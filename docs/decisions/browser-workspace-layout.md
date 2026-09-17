@@ -11,16 +11,17 @@ The shared browser IDE uses React for application composition and FlexLayout for
 
 Monaco remains an imperative integration through GIC's existing `createGicEditor()` adapter. React mounts and disposes that adapter; GIC does not add a separate React Monaco binding.
 
-The workspace constrains FlexLayout to the product layout rather than exposing a general-purpose docking environment:
+React owns the top-level Code, Settings, Examples, Docs, and About tabs. All top-level tab content remains mounted so switching away from Code does not discard Monaco, Canvas, worker, or workspace state. Examples and Docs are placeholders until their owning slices supply document and reference behavior.
+
+The Code tab constrains FlexLayout to the product layout rather than exposing a general-purpose docking environment:
 
 - Editor and Tutor occupy hideable side borders.
-- Preview and Settings share the central tabset.
+- Preview occupies the central tabset and its tab controls central visibility.
 - Problems and Output share a hideable lower border.
 - Border tabs are the only hide/show controls for their panels.
-- Settings contains Format on save and Reset Layout.
 - Arbitrary panel closing, dragging, floating, and docking are disabled.
 
-Persisted state uses a versioned GIC-owned envelope around FlexLayout's JSON model. Invalid or unsupported state falls back to the default workspace.
+The top-level Settings tab contains Format on save, Reset Layout, and tutor-provider guidance. Persisted workspace state uses a versioned GIC-owned envelope around FlexLayout's JSON model. Invalid or unsupported state falls back to the default workspace.
 
 ## Rationale
 
@@ -35,6 +36,7 @@ Dockview was the strongest framework-neutral candidate, but its splitview sashes
 - React remains outside the language core, worker, Canvas renderer, and language service.
 - Resetting layout state must not reset the active GIC source.
 - Reset Layout selects Preview and restores the default Editor, Tutor, and Problems panels.
+- Reset Layout does not change the selected top-level application tab.
 - Current-source diagnostics can reopen Problems only when the lower panel is hidden; an already visible lower panel preserves the student's selected tab.
 - Layout behavior is verified through the real Monaco, worker, FlexLayout, and Canvas path in Firefox.
 

@@ -31,9 +31,10 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 - `pnpm lint` — no warnings or errors.
 - `pnpm fmt:check` — passed.
 - `pnpm build:browser` — passed with the documented Monaco chunk-size warning.
-- Playwright Firefox acceptance — 53 tests passed: 52 on the isolated worktree server and the origin-pinned local-assets check against the existing primary-checkout server.
+- Playwright Firefox acceptance — 54 tests passed: 53 on the isolated worktree server and the origin-pinned local-assets check on the standard port.
 
 ## UI Follow-up
 
-- [decision] Preview and Settings are central FlexLayout tabs. Selecting the active central tab collapses its content, while border tabs remain the sole hide/show controls for Editor, Tutor, Problems, and Output.
-- [decision] Settings contains Format on save, Reset Layout, and desktop tutor provider guidance. Reset Layout selects Preview while preserving the current GIC source.
+- [decision] Preview is the central FlexLayout tab. Selecting it while active collapses its content, while border tabs remain the sole hide/show controls for Editor, Tutor, Problems, and Output.
+- [decision] Code, Settings, Examples, Docs, and About are top-level React tabs whose content remains mounted. Settings contains Format on save, Reset Layout, and desktop tutor-provider guidance; Examples and Docs are placeholders for their owning slices.
+- [decision] Reset Layout selects Preview and restores the workspace defaults while preserving the current GIC source and selected top-level application tab.
