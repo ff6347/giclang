@@ -1,7 +1,84 @@
-/* ABOUTME: Gives the Monaco editor a visible responsive editing area. */
-/* ABOUTME: Keeps the static authoring shell usable without prescribing visual styling. */
+/* ABOUTME: Sizes the nested FlexLayout application and Code workspace panels. */
+/* ABOUTME: Keeps editor, preview, status, and tutor content usable across window sizes. */
+
+html,
+body,
+#app {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	font-family: "IBM Plex Mono", monospace;
+}
+
+button,
+input {
+	font: inherit;
+}
+
+.app-shell {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+}
+
+.application-layout {
+	flex: 1;
+	min-height: 0;
+	position: relative;
+}
+.flexlayout__tab_button--selected {
+	background-color: #ffffff;
+}
+
+.flexlayout__tab_button--unselected {
+	background-color: #cccccc;
+}
+
+.flexlayout__tabset_tabbar_inner {
+	background-color: #f0f0f0;
+	/*background-image: url("/images/striped-tile.svg");*/
+}
+
+.flexlayout__splitter::after {
+	content: "";
+	pointer-events: none;
+	position: absolute;
+}
+
+.flexlayout__splitter_horz::after {
+	border-left: 2px dashed black;
+	bottom: 0;
+	left: 50%;
+	top: 0;
+}
+
+.flexlayout__splitter_vert::after {
+	border-top: 2px dashed black;
+	left: 0;
+	right: 0;
+	top: 50%;
+}
+
+.workspace-panel {
+	box-sizing: border-box;
+	height: 100%;
+	overflow: auto;
+	width: 100%;
+}
 
 #code {
-	height: 20rem;
-	width: 100%;
+	height: 100%;
+}
+
+.preview-panel {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+}
+
+.padded-panel {
+	padding: 1rem;
 }

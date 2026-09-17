@@ -38,7 +38,7 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 `;
 
 	await page.goto("/");
-	await page.getByLabel("Example").selectOption("repeat.gic");
+	await page.locator("#example").selectOption("repeat.gic");
 
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example",
