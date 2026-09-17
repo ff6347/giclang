@@ -13,10 +13,11 @@ Monaco remains an imperative integration through GIC's existing `createGicEditor
 
 The workspace constrains FlexLayout to the product layout rather than exposing a general-purpose docking environment:
 
-- Editor and tutor occupy hideable side borders.
-- Canvas occupies the central preview region.
+- Editor and Tutor occupy hideable side borders.
+- Preview and Settings share the central tabset.
 - Problems and Output share a hideable lower border.
-- Application controls expose hide, show, and Reset Layout actions.
+- Border tabs are the only hide/show controls for their panels.
+- Settings contains Format on save and Reset Layout.
 - Arbitrary panel closing, dragging, floating, and docking are disabled.
 
 Persisted state uses a versioned GIC-owned envelope around FlexLayout's JSON model. Invalid or unsupported state falls back to the default workspace.
@@ -33,6 +34,7 @@ Dockview was the strongest framework-neutral candidate, but its splitview sashes
 - Sass compiles FlexLayout's published theme source because its CSS package references an unpublished source map.
 - React remains outside the language core, worker, Canvas renderer, and language service.
 - Resetting layout state must not reset the active GIC source.
+- Reset Layout selects Preview and restores the default Editor, Tutor, and Problems panels.
 - Current-source diagnostics can reopen Problems only when the lower panel is hidden; an already visible lower panel preserves the student's selected tab.
 - Layout behavior is verified through the real Monaco, worker, FlexLayout, and Canvas path in Firefox.
 
