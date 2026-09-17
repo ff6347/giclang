@@ -9,11 +9,41 @@ const repeatExamplePath = fileURLToPath(
 	new URL("../examples/repeat.gic", import.meta.url),
 );
 
+async function chooseFileCommand(
+	page: import("@playwright/test").Page,
+	name: string,
+) {
+	await page.getByRole("button", { name: "File" }).click();
+	await page
+		.getByRole("menu", { name: "File" })
+		.getByRole("menuitem", { name, exact: true })
+		.click();
+}
+
+test("offers PWA document commands through the File menu", async ({ page }) => {
+	await page.goto("/");
+	await page.getByRole("button", { name: "File" }).click();
+
+	const menu = page.getByRole("menu", { name: "File" });
+	await expect(
+		menu.getByRole("menuitem", { name: "Open", exact: true }),
+	).toBeVisible();
+	await expect(
+		menu.getByRole("menuitem", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await expect(
+		menu.getByRole("menuitem", { name: "Save As", exact: true }),
+	).toBeVisible();
+	await expect(
+		menu.getByRole("menuitem", { name: "Recent Files" }),
+	).toBeDisabled();
+});
+
 test("opens a local sketch and saves it with its selected filename", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await page.getByRole("button", { name: "Open" }).click();
+	await chooseFileCommand(page, "Open");
 	await page.locator("#open-file").setInputFiles(repeatExamplePath);
 
 	await expect(page.locator("#document-status")).toHaveText("repeat.gic");
@@ -21,7 +51,7 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	await expect(page.locator("#document-status")).toHaveText("repeat.gic *");
 
 	const download = page.waitForEvent("download");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await chooseFileCommand(page, "Save");
 	expect((await download).suggestedFilename()).toBe("repeat.gic");
 	await expect(page.locator("#document-status")).toHaveText("repeat.gic");
 	await page.reload();
@@ -43,15 +73,19 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example",
 	);
+	await page.getByRole("button", { name: "File" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page
+			.getByRole("menu", { name: "File" })
+			.getByRole("menuitem", { name: "Save", exact: true }),
 	).toBeDisabled();
+	await page.getByRole("button", { name: "File" }).click();
 	await setEditorSource(page, source);
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example *",
 	);
 
-	await page.getByRole("button", { name: "Save As" }).click();
+	await chooseFileCommand(page, "Save As");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 	await page.getByLabel("File name").fill("my-repeat");
 	const download = page.waitForEvent("download");
@@ -69,7 +103,7 @@ test("cancels replacement of dirty work until the student confirms discard", asy
 }) => {
 	await page.goto("/");
 	await setEditorSource(page, "point(10, 10);");
-	await page.getByRole("button", { name: "Open" }).click();
+	await chooseFileCommand(page, "Open");
 	await page.locator("#open-file").setInputFiles(repeatExamplePath);
 
 	const discard = page.getByRole("dialog", { name: "Discard changes?" });
@@ -99,8 +133,11 @@ test("restores interrupted work only as an unsaved recovery copy", async ({
 	await expect(page.locator("#document-status")).toHaveText(
 		"Recovered sketch *",
 	);
+	await page.getByRole("button", { name: "File" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page
+			.getByRole("menu", { name: "File" })
+			.getByRole("menuitem", { name: "Save", exact: true }),
 	).toBeDisabled();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
 		"point(10, 10);",
