@@ -271,6 +271,7 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.goto("/");
 	await page.evaluate(() => localStorage.clear());
 	await page.reload();
+	await page.getByRole("tab", { name: "Settings" }).click();
 	const setting = page.getByRole("checkbox", { name: "Format on save" });
 	await expect(setting).toBeChecked();
 	await setEditorSource(page, source);

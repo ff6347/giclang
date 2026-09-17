@@ -20,26 +20,6 @@ input {
 	min-height: 0;
 }
 
-.app-toolbar {
-	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.75rem;
-	padding: 0.5rem;
-}
-
-.app-toolbar h1 {
-	font-size: 1rem;
-	margin: 0;
-}
-
-.app-toolbar nav,
-.tutor-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-}
-
 .workspace {
 	flex: 1;
 	min-height: 0;
@@ -63,13 +43,6 @@ input {
 	justify-content: center;
 }
 
-.tutor-panel {
+.padded-panel {
 	padding: 1rem;
-}
-
-@media (max-width: 48rem) {
-	.app-toolbar {
-		align-items: flex-start;
-		flex-direction: column;
-	}
 }

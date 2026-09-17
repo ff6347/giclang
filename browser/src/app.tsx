@@ -1,9 +1,17 @@
 // ABOUTME: Composes the React IDE shell around the persisted FlexLayout model.
 // ABOUTME: Coordinates panel controls, preview status, and error-driven layout behavior.
 
-import { useEffect, useRef, useState } from "react";
 import {
+	useEffect,
+	useRef,
+	useState,
+	type KeyboardEvent,
+	type MouseEvent,
+} from "react";
+import {
+	Actions,
 	Layout,
+	type Action,
 	type ITabRenderValues,
 	type Model,
 	type TabNode,
@@ -11,25 +19,24 @@ import {
 import "flexlayout-react/style/light.scss";
 import {
 	createDefaultWorkspace,
+	collapseSelectedCentralTab,
 	EDITOR_ID,
 	isBorderVisible,
-	isPreviewVisible,
 	loadWorkspace,
 	OUTPUT_ID,
 	PREVIEW_ID,
 	PROBLEMS_ID,
 	saveWorkspace,
+	SETTINGS_ID,
 	showProblemsWhenLowerPanelIsHidden,
 	TUTOR_ID,
-	toggleBorder,
-	togglePreview,
 } from "./workspace-model.ts";
 import {
 	EditorPanel,
-	FormatOnSaveControl,
 	OutputPanel,
 	PreviewPanel,
 	ProblemsPanel,
+	SettingsPanel,
 	TutorPanel,
 } from "./workspace-panels.tsx";
 import { usePreview } from "./use-preview.ts";
@@ -44,6 +51,13 @@ function countLabel(name: string, count: number): string {
 	return count === 0 ? name : `${name} (${count})`;
 }
 
+function tabIdForEventTarget(target: EventTarget | null): string | undefined {
+	if (!(target instanceof Element)) return undefined;
+	return target
+		.closest("[role='tab']")
+		?.id.replace("flexlayout-tabbutton-", "");
+}
+
 export function App() {
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
 	const [model, setModel] = useState(loadWorkspace);
@@ -52,32 +66,9 @@ export function App() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const preview = usePreview(canvasRef);
 
-	const editorVisible = isBorderVisible(model, EDITOR_ID);
-	const previewVisible = isPreviewVisible(model);
-	const tutorVisible = isBorderVisible(model, TUTOR_ID);
-	const lowerPanelVisible = isBorderVisible(model, PROBLEMS_ID);
-
 	const layoutChanged = (changedModel: Model) => {
 		saveWorkspace(changedModel);
 		setLayoutRevision((revision) => revision + 1);
-	};
-
-	const applyLayoutChange = (change: () => void) => {
-		change();
-		layoutChanged(model);
-	};
-
-	const toggleEditor = () => {
-		applyLayoutChange(() => toggleBorder(model, EDITOR_ID));
-	};
-	const toggleMiddle = () => {
-		applyLayoutChange(() => togglePreview(model));
-	};
-	const toggleTutor = () => {
-		applyLayoutChange(() => toggleBorder(model, TUTOR_ID));
-	};
-	const toggleLowerPanel = () => {
-		applyLayoutChange(() => toggleBorder(model, PROBLEMS_ID));
 	};
 
 	const resetLayout = () => {
@@ -116,6 +107,34 @@ export function App() {
 		}
 	};
 
+	const handleLayoutAction = (action: Action) => {
+		const tabId = action.data.tabNode;
+		if (
+			action.type === Actions.SELECT_TAB &&
+			typeof tabId === "string" &&
+			collapseSelectedCentralTab(model, tabId)
+		) {
+			return undefined;
+		}
+		return action;
+	};
+
+	const handleCentralTabClick = (event: MouseEvent<HTMLDivElement>) => {
+		const tabId = tabIdForEventTarget(event.target);
+		if (tabId !== undefined && collapseSelectedCentralTab(model, tabId)) {
+			event.stopPropagation();
+		}
+	};
+
+	const handleCentralTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+		if (event.key !== "Enter" && event.key !== " ") return;
+		const tabId = tabIdForEventTarget(event.target);
+		if (tabId !== undefined && collapseSelectedCentralTab(model, tabId)) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+	};
+
 	const panelFactory = (node: TabNode) => {
 		switch (node.getComponent()) {
 			case EDITOR_ID:
@@ -134,7 +153,15 @@ export function App() {
 			case OUTPUT_ID:
 				return <OutputPanel entries={preview.state.output} />;
 			case TUTOR_ID:
-				return <TutorPanel onHide={toggleTutor} />;
+				return <TutorPanel />;
+			case SETTINGS_ID:
+				return (
+					<SettingsPanel
+						formatOnSave={formatOnSave}
+						onFormatOnSaveChange={updateFormatOnSave}
+						onResetLayout={resetLayout}
+					/>
+				);
 			default:
 				throw new Error(`Unknown workspace panel '${node.getComponent()}'.`);
 		}
@@ -142,34 +169,15 @@ export function App() {
 
 	return (
 		<main className="app-shell">
-			<header className="app-toolbar">
-				<h1>GiC</h1>
-				<FormatOnSaveControl
-					checked={formatOnSave}
-					onChange={updateFormatOnSave}
-				/>
-				<nav aria-label="Workspace controls">
-					<button type="button" onClick={toggleEditor}>
-						{editorVisible ? "Hide editor" : "Show editor"}
-					</button>
-					<button type="button" onClick={toggleMiddle}>
-						{previewVisible ? "Hide preview" : "Show preview"}
-					</button>
-					<button type="button" onClick={toggleTutor}>
-						{tutorVisible ? "Hide tutor" : "Show tutor"}
-					</button>
-					<button type="button" onClick={toggleLowerPanel}>
-						{lowerPanelVisible ? "Hide lower panel" : "Show lower panel"}
-					</button>
-					<button type="button" onClick={resetLayout}>
-						Reset Layout
-					</button>
-				</nav>
-			</header>
-			<div className="workspace">
+			<div
+				className="workspace"
+				onClickCapture={handleCentralTabClick}
+				onKeyDownCapture={handleCentralTabKeyDown}
+			>
 				<Layout
 					factory={panelFactory}
 					model={model}
+					onAction={handleLayoutAction}
 					onModelChange={layoutChanged}
 					onRenderTab={renderTab}
 				/>

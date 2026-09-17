@@ -99,29 +99,24 @@ export function OutputPanel({ entries }: { entries: string[] }) {
 	return <Entries entries={entries} id="output" label="Output" />;
 }
 
-export function TutorPanel({ onHide }: { onHide: () => void }) {
+export function TutorPanel() {
 	const [status, setStatus] = useState(
 		"Complete tutor setup in the desktop application, then retry.",
 	);
 
 	return (
-		<section aria-label="Tutor" className="workspace-panel tutor-panel">
+		<section aria-label="Tutor" className="workspace-panel padded-panel">
 			<h2>Tutor unavailable</h2>
 			<p>The tutor is optional. Editing and preview remain available.</p>
 			<p aria-live="polite">{status}</p>
-			<div className="tutor-actions">
-				<button
-					type="button"
-					onClick={() =>
-						setStatus("Tutor is still unavailable. Complete setup, then retry.")
-					}
-				>
-					Retry tutor setup
-				</button>
-				<button type="button" onClick={onHide}>
-					Hide tutor
-				</button>
-			</div>
+			<button
+				type="button"
+				onClick={() =>
+					setStatus("Tutor is still unavailable. Complete setup, then retry.")
+				}
+			>
+				Retry tutor setup
+			</button>
 		</section>
 	);
 }
@@ -142,5 +137,33 @@ export function FormatOnSaveControl({
 			<input checked={checked} type="checkbox" onChange={handleChange} />
 			Format on save
 		</label>
+	);
+}
+
+export function SettingsPanel({
+	formatOnSave,
+	onFormatOnSaveChange,
+	onResetLayout,
+}: {
+	formatOnSave: boolean;
+	onFormatOnSaveChange: (checked: boolean) => void;
+	onResetLayout: () => void;
+}) {
+	return (
+		<section aria-label="Settings" className="workspace-panel padded-panel">
+			<h2>Workspace</h2>
+			<FormatOnSaveControl
+				checked={formatOnSave}
+				onChange={onFormatOnSaveChange}
+			/>
+			<button type="button" onClick={onResetLayout}>
+				Reset Layout
+			</button>
+			<h2>Tutor provider</h2>
+			<p>
+				Tutor provider configuration is available in the desktop application
+				when tutor support is installed.
+			</p>
+		</section>
 	);
 }

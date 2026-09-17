@@ -13,12 +13,13 @@ import {
 export const EDITOR_ID = "editor";
 export const PREVIEW_ID = "preview";
 export const PREVIEW_TABSET_ID = "preview-tabset";
+export const SETTINGS_ID = "settings";
 export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
 export const TUTOR_ID = "tutor";
 
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -94,7 +95,6 @@ function defaultLayout(): IJsonModel {
 				{
 					type: "tabset",
 					id: PREVIEW_TABSET_ID,
-					enableTabStrip: false,
 					selected: 0,
 					children: [
 						{
@@ -102,6 +102,12 @@ function defaultLayout(): IJsonModel {
 							id: PREVIEW_ID,
 							name: "Preview",
 							component: PREVIEW_ID,
+						},
+						{
+							type: "tab",
+							id: SETTINGS_ID,
+							name: "Settings",
+							component: SETTINGS_ID,
 						},
 					],
 				},
@@ -166,14 +172,19 @@ function validateWorkspace(model: Model): void {
 		}
 		borderFor(model, panelId);
 	}
-	const preview = model.getNodeById(PREVIEW_ID);
 	const previewTabset = model.getNodeById(PREVIEW_TABSET_ID);
-	if (
-		!(preview instanceof TabNode) ||
-		preview.getComponent() !== PREVIEW_ID ||
-		!(previewTabset instanceof TabSetNode)
-	) {
+	if (!(previewTabset instanceof TabSetNode)) {
 		throw new Error("Workspace preview is invalid.");
+	}
+	for (const panelId of [PREVIEW_ID, SETTINGS_ID]) {
+		const panel = model.getNodeById(panelId);
+		if (
+			!(panel instanceof TabNode) ||
+			panel.getComponent() !== panelId ||
+			panel.getParent() !== previewTabset
+		) {
+			throw new Error(`Workspace panel '${panelId}' is invalid.`);
+		}
 	}
 }
 
@@ -181,30 +192,23 @@ export function isBorderVisible(model: Model, tabId: string): boolean {
 	return borderFor(model, tabId).getSelected() !== -1;
 }
 
-export function toggleBorder(model: Model, tabId: string): void {
-	const border = borderFor(model, tabId);
-	if (border.getSelected() === -1) {
-		model.doAction(Actions.selectTab(tabId));
-		return;
+export function collapseSelectedCentralTab(
+	model: Model,
+	tabId: string,
+): boolean {
+	const node = model.getNodeById(PREVIEW_TABSET_ID);
+	if (
+		!(node instanceof TabSetNode) ||
+		node.getSelectedNode()?.getId() !== tabId
+	) {
+		return false;
 	}
 	model.doAction(
-		Actions.updateNodeAttributes(border.getId(), {
+		Actions.updateNodeAttributes(PREVIEW_TABSET_ID, {
 			selected: -1,
 		}),
 	);
-}
-
-export function isPreviewVisible(model: Model): boolean {
-	const node = model.getNodeById(PREVIEW_TABSET_ID);
-	return node instanceof TabSetNode && node.getSelected() !== -1;
-}
-
-export function togglePreview(model: Model): void {
-	model.doAction(
-		Actions.updateNodeAttributes(PREVIEW_TABSET_ID, {
-			selected: isPreviewVisible(model) ? -1 : 0,
-		}),
-	);
+	return true;
 }
 
 export function showProblemsWhenLowerPanelIsHidden(model: Model): void {

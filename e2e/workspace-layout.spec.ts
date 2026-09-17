@@ -4,13 +4,22 @@
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "./editor.ts";
 
-test("shows the editor, preview, lower panel, and unavailable tutor", async ({
+test("shows workspace tabs without a duplicated header or controls", async ({
 	page,
 }) => {
 	await page.goto("/");
 
+	await expect(page.getByRole("heading", { name: "GiC" })).toHaveCount(0);
+	await expect(
+		page.getByRole("navigation", { name: "Workspace controls" }),
+	).toHaveCount(0);
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await expect(page.getByRole("tab", { name: "Settings" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
@@ -19,14 +28,64 @@ test("shows the editor, preview, lower panel, and unavailable tutor", async ({
 	await expect(
 		page.getByRole("button", { name: "Retry tutor setup" }),
 	).toBeVisible();
-	await expect(
-		page
-			.getByRole("region", { name: "Tutor" })
-			.getByRole("button", { name: "Hide tutor" }),
-	).toBeVisible();
+	await expect(page.getByRole("button", { name: "Hide tutor" })).toHaveCount(0);
 	await page.getByRole("button", { name: "Retry tutor setup" }).click();
 	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
 		"Tutor is still unavailable.",
+	);
+});
+
+test("uses workspace tabs as the panel visibility controls", async ({
+	page,
+}) => {
+	await page.goto("/");
+
+	const editorTab = page.getByRole("tab", { name: "Editor" });
+	await editorTab.click();
+	await expect(page.getByRole("region", { name: "Editor" })).toBeHidden();
+	await expect(editorTab).toHaveAttribute("aria-selected", "false");
+	await editorTab.click();
+	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
+
+	const tutorTab = page.getByRole("tab", { name: "Tutor" });
+	await tutorTab.click();
+	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
+	await tutorTab.click();
+	await expect(page.getByRole("region", { name: "Tutor" })).toBeVisible();
+
+	const previewTab = page.getByRole("tab", { name: "Preview" });
+	await previewTab.focus();
+	await previewTab.press("Enter");
+	await expect(page.getByRole("region", { name: "Preview" })).toBeHidden();
+	await expect(previewTab).toHaveAttribute("aria-selected", "false");
+	await previewTab.click();
+	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
+
+	const outputTab = page.getByRole("tab", { name: "Output" });
+	await outputTab.click();
+	await outputTab.click();
+	await expect(page.getByRole("region", { name: "Output" })).toBeHidden();
+	await expect(outputTab).toHaveAttribute("aria-selected", "false");
+});
+
+test("places application preferences and provider guidance in Settings", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Settings" }).click();
+
+	await expect(page.getByRole("region", { name: "Settings" })).toBeVisible();
+	await expect(
+		page.getByRole("checkbox", { name: "Format on save" }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Reset Layout" }),
+	).toBeVisible();
+	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
+		"Tutor provider",
+	);
+	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
+		"Tutor provider configuration is available in the desktop application",
 	);
 });
 
@@ -35,7 +94,7 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 		localStorage.setItem(
 			"gic.workspaceLayout",
 			JSON.stringify({
-				version: 1,
+				version: 2,
 				layout: {
 					global: {},
 					borders: [],
@@ -87,20 +146,16 @@ test("persists keyboard resizing, hidden regions, and the selected lower tab", a
 	expect(resizedWidth).toBeGreaterThan(initialWidth!);
 
 	await page.getByRole("tab", { name: "Output" }).click();
-	await page
-		.getByRole("navigation", { name: "Workspace controls" })
-		.getByRole("button", { name: "Hide tutor" })
-		.click();
+	await page.getByRole("tab", { name: "Tutor" }).click();
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
 
 	await page.reload();
 
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
-	await expect(
-		page
-			.getByRole("navigation", { name: "Workspace controls" })
-			.getByRole("button", { name: "Show tutor" }),
-	).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Tutor" })).toHaveAttribute(
+		"aria-selected",
+		"false",
+	);
 	await expect(page.getByRole("tab", { name: "Output" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -113,10 +168,7 @@ test("reopens a hidden lower panel on error and selects Problems", async ({
 }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Output" }).click();
-	await page.getByRole("button", { name: "Hide lower panel" }).click();
-	await expect(
-		page.getByRole("button", { name: "Show lower panel" }),
-	).toBeVisible();
+	await page.getByRole("tab", { name: "Output" }).click();
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
 		"aria-selected",
 		"false",
@@ -166,21 +218,23 @@ test("Reset Layout restores visible regions and the default lower tab", async ({
 	await page.goto("/");
 	await setEditorSource(page, "circle(50, 50, 30);");
 	await page.getByRole("tab", { name: "Output" }).click();
-	await page.getByRole("button", { name: "Hide editor" }).click();
-	await page.getByRole("button", { name: "Hide preview" }).click();
-	await page
-		.getByRole("navigation", { name: "Workspace controls" })
-		.getByRole("button", { name: "Hide tutor" })
-		.click();
+	await page.getByRole("tab", { name: "Editor" }).click();
+	await page.getByRole("tab", { name: "Preview" }).click();
+	await page.getByRole("tab", { name: "Tutor" }).click();
 	await expect(page.getByRole("region", { name: "Editor" })).toBeHidden();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeHidden();
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
 
+	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
 		"aria-selected",
 		"true",
