@@ -163,11 +163,11 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 **Acceptance:**
 
-- FlexLayout provides top-level Code, Settings, Examples, Docs, and About tabs.
-- Code contains headerless Editor and Tutor side panes around a middle column.
+- One FlexLayout model provides top-level Code, Settings, Examples, Docs, and About tabs with a model-native Code sublayout.
+- Code defaults to Editor and Tutor side tabsets around a middle column.
 - Canvas and a lower Problems/Output tabset occupy the middle column.
-- Pane sizes and the selected Problems/Output tab survive restart.
-- Reset Layout restores defaults.
+- Every tab can be dragged, docked, and rearranged across the model.
+- The complete arrangement survives restart; Reset Layout restores the sketch defaults.
 - Reruns preserve the selected Problems/Output tab while updating badges and content.
 - The unavailable Tutor explains setup, Retry, and its optional status without gating Code.
 

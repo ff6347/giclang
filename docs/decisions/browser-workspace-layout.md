@@ -11,16 +11,16 @@ The shared browser IDE uses React for application composition and FlexLayout for
 
 Monaco remains an imperative integration through GIC's existing `createGicEditor()` adapter. React mounts and disposes that adapter; GIC does not add a separate React Monaco binding.
 
-An outer FlexLayout owns the top-level Code, Settings, Examples, Docs, and About tabs. It keeps all top-level tab content mounted so switching away from Code does not discard Monaco, Canvas, worker, or workspace state. Examples and Docs are placeholders until their owning slices supply document and reference behavior.
+One FlexLayout model owns the top-level Code, Settings, Examples, Docs, and About tabs and a model-native Code sublayout. It keeps all tab content mounted so rearranging or switching tabs does not discard Monaco, Canvas, worker, or workspace state. Examples and Docs are placeholders until their owning slices supply document and reference behavior.
 
-The Code tab contains a nested FlexLayout constrained to the product layout rather than exposing a general-purpose docking environment:
+The Code sublayout starts with the layout from the accepted sketch:
 
-- Editor and Tutor are headerless left and right panes.
-- The middle column stacks a headerless Preview above the Problems/Output tabset.
-- Problems and Output are the only visible tabs inside Code.
-- Arbitrary panel closing, dragging, floating, and docking are disabled.
+- Editor and Tutor occupy left and right tabsets.
+- The middle column stacks Preview above the Problems/Output tabset.
+- Every application and Code item is an equal FlexLayout tab that students can drag, dock, and rearrange across the model.
+- Closing remains disabled so essential application tabs cannot be lost.
 
-The top-level Settings tab contains Format on save, Reset Layout, and tutor-provider guidance. Persisted workspace state uses a versioned GIC-owned envelope around FlexLayout's JSON model. Invalid or unsupported state falls back to the default workspace.
+The Settings tab contains Format on save, Reset Layout, and tutor-provider guidance. Persisted state uses a versioned GIC-owned envelope around the complete FlexLayout JSON model. Invalid or unsupported state falls back to the default workspace.
 
 ## Rationale
 
@@ -31,12 +31,12 @@ Dockview was the strongest framework-neutral candidate, but its splitview sashes
 ## Consequences
 
 - React, React DOM, and FlexLayout are browser application dependencies.
-- Sass compiles FlexLayout's published theme source because its CSS package references an unpublished source map.
+- Sass compiles FlexLayout's published `combined.scss` theme because its CSS package references an unpublished source map.
 - React remains outside the language core, worker, Canvas renderer, and language service.
 - Resetting layout state must not reset the active GIC source.
-- Reset Layout restores default Code geometry with Problems selected.
-- Reset Layout does not change the selected top-level application tab.
+- Reset Layout restores the complete default model with Code and Problems selected.
 - Diagnostics update the Problems badge and content without replacing the student's selected Problems/Output tab.
+- Application chrome inherits Monaco's `"IBM Plex Mono", monospace` font stack.
 - Layout behavior is verified through the real Monaco, worker, FlexLayout, and Canvas path in Firefox.
 
 ## Related Sources

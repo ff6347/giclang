@@ -9,7 +9,7 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 
 ## Implementation
 
-- [decision] React composes the browser application and nested FlexLayout models own application tabs, resizable Code panes, keyboard splitters, and serialized workspace state.
+- [decision] React composes panel content while one FlexLayout model owns application tabs, the model-native Code sublayout, keyboard splitters, drag/dock behavior, and serialized state.
 - [decision] Monaco keeps its imperative adapter. A React panel mounts `createGicEditor()` directly and disposes it without adding another Monaco binding.
 - [decision] A versioned GIC envelope stores FlexLayout JSON. Invalid state restores defaults, and Reset Layout replaces only the layout model so the current source survives.
 - [technique] Problems and Output render even while inactive so structured results remain observable and ready when their tab is selected.
@@ -19,7 +19,7 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 
 ## Acceptance
 
-- [verification] Focused Playwright acceptance covers the application tabs, nested Code geometry, keyboard resizing, restart persistence, Problems/Output selection, status counts, tutor fallback controls, and Reset Layout without source loss.
+- [verification] Focused Playwright acceptance covers the application tabs, Code sublayout geometry, cross-tabset dragging, keyboard resizing, restart persistence, Problems/Output selection, status counts, tutor fallback controls, and Reset Layout without source loss.
 - [verification] Existing Monaco, print-output, and deterministic Canvas acceptance remains part of the full Firefox regression suite.
 
 ## Verification
@@ -31,10 +31,12 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 - `pnpm lint` — no warnings or errors.
 - `pnpm fmt:check` — passed.
 - `pnpm build:browser` — passed with the documented Monaco chunk-size warning.
-- Playwright Firefox acceptance — 53 tests passed.
+- Playwright Firefox acceptance — 55 tests passed.
 
 ## UI Follow-up
 
-- [decision] An outer FlexLayout owns Code, Settings, Examples, Docs, and About while keeping every tab mounted. Settings contains Format on save, Reset Layout, and desktop tutor-provider guidance; Examples and Docs are placeholders for their owning slices.
-- [decision] Code nests a second FlexLayout: headerless Editor and Tutor side panes surround a middle column with headerless Preview above the Problems/Output tabset.
-- [decision] Reset Layout restores Code geometry and selects Problems while preserving the current GIC source and selected top-level application tab.
+- [decision] Code is a model-native sublayout. Every application and Code item is an equal draggable tab; the default arrangement places Editor and Tutor around a middle column with Preview above Problems/Output.
+- [decision] Settings contains Format on save, Reset Layout, and desktop tutor-provider guidance; Examples and Docs are placeholders for their owning slices.
+- [decision] Reset Layout restores the complete default model with Code and Problems selected while preserving the current GIC source.
+- [decision] Application chrome inherits Monaco's `"IBM Plex Mono", monospace` font stack.
+- [lesson] The browser TypeScript project must include both `.ts` and `.tsx`; excluding `.tsx` hid an invalid FlexLayout render-value property and left editor tooling without the Vite SCSS declarations.
