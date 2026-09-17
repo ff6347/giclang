@@ -1,1 +1,1 @@
-{"author":{"id":"86dc3c885e4fa466d19699d4a5e74c240f1c9d6b23f4e62ea2d2d8e359bd1711"},"ops":[{"type":8,"timestamp":1789634737,"nonce":"p72Pxt8DVSGLkrlyTx8F8WGD3YE=","target":"98354e4d9583705fb4d2644f2c0598804c8a6adbceda011c7f10ca85291b1205","new_metadata":{"github-id":"I_kwDOUKdEis8AAAABRu-xgw","github-url":"https://github.com/ff6347/gic-lang/issues/40"}}]}
+{"author":{"id":"86dc3c885e4fa466d19699d4a5e74c240f1c9d6b23f4e62ea2d2d8e359bd1711"},"ops":[{"type":5,"timestamp":1789634747,"nonce":"jigq/Mcewm6qz/29hFSPuMXgHrI=","added":["v0.9.1"],"removed":null}]}
