@@ -1,23 +1,22 @@
 // ABOUTME: Composes the React IDE shell around the persisted FlexLayout model.
 // ABOUTME: Coordinates panel controls, preview status, and error-driven layout behavior.
 
+import { useRef, useState } from "react";
 import {
-	useEffect,
-	useRef,
-	useState,
-	type KeyboardEvent,
-	type MouseEvent,
-} from "react";
-import {
-	Actions,
 	Layout,
-	type Action,
 	type ITabRenderValues,
 	type Model,
 	type TabNode,
 } from "flexlayout-react";
 import "flexlayout-react/style/light.scss";
-import { ApplicationTabs, type ApplicationTabId } from "./application-tabs.tsx";
+import {
+	ABOUT_ID,
+	CODE_ID,
+	createApplicationModel,
+	DOCS_ID,
+	EXAMPLES_ID,
+	SETTINGS_ID,
+} from "./application-model.ts";
 import {
 	AboutView,
 	DocsView,
@@ -26,15 +25,12 @@ import {
 } from "./application-pages.tsx";
 import {
 	createDefaultWorkspace,
-	collapseSelectedCentralTab,
 	EDITOR_ID,
-	isBorderVisible,
 	loadWorkspace,
 	OUTPUT_ID,
 	PREVIEW_ID,
 	PROBLEMS_ID,
 	saveWorkspace,
-	showProblemsWhenLowerPanelIsHidden,
 	TUTOR_ID,
 } from "./workspace-model.ts";
 import {
@@ -56,16 +52,8 @@ function countLabel(name: string, count: number): string {
 	return count === 0 ? name : `${name} (${count})`;
 }
 
-function tabIdForEventTarget(target: EventTarget | null): string | undefined {
-	if (!(target instanceof Element)) return undefined;
-	return target
-		.closest("[role='tab']")
-		?.id.replace("flexlayout-tabbutton-", "");
-}
-
 export function App() {
-	const [activeApplicationTab, setActiveApplicationTab] =
-		useState<ApplicationTabId>("code");
+	const [applicationModel] = useState(createApplicationModel);
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
 	const [model, setModel] = useState(loadWorkspace);
 	const [source, setSource] = useState("");
@@ -94,13 +82,6 @@ export function App() {
 		preview.onSourceChange(nextSource);
 	};
 
-	useEffect(() => {
-		if (preview.state.problems.length === 0) return;
-		if (isBorderVisible(model, PROBLEMS_ID)) return;
-		showProblemsWhenLowerPanelIsHidden(model);
-		layoutChanged(model);
-	}, [model, preview.state.problems.length]);
-
 	const renderTab = (node: TabNode, values: ITabRenderValues) => {
 		if (node.getId() === PROBLEMS_ID) {
 			const label = countLabel("Problems", preview.state.problems.length);
@@ -114,35 +95,7 @@ export function App() {
 		}
 	};
 
-	const handleLayoutAction = (action: Action) => {
-		const tabId = action.data.tabNode;
-		if (
-			action.type === Actions.SELECT_TAB &&
-			typeof tabId === "string" &&
-			collapseSelectedCentralTab(model, tabId)
-		) {
-			return undefined;
-		}
-		return action;
-	};
-
-	const handleCentralTabClick = (event: MouseEvent<HTMLDivElement>) => {
-		const tabId = tabIdForEventTarget(event.target);
-		if (tabId !== undefined && collapseSelectedCentralTab(model, tabId)) {
-			event.stopPropagation();
-		}
-	};
-
-	const handleCentralTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-		if (event.key !== "Enter" && event.key !== " ") return;
-		const tabId = tabIdForEventTarget(event.target);
-		if (tabId !== undefined && collapseSelectedCentralTab(model, tabId)) {
-			event.preventDefault();
-			event.stopPropagation();
-		}
-	};
-
-	const panelFactory = (node: TabNode) => {
+	const workspacePanelFactory = (node: TabNode) => {
 		switch (node.getComponent()) {
 			case EDITOR_ID:
 				return (
@@ -166,39 +119,43 @@ export function App() {
 		}
 	};
 
+	const applicationPanelFactory = (node: TabNode) => {
+		switch (node.getComponent()) {
+			case CODE_ID:
+				return (
+					<div className="workspace">
+						<Layout
+							factory={workspacePanelFactory}
+							model={model}
+							onModelChange={layoutChanged}
+							onRenderTab={renderTab}
+						/>
+					</div>
+				);
+			case SETTINGS_ID:
+				return (
+					<SettingsView
+						formatOnSave={formatOnSave}
+						onFormatOnSaveChange={updateFormatOnSave}
+						onResetLayout={resetLayout}
+					/>
+				);
+			case EXAMPLES_ID:
+				return <ExamplesView />;
+			case DOCS_ID:
+				return <DocsView />;
+			case ABOUT_ID:
+				return <AboutView />;
+			default:
+				throw new Error(`Unknown application tab '${node.getComponent()}'.`);
+		}
+	};
+
 	return (
 		<main className="app-shell">
-			<ApplicationTabs
-				activeTab={activeApplicationTab}
-				onSelect={setActiveApplicationTab}
-				panels={{
-					code: (
-						<div
-							className="workspace"
-							onClickCapture={handleCentralTabClick}
-							onKeyDownCapture={handleCentralTabKeyDown}
-						>
-							<Layout
-								factory={panelFactory}
-								model={model}
-								onAction={handleLayoutAction}
-								onModelChange={layoutChanged}
-								onRenderTab={renderTab}
-							/>
-						</div>
-					),
-					settings: (
-						<SettingsView
-							formatOnSave={formatOnSave}
-							onFormatOnSaveChange={updateFormatOnSave}
-							onResetLayout={resetLayout}
-						/>
-					),
-					examples: <ExamplesView />,
-					docs: <DocsView />,
-					about: <AboutView />,
-				}}
-			/>
+			<div className="application-layout">
+				<Layout factory={applicationPanelFactory} model={applicationModel} />
+			</div>
 		</main>
 	);
 }

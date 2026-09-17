@@ -271,23 +271,22 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.goto("/");
 	await page.evaluate(() => localStorage.clear());
 	await page.reload();
-	const applicationTabs = page.getByRole("tablist", { name: "Application" });
-	await applicationTabs.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("tab", { name: "Settings" }).click();
 	const setting = page.getByRole("checkbox", { name: "Format on save" });
 	await expect(setting).toBeChecked();
-	await applicationTabs.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Code" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
 		formatted,
 	);
 
-	await applicationTabs.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("tab", { name: "Settings" }).click();
 	await setting.uncheck();
 	await page.reload();
-	await applicationTabs.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("tab", { name: "Settings" }).click();
 	await expect(setting).not.toBeChecked();
-	await applicationTabs.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Code" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);

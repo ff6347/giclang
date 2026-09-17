@@ -1,14 +1,7 @@
 // ABOUTME: Defines and persists the browser IDE's FlexLayout workspace model.
-// ABOUTME: Provides panel visibility actions without coupling layout state to React.
+// ABOUTME: Places headerless Code panes around the central Preview and status stack.
 
-import {
-	Actions,
-	BorderNode,
-	Model,
-	TabNode,
-	TabSetNode,
-	type IJsonModel,
-} from "flexlayout-react";
+import { Model, TabNode, TabSetNode, type IJsonModel } from "flexlayout-react";
 
 export const EDITOR_ID = "editor";
 export const PREVIEW_ID = "preview";
@@ -17,8 +10,11 @@ export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
 export const TUTOR_ID = "tutor";
 
+const EDITOR_TABSET_ID = "editor-tabset";
+const STATUS_TABSET_ID = "status-tabset";
+const TUTOR_TABSET_ID = "tutor-tabset";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -28,7 +24,6 @@ interface StoredWorkspace {
 function defaultLayout(): IJsonModel {
 	return {
 		global: {
-			borderEnableDrop: false,
 			tabEnableClose: false,
 			tabEnableDrag: false,
 			tabEnableFloat: false,
@@ -38,69 +33,75 @@ function defaultLayout(): IJsonModel {
 			tabSetEnableDrop: false,
 			tabSetEnableMaximize: false,
 		},
-		borders: [
-			{
-				type: "border",
-				location: "left",
-				selected: 0,
-				size: 480,
-				children: [
-					{
-						type: "tab",
-						id: EDITOR_ID,
-						name: "Editor",
-						component: EDITOR_ID,
-					},
-				],
-			},
-			{
-				type: "border",
-				location: "right",
-				selected: 0,
-				size: 320,
-				children: [
-					{
-						type: "tab",
-						id: TUTOR_ID,
-						name: "Tutor",
-						component: TUTOR_ID,
-					},
-				],
-			},
-			{
-				type: "border",
-				location: "bottom",
-				selected: 0,
-				size: 200,
-				children: [
-					{
-						type: "tab",
-						id: PROBLEMS_ID,
-						name: "Problems",
-						component: PROBLEMS_ID,
-					},
-					{
-						type: "tab",
-						id: OUTPUT_ID,
-						name: "Output",
-						component: OUTPUT_ID,
-					},
-				],
-			},
-		],
+		borders: [],
 		layout: {
 			type: "row",
 			children: [
 				{
 					type: "tabset",
-					id: PREVIEW_TABSET_ID,
-					selected: 0,
+					id: EDITOR_TABSET_ID,
+					enableTabStrip: false,
+					weight: 35,
 					children: [
 						{
 							type: "tab",
-							id: PREVIEW_ID,
-							name: "Preview",
-							component: PREVIEW_ID,
+							id: EDITOR_ID,
+							name: "Editor",
+							component: EDITOR_ID,
+						},
+					],
+				},
+				{
+					type: "row",
+					weight: 30,
+					children: [
+						{
+							type: "tabset",
+							id: PREVIEW_TABSET_ID,
+							enableTabStrip: false,
+							weight: 55,
+							children: [
+								{
+									type: "tab",
+									id: PREVIEW_ID,
+									name: "Preview",
+									component: PREVIEW_ID,
+								},
+							],
+						},
+						{
+							type: "tabset",
+							id: STATUS_TABSET_ID,
+							selected: 0,
+							weight: 45,
+							children: [
+								{
+									type: "tab",
+									id: PROBLEMS_ID,
+									name: "Problems",
+									component: PROBLEMS_ID,
+								},
+								{
+									type: "tab",
+									id: OUTPUT_ID,
+									name: "Output",
+									component: OUTPUT_ID,
+								},
+							],
+						},
+					],
+				},
+				{
+					type: "tabset",
+					id: TUTOR_TABSET_ID,
+					enableTabStrip: false,
+					weight: 35,
+					children: [
+						{
+							type: "tab",
+							id: TUTOR_ID,
+							name: "Tutor",
+							component: TUTOR_ID,
 						},
 					],
 				},
@@ -145,65 +146,23 @@ export function saveWorkspace(model: Model): void {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 }
 
-function borderFor(model: Model, tabId: string): BorderNode {
-	const node = model.getNodeById(tabId);
-	if (!(node instanceof TabNode)) {
-		throw new Error(`Workspace tab '${tabId}' not found.`);
+function validatePanel(model: Model, panelId: string, tabsetId: string): void {
+	const panel = model.getNodeById(panelId);
+	const tabset = model.getNodeById(tabsetId);
+	if (
+		!(panel instanceof TabNode) ||
+		panel.getComponent() !== panelId ||
+		!(tabset instanceof TabSetNode) ||
+		panel.getParent() !== tabset
+	) {
+		throw new Error(`Workspace panel '${panelId}' is invalid.`);
 	}
-	const parent = node.getParent();
-	if (!(parent instanceof BorderNode)) {
-		throw new Error(`Workspace tab '${tabId}' is not in a border.`);
-	}
-	return parent;
 }
 
 function validateWorkspace(model: Model): void {
-	for (const panelId of [EDITOR_ID, PROBLEMS_ID, OUTPUT_ID, TUTOR_ID]) {
-		const panel = model.getNodeById(panelId);
-		if (!(panel instanceof TabNode) || panel.getComponent() !== panelId) {
-			throw new Error(`Workspace panel '${panelId}' is invalid.`);
-		}
-		borderFor(model, panelId);
-	}
-	const previewTabset = model.getNodeById(PREVIEW_TABSET_ID);
-	if (!(previewTabset instanceof TabSetNode)) {
-		throw new Error("Workspace preview is invalid.");
-	}
-	const preview = model.getNodeById(PREVIEW_ID);
-	if (
-		!(preview instanceof TabNode) ||
-		preview.getComponent() !== PREVIEW_ID ||
-		preview.getParent() !== previewTabset
-	) {
-		throw new Error(`Workspace panel '${PREVIEW_ID}' is invalid.`);
-	}
-}
-
-export function isBorderVisible(model: Model, tabId: string): boolean {
-	return borderFor(model, tabId).getSelected() !== -1;
-}
-
-export function collapseSelectedCentralTab(
-	model: Model,
-	tabId: string,
-): boolean {
-	const node = model.getNodeById(PREVIEW_TABSET_ID);
-	if (
-		!(node instanceof TabSetNode) ||
-		node.getSelectedNode()?.getId() !== tabId
-	) {
-		return false;
-	}
-	model.doAction(
-		Actions.updateNodeAttributes(PREVIEW_TABSET_ID, {
-			selected: -1,
-		}),
-	);
-	return true;
-}
-
-export function showProblemsWhenLowerPanelIsHidden(model: Model): void {
-	if (!isBorderVisible(model, PROBLEMS_ID)) {
-		model.doAction(Actions.selectTab(PROBLEMS_ID));
-	}
+	validatePanel(model, EDITOR_ID, EDITOR_TABSET_ID);
+	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
+	validatePanel(model, PROBLEMS_ID, STATUS_TABSET_ID);
+	validatePanel(model, OUTPUT_ID, STATUS_TABSET_ID);
+	validatePanel(model, TUTOR_ID, TUTOR_TABSET_ID);
 }

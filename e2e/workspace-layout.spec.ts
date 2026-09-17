@@ -9,24 +9,23 @@ test("shows the top-level application tabs and Code workspace", async ({
 }) => {
 	await page.goto("/");
 
-	const applicationTabs = page.getByRole("tablist", { name: "Application" });
 	await expect(page.getByRole("heading", { name: "GiC" })).toHaveCount(0);
 	await expect(
 		page.getByRole("navigation", { name: "Workspace controls" }),
 	).toHaveCount(0);
 	for (const name of ["Code", "Settings", "Examples", "Docs", "About"]) {
-		await expect(applicationTabs.getByRole("tab", { name })).toBeVisible();
+		await expect(page.getByRole("tab", { name })).toBeVisible();
 	}
-	await expect(
-		applicationTabs.getByRole("tab", { name: "Code" }),
-	).toHaveAttribute("aria-selected", "true");
-	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
+	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
+	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
+	for (const name of ["Editor", "Preview", "Tutor"]) {
+		await expect(page.getByRole("tab", { name })).toHaveCount(0);
+	}
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
@@ -42,47 +41,42 @@ test("shows the top-level application tabs and Code workspace", async ({
 	);
 });
 
-test("uses workspace tabs as the panel visibility controls", async ({
+test("places Problems and Output beneath Preview in the middle column", async ({
 	page,
 }) => {
 	await page.goto("/");
 
-	const editorTab = page.getByRole("tab", { name: "Editor" });
-	await editorTab.click();
-	await expect(page.getByRole("region", { name: "Editor" })).toBeHidden();
-	await expect(editorTab).toHaveAttribute("aria-selected", "false");
-	await editorTab.click();
-	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
+	const editorBox = await page
+		.getByRole("region", { name: "Editor" })
+		.boundingBox();
+	const previewBox = await page
+		.getByRole("region", { name: "Preview" })
+		.boundingBox();
+	const problemsBox = await page
+		.getByRole("region", { name: "Problems" })
+		.boundingBox();
+	const tutorBox = await page
+		.getByRole("region", { name: "Tutor" })
+		.boundingBox();
 
-	const tutorTab = page.getByRole("tab", { name: "Tutor" });
-	await tutorTab.click();
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
-	await tutorTab.click();
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeVisible();
-
-	const previewTab = page.getByRole("tab", { name: "Preview" });
-	await previewTab.focus();
-	await previewTab.press("Enter");
-	await expect(page.getByRole("region", { name: "Preview" })).toBeHidden();
-	await expect(previewTab).toHaveAttribute("aria-selected", "false");
-	await previewTab.click();
-	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-
-	const outputTab = page.getByRole("tab", { name: "Output" });
-	await outputTab.click();
-	await outputTab.click();
-	await expect(page.getByRole("region", { name: "Output" })).toBeHidden();
-	await expect(outputTab).toHaveAttribute("aria-selected", "false");
+	expect(editorBox).not.toBeNull();
+	expect(previewBox).not.toBeNull();
+	expect(problemsBox).not.toBeNull();
+	expect(tutorBox).not.toBeNull();
+	expect(problemsBox!.y).toBeGreaterThanOrEqual(
+		previewBox!.y + previewBox!.height,
+	);
+	expect(problemsBox!.x).toBeCloseTo(previewBox!.x, 0);
+	expect(problemsBox!.width).toBeCloseTo(previewBox!.width, 0);
+	expect(editorBox!.x).toBeLessThan(previewBox!.x);
+	expect(tutorBox!.x).toBeGreaterThan(previewBox!.x + previewBox!.width);
 });
 
 test("places application preferences and provider guidance in Settings", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await page
-		.getByRole("tablist", { name: "Application" })
-		.getByRole("tab", { name: "Settings" })
-		.click();
+	await page.getByRole("tab", { name: "Settings" }).click();
 
 	await expect(page.getByRole("region", { name: "Settings" })).toBeVisible();
 	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeHidden();
@@ -104,7 +98,6 @@ test("shows explicit placeholders for Examples, Docs, and About", async ({
 	page,
 }) => {
 	await page.goto("/");
-	const applicationTabs = page.getByRole("tablist", { name: "Application" });
 	const placeholders = [
 		{ name: "Examples", text: "one-document workflow" },
 		{ name: "Docs", text: "Language reference and help" },
@@ -112,7 +105,7 @@ test("shows explicit placeholders for Examples, Docs, and About", async ({
 	];
 
 	for (const { name, text } of placeholders) {
-		await applicationTabs.getByRole("tab", { name }).click();
+		await page.getByRole("tab", { name }).click();
 		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
 	}
 });
@@ -122,7 +115,7 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 		localStorage.setItem(
 			"gic.workspaceLayout",
 			JSON.stringify({
-				version: 3,
+				version: 4,
 				layout: {
 					global: {},
 					borders: [],
@@ -156,7 +149,7 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 	);
 });
 
-test("persists keyboard resizing, hidden regions, and the selected lower tab", async ({
+test("persists keyboard resizing and the selected status tab", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -174,43 +167,14 @@ test("persists keyboard resizing, hidden regions, and the selected lower tab", a
 	expect(resizedWidth).toBeGreaterThan(initialWidth!);
 
 	await page.getByRole("tab", { name: "Output" }).click();
-	await page.getByRole("tab", { name: "Tutor" }).click();
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
 
 	await page.reload();
 
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
-	await expect(page.getByRole("tab", { name: "Tutor" })).toHaveAttribute(
-		"aria-selected",
-		"false",
-	);
 	await expect(page.getByRole("tab", { name: "Output" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
 	expect((await editor.boundingBox())?.width).toBeCloseTo(resizedWidth!, 0);
-});
-
-test("reopens a hidden lower panel on error and selects Problems", async ({
-	page,
-}) => {
-	await page.goto("/");
-	await page.getByRole("tab", { name: "Output" }).click();
-	await page.getByRole("tab", { name: "Output" }).click();
-	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
-		"aria-selected",
-		"false",
-	);
-
-	await setEditorSource(page, "circle(50, 50);");
-
-	await expect(page.getByRole("tab", { name: "Problems (1)" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(page.locator("#problems")).toContainText(
-		"Function 'circle' expects 3 arguments, but got 2.",
-	);
 });
 
 test("preserves Output selection on errors when the lower panel is visible", async ({
@@ -240,36 +204,25 @@ if (size > 20) {
 	await expect(page.getByRole("tab", { name: "Problems (1)" })).toBeVisible();
 });
 
-test("Reset Layout restores visible regions and the default lower tab", async ({
+test("Reset Layout restores workspace geometry and the default status tab", async ({
 	page,
 }) => {
 	await page.goto("/");
 	await setEditorSource(page, "circle(50, 50, 30);");
 	await page.getByRole("tab", { name: "Output" }).click();
-	await page.getByRole("tab", { name: "Editor" }).click();
-	await page.getByRole("tab", { name: "Preview" }).click();
-	await page.getByRole("tab", { name: "Tutor" }).click();
-	await expect(page.getByRole("region", { name: "Editor" })).toBeHidden();
-	await expect(page.getByRole("region", { name: "Preview" })).toBeHidden();
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeHidden();
+	const splitter = page
+		.locator("[role='separator'][aria-orientation='vertical']")
+		.first();
+	await splitter.focus();
+	await splitter.press("ArrowRight");
 
-	await page
-		.getByRole("tablist", { name: "Application" })
-		.getByRole("tab", { name: "Settings" })
-		.click();
+	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
-	await page
-		.getByRole("tablist", { name: "Application" })
-		.getByRole("tab", { name: "Code" })
-		.click();
+	await page.getByRole("tab", { name: "Code" }).click();
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Tutor" })).toBeVisible();
-	await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
 		"aria-selected",
 		"true",

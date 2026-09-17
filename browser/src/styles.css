@@ -1,26 +1,5 @@
-/* ABOUTME: Sizes the React application tabs and workspace panels. */
-/* ABOUTME: Keeps FlexLayout and tab content usable across browser window sizes. */
-
-.application-tabs {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-	min-height: 0;
-}
-
-.application-tabs__list {
-	display: flex;
-}
-
-.application-tabs__panels {
-	flex: 1;
-	min-height: 0;
-}
-
-.application-tabs__panel {
-	height: 100%;
-	min-height: 0;
-}
+/* ABOUTME: Sizes the nested FlexLayout application and Code workspace panels. */
+/* ABOUTME: Keeps editor, preview, status, and tutor content usable across window sizes. */
 
 html,
 body,
@@ -39,6 +18,12 @@ input {
 	flex-direction: column;
 	height: 100%;
 	min-height: 0;
+}
+
+.application-layout {
+	flex: 1;
+	min-height: 0;
+	position: relative;
 }
 
 .workspace {
