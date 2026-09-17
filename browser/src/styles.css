@@ -8,6 +8,10 @@ body,
 	margin: 0;
 }
 
+body {
+	font-family: "IBM Plex Mono", monospace;
+}
+
 button,
 input {
 	font: inherit;
@@ -22,12 +26,6 @@ input {
 
 .application-layout {
 	flex: 1;
-	min-height: 0;
-	position: relative;
-}
-
-.workspace {
-	height: 100%;
 	min-height: 0;
 	position: relative;
 }

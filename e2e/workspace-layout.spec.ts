@@ -24,7 +24,7 @@ test("shows the top-level application tabs and Code workspace", async ({
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	for (const name of ["Editor", "Preview", "Tutor"]) {
-		await expect(page.getByRole("tab", { name })).toHaveCount(0);
+		await expect(page.getByRole("tab", { name })).toBeVisible();
 	}
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
@@ -39,6 +39,29 @@ test("shows the top-level application tabs and Code workspace", async ({
 	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
 		"Tutor is still unavailable.",
 	);
+});
+
+test("uses Monaco's font stack throughout the application", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const fonts = await page.evaluate(() => {
+		const editorLine = document.querySelector(".view-line");
+		const applicationTab = document.querySelector("#flexlayout-tabbutton-code");
+		if (!(editorLine instanceof HTMLElement)) {
+			throw new Error("Monaco view line not found.");
+		}
+		if (!(applicationTab instanceof HTMLElement)) {
+			throw new Error("Application tab not found.");
+		}
+		return {
+			application: getComputedStyle(applicationTab).fontFamily,
+			editor: getComputedStyle(editorLine).fontFamily,
+		};
+	});
+
+	expect(fonts.application).toContain("IBM Plex Mono");
+	expect(fonts.editor).toContain("IBM Plex Mono");
 });
 
 test("places Problems and Output beneath Preview in the middle column", async ({
@@ -115,7 +138,7 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 		localStorage.setItem(
 			"gic.workspaceLayout",
 			JSON.stringify({
-				version: 4,
+				version: 5,
 				layout: {
 					global: {},
 					borders: [],
@@ -177,6 +200,40 @@ test("persists keyboard resizing and the selected status tab", async ({
 	expect((await editor.boundingBox())?.width).toBeCloseTo(resizedWidth!, 0);
 });
 
+test("moves tabs between Code tabsets and Reset Layout restores defaults", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const previewTab = page.getByRole("tab", { name: "Preview" });
+	const outputTab = page.getByRole("tab", { name: "Output" });
+	const initialPreviewBox = await previewTab.boundingBox();
+	const initialOutputBox = await outputTab.boundingBox();
+	expect(initialPreviewBox).not.toBeNull();
+	expect(initialOutputBox).not.toBeNull();
+	expect(initialOutputBox!.y).toBeGreaterThan(initialPreviewBox!.y);
+
+	await outputTab.dragTo(previewTab);
+	await expect
+		.poll(async () => (await outputTab.boundingBox())?.y)
+		.toBeCloseTo((await previewTab.boundingBox())!.y, 0);
+
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("button", { name: "Reset Layout" }).click();
+	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	const resetPreviewBox = await page
+		.getByRole("tab", { name: "Preview" })
+		.boundingBox();
+	const resetOutputBox = await page
+		.getByRole("tab", { name: "Output" })
+		.boundingBox();
+	expect(resetPreviewBox).not.toBeNull();
+	expect(resetOutputBox).not.toBeNull();
+	expect(resetOutputBox!.y).toBeGreaterThan(resetPreviewBox!.y);
+});
+
 test("preserves Output selection on errors when the lower panel is visible", async ({
 	page,
 }) => {
@@ -193,15 +250,16 @@ if (size > 20) {
 }`,
 	);
 
-	await expect(page.getByRole("tab", { name: "Output (2)" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	const outputTab = page.getByRole("tab", { name: "Output" });
+	await expect(outputTab).toHaveAttribute("aria-selected", "true");
+	await expect(outputTab).toContainText("Output (2)");
 	await expect(page.locator("#output").locator("p")).toHaveText([
 		"Line 1: first",
 		"Line 2: second",
 	]);
-	await expect(page.getByRole("tab", { name: "Problems (1)" })).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Problems" })).toContainText(
+		"Problems (1)",
+	);
 });
 
 test("Reset Layout restores workspace geometry and the default status tab", async ({
@@ -218,7 +276,10 @@ test("Reset Layout restores workspace geometry and the default status tab", asyn
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();

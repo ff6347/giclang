@@ -8,31 +8,27 @@ import {
 	type Model,
 	type TabNode,
 } from "flexlayout-react";
-import "flexlayout-react/style/light.scss";
+import "flexlayout-react/style/combined.scss";
 import {
 	ABOUT_ID,
-	CODE_ID,
-	createApplicationModel,
+	createDefaultWorkspace,
 	DOCS_ID,
+	EDITOR_ID,
 	EXAMPLES_ID,
+	loadWorkspace,
+	OUTPUT_ID,
+	PREVIEW_ID,
+	PROBLEMS_ID,
+	saveWorkspace,
 	SETTINGS_ID,
-} from "./application-model.ts";
+	TUTOR_ID,
+} from "./workspace-model.ts";
 import {
 	AboutView,
 	DocsView,
 	ExamplesView,
 	SettingsView,
 } from "./application-pages.tsx";
-import {
-	createDefaultWorkspace,
-	EDITOR_ID,
-	loadWorkspace,
-	OUTPUT_ID,
-	PREVIEW_ID,
-	PROBLEMS_ID,
-	saveWorkspace,
-	TUTOR_ID,
-} from "./workspace-model.ts";
 import {
 	EditorPanel,
 	OutputPanel,
@@ -53,7 +49,6 @@ function countLabel(name: string, count: number): string {
 }
 
 export function App() {
-	const [applicationModel] = useState(createApplicationModel);
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
 	const [model, setModel] = useState(loadWorkspace);
 	const [source, setSource] = useState("");
@@ -86,16 +81,14 @@ export function App() {
 		if (node.getId() === PROBLEMS_ID) {
 			const label = countLabel("Problems", preview.state.problems.length);
 			values.content = label;
-			values.name = label;
 		}
 		if (node.getId() === OUTPUT_ID) {
 			const label = countLabel("Output", preview.state.output.length);
 			values.content = label;
-			values.name = label;
 		}
 	};
 
-	const workspacePanelFactory = (node: TabNode) => {
+	const panelFactory = (node: TabNode) => {
 		switch (node.getComponent()) {
 			case EDITOR_ID:
 				return (
@@ -114,24 +107,6 @@ export function App() {
 				return <OutputPanel entries={preview.state.output} />;
 			case TUTOR_ID:
 				return <TutorPanel />;
-			default:
-				throw new Error(`Unknown workspace panel '${node.getComponent()}'.`);
-		}
-	};
-
-	const applicationPanelFactory = (node: TabNode) => {
-		switch (node.getComponent()) {
-			case CODE_ID:
-				return (
-					<div className="workspace">
-						<Layout
-							factory={workspacePanelFactory}
-							model={model}
-							onModelChange={layoutChanged}
-							onRenderTab={renderTab}
-						/>
-					</div>
-				);
 			case SETTINGS_ID:
 				return (
 					<SettingsView
@@ -147,14 +122,19 @@ export function App() {
 			case ABOUT_ID:
 				return <AboutView />;
 			default:
-				throw new Error(`Unknown application tab '${node.getComponent()}'.`);
+				throw new Error(`Unknown layout panel '${node.getComponent()}'.`);
 		}
 	};
 
 	return (
 		<main className="app-shell">
 			<div className="application-layout">
-				<Layout factory={applicationPanelFactory} model={applicationModel} />
+				<Layout
+					factory={panelFactory}
+					model={model}
+					onModelChange={layoutChanged}
+					onRenderTab={renderTab}
+				/>
 			</div>
 		</main>
 	);
