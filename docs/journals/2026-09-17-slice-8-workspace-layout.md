@@ -9,17 +9,17 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 
 ## Implementation
 
-- [decision] React composes the browser application and FlexLayout owns resizable panels, border tabs, keyboard splitters, and serialized layout state.
+- [decision] React composes the browser application and nested FlexLayout models own application tabs, resizable Code panes, keyboard splitters, and serialized workspace state.
 - [decision] Monaco keeps its imperative adapter. A React panel mounts `createGicEditor()` directly and disposes it without adding another Monaco binding.
 - [decision] A versioned GIC envelope stores FlexLayout JSON. Invalid state restores defaults, and Reset Layout replaces only the layout model so the current source survives.
 - [technique] Problems and Output render even while inactive so structured results remain observable and ready when their tab is selected.
-- [technique] Current-source failures select Problems only when the lower panel is hidden. A visible lower panel retains its selected tab while counts and content update.
+- [technique] Current-source failures update Problems while the Problems/Output tabset retains the student's selected tab.
 - [technique] The Canvas obtains its rendering context on mount so clearing it after a diagnostic preserves the deterministic PNG representation expected by browser acceptance.
-- [decision] The unavailable tutor explicitly says that tutoring is optional, provides setup guidance and Retry, and can be hidden without affecting editing.
+- [decision] The unavailable tutor explicitly says that tutoring is optional, provides setup guidance and Retry, and does not gate editing.
 
 ## Acceptance
 
-- [verification] Focused Playwright acceptance covers visible regions, keyboard resizing, restart persistence, hide/show controls, Problems/Output selection, status counts, error reopening, tutor fallback controls, and Reset Layout without source loss.
+- [verification] Focused Playwright acceptance covers the application tabs, nested Code geometry, keyboard resizing, restart persistence, Problems/Output selection, status counts, tutor fallback controls, and Reset Layout without source loss.
 - [verification] Existing Monaco, print-output, and deterministic Canvas acceptance remains part of the full Firefox regression suite.
 
 ## Verification
@@ -31,10 +31,10 @@ Git-bug issue `d5f66fd` adds the shared three-region workspace: Monaco on the le
 - `pnpm lint` — no warnings or errors.
 - `pnpm fmt:check` — passed.
 - `pnpm build:browser` — passed with the documented Monaco chunk-size warning.
-- Playwright Firefox acceptance — 54 tests passed: 53 on the isolated worktree server and the origin-pinned local-assets check on the standard port.
+- Playwright Firefox acceptance — 53 tests passed.
 
 ## UI Follow-up
 
-- [decision] Preview is the central FlexLayout tab. Selecting it while active collapses its content, while border tabs remain the sole hide/show controls for Editor, Tutor, Problems, and Output.
-- [decision] Code, Settings, Examples, Docs, and About are top-level React tabs whose content remains mounted. Settings contains Format on save, Reset Layout, and desktop tutor-provider guidance; Examples and Docs are placeholders for their owning slices.
-- [decision] Reset Layout selects Preview and restores the workspace defaults while preserving the current GIC source and selected top-level application tab.
+- [decision] An outer FlexLayout owns Code, Settings, Examples, Docs, and About while keeping every tab mounted. Settings contains Format on save, Reset Layout, and desktop tutor-provider guidance; Examples and Docs are placeholders for their owning slices.
+- [decision] Code nests a second FlexLayout: headerless Editor and Tutor side panes surround a middle column with headerless Preview above the Problems/Output tabset.
+- [decision] Reset Layout restores Code geometry and selects Problems while preserving the current GIC source and selected top-level application tab.

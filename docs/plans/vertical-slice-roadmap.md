@@ -159,18 +159,17 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 ### Slice 8: Workspace layout and status behavior
 
-**Student-visible outcome:** The IDE has persistent resizable editor, preview/output, and tutor regions with recoverable layout state.
-
-![GIC IDE layout sketch](../bin/ide-layout-scribble.png)
+**Student-visible outcome:** The IDE has application-level navigation and a persistent resizable Code workspace with recoverable layout state.
 
 **Acceptance:**
 
-- Editor, middle, and tutor regions resize and hide through visible controls.
-- Canvas and a lower Problems/Output tab panel occupy the middle region.
-- Sizes, hidden states, and selected lower tab survive restart.
+- FlexLayout provides top-level Code, Settings, Examples, Docs, and About tabs.
+- Code contains headerless Editor and Tutor side panes around a middle column.
+- Canvas and a lower Problems/Output tabset occupy the middle column.
+- Pane sizes and the selected Problems/Output tab survive restart.
 - Reset Layout restores defaults.
-- An error reopens a minimized lower panel with Problems selected.
-- When the panel is visible, reruns preserve its selected tab and update badges.
+- Reruns preserve the selected Problems/Output tab while updating badges and content.
+- The unavailable Tutor explains setup, Retry, and its optional status without gating Code.
 
 **Dependency:** Slice 6.
 

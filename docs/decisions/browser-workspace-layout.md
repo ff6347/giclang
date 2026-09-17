@@ -11,21 +11,20 @@ The shared browser IDE uses React for application composition and FlexLayout for
 
 Monaco remains an imperative integration through GIC's existing `createGicEditor()` adapter. React mounts and disposes that adapter; GIC does not add a separate React Monaco binding.
 
-React owns the top-level Code, Settings, Examples, Docs, and About tabs. All top-level tab content remains mounted so switching away from Code does not discard Monaco, Canvas, worker, or workspace state. Examples and Docs are placeholders until their owning slices supply document and reference behavior.
+An outer FlexLayout owns the top-level Code, Settings, Examples, Docs, and About tabs. It keeps all top-level tab content mounted so switching away from Code does not discard Monaco, Canvas, worker, or workspace state. Examples and Docs are placeholders until their owning slices supply document and reference behavior.
 
-The Code tab constrains FlexLayout to the product layout rather than exposing a general-purpose docking environment:
+The Code tab contains a nested FlexLayout constrained to the product layout rather than exposing a general-purpose docking environment:
 
-- Editor and Tutor occupy hideable side borders.
-- Preview occupies the central tabset and its tab controls central visibility.
-- Problems and Output share a hideable lower border.
-- Border tabs are the only hide/show controls for their panels.
+- Editor and Tutor are headerless left and right panes.
+- The middle column stacks a headerless Preview above the Problems/Output tabset.
+- Problems and Output are the only visible tabs inside Code.
 - Arbitrary panel closing, dragging, floating, and docking are disabled.
 
 The top-level Settings tab contains Format on save, Reset Layout, and tutor-provider guidance. Persisted workspace state uses a versioned GIC-owned envelope around FlexLayout's JSON model. Invalid or unsupported state falls back to the default workspace.
 
 ## Rationale
 
-Slice 8 requires nested resizing, tabs, hidden states, restart persistence, programmatic panel selection, and reset behavior. The accepted browser accessibility boundary also requires keyboard operation and focus behavior. FlexLayout supplies WAI-ARIA tabs and keyboard-resizable separators as one maintained layout model.
+Slice 8 requires nested resizing, tabs, restart persistence, programmatic panel selection, and reset behavior. The accepted browser accessibility boundary also requires keyboard operation and focus behavior. FlexLayout supplies WAI-ARIA tabs and keyboard-resizable separators as one maintained layout model.
 
 Dockview was the strongest framework-neutral candidate, but its splitview sashes are pointer-driven and do not implement keyboard resizing. Split.js and the React split-panel libraries solve resizing but leave tabs and workspace state to GIC. Lumino introduces a larger widget framework than this workspace needs.
 
@@ -35,9 +34,9 @@ Dockview was the strongest framework-neutral candidate, but its splitview sashes
 - Sass compiles FlexLayout's published theme source because its CSS package references an unpublished source map.
 - React remains outside the language core, worker, Canvas renderer, and language service.
 - Resetting layout state must not reset the active GIC source.
-- Reset Layout selects Preview and restores the default Editor, Tutor, and Problems panels.
+- Reset Layout restores default Code geometry with Problems selected.
 - Reset Layout does not change the selected top-level application tab.
-- Current-source diagnostics can reopen Problems only when the lower panel is hidden; an already visible lower panel preserves the student's selected tab.
+- Diagnostics update the Problems badge and content without replacing the student's selected Problems/Output tab.
 - Layout behavior is verified through the real Monaco, worker, FlexLayout, and Canvas path in Firefox.
 
 ## Related Sources
