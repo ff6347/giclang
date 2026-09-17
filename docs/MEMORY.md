@@ -159,6 +159,7 @@
 - [decision] `gic check` and `gic run` are required v0.9 interfaces over the shared core. `gic run` executes headlessly with ordered `print` output by default; `--commands` instead emits stable drawing-command JSON. Image rendering is deferred to a separate future shell-backend decision, with Skia only a candidate. CLI export, server rendering, watch mode, and `gic lsp` remain out of scope.
 - [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical slices may implement partial milestone behavior without checking the milestone early.
 - [process] Each vertical slice uses a feature branch and starts with a source-level acceptance test, keeps the core browser-neutral, and ends with an experiment, durable documentation, review, atomic commits, and a push. Use a separate worktree only when parallel agents require isolated working trees.
+- [decision] The shared IDE uses React for browser composition and FlexLayout for keyboard-operable resizing, tabs, and persisted layout state. Monaco remains an imperative GIC adapter mounted by React; no React Monaco binding enters the application.
 - [preference] Fabian's personal learning comments are intentional working notes; agents preserve them unless he requests comment review or removal.
 
 ## Issue Tracking
