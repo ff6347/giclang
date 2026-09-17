@@ -40,6 +40,9 @@
 - [decision] Monaco's packaged editor feature graph supplies the F1 command palette and applicable editor commands, including Format Document; the single-editor shell focuses Monaco on launch, and no runtime CDN dependency is introduced.
 - [decision] Language assistance recovers completed declarations from incomplete block prefixes, closes only unmatched blocks for parsing, and applies analyzer declaration-order rules so a variable is not visible inside its own initializer.
 - [decision] Format-on-save is browser-neutral configuration, defaults to enabled, and persists in the shared UI under `gic.formatOnSave`. The pre-document-workflow `Ctrl`/`Cmd`+`S` seam formats once when enabled; explicit Format Document ignores the setting.
+- [decision] Workspace persistence stores the complete FlexLayout JSON inside a versioned GIC envelope. Invalid or unsupported state falls back to the default model; Reset Layout replaces only layout state so the current GIC source survives.
+- [technique] FlexLayout keeps every tab mounted with `tabEnableRenderOnDemand: false`, preserving Monaco, Canvas, worker, and status content while tabs move or become inactive.
+- [technique] Obtain the Canvas 2D context when its panel mounts. Firefox otherwise serializes the untouched initial Canvas differently from a later cleared Canvas, making deterministic empty-image acceptance fail despite identical pixels.
 - [direction] Treat Node-based image rendering as an optional export, CI, or dataset tool rather than the primary execution environment.
 - [decision] The primary v0.9 distribution is a Tauri 2 dedicated-window desktop app; the secondary edition is a tutor-less offline PWA. Operation-specific native Rust commands own dialogs, files, credentials, and provider calls. Electron is the fallback; Deno Desktop was rejected because it lacked first-class native Open/Save APIs, and no Node sidecar is currently required.
 - [decision] Desktop and PWA edit one document at a time. Explicit source saves, immutable example copies, and private recovery snapshots are separate workflows.
@@ -161,6 +164,7 @@
 - [decision] `docs/LESSONS.md` remains the feature-completeness ledger; vertical slices may implement partial milestone behavior without checking the milestone early.
 - [process] Each vertical slice uses a feature branch and starts with a source-level acceptance test, keeps the core browser-neutral, and ends with an experiment, durable documentation, review, atomic commits, and a push. Use a separate worktree only when parallel agents require isolated working trees.
 - [decision] The shared IDE uses React panel content inside one FlexLayout model with a model-native Code sublayout. Every application and Code item is an equal draggable tab; FlexLayout owns resizing, docking, and persisted state. Monaco remains an imperative GIC adapter mounted by React; no React Monaco binding enters the application.
+- [preference] Delegate implementation to configured worker models such as Terra while the primary agent defines acceptance, reviews, verifies, commits, and pushes. Keep delegated tasks bounded and request milestone check-ins; if isolated workers repeatedly stall, report the limitation before taking implementation back.
 - [preference] Fabian's personal learning comments are intentional working notes; agents preserve them unless he requests comment review or removal.
 
 ## Issue Tracking
