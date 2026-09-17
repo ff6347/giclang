@@ -170,6 +170,7 @@ export function createGicEditor(
 	container: HTMLElement,
 	onSourceChange: (source: string) => void,
 	getSettings: () => LanguageServiceSettings,
+	initialSource = "",
 ): GicEditor {
 	registerGicLanguage();
 	const editor = monaco.editor.create(container, {
@@ -182,7 +183,7 @@ export function createGicEditor(
 		detectIndentation: true,
 		wordBasedSuggestions: "off",
 		colorDecorators: true,
-		value: "",
+		value: initialSource,
 		lineNumbers: "on",
 		formatOnPaste: true,
 		fontFamily: "IBM Plex Mono, monospace",
