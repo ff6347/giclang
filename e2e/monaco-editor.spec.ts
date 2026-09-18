@@ -62,6 +62,24 @@ point(10, 10);`;
 	expect(builtInClass).not.toBe(identifierClass);
 });
 
+test("wraps long GIC source lines", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, `// ${"long ".repeat(30)}`);
+
+	await expect
+		.poll(() => page.locator(".view-line").count())
+		.toBeGreaterThan(1);
+});
+
+test("does not show Monaco's CSS color picker for GIC color strings", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await setEditorSource(page, 'background("#777777");');
+
+	await expect(page.locator(".colorpicker-color-decoration")).toHaveCount(0);
+});
+
 test("loads Monaco without requesting external assets", async ({ page }) => {
 	const externalRequests: string[] = [];
 	page.on("request", (request) => {
