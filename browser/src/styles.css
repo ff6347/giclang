@@ -39,10 +39,6 @@ input {
 	padding: 0 0.5rem;
 }
 
-.document-status {
-	margin: 0;
-}
-
 .application-menubar {
 	display: flex;
 }

@@ -67,6 +67,11 @@ export function App() {
 		model.doAction(Actions.renameTab(TUTOR_ID, "Agent"));
 	}, [model]);
 
+	useEffect(() => {
+		const label = `${documents.documentState.displayName}${documents.documentState.isDirty ? " *" : ""}`;
+		model.doAction(Actions.renameTab(EDITOR_ID, label));
+	}, [documents.documentState, model]);
+
 	const layoutChanged = (changedModel: Model) => {
 		saveWorkspace(changedModel);
 		setLayoutRevision((revision) => revision + 1);
@@ -89,9 +94,6 @@ export function App() {
 	};
 
 	const renderTab = (node: TabNode, values: ITabRenderValues) => {
-		if (node.getId() === EDITOR_ID) {
-			values.content = `${documents.documentState.displayName}${documents.documentState.isDirty ? " *" : ""}`;
-		}
 		if (node.getId() === PROBLEMS_ID) {
 			const label = countLabel("Problems", preview.state.problems.length);
 			values.content = label;
@@ -150,11 +152,6 @@ export function App() {
 	return (
 		<main className="app-shell">
 			<header className="application-chrome">
-				<p className="document-status" id="document-status" aria-live="polite">
-					{documents.documentState.displayName}
-					{documents.documentState.kind === "example" ? " — example" : ""}
-					{documents.documentState.isDirty ? " *" : ""}
-				</p>
 				<Menubar aria-label="Application menu" className="application-menubar">
 					<Menu.Root>
 						<Menu.Trigger className="application-menu-trigger">

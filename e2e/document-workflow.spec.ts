@@ -20,6 +20,10 @@ async function chooseFileCommand(
 		.click();
 }
 
+function documentTab(page: import("@playwright/test").Page, name: string) {
+	return page.getByRole("tab", { name, exact: true });
+}
+
 test("offers PWA document commands through the File menu", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
@@ -46,14 +50,14 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	await chooseFileCommand(page, "Open");
 	await page.locator("#open-file").setInputFiles(repeatExamplePath);
 
-	await expect(page.locator("#document-status")).toHaveText("repeat.gic");
+	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 	await setEditorSource(page, "point(10, 10);");
-	await expect(page.locator("#document-status")).toHaveText("repeat.gic *");
+	await expect(documentTab(page, "repeat.gic *")).toBeVisible();
 
 	const download = page.waitForEvent("download");
 	await chooseFileCommand(page, "Save");
 	expect((await download).suggestedFilename()).toBe("repeat.gic");
-	await expect(page.locator("#document-status")).toHaveText("repeat.gic");
+	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 	await page.reload();
 	await expect(
 		page.getByRole("dialog", { name: "Recover unsaved sketch?" }),
@@ -72,9 +76,7 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await page.getByRole("button", { name: "repeat.gic" }).click();
 	await page.getByRole("tab", { name: "Gestalten" }).click();
 
-	await expect(page.locator("#document-status")).toHaveText(
-		"repeat.gic — example",
-	);
+	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await expect(
 		page
@@ -83,9 +85,7 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	).toBeDisabled();
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await setEditorSource(page, source);
-	await expect(page.locator("#document-status")).toHaveText(
-		"repeat.gic — example *",
-	);
+	await expect(documentTab(page, "repeat.gic *")).toBeVisible();
 
 	await chooseFileCommand(page, "Save As");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
@@ -94,7 +94,7 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await page.getByRole("button", { name: "Save copy" }).click();
 
 	expect((await download).suggestedFilename()).toBe("my-repeat.gic");
-	await expect(page.locator("#document-status")).toHaveText("my-repeat.gic");
+	await expect(documentTab(page, "my-repeat.gic")).toBeVisible();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
 		formatted,
 	);
@@ -117,7 +117,7 @@ test("cancels replacement of dirty work until the student confirms discard", asy
 
 	await page.locator("#open-file").setInputFiles(repeatExamplePath);
 	await discard.getByRole("button", { name: "Discard changes" }).click();
-	await expect(page.locator("#document-status")).toHaveText("repeat.gic");
+	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 });
 
 test("restores interrupted work only as an unsaved recovery copy", async ({
@@ -132,9 +132,7 @@ test("restores interrupted work only as an unsaved recovery copy", async ({
 	});
 	await expect(recovery).toBeVisible();
 	await recovery.getByRole("button", { name: "Restore" }).click();
-	await expect(page.locator("#document-status")).toHaveText(
-		"Recovered sketch *",
-	);
+	await expect(documentTab(page, "Recovered sketch *")).toBeVisible();
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await expect(
 		page
@@ -162,5 +160,5 @@ test("discards a recovery snapshot older than seven days", async ({ page }) => {
 	await expect(
 		page.getByRole("dialog", { name: "Recover unsaved sketch?" }),
 	).not.toBeVisible();
-	await expect(page.locator("#document-status")).toHaveText("Untitled sketch");
+	await expect(documentTab(page, "Untitled sketch")).toBeVisible();
 });
