@@ -46,6 +46,7 @@
 - [technique] Obtain the Canvas 2D context when its panel mounts. Firefox otherwise serializes the untouched initial Canvas differently from a later cleared Canvas, making deterministic empty-image acceptance fail despite identical pixels.
 - [decision] Browser application controls use Base UI primitives while FlexLayout owns panes and tabs. The PWA File menu opens portable files and downloads saves; it hides Recent Files because browser file names are not reopenable without persistent handles.
 - [decision] Application icons use free MIT-licensed Pixel Art Icons React components at their native 24 px grid size; do not hand-edit SVG path data.
+- [decision] The Preview reserves a disabled Code-icon position beside PNG export for the standalone HTML artifact until its worker-backed behavior exists.
 - [decision] Gestalten is the PWA workspace label over the stable `code` FlexLayout identifier. The PWA removes the unavailable tutor tab from stored layouts; the editor tab, not application chrome, displays the active document name and dirty marker.
 - [preference] Browser chrome follows a neobrutalist treatment: hard black panel edges, offset black shadows, white and gray surfaces, and dashed splitter guides.
 - [lesson] Base UI portals require an explicit stacking layer above FlexLayout. Adding tabset borders alters tab geometry, so visual layout tests should allow the intentional border offset.
