@@ -33,7 +33,7 @@ function defaultLayout(): IJsonModel {
 		global: {
 			tabEnableClose: false,
 			tabEnableRenderOnDemand: false,
-			tabSetEnableClose: false,
+			tabSetEnableClose: true,
 		},
 		subLayouts: {
 			[CODE_SUBLAYOUT_ID]: {
@@ -176,7 +176,12 @@ export function loadWorkspace(): Model {
 		) {
 			return createDefaultWorkspace();
 		}
-		const model = Model.fromJson((parsed as StoredWorkspace).layout);
+		const layout = (parsed as StoredWorkspace).layout;
+		layout.global = {
+			...layout.global,
+			tabSetEnableClose: true,
+		};
+		const model = Model.fromJson(layout);
 		validateWorkspace(model);
 		return model;
 	} catch {

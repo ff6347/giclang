@@ -27,7 +27,10 @@ function normalizeFileName(name: string): string {
 	return trimmedName.endsWith(".gic") ? trimmedName : `${trimmedName}.gic`;
 }
 
-export function useDocument(formatOnSave: boolean) {
+export function useDocument(
+	formatOnSave: boolean,
+	onExampleOpened: () => void,
+) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
 	const initialRecovery = useRef(adapter.readRecovery()).current;
 	const knownRecoveryUpdatedAt = useRef(initialRecovery?.updatedAt ?? 0);
@@ -129,6 +132,7 @@ export function useDocument(formatOnSave: boolean) {
 			const open = () => {
 				discardRecovery();
 				replace(createExampleDocument(name, examples[name]));
+				onExampleOpened();
 			};
 			if (documentState.isDirty) {
 				pendingReplacement.current = open;

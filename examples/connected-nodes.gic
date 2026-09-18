@@ -11,8 +11,9 @@ let diam = 5;
 let maxDistance = diam * 3;
 let x = random(0, 100);
 let y = random(0, 100);
+background(0, 0, 0);
 fill(100, 0, 0);
-stroke(100, 0, 0);
+stroke(60, 0, 0);
 strokeWidth(1);
 repeat(i, 0, num){
 	let px = x;

@@ -64,7 +64,12 @@ export function App() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const openFile = useRef<HTMLInputElement>(null);
 	const preview = usePreview(canvasRef);
-	const documents = useDocument(formatOnSave);
+	const selectGestalten = () => {
+		model.doAction(Actions.selectTab(CODE_ID));
+		saveWorkspace(model);
+		setLayoutRevision((revision) => revision + 1);
+	};
+	const documents = useDocument(formatOnSave, selectGestalten);
 
 	useEffect(() => {
 		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));

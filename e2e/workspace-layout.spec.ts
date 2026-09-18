@@ -238,6 +238,28 @@ test("moves tabs between Code tabsets and Reset Layout restores defaults", async
 	expect(resetOutputBox!.y).toBeGreaterThan(resetPreviewBox!.y);
 });
 
+test("removes an empty tabset after its only tab moves", async ({ page }) => {
+	await page.goto("/");
+	const previewTab = page.getByRole("tab", { name: "Preview" });
+	const problemsTab = page.getByRole("tab", { name: "Problems" });
+
+	await previewTab.dragTo(problemsTab);
+
+	await expect
+		.poll(() =>
+			page
+				.locator(".flexlayout__tabset")
+				.evaluateAll(
+					(tabsets) =>
+						tabsets.filter(
+							(tabset) =>
+								tabset.querySelector(".flexlayout__tab_button") === null,
+						).length,
+				),
+		)
+		.toBe(0);
+});
+
 test("preserves Output selection on errors when the lower panel is visible", async ({
 	page,
 }) => {

@@ -74,8 +74,11 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Examples" }).click();
 	await page.getByRole("button", { name: "repeat.gic" }).click();
-	await page.getByRole("tab", { name: "Gestalten" }).click();
 
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
 	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await expect(
@@ -97,6 +100,23 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
 		formatted,
 	);
+});
+
+test("shows a chosen example after discarding dirty work", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, "point(10, 10);");
+	await page.getByRole("tab", { name: "Examples" }).click();
+	await page.getByRole("button", { name: "repeat.gic" }).click();
+
+	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
+	await expect(discard).toBeVisible();
+	await discard.getByRole("button", { name: "Discard changes" }).click();
+
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 });
 
 test("cancels replacement of dirty work until the student confirms discard", async ({
