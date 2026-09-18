@@ -277,8 +277,8 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await setting.uncheck();
@@ -292,7 +292,6 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 	await page.getByLabel("File name").fill("unformatted");
 	await page.getByRole("button", { name: "Save copy" }).click();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);

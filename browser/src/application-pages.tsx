@@ -2,6 +2,7 @@
 // ABOUTME: Keeps non-Code pages separate from the persistent IDE workspace.
 
 import type { ChangeEvent } from "react";
+import { Button } from "@base-ui/react/button";
 
 export function SettingsView({
 	formatOnSave,
@@ -27,9 +28,13 @@ export function SettingsView({
 				/>
 				Format on save
 			</label>
-			<button type="button" onClick={onResetLayout}>
+			<Button
+				className="application-button"
+				type="button"
+				onClick={onResetLayout}
+			>
 				Reset Layout
-			</button>
+			</Button>
 			<h2>Agent provider</h2>
 			<p>
 				Agent provider configuration is available in the desktop application
@@ -52,9 +57,13 @@ export function ExamplesView({
 			<ul>
 				{examples.map((name) => (
 					<li key={name}>
-						<button type="button" onClick={() => onOpen(name)}>
+						<Button
+							className="application-button"
+							type="button"
+							onClick={() => onOpen(name)}
+						>
 							{name}
-						</button>
+						</Button>
 					</li>
 				))}
 			</ul>

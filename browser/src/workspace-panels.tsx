@@ -2,6 +2,7 @@
 // ABOUTME: Adapts the existing Monaco lifecycle to React without a Monaco binding.
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { Button } from "@base-ui/react/button";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
 
 interface EditorPanelProps {
@@ -109,14 +110,15 @@ export function TutorPanel() {
 			<h2>Agent unavailable</h2>
 			<p>The agent is optional. Editing and preview remain available.</p>
 			<p aria-live="polite">{status}</p>
-			<button
+			<Button
+				className="application-button"
 				type="button"
 				onClick={() =>
 					setStatus("Agent is still unavailable. Complete setup, then retry.")
 				}
 			>
 				Retry agent setup
-			</button>
+			</Button>
 		</section>
 	);
 }

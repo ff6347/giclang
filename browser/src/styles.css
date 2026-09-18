@@ -74,6 +74,7 @@ input {
 	inset: 0;
 	opacity: 0.2;
 	position: fixed;
+	z-index: 1000;
 }
 
 .recovery-viewport {
@@ -82,6 +83,7 @@ input {
 	inset: 0;
 	justify-content: center;
 	position: fixed;
+	z-index: 1001;
 }
 
 .recovery-popup {
@@ -103,6 +105,26 @@ input {
 .recovery-actions {
 	display: flex;
 	gap: 0.25rem;
+}
+
+.application-button,
+.recovery-button {
+	background-color: #ffffff;
+	border: 2px solid black;
+	box-shadow: 3px 3px 0 black;
+	font: inherit;
+	padding: 0.25rem 0.5rem;
+}
+
+.application-button:hover,
+.recovery-button:hover {
+	background-color: #cccccc;
+}
+
+.application-button:active,
+.recovery-button:active {
+	box-shadow: none;
+	transform: translate(3px, 3px);
 }
 
 .flexlayout__tab_button--selected {

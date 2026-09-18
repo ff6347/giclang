@@ -5,6 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { Menubar } from "@base-ui/react/menubar";
 import { Menu } from "@base-ui/react/menu";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
+import { Button } from "@base-ui/react/button";
+import { Dialog } from "@base-ui/react/dialog";
+import { Input } from "@base-ui/react/input";
 import {
 	Actions,
 	Layout,
@@ -212,35 +215,73 @@ export function App() {
 				/>
 			</div>
 			{documents.saveAsOpen && (
-				<dialog open aria-label="Save sketch as">
-					<form
-						onSubmit={(event) => {
-							event.preventDefault();
-							const name = new FormData(event.currentTarget).get("file-name");
-							if (typeof name === "string") documents.saveAs(name);
-						}}
-					>
-						<label>
-							File name
-							<input defaultValue="sketch.gic" name="file-name" required />
-						</label>
-						<button type="submit">Save copy</button>
-						<button type="button" onClick={documents.cancelSaveAs}>
-							Cancel
-						</button>
-					</form>
-				</dialog>
+				<Dialog.Root open>
+					<Dialog.Portal>
+						<Dialog.Backdrop className="recovery-backdrop" />
+						<Dialog.Viewport className="recovery-viewport">
+							<Dialog.Popup className="recovery-popup">
+								<Dialog.Title>Save sketch as</Dialog.Title>
+								<form
+									onSubmit={(event) => {
+										event.preventDefault();
+										const name = new FormData(event.currentTarget).get(
+											"file-name",
+										);
+										if (typeof name === "string") documents.saveAs(name);
+									}}
+								>
+									<label>
+										File name
+										<Input
+											defaultValue="sketch.gic"
+											name="file-name"
+											required
+										/>
+									</label>
+									<Button className="application-button" type="submit">
+										Save copy
+									</Button>
+									<Button
+										className="application-button"
+										type="button"
+										onClick={documents.cancelSaveAs}
+									>
+										Cancel
+									</Button>
+								</form>
+							</Dialog.Popup>
+						</Dialog.Viewport>
+					</Dialog.Portal>
+				</Dialog.Root>
 			)}
 			{documents.discardOpen && (
-				<dialog open aria-label="Discard changes?">
-					<p>Your unsaved changes will be discarded.</p>
-					<button type="button" onClick={documents.confirmDiscard}>
-						Discard changes
-					</button>
-					<button type="button" onClick={documents.cancelDiscard}>
-						Keep editing
-					</button>
-				</dialog>
+				<AlertDialog.Root open>
+					<AlertDialog.Portal>
+						<AlertDialog.Backdrop className="recovery-backdrop" />
+						<AlertDialog.Viewport className="recovery-viewport">
+							<AlertDialog.Popup className="recovery-popup">
+								<AlertDialog.Title>Discard changes?</AlertDialog.Title>
+								<AlertDialog.Description>
+									Your unsaved changes will be discarded.
+								</AlertDialog.Description>
+								<div className="recovery-actions">
+									<Button
+										className="application-button"
+										onClick={documents.confirmDiscard}
+									>
+										Discard changes
+									</Button>
+									<Button
+										className="application-button"
+										onClick={documents.cancelDiscard}
+									>
+										Keep editing
+									</Button>
+								</div>
+							</AlertDialog.Popup>
+						</AlertDialog.Viewport>
+					</AlertDialog.Portal>
+				</AlertDialog.Root>
 			)}
 			{documents.recoveryOpen && (
 				<AlertDialog.Root open>
@@ -253,12 +294,18 @@ export function App() {
 									A copy of unsaved work is available from a previous session.
 								</AlertDialog.Description>
 								<div className="recovery-actions">
-									<button type="button" onClick={documents.restoreRecovery}>
+									<Button
+										className="recovery-button"
+										onClick={documents.restoreRecovery}
+									>
 										Restore
-									</button>
-									<button type="button" onClick={documents.dismissRecovery}>
+									</Button>
+									<Button
+										className="recovery-button"
+										onClick={documents.dismissRecovery}
+									>
 										Discard recovery
-									</button>
+									</Button>
 								</div>
 							</AlertDialog.Popup>
 						</AlertDialog.Viewport>

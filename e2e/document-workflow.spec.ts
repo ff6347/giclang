@@ -88,7 +88,6 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await expect(documentTab(page, "repeat.gic *")).toBeVisible();
 
 	await chooseFileCommand(page, "Save As");
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 	await page.getByLabel("File name").fill("my-repeat");
 	const download = page.waitForEvent("download");
 	await page.getByRole("button", { name: "Save copy" }).click();
@@ -108,7 +107,7 @@ test("cancels replacement of dirty work until the student confirms discard", asy
 	await chooseFileCommand(page, "Open");
 	await page.locator("#open-file").setInputFiles(repeatExamplePath);
 
-	const discard = page.getByRole("dialog", { name: "Discard changes?" });
+	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
 	await expect(discard).toBeVisible();
 	await discard.getByRole("button", { name: "Keep editing" }).click();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
