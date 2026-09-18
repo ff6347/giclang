@@ -214,8 +214,12 @@ test("moves tabs between Code tabsets and Reset Layout restores defaults", async
 
 	await outputTab.dragTo(previewTab);
 	await expect
-		.poll(async () => (await outputTab.boundingBox())?.y)
-		.toBeCloseTo((await previewTab.boundingBox())!.y, 0);
+		.poll(async () => {
+			const outputBox = await outputTab.boundingBox();
+			const previewBox = await previewTab.boundingBox();
+			return Math.abs((outputBox?.y ?? 0) - (previewBox?.y ?? 0));
+		})
+		.toBeLessThanOrEqual(2);
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();

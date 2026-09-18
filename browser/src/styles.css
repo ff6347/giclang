@@ -59,6 +59,11 @@ input {
 	background-color: #ffffff;
 	border: 2px dashed black;
 	padding: 0.25rem;
+	z-index: 1000;
+}
+
+.application-menu-positioner {
+	z-index: 1000;
 }
 
 .application-menu-item {
@@ -129,6 +134,10 @@ input {
 
 .flexlayout__tab_button--selected {
 	background-color: #ffffff;
+	border: 2px solid black;
+	box-shadow: 3px 3px 0 black;
+	position: relative;
+	z-index: 1;
 }
 
 .flexlayout__tab_button--unselected {
@@ -138,6 +147,15 @@ input {
 .flexlayout__tabset_tabbar_inner {
 	background-color: #f0f0f0;
 	/*background-image: url("/images/striped-tile.svg");*/
+}
+
+.flexlayout__tabset {
+	border: 2px solid black;
+	box-sizing: border-box;
+}
+
+.flexlayout__splitter {
+	background-color: black;
 }
 
 .flexlayout__splitter::after {
