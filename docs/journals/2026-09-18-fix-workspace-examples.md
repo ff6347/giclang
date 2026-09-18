@@ -18,3 +18,13 @@
 - `pnpm test:compact` — core and browser-local tests passed.
 - `pnpm typecheck:browser`, `pnpm build:browser`, `pnpm lint`, and `pnpm fmt:check` passed.
 - `pnpm test:e2e` — 64 Firefox tests passed.
+
+## PWA Tutor Visibility
+
+- [decision] The PWA workspace does not render an unavailable Agent panel. Stored PWA layouts remove the retired tutor tab before validation and persist the cleaned layout.
+
+## Verification
+
+- `pnpm test` — 416 core tests passed.
+- `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
+- `pnpm test:e2e` — 65 Firefox tests passed.
