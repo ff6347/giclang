@@ -210,13 +210,23 @@ input {
 	position: relative;
 }
 
-.preview-download {
-	bottom: 0.5rem;
-	height: 24px;
+.preview-download,
+.preview-html-download {
+	bottom: 0.5em;
+	height: 1em;
 	padding: 0;
 	position: absolute;
-	right: 0.5rem;
-	width: 24px;
+	right: 0.5em;
+	width: 1em;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+}
+
+.preview-html-download {
+	right: 2em;
 }
 
 .padded-panel {

@@ -147,3 +147,21 @@ test("places PNG export in the Preview panel's lower-right corner", async ({
 		previewBox!.y + previewBox!.height / 2,
 	);
 });
+
+test("shows disabled standalone HTML export beside PNG export", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const htmlDownload = page.getByRole("button", {
+		name: "Download standalone HTML",
+	});
+	const pngDownload = page.getByRole("button", { name: "Download PNG" });
+	await expect(htmlDownload).toBeDisabled();
+
+	const htmlBox = await htmlDownload.boundingBox();
+	const pngBox = await pngDownload.boundingBox();
+	expect(htmlBox).not.toBeNull();
+	expect(pngBox).not.toBeNull();
+	expect(htmlBox!.x + htmlBox!.width).toBeLessThanOrEqual(pngBox!.x);
+	expect(htmlBox!.y).toBeCloseTo(pngBox!.y, 0);
+});

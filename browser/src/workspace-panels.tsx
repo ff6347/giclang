@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import { Button } from "@base-ui/react/button";
-import { Download } from "pixelarticons/react";
+import { Code, Download } from "pixelarticons/react";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
 
 interface EditorPanelProps {
@@ -85,6 +85,14 @@ export function PreviewPanel({
 	return (
 		<section aria-label="Preview" className="workspace-panel preview-panel">
 			<canvas id="canvas" ref={canvasRef} width="100" height="100"></canvas>
+			<Button
+				aria-label="Download standalone HTML"
+				className="preview-html-download"
+				disabled
+				type="button"
+			>
+				<Code aria-hidden="true" />
+			</Button>
 			<Button
 				aria-label="Download PNG"
 				className="preview-download"
