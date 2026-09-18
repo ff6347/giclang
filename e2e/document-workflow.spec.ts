@@ -70,7 +70,7 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Examples" }).click();
 	await page.getByRole("button", { name: "repeat.gic" }).click();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
 
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example",

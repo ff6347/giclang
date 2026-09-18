@@ -101,21 +101,21 @@ export function OutputPanel({ entries }: { entries: string[] }) {
 
 export function TutorPanel() {
 	const [status, setStatus] = useState(
-		"Complete tutor setup in the desktop application, then retry.",
+		"Complete agent setup in the desktop application, then retry.",
 	);
 
 	return (
-		<section aria-label="Tutor" className="workspace-panel padded-panel">
-			<h2>Tutor unavailable</h2>
-			<p>The tutor is optional. Editing and preview remain available.</p>
+		<section aria-label="Agent" className="workspace-panel padded-panel">
+			<h2>Agent unavailable</h2>
+			<p>The agent is optional. Editing and preview remain available.</p>
 			<p aria-live="polite">{status}</p>
 			<button
 				type="button"
 				onClick={() =>
-					setStatus("Tutor is still unavailable. Complete setup, then retry.")
+					setStatus("Agent is still unavailable. Complete setup, then retry.")
 				}
 			>
-				Retry tutor setup
+				Retry agent setup
 			</button>
 		</section>
 	);

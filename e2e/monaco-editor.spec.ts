@@ -274,7 +274,7 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.getByRole("tab", { name: "Settings" }).click();
 	const setting = page.getByRole("checkbox", { name: "Format on save" });
 	await expect(setting).toBeChecked();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
@@ -289,7 +289,7 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 		.click();
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await expect(setting).not.toBeChecked();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);

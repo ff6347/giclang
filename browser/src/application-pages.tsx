@@ -30,10 +30,10 @@ export function SettingsView({
 			<button type="button" onClick={onResetLayout}>
 				Reset Layout
 			</button>
-			<h2>Tutor provider</h2>
+			<h2>Agent provider</h2>
 			<p>
-				Tutor provider configuration is available in the desktop application
-				when tutor support is installed.
+				Agent provider configuration is available in the desktop application
+				when agent support is installed.
 			</p>
 		</section>
 	);

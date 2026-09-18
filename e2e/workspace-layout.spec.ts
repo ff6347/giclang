@@ -4,7 +4,7 @@
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "./editor.ts";
 
-test("shows the top-level application tabs and Code workspace", async ({
+test("shows the top-level application tabs and Gestalten workspace", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -13,31 +13,31 @@ test("shows the top-level application tabs and Code workspace", async ({
 	await expect(
 		page.getByRole("navigation", { name: "Workspace controls" }),
 	).toHaveCount(0);
-	for (const name of ["Code", "Settings", "Examples", "Docs", "About"]) {
+	for (const name of ["Gestalten", "Settings", "Examples", "Docs", "About"]) {
 		await expect(page.getByRole("tab", { name })).toBeVisible();
 	}
-	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
-	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeVisible();
+	await expect(page.getByRole("tabpanel", { name: "Gestalten" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	for (const name of ["Editor", "Preview", "Tutor"]) {
+	for (const name of ["Untitled sketch", "Preview", "Agent"]) {
 		await expect(page.getByRole("tab", { name })).toBeVisible();
 	}
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
-		"Tutor unavailable",
+	await expect(page.getByRole("region", { name: "Agent" })).toContainText(
+		"Agent unavailable",
 	);
 	await expect(
-		page.getByRole("button", { name: "Retry tutor setup" }),
+		page.getByRole("button", { name: "Retry agent setup" }),
 	).toBeVisible();
-	await expect(page.getByRole("button", { name: "Hide tutor" })).toHaveCount(0);
-	await page.getByRole("button", { name: "Retry tutor setup" }).click();
-	await expect(page.getByRole("region", { name: "Tutor" })).toContainText(
-		"Tutor is still unavailable.",
+	await expect(page.getByRole("button", { name: "Hide agent" })).toHaveCount(0);
+	await page.getByRole("button", { name: "Retry agent setup" }).click();
+	await expect(page.getByRole("region", { name: "Agent" })).toContainText(
+		"Agent is still unavailable.",
 	);
 });
 
@@ -79,7 +79,7 @@ test("places Problems and Output beneath Preview in the middle column", async ({
 		.getByRole("region", { name: "Problems" })
 		.boundingBox();
 	const tutorBox = await page
-		.getByRole("region", { name: "Tutor" })
+		.getByRole("region", { name: "Agent" })
 		.boundingBox();
 
 	expect(editorBox).not.toBeNull();
@@ -102,7 +102,7 @@ test("places application preferences and provider guidance in Settings", async (
 	await page.getByRole("tab", { name: "Settings" }).click();
 
 	await expect(page.getByRole("region", { name: "Settings" })).toBeVisible();
-	await expect(page.getByRole("tabpanel", { name: "Code" })).toBeHidden();
+	await expect(page.getByRole("tabpanel", { name: "Gestalten" })).toBeHidden();
 	await expect(
 		page.getByRole("checkbox", { name: "Format on save" }),
 	).toBeVisible();
@@ -110,10 +110,10 @@ test("places application preferences and provider guidance in Settings", async (
 		page.getByRole("button", { name: "Reset Layout" }),
 	).toBeVisible();
 	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
-		"Tutor provider",
+		"Agent provider",
 	);
 	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
-		"Tutor provider configuration is available in the desktop application",
+		"Agent provider configuration is available in the desktop application",
 	);
 });
 
@@ -219,7 +219,7 @@ test("moves tabs between Code tabsets and Reset Layout restores defaults", async
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
-	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
@@ -276,14 +276,14 @@ test("Reset Layout restores workspace geometry and the default status tab", asyn
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
-	await expect(page.getByRole("tab", { name: "Code" })).toHaveAttribute(
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Tutor" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Agent" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
 		"aria-selected",
 		"true",

@@ -1,10 +1,11 @@
 // ABOUTME: Composes the React IDE shell around the persisted FlexLayout model.
 // ABOUTME: Coordinates panel controls, preview status, and error-driven layout behavior.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menubar } from "@base-ui/react/menubar";
 import { Menu } from "@base-ui/react/menu";
 import {
+	Actions,
 	Layout,
 	type ITabRenderValues,
 	type Model,
@@ -13,6 +14,7 @@ import {
 import "flexlayout-react/style/combined.scss";
 import {
 	ABOUT_ID,
+	CODE_ID,
 	createDefaultWorkspace,
 	DOCS_ID,
 	EDITOR_ID,
@@ -60,6 +62,11 @@ export function App() {
 	const preview = usePreview(canvasRef);
 	const documents = useDocument(formatOnSave);
 
+	useEffect(() => {
+		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));
+		model.doAction(Actions.renameTab(TUTOR_ID, "Agent"));
+	}, [model]);
+
 	const layoutChanged = (changedModel: Model) => {
 		saveWorkspace(changedModel);
 		setLayoutRevision((revision) => revision + 1);
@@ -82,6 +89,9 @@ export function App() {
 	};
 
 	const renderTab = (node: TabNode, values: ITabRenderValues) => {
+		if (node.getId() === EDITOR_ID) {
+			values.content = `${documents.documentState.displayName}${documents.documentState.isDirty ? " *" : ""}`;
+		}
 		if (node.getId() === PROBLEMS_ID) {
 			const label = countLabel("Problems", preview.state.problems.length);
 			values.content = label;
