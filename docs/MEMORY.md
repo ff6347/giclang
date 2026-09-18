@@ -43,6 +43,10 @@
 - [decision] Workspace persistence stores the complete FlexLayout JSON inside a versioned GIC envelope. Invalid or unsupported state falls back to the default model; Reset Layout replaces only layout state so the current GIC source survives.
 - [technique] FlexLayout keeps every tab mounted with `tabEnableRenderOnDemand: false`, preserving Monaco, Canvas, worker, and status content while tabs move or become inactive.
 - [technique] Obtain the Canvas 2D context when its panel mounts. Firefox otherwise serializes the untouched initial Canvas differently from a later cleared Canvas, making deterministic empty-image acceptance fail despite identical pixels.
+- [decision] Browser application controls use Base UI primitives while FlexLayout owns panes and tabs. The PWA File menu opens portable files and downloads saves; it hides Recent Files because browser file names are not reopenable without persistent handles.
+- [decision] Gestalten and Agent are visible workspace labels over stable `code` and `tutor` FlexLayout identifiers. The editor tab, not application chrome, displays the active document name and dirty marker.
+- [preference] Browser chrome follows a neobrutalist treatment: hard black panel edges, offset black shadows, white and gray surfaces, and dashed splitter guides.
+- [lesson] Base UI portals require an explicit stacking layer above FlexLayout. Adding tabset borders alters tab geometry, so visual layout tests should allow the intentional border offset.
 - [direction] Treat Node-based image rendering as an optional export, CI, or dataset tool rather than the primary execution environment.
 - [decision] The primary v0.9 distribution is a Tauri 2 dedicated-window desktop app; the secondary edition is a tutor-less offline PWA. Operation-specific native Rust commands own dialogs, files, credentials, and provider calls. Electron is the fallback; Deno Desktop was rejected because it lacked first-class native Open/Save APIs, and no Node sidecar is currently required.
 - [decision] Desktop and PWA edit one document at a time. Explicit source saves, immutable example copies, and private recovery snapshots are separate workflows.
