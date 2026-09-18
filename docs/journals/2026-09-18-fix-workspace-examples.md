@@ -48,3 +48,13 @@
 - `pnpm test` — 416 core tests passed.
 - `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
 - `pnpm test:e2e` — 67 Firefox tests passed.
+
+## Monaco Color Picker
+
+- [decision] GIC retains Monaco color decorators for CSS string colors. The picker’s RGB/HSL/hex format control is hidden and inactive because GIC’s numeric color arguments use OKLCH.
+
+## Verification
+
+- `pnpm test` — 416 core tests passed.
+- `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
+- `pnpm test:e2e` — 66 Firefox tests passed.
