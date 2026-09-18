@@ -23,22 +23,12 @@ test("shows the top-level application tabs and Gestalten workspace", async ({
 	await expect(page.getByRole("tabpanel", { name: "Gestalten" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	for (const name of ["Untitled sketch", "Preview", "Agent"]) {
+	for (const name of ["Untitled sketch", "Preview"]) {
 		await expect(page.getByRole("tab", { name })).toBeVisible();
 	}
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Agent" })).toContainText(
-		"Agent unavailable",
-	);
-	await expect(
-		page.getByRole("button", { name: "Retry agent setup" }),
-	).toBeVisible();
-	await expect(page.getByRole("button", { name: "Hide agent" })).toHaveCount(0);
-	await page.getByRole("button", { name: "Retry agent setup" }).click();
-	await expect(page.getByRole("region", { name: "Agent" })).toContainText(
-		"Agent is still unavailable.",
-	);
+	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
 });
 
 test("uses Monaco's font stack throughout the application", async ({
@@ -78,21 +68,16 @@ test("places Problems and Output beneath Preview in the middle column", async ({
 	const problemsBox = await page
 		.getByRole("region", { name: "Problems" })
 		.boundingBox();
-	const tutorBox = await page
-		.getByRole("region", { name: "Agent" })
-		.boundingBox();
 
 	expect(editorBox).not.toBeNull();
 	expect(previewBox).not.toBeNull();
 	expect(problemsBox).not.toBeNull();
-	expect(tutorBox).not.toBeNull();
 	expect(problemsBox!.y).toBeGreaterThanOrEqual(
 		previewBox!.y + previewBox!.height,
 	);
 	expect(problemsBox!.x).toBeCloseTo(previewBox!.x, 0);
 	expect(problemsBox!.width).toBeCloseTo(previewBox!.width, 0);
 	expect(editorBox!.x).toBeLessThan(previewBox!.x);
-	expect(tutorBox!.x).toBeGreaterThan(previewBox!.x + previewBox!.width);
 });
 
 test("places application preferences and provider guidance in Settings", async ({
@@ -167,6 +152,46 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+});
+
+test("removes Agent from a persisted workspace", async ({ page }) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("button", { name: "Reset Layout" }).click();
+	await page.evaluate(() => {
+		const stored = JSON.parse(
+			localStorage.getItem("gic.workspaceLayout") ?? "",
+		) as {
+			layout: {
+				subLayouts: Record<
+					string,
+					{ layout: { children: Array<Record<string, unknown>> } }
+				>;
+			};
+		};
+		stored.layout.subLayouts["code-workspace"].layout.children.push({
+			type: "tabset",
+			id: "tutor-tabset",
+			weight: 35,
+			children: [
+				{
+					type: "tab",
+					id: "tutor",
+					name: "Agent",
+					component: "tutor",
+				},
+			],
+		});
+		localStorage.setItem("gic.workspaceLayout", JSON.stringify(stored));
+	});
+
+	await page.reload();
+
+	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
+	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
@@ -309,7 +334,7 @@ test("Reset Layout restores workspace geometry and the default status tab", asyn
 
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	await expect(page.getByRole("region", { name: "Agent" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
 	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
 		"aria-selected",
 		"true",

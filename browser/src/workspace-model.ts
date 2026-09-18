@@ -1,7 +1,13 @@
 // ABOUTME: Defines and persists the browser IDE's complete FlexLayout model.
 // ABOUTME: Keeps application tabs and the draggable Code sublayout in one model.
 
-import { Model, TabNode, TabSetNode, type IJsonModel } from "flexlayout-react";
+import {
+	Actions,
+	Model,
+	TabNode,
+	TabSetNode,
+	type IJsonModel,
+} from "flexlayout-react";
 
 export const CODE_ID = "code";
 export const SETTINGS_ID = "settings";
@@ -12,14 +18,13 @@ export const EDITOR_ID = "editor";
 export const PREVIEW_ID = "preview";
 export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
-export const TUTOR_ID = "tutor";
 
 const APPLICATION_TABSET_ID = "application-tabs";
 const CODE_SUBLAYOUT_ID = "code-workspace";
 const EDITOR_TABSET_ID = "editor-tabset";
 const PREVIEW_TABSET_ID = "preview-tabset";
 const STATUS_TABSET_ID = "status-tabset";
-const TUTOR_TABSET_ID = "tutor-tabset";
+const TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
 const STORAGE_VERSION = 5;
 
@@ -90,19 +95,6 @@ function defaultLayout(): IJsonModel {
 											component: OUTPUT_ID,
 										},
 									],
-								},
-							],
-						},
-						{
-							type: "tabset",
-							id: TUTOR_TABSET_ID,
-							weight: 35,
-							children: [
-								{
-									type: "tab",
-									id: TUTOR_ID,
-									name: "Agent",
-									component: TUTOR_ID,
 								},
 							],
 						},
@@ -182,7 +174,9 @@ export function loadWorkspace(): Model {
 			tabSetEnableClose: true,
 		};
 		const model = Model.fromJson(layout);
+		const removedTutor = removeTutor(model);
 		validateWorkspace(model);
+		if (removedTutor) saveWorkspace(model);
 		return model;
 	} catch {
 		return createDefaultWorkspace();
@@ -217,6 +211,12 @@ function validatePanel(model: Model, panelId: string, tabsetId: string): void {
 	}
 }
 
+function removeTutor(model: Model): boolean {
+	if (!(model.getNodeById(TUTOR_ID) instanceof TabNode)) return false;
+	model.doAction(Actions.deleteTab(TUTOR_ID));
+	return true;
+}
+
 function validateWorkspace(model: Model): void {
 	const applicationTabset = model.getNodeById(APPLICATION_TABSET_ID);
 	const code = requireTab(model, CODE_ID);
@@ -234,5 +234,4 @@ function validateWorkspace(model: Model): void {
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, STATUS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, STATUS_TABSET_ID);
-	validatePanel(model, TUTOR_ID, TUTOR_TABSET_ID);
 }

@@ -1,8 +1,7 @@
-// ABOUTME: Renders the editor, preview, status, and tutor workspace panels.
+// ABOUTME: Renders the editor, preview, and status workspace panels.
 // ABOUTME: Adapts the existing Monaco lifecycle to React without a Monaco binding.
 
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { Button } from "@base-ui/react/button";
+import { useEffect, useRef, type RefObject } from "react";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
 
 interface EditorPanelProps {
@@ -98,27 +97,4 @@ export function ProblemsPanel({ entries }: { entries: string[] }) {
 
 export function OutputPanel({ entries }: { entries: string[] }) {
 	return <Entries entries={entries} id="output" label="Output" />;
-}
-
-export function TutorPanel() {
-	const [status, setStatus] = useState(
-		"Complete agent setup in the desktop application, then retry.",
-	);
-
-	return (
-		<section aria-label="Agent" className="workspace-panel padded-panel">
-			<h2>Agent unavailable</h2>
-			<p>The agent is optional. Editing and preview remain available.</p>
-			<p aria-live="polite">{status}</p>
-			<Button
-				className="application-button"
-				type="button"
-				onClick={() =>
-					setStatus("Agent is still unavailable. Complete setup, then retry.")
-				}
-			>
-				Retry agent setup
-			</Button>
-		</section>
-	);
 }

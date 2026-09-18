@@ -29,7 +29,6 @@ import {
 	PROBLEMS_ID,
 	saveWorkspace,
 	SETTINGS_ID,
-	TUTOR_ID,
 } from "./workspace-model.ts";
 import {
 	AboutView,
@@ -42,7 +41,6 @@ import {
 	OutputPanel,
 	PreviewPanel,
 	ProblemsPanel,
-	TutorPanel,
 } from "./workspace-panels.tsx";
 import { usePreview } from "./use-preview.ts";
 import { examples, useDocument } from "./use-document.ts";
@@ -73,7 +71,6 @@ export function App() {
 
 	useEffect(() => {
 		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));
-		model.doAction(Actions.renameTab(TUTOR_ID, "Agent"));
 	}, [model]);
 
 	useEffect(() => {
@@ -130,8 +127,6 @@ export function App() {
 				return <ProblemsPanel entries={preview.state.problems} />;
 			case OUTPUT_ID:
 				return <OutputPanel entries={preview.state.output} />;
-			case TUTOR_ID:
-				return <TutorPanel />;
 			case SETTINGS_ID:
 				return (
 					<SettingsView
