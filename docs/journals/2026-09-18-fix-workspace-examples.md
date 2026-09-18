@@ -38,3 +38,13 @@
 - `pnpm test` — 416 core tests passed.
 - `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
 - `pnpm test:e2e` — 65 Firefox tests passed.
+
+## Monaco Presentation
+
+- [decision] GIC disables Monaco color decorators because its built-in RGB/HSL/hex picker cannot represent GIC’s numeric OKLCH color values. Long source lines wrap at the smaller of the editor width and the 50-column teaching guide.
+
+## Verification
+
+- `pnpm test` — 416 core tests passed.
+- `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
+- `pnpm test:e2e` — 67 Firefox tests passed.
