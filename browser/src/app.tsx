@@ -120,7 +120,14 @@ export function App() {
 					/>
 				);
 			case EXAMPLES_ID:
-				return <ExamplesView />;
+				return (
+					<ExamplesView
+						examples={Object.keys(examples)}
+						onOpen={(name) =>
+							documents.requestExample(name as keyof typeof examples)
+						}
+					/>
+				);
 			case DOCS_ID:
 				return <DocsView />;
 			case ABOUT_ID:
@@ -132,70 +139,47 @@ export function App() {
 
 	return (
 		<main className="app-shell">
-			<nav aria-label="Document actions">
-				<p id="document-status" aria-live="polite">
+			<header className="application-chrome">
+				<p className="document-status" id="document-status" aria-live="polite">
 					{documents.documentState.displayName}
 					{documents.documentState.kind === "example" ? " — example" : ""}
 					{documents.documentState.isDirty ? " *" : ""}
 				</p>
-				<Menubar aria-label="Application menu">
+				<Menubar aria-label="Application menu" className="application-menubar">
 					<Menu.Root>
-						<Menu.Trigger>File</Menu.Trigger>
+						<Menu.Trigger className="application-menu-trigger">
+							File
+						</Menu.Trigger>
 						<Menu.Portal>
-							<Menu.Positioner>
-								<Menu.Popup aria-label="File">
-									<Menu.Item onClick={() => openFile.current?.click()}>
+							<Menu.Positioner className="application-menu-positioner">
+								<Menu.Popup
+									aria-label="File"
+									className="application-menu-popup"
+								>
+									<Menu.Item
+										className="application-menu-item"
+										onClick={() => openFile.current?.click()}
+									>
 										Open
 									</Menu.Item>
 									<Menu.Item
+										className="application-menu-item"
 										disabled={!documents.documentState.canSave}
 										onClick={documents.requestSave}
 									>
 										Save
 									</Menu.Item>
-									<Menu.Item onClick={documents.openSaveAs}>Save As</Menu.Item>
 									<Menu.Item
-										disabled
-										title="Recent files require persistent file handles."
+										className="application-menu-item"
+										onClick={documents.openSaveAs}
 									>
-										Recent Files
+										Save As
 									</Menu.Item>
 								</Menu.Popup>
 							</Menu.Positioner>
 						</Menu.Portal>
 					</Menu.Root>
 				</Menubar>
-				<label>
-					Example
-					<select
-						defaultValue=""
-						id="example"
-						onChange={(event) => {
-							const name = event.target.value as keyof typeof examples | "";
-							if (name !== "") documents.requestExample(name);
-							event.target.value = "";
-						}}
-					>
-						<option value="">Choose an example</option>
-						{Object.keys(examples).map((name) => (
-							<option key={name} value={name}>
-								{name}
-							</option>
-						))}
-					</select>
-				</label>
-				<details>
-					<summary>Recent files</summary>
-					<ul>
-						{documents.recentFiles.map((name) => (
-							<li key={name}>
-								<button type="button" onClick={() => openFile.current?.click()}>
-									{name}
-								</button>
-							</li>
-						))}
-					</ul>
-				</details>
 				<input
 					accept=".gic"
 					hidden
@@ -210,7 +194,7 @@ export function App() {
 						event.currentTarget.value = "";
 					}}
 				/>
-			</nav>
+			</header>
 			<div className="application-layout">
 				<Layout
 					factory={panelFactory}

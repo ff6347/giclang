@@ -117,12 +117,12 @@ test("places application preferences and provider guidance in Settings", async (
 	);
 });
 
-test("shows explicit placeholders for Examples, Docs, and About", async ({
+test("shows examples and explicit Docs and About placeholders", async ({
 	page,
 }) => {
 	await page.goto("/");
 	const placeholders = [
-		{ name: "Examples", text: "one-document workflow" },
+		{ name: "Examples", text: "repeat.gic" },
 		{ name: "Docs", text: "Language reference and help" },
 		{ name: "About", text: "Gestalten in Code" },
 	];

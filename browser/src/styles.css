@@ -29,6 +29,49 @@ input {
 	min-height: 0;
 	position: relative;
 }
+
+.application-chrome {
+	align-items: center;
+	background-color: #f0f0f0;
+	display: flex;
+	gap: 1rem;
+	min-height: 2rem;
+	padding: 0 0.5rem;
+}
+
+.document-status {
+	margin: 0;
+}
+
+.application-menubar {
+	display: flex;
+}
+
+.application-menu-trigger {
+	background: transparent;
+	border: 0;
+	font: inherit;
+	padding: 0.25rem 0.5rem;
+}
+
+.application-menu-trigger[data-pressed],
+.application-menu-trigger:hover {
+	background-color: #cccccc;
+}
+
+.application-menu-popup {
+	background-color: #ffffff;
+	border: 1px solid black;
+	padding: 0.25rem;
+}
+
+.application-menu-item {
+	padding: 0.25rem 1rem;
+}
+
+.application-menu-item[data-highlighted] {
+	background-color: #cccccc;
+}
 .flexlayout__tab_button--selected {
 	background-color: #ffffff;
 }

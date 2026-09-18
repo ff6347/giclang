@@ -36,7 +36,7 @@ test("offers PWA document commands through the File menu", async ({ page }) => {
 	).toBeVisible();
 	await expect(
 		menu.getByRole("menuitem", { name: "Recent Files" }),
-	).toBeDisabled();
+	).toHaveCount(0);
 });
 
 test("opens a local sketch and saves it with its selected filename", async ({
@@ -68,7 +68,9 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 `;
 
 	await page.goto("/");
-	await page.locator("#example").selectOption("repeat.gic");
+	await page.getByRole("tab", { name: "Examples" }).click();
+	await page.getByRole("button", { name: "repeat.gic" }).click();
+	await page.getByRole("tab", { name: "Code" }).click();
 
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example",

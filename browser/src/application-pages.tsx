@@ -39,11 +39,25 @@ export function SettingsView({
 	);
 }
 
-export function ExamplesView() {
+export function ExamplesView({
+	examples,
+	onOpen,
+}: {
+	examples: string[];
+	onOpen: (name: string) => void;
+}) {
 	return (
 		<section className="workspace-panel padded-panel">
 			<h2>Examples</h2>
-			<p>Examples are provided through the one-document workflow.</p>
+			<ul>
+				{examples.map((name) => (
+					<li key={name}>
+						<button type="button" onClick={() => onOpen(name)}>
+							{name}
+						</button>
+					</li>
+				))}
+			</ul>
 		</section>
 	);
 }
