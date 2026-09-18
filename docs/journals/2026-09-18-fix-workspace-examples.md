@@ -28,3 +28,13 @@
 - `pnpm test` — 416 core tests passed.
 - `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
 - `pnpm test:e2e` — 65 Firefox tests passed.
+
+## PWA Settings
+
+- [decision] PWA Settings contains only the format-on-save and workspace-reset controls. Format on save uses the accessible Base UI Checkbox rather than a native input.
+
+## Verification
+
+- `pnpm test` — 416 core tests passed.
+- `pnpm test:compact`, `pnpm typecheck:browser`, `pnpm lint`, `pnpm fmt:check`, and `pnpm build:browser` passed.
+- `pnpm test:e2e` — 65 Firefox tests passed.
