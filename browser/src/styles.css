@@ -44,20 +44,27 @@ input {
 }
 
 .application-menu-trigger {
-	background: transparent;
-	border: 0;
+	background-color: #ffffff;
+	border: 2px solid black;
+	box-shadow: 3px 3px 0 black;
 	font: inherit;
 	padding: 0.25rem 0.5rem;
 }
 
 .application-menu-trigger[data-pressed],
 .application-menu-trigger:hover {
-	background-color: white;
+	background-color: #cccccc;
+}
+
+.application-menu-trigger[data-pressed] {
+	box-shadow: none;
+	transform: translate(3px, 3px);
 }
 
 .application-menu-popup {
 	background-color: #ffffff;
-	border: 2px dashed black;
+	border: 2px solid black;
+	box-shadow: 4px 4px 0 black;
 	padding: 0.25rem;
 	z-index: 1000;
 }
@@ -71,7 +78,8 @@ input {
 }
 
 .application-menu-item[data-highlighted] {
-	background-color: #cccccc;
+	background-color: black;
+	color: #ffffff;
 }
 
 .recovery-backdrop {
@@ -135,7 +143,9 @@ input {
 .flexlayout__tab_button--selected {
 	background-color: #ffffff;
 	border: 2px solid black;
+	border-bottom-color: #ffffff;
 	box-shadow: 3px 3px 0 black;
+	margin-bottom: -2px;
 	position: relative;
 	z-index: 1;
 }
@@ -152,6 +162,10 @@ input {
 .flexlayout__tabset {
 	border: 2px solid black;
 	box-sizing: border-box;
+}
+
+.flexlayout__tab {
+	border-top: 2px solid black;
 }
 
 .flexlayout__splitter {
