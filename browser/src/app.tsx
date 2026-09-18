@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Menubar } from "@base-ui/react/menubar";
 import { Menu } from "@base-ui/react/menu";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import {
 	Actions,
 	Layout,
@@ -242,15 +243,27 @@ export function App() {
 				</dialog>
 			)}
 			{documents.recoveryOpen && (
-				<dialog open aria-label="Recover unsaved sketch?">
-					<p>A copy of unsaved work is available from a previous session.</p>
-					<button type="button" onClick={documents.restoreRecovery}>
-						Restore
-					</button>
-					<button type="button" onClick={documents.dismissRecovery}>
-						Discard recovery
-					</button>
-				</dialog>
+				<AlertDialog.Root open>
+					<AlertDialog.Portal>
+						<AlertDialog.Backdrop className="recovery-backdrop" />
+						<AlertDialog.Viewport className="recovery-viewport">
+							<AlertDialog.Popup className="recovery-popup">
+								<AlertDialog.Title>Recover unsaved sketch?</AlertDialog.Title>
+								<AlertDialog.Description>
+									A copy of unsaved work is available from a previous session.
+								</AlertDialog.Description>
+								<div className="recovery-actions">
+									<button type="button" onClick={documents.restoreRecovery}>
+										Restore
+									</button>
+									<button type="button" onClick={documents.dismissRecovery}>
+										Discard recovery
+									</button>
+								</div>
+							</AlertDialog.Popup>
+						</AlertDialog.Viewport>
+					</AlertDialog.Portal>
+				</AlertDialog.Root>
 			)}
 		</main>
 	);

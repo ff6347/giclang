@@ -284,7 +284,7 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await setting.uncheck();
 	await page.reload();
 	await page
-		.getByRole("dialog", { name: "Recover unsaved sketch?" })
+		.getByRole("alertdialog", { name: "Recover unsaved sketch?" })
 		.getByRole("button", { name: "Discard recovery" })
 		.click();
 	await page.getByRole("tab", { name: "Settings" }).click();

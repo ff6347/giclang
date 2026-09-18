@@ -60,7 +60,7 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 	await page.reload();
 	await expect(
-		page.getByRole("dialog", { name: "Recover unsaved sketch?" }),
+		page.getByRole("alertdialog", { name: "Recover unsaved sketch?" }),
 	).not.toBeVisible();
 });
 
@@ -127,7 +127,7 @@ test("restores interrupted work only as an unsaved recovery copy", async ({
 	await setEditorSource(page, "point(10, 10);");
 	await page.reload();
 
-	const recovery = page.getByRole("dialog", {
+	const recovery = page.getByRole("alertdialog", {
 		name: "Recover unsaved sketch?",
 	});
 	await expect(recovery).toBeVisible();
@@ -158,7 +158,7 @@ test("discards a recovery snapshot older than seven days", async ({ page }) => {
 	await page.reload();
 
 	await expect(
-		page.getByRole("dialog", { name: "Recover unsaved sketch?" }),
+		page.getByRole("alertdialog", { name: "Recover unsaved sketch?" }),
 	).not.toBeVisible();
 	await expect(documentTab(page, "Untitled sketch")).toBeVisible();
 });
