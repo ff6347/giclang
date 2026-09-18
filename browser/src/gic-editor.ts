@@ -7,12 +7,10 @@ import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
 import type { Diagnostic } from "../../src/core.ts";
 import { builtIns } from "../../src/built-ins.ts";
 import {
-	applySaveFormatting,
 	completeSource,
 	formatSourceDocument,
 	hoverSource,
 	signatureHelpSource,
-	type LanguageServiceSettings,
 } from "../../src/language-service.ts";
 import { keywords } from "../../src/keywords.ts";
 
@@ -169,7 +167,7 @@ function registerGicLanguage() {
 export function createGicEditor(
 	container: HTMLElement,
 	onSourceChange: (source: string) => void,
-	getSettings: () => LanguageServiceSettings,
+	onSave: () => void,
 	initialSource = "",
 ): GicEditor {
 	registerGicLanguage();
@@ -201,20 +199,7 @@ export function createGicEditor(
 		onSourceChange(editor.getValue());
 	});
 	editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-		const model = editor.getModel();
-		if (model === null) {
-			return;
-		}
-		const source = model.getValue();
-		const formattedSource = applySaveFormatting(source, getSettings());
-		if (formattedSource !== source) {
-			editor.executeEdits("gic.format-on-save", [
-				{
-					range: model.getFullModelRange(),
-					text: formattedSource,
-				},
-			]);
-		}
+		onSave();
 	});
 	editor.focus();
 	return editor;

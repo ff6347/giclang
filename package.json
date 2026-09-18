@@ -32,6 +32,7 @@
 		"dev:browser": "vite"
 	},
 	"dependencies": {
+		"@base-ui/react": "1.8.0",
 		"flexlayout-react": "0.11.0",
 		"monaco-editor": "0.56.0",
 		"react": "19.3.0",

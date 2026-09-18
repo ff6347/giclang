@@ -2,45 +2,52 @@
 // ABOUTME: Adapts the existing Monaco lifecycle to React without a Monaco binding.
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { Button } from "@base-ui/react/button";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
-import type { LanguageServiceSettings } from "../../src/language-service.ts";
 
 interface EditorPanelProps {
-	formatOnSave: boolean;
-	initialSource: string;
 	onEditorReady: (editor: GicEditor | null) => void;
+	onSave: () => void;
 	onSourceChange: (source: string) => void;
+	source: string;
 }
 
 export function EditorPanel({
-	formatOnSave,
-	initialSource,
 	onEditorReady,
+	onSave,
 	onSourceChange,
+	source,
 }: EditorPanelProps) {
 	const container = useRef<HTMLDivElement>(null);
-	const initialSourceRef = useRef(initialSource);
+	const editorRef = useRef<GicEditor | null>(null);
 	const onEditorReadyRef = useRef(onEditorReady);
+	const onSaveRef = useRef(onSave);
 	const onSourceChangeRef = useRef(onSourceChange);
-	const settingsRef = useRef<LanguageServiceSettings>({ formatOnSave });
 	onEditorReadyRef.current = onEditorReady;
+	onSaveRef.current = onSave;
 	onSourceChangeRef.current = onSourceChange;
-	settingsRef.current = { formatOnSave };
 
 	useEffect(() => {
 		if (container.current === null) return;
 		const editor = createGicEditor(
 			container.current,
 			(source) => onSourceChangeRef.current(source),
-			() => settingsRef.current,
-			initialSourceRef.current,
+			() => onSaveRef.current(),
+			source,
 		);
+		editorRef.current = editor;
 		onEditorReadyRef.current(editor);
 		return () => {
 			onEditorReadyRef.current(null);
+			editorRef.current = null;
 			editor.dispose();
 		};
 	}, []);
+
+	useEffect(() => {
+		if (editorRef.current?.getValue() !== source)
+			editorRef.current?.setValue(source);
+	}, [source]);
 
 	return (
 		<section aria-label="Editor" className="workspace-panel">
@@ -95,22 +102,23 @@ export function OutputPanel({ entries }: { entries: string[] }) {
 
 export function TutorPanel() {
 	const [status, setStatus] = useState(
-		"Complete tutor setup in the desktop application, then retry.",
+		"Complete agent setup in the desktop application, then retry.",
 	);
 
 	return (
-		<section aria-label="Tutor" className="workspace-panel padded-panel">
-			<h2>Tutor unavailable</h2>
-			<p>The tutor is optional. Editing and preview remain available.</p>
+		<section aria-label="Agent" className="workspace-panel padded-panel">
+			<h2>Agent unavailable</h2>
+			<p>The agent is optional. Editing and preview remain available.</p>
 			<p aria-live="polite">{status}</p>
-			<button
+			<Button
+				className="application-button"
 				type="button"
 				onClick={() =>
-					setStatus("Tutor is still unavailable. Complete setup, then retry.")
+					setStatus("Agent is still unavailable. Complete setup, then retry.")
 				}
 			>
-				Retry tutor setup
-			</button>
+				Retry agent setup
+			</Button>
 		</section>
 	);
 }

@@ -274,23 +274,29 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await page.getByRole("tab", { name: "Settings" }).click();
 	const setting = page.getByRole("checkbox", { name: "Format on save" });
 	await expect(setting).toBeChecked();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
-		formatted,
-	);
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await setting.uncheck();
 	await page.reload();
+	await page
+		.getByRole("alertdialog", { name: "Recover unsaved sketch?" })
+		.getByRole("button", { name: "Discard recovery" })
+		.click();
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await expect(setting).not.toBeChecked();
-	await page.getByRole("tab", { name: "Code" }).click();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
 	await setEditorSource(page, source);
 	await page.keyboard.press("Control+S");
+	await page.getByLabel("File name").fill("unformatted");
+	await page.getByRole("button", { name: "Save copy" }).click();
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 
+	await page.locator(".view-lines").click({ position: { x: 5, y: 5 } });
 	await page.keyboard.press("F1");
 	const palette = page.locator(".quick-input-widget");
 	await palette.locator("input").pressSequentially("Format Document");

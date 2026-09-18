@@ -2,6 +2,7 @@
 // ABOUTME: Keeps non-Code pages separate from the persistent IDE workspace.
 
 import type { ChangeEvent } from "react";
+import { Button } from "@base-ui/react/button";
 
 export function SettingsView({
 	formatOnSave,
@@ -27,23 +28,45 @@ export function SettingsView({
 				/>
 				Format on save
 			</label>
-			<button type="button" onClick={onResetLayout}>
+			<Button
+				className="application-button"
+				type="button"
+				onClick={onResetLayout}
+			>
 				Reset Layout
-			</button>
-			<h2>Tutor provider</h2>
+			</Button>
+			<h2>Agent provider</h2>
 			<p>
-				Tutor provider configuration is available in the desktop application
-				when tutor support is installed.
+				Agent provider configuration is available in the desktop application
+				when agent support is installed.
 			</p>
 		</section>
 	);
 }
 
-export function ExamplesView() {
+export function ExamplesView({
+	examples,
+	onOpen,
+}: {
+	examples: string[];
+	onOpen: (name: string) => void;
+}) {
 	return (
 		<section className="workspace-panel padded-panel">
 			<h2>Examples</h2>
-			<p>Examples are provided through the one-document workflow.</p>
+			<ul>
+				{examples.map((name) => (
+					<li key={name}>
+						<Button
+							className="application-button"
+							type="button"
+							onClick={() => onOpen(name)}
+						>
+							{name}
+						</Button>
+					</li>
+				))}
+			</ul>
 		</section>
 	);
 }

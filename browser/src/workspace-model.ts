@@ -49,7 +49,7 @@ function defaultLayout(): IJsonModel {
 								{
 									type: "tab",
 									id: EDITOR_ID,
-									name: "Editor",
+									name: "Untitled sketch",
 									component: EDITOR_ID,
 								},
 							],
@@ -101,7 +101,7 @@ function defaultLayout(): IJsonModel {
 								{
 									type: "tab",
 									id: TUTOR_ID,
-									name: "Tutor",
+									name: "Agent",
 									component: TUTOR_ID,
 								},
 							],
@@ -122,7 +122,7 @@ function defaultLayout(): IJsonModel {
 						{
 							type: "tab",
 							id: CODE_ID,
-							name: "Code",
+							name: "Gestalten",
 							subLayoutId: CODE_SUBLAYOUT_ID,
 						},
 						{
