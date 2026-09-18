@@ -13,7 +13,7 @@ async function chooseFileCommand(
 	page: import("@playwright/test").Page,
 	name: string,
 ) {
-	await page.getByRole("button", { name: "File" }).click();
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await page
 		.getByRole("menu", { name: "File" })
 		.getByRole("menuitem", { name, exact: true })
@@ -22,7 +22,7 @@ async function chooseFileCommand(
 
 test("offers PWA document commands through the File menu", async ({ page }) => {
 	await page.goto("/");
-	await page.getByRole("button", { name: "File" }).click();
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 
 	const menu = page.getByRole("menu", { name: "File" });
 	await expect(
@@ -73,13 +73,13 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example",
 	);
-	await page.getByRole("button", { name: "File" }).click();
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await expect(
 		page
 			.getByRole("menu", { name: "File" })
 			.getByRole("menuitem", { name: "Save", exact: true }),
 	).toBeDisabled();
-	await page.getByRole("button", { name: "File" }).click();
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await setEditorSource(page, source);
 	await expect(page.locator("#document-status")).toHaveText(
 		"repeat.gic — example *",
@@ -133,7 +133,7 @@ test("restores interrupted work only as an unsaved recovery copy", async ({
 	await expect(page.locator("#document-status")).toHaveText(
 		"Recovered sketch *",
 	);
-	await page.getByRole("button", { name: "File" }).click();
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	await expect(
 		page
 			.getByRole("menu", { name: "File" })

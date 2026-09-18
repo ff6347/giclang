@@ -2,6 +2,8 @@
 // ABOUTME: Coordinates panel controls, preview status, and error-driven layout behavior.
 
 import { useRef, useState } from "react";
+import { Menubar } from "@base-ui/react/menubar";
+import { Menu } from "@base-ui/react/menu";
 import {
 	Layout,
 	type ITabRenderValues,
@@ -51,7 +53,6 @@ function countLabel(name: string, count: number): string {
 
 export function App() {
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
-	const [fileMenuOpen, setFileMenuOpen] = useState(false);
 	const [model, setModel] = useState(loadWorkspace);
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,57 +138,33 @@ export function App() {
 					{documents.documentState.kind === "example" ? " — example" : ""}
 					{documents.documentState.isDirty ? " *" : ""}
 				</p>
-				<button
-					aria-expanded={fileMenuOpen}
-					aria-haspopup="menu"
-					type="button"
-					onClick={() => setFileMenuOpen((open) => !open)}
-				>
-					File
-				</button>
-				{fileMenuOpen && (
-					<div aria-label="File" role="menu">
-						<button
-							role="menuitem"
-							type="button"
-							onClick={() => {
-								setFileMenuOpen(false);
-								openFile.current?.click();
-							}}
-						>
-							Open
-						</button>
-						<button
-							disabled={!documents.documentState.canSave}
-							role="menuitem"
-							type="button"
-							onClick={() => {
-								setFileMenuOpen(false);
-								documents.requestSave();
-							}}
-						>
-							Save
-						</button>
-						<button
-							role="menuitem"
-							type="button"
-							onClick={() => {
-								setFileMenuOpen(false);
-								documents.openSaveAs();
-							}}
-						>
-							Save As
-						</button>
-						<button
-							disabled
-							role="menuitem"
-							title="Recent files require persistent file handles."
-							type="button"
-						>
-							Recent Files
-						</button>
-					</div>
-				)}
+				<Menubar aria-label="Application menu">
+					<Menu.Root>
+						<Menu.Trigger>File</Menu.Trigger>
+						<Menu.Portal>
+							<Menu.Positioner>
+								<Menu.Popup aria-label="File">
+									<Menu.Item onClick={() => openFile.current?.click()}>
+										Open
+									</Menu.Item>
+									<Menu.Item
+										disabled={!documents.documentState.canSave}
+										onClick={documents.requestSave}
+									>
+										Save
+									</Menu.Item>
+									<Menu.Item onClick={documents.openSaveAs}>Save As</Menu.Item>
+									<Menu.Item
+										disabled
+										title="Recent files require persistent file handles."
+									>
+										Recent Files
+									</Menu.Item>
+								</Menu.Popup>
+							</Menu.Positioner>
+						</Menu.Portal>
+					</Menu.Root>
+				</Menubar>
 				<label>
 					Example
 					<select
