@@ -16,12 +16,14 @@ import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
 const TIMEOUT_IN_MS = 500;
 
 export interface PreviewState {
+	isCurrentSourceRendered: boolean;
 	output: string[];
 	problems: string[];
 }
 
 export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 	const [state, setState] = useState<PreviewState>({
+		isCurrentSourceRendered: false,
 		output: [],
 		problems: [],
 	});
@@ -50,6 +52,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					setEditorDiagnostics(editor.current, []);
 				}
 				setState({
+					isCurrentSourceRendered: false,
 					output: [],
 					problems: [
 						`The preview took too long and was terminated after ${TIMEOUT_IN_MS}ms.`,
@@ -69,6 +72,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					setEditorDiagnostics(editor.current, []);
 				}
 				setState({
+					isCurrentSourceRendered: false,
 					output: [],
 					problems: ["The preview could not be generated."],
 				});
@@ -97,7 +101,11 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					if (editor.current) {
 						setEditorDiagnostics(editor.current, []);
 					}
-					setState({ output, problems: [] });
+					setState({
+						isCurrentSourceRendered: canvas !== null,
+						output,
+						problems: [],
+					});
 					return;
 				}
 
@@ -105,7 +113,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				const problems = editor.current
 					? setEditorDiagnostics(editor.current, event.data.diagnostics)
 					: event.data.diagnostics.map(({ message }) => message);
-				setState({ output, problems });
+				setState({ isCurrentSourceRendered: false, output, problems });
 			};
 			worker.postMessage({ source });
 		},
@@ -122,7 +130,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 			if (editor.current) {
 				setEditorDiagnostics(editor.current, []);
 			}
-			setState({ output: [], problems: [] });
+			setState({ isCurrentSourceRendered: false, output: [], problems: [] });
 			debounceTimer.current = window.setTimeout(() => {
 				runPreview(source);
 			}, 100);

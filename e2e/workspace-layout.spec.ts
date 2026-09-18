@@ -104,7 +104,7 @@ test("shows examples and explicit Docs and About placeholders", async ({
 	const placeholders = [
 		{ name: "Examples", text: "repeat.gic" },
 		{ name: "Docs", text: "Language reference and help" },
-		{ name: "About", text: "Gestalten in Code" },
+		{ name: "About", text: "Pixel Art Icons" },
 	];
 
 	for (const { name, text } of placeholders) {

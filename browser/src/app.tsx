@@ -122,7 +122,12 @@ export function App() {
 					/>
 				);
 			case PREVIEW_ID:
-				return <PreviewPanel canvasRef={canvasRef} />;
+				return (
+					<PreviewPanel
+						canvasRef={canvasRef}
+						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
+					/>
+				);
 			case PROBLEMS_ID:
 				return <ProblemsPanel entries={preview.state.problems} />;
 			case OUTPUT_ID:

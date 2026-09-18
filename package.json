@@ -35,6 +35,7 @@
 		"@base-ui/react": "1.8.0",
 		"flexlayout-react": "0.11.0",
 		"monaco-editor": "0.56.0",
+		"pixelarticons": "2.4.1",
 		"react": "19.3.0",
 		"react-dom": "19.3.0"
 	},

@@ -17,6 +17,9 @@ importers:
       monaco-editor:
         specifier: 0.56.0
         version: 0.56.0
+      pixelarticons:
+        specifier: 2.4.1
+        version: 2.4.1(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -731,6 +734,12 @@ packages:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
 
+  pixelarticons@2.4.1:
+    resolution: {integrity: sha512-NIiwuEmBrFT6YG5PdMnOPRsGm0rbz4TiH0P5sgftjrQugxgdF+xtZPgGrgAOL76KUMJ04kk5Bq2lVLnmBg7IPw==}
+    hasBin: true
+    peerDependencies:
+      react: '>=16'
+
   playwright-core@1.62.1:
     resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
     engines: {node: '>=20'}
@@ -1419,6 +1428,10 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.5: {}
+
+  pixelarticons@2.4.1(react@19.3.0):
+    dependencies:
+      react: 19.3.0
 
   playwright-core@1.62.1: {}
 

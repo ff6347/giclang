@@ -82,6 +82,24 @@ export function AboutView() {
 				two-dimensional generative graphics and teaching programming
 				fundamentals.
 			</p>
+			<h3>Built with</h3>
+			<ul>
+				<li>
+					<a href="https://react.dev/">React</a>
+				</li>
+				<li>
+					<a href="https://microsoft.github.io/monaco-editor/">Monaco Editor</a>
+				</li>
+				<li>
+					<a href="https://github.com/caplin/FlexLayout">FlexLayout</a>
+				</li>
+				<li>
+					<a href="https://base-ui.com/">Base UI</a>
+				</li>
+				<li>
+					<a href="https://pixelarticons.com/">Pixel Art Icons</a> (MIT License)
+				</li>
+			</ul>
 		</section>
 	);
 }

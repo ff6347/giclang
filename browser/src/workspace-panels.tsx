@@ -2,6 +2,8 @@
 // ABOUTME: Adapts the existing Monaco lifecycle to React without a Monaco binding.
 
 import { useEffect, useRef, type RefObject } from "react";
+import { Button } from "@base-ui/react/button";
+import { Download } from "pixelarticons/react";
 import { createGicEditor, type GicEditor } from "./gic-editor.ts";
 
 interface EditorPanelProps {
@@ -57,16 +59,41 @@ export function EditorPanel({
 
 export function PreviewPanel({
 	canvasRef,
+	isCurrentSourceRendered,
 }: {
 	canvasRef: RefObject<HTMLCanvasElement | null>;
+	isCurrentSourceRendered: boolean;
 }) {
 	useEffect(() => {
 		canvasRef.current?.getContext("2d");
 	}, [canvasRef]);
 
+	const downloadPng = () => {
+		const canvas = canvasRef.current;
+		if (canvas === null) return;
+		canvas.toBlob((blob) => {
+			if (blob === null) return;
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = "gic-sketch.png";
+			link.click();
+			URL.revokeObjectURL(url);
+		}, "image/png");
+	};
+
 	return (
 		<section aria-label="Preview" className="workspace-panel preview-panel">
 			<canvas id="canvas" ref={canvasRef} width="100" height="100"></canvas>
+			<Button
+				aria-label="Download PNG"
+				className="preview-download"
+				disabled={!isCurrentSourceRendered}
+				type="button"
+				onClick={downloadPng}
+			>
+				<Download aria-hidden="true" />
+			</Button>
 		</section>
 	);
 }
