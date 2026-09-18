@@ -99,9 +99,9 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 **Question:** Can one generated HTML file create and replace Blob workers when opened directly from disk in Chromium, Firefox, and WebKit?
 
-**Evidence:** One artifact reruns after edits, cancels an active run, times out an infinite run, and reports diagnostics/output in each engine.
+**Evidence:** [`spikes/standalone-file-workers`](../../spikes/standalone-file-workers/) opens directly from disk in Chromium `151.0.7922.34`, Firefox `153.0`, and WebKit `26.5`. Its verifier proves reruns after edits, active-run replacement, runaway timeout, diagnostics, runtime errors, structured output, Canvas updates, and no network requests.
 
-**Decision:** Adopt Blob workers or select another single-file isolation method.
+**Decision:** Use inline JavaScript Blob workers. Each run creates a worker from a Blob URL, revokes that URL after construction, and terminates the active worker on replacement or timeout.
 
 ### Spike D: Signing and installer path
 

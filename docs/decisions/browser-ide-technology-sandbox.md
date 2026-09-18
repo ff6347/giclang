@@ -21,6 +21,7 @@ Which editor, preview isolation model, runtime scheduling boundary, dependency p
 - Browser-facing failures use structured GIC diagnostics and never expose raw JavaScript stack traces.
 - Playwright drives the shared UI through Monaco, visible diagnostics, Canvas, Output, file workflows, and exports.
 - Direct-`file://` standalone export has a separate required Chromium, Firefox, and WebKit matrix.
+- Standalone HTML creates each preview worker from an inline JavaScript Blob and revokes its Blob URL after worker construction.
 - The core remains free of DOM, Canvas, Monaco, worker, desktop, and test APIs.
 
 The concrete bundler, Monaco worker packaging, and execution timeout value are implementation details selected and pinned by their owning slices.

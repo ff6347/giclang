@@ -35,6 +35,7 @@
 - [decision] Preview execution runs in a dedicated Web Worker with termination for replacement and runaway-program protection. The main thread renders structured output to Canvas; interpreted GIC does not use an iframe.
 - [decision] The previous image remains during execution, is replaced only by success for the exact current source, and is cleared on parse, analysis, runtime, or timeout failure. Failed current source also disables PNG export.
 - [decision] Playwright drives the shared UI. Direct-`file://` standalone export additionally requires Chromium, Firefox, and WebKit acceptance.
+- [decision] Standalone HTML preview workers use an inline JavaScript Blob. Each run revokes its Blob URL after worker construction and terminates the active worker when source changes or execution times out.
 - [decision] Monaco calls a direct browser-neutral service for diagnostics, formatting, completion, hover, and signature help. LSP, VS Code, and go-to-definition remain outside v0.9.
 - [decision] `formatSource` formats only parser-valid GIC. It reconstructs line comments from gaps between token offsets, emits tabs and canonical whitespace with a final newline, and returns invalid source unchanged.
 - [decision] Monaco's packaged editor feature graph supplies the F1 command palette and applicable editor commands, including Format Document; the single-editor shell focuses Monaco on launch, and no runtime CDN dependency is introduced.

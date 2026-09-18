@@ -1,0 +1,215 @@
+<!-- ABOUTME: Exercises inline Blob-worker execution from one standalone HTML file. -->
+<!-- ABOUTME: Exposes cancellation, timeout, Canvas, diagnostics, and output evidence. -->
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Standalone file worker spike</title>
+	</head>
+	<body>
+		<label>
+			Source
+			<textarea aria-label="Source" rows="8">draw #000000</textarea>
+		</label>
+		<p id="status" aria-live="polite">Ready</p>
+		<canvas id="canvas" width="100" height="100"></canvas>
+		<section aria-label="Diagnostics">
+			<h2>Diagnostics</h2>
+			<p id="diagnostics"></p>
+		</section>
+		<section aria-label="Runtime error">
+			<h2>Runtime error</h2>
+			<p id="runtime-error"></p>
+		</section>
+		<section aria-label="Output">
+			<h2>Output</h2>
+			<ol id="output"></ol>
+		</section>
+		<script>
+			const DEBOUNCE_IN_MS = 100;
+			const TIMEOUT_IN_MS = 250;
+			const canvas = document.querySelector("#canvas");
+			const context = canvas.getContext("2d");
+			const diagnostics = document.querySelector("#diagnostics");
+			const output = document.querySelector("#output");
+			const runtimeError = document.querySelector("#runtime-error");
+			const source = document.querySelector("textarea");
+			const status = document.querySelector("#status");
+			let activeWorker = null;
+			let debounceTimer = null;
+
+			const workerSource = `
+				function send(result) {
+					self.postMessage(result);
+				}
+
+				function run(source) {
+					if (source.trim() === "loop") {
+						while (true) {}
+					}
+					if (source.trim() === "diagnostic") {
+						send({
+							commands: [],
+							diagnostics: [{ line: 1, message: "Expected a drawing command." }],
+							output: [],
+							runtimeError: null,
+						});
+						return;
+					}
+					if (source.trim() === "runtime") {
+						send({
+							commands: [],
+							diagnostics: [],
+							output: [],
+							runtimeError: "The sketch failed.",
+						});
+						return;
+					}
+
+					const commands = [];
+					const output = [];
+					const lines = source.split("\\n");
+					for (const [index, line] of lines.entries()) {
+						if (line === "") continue;
+						const draw = line.match(/^draw (#[\\da-f]{6})$/i);
+						if (draw !== null) {
+							commands.push({ color: draw[1], type: "draw" });
+							continue;
+						}
+						const delayedDraw = line.match(/^delay (#[\\da-f]{6})$/i);
+						if (delayedDraw !== null) {
+							setTimeout(
+								() =>
+									send({
+										commands: [{ color: delayedDraw[1], type: "draw" }],
+										diagnostics: [],
+										output: [],
+										runtimeError: null,
+									}),
+								300,
+							);
+							return;
+						}
+						const print = line.match(/^print (.+)$/);
+						if (print !== null) {
+							output.push({ line: index + 1, text: print[1] });
+							continue;
+						}
+						send({
+							commands: [],
+							diagnostics: [
+								{ line: index + 1, message: "Expected a drawing command." },
+							],
+							output: [],
+							runtimeError: null,
+						});
+						return;
+					}
+					send({ commands, diagnostics: [], output, runtimeError: null });
+				}
+
+				self.onmessage = ({ data }) => run(data.source);
+			`;
+
+			function clearCanvas() {
+				context.clearRect(0, 0, canvas.width, canvas.height);
+			}
+
+			function clearResults() {
+				clearCanvas();
+				diagnostics.textContent = "";
+				output.replaceChildren();
+				runtimeError.textContent = "";
+			}
+
+			function terminateActiveWorker() {
+				activeWorker?.terminate();
+				activeWorker = null;
+			}
+
+			function render(commands) {
+				clearCanvas();
+				for (const command of commands) {
+					context.fillStyle = command.color;
+					context.fillRect(0, 0, canvas.width, canvas.height);
+				}
+			}
+
+			function showOutput(entries) {
+				output.replaceChildren(
+					...entries.map((entry) => {
+						const item = document.createElement("li");
+						item.textContent = `Line ${entry.line}: ${entry.text}`;
+						return item;
+					}),
+				);
+			}
+
+			function run(sourceText) {
+				const blob = new Blob([workerSource], {
+					type: "text/javascript",
+				});
+				const workerUrl = URL.createObjectURL(blob);
+				const worker = new Worker(workerUrl);
+				URL.revokeObjectURL(workerUrl);
+				activeWorker = worker;
+				const timeout = window.setTimeout(() => {
+					if (worker !== activeWorker) return;
+					terminateActiveWorker();
+					clearResults();
+					status.textContent = `The preview timed out after ${TIMEOUT_IN_MS} ms.`;
+				}, TIMEOUT_IN_MS);
+
+				worker.onmessage = ({ data }) => {
+					if (worker !== activeWorker) return;
+					window.clearTimeout(timeout);
+					terminateActiveWorker();
+					if (data.diagnostics.length > 0) {
+						clearResults();
+						diagnostics.textContent = data.diagnostics
+							.map(
+								(diagnostic) =>
+									`Line ${diagnostic.line}: ${diagnostic.message}`,
+							)
+							.join("\n");
+						status.textContent = "Diagnostic";
+						return;
+					}
+					if (data.runtimeError !== null) {
+						clearResults();
+						runtimeError.textContent = data.runtimeError;
+						status.textContent = "Runtime error";
+						return;
+					}
+					render(data.commands);
+					showOutput(data.output);
+					status.textContent = "Rendered";
+				};
+
+				worker.onerror = () => {
+					if (worker !== activeWorker) return;
+					window.clearTimeout(timeout);
+					terminateActiveWorker();
+					clearResults();
+					runtimeError.textContent = "The preview worker failed.";
+					status.textContent = "Worker error";
+				};
+				worker.postMessage({ source: sourceText });
+			}
+
+			function schedule() {
+				if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+				terminateActiveWorker();
+				clearResults();
+				status.textContent = "Waiting";
+				debounceTimer = window.setTimeout(() => {
+					debounceTimer = null;
+					run(source.value);
+				}, DEBOUNCE_IN_MS);
+			}
+
+			source.addEventListener("input", schedule);
+		</script>
+	</body>
+</html>
