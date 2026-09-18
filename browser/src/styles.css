@@ -243,3 +243,12 @@ input {
 	transform: rotate(45deg) translate(-0.125rem, -0.125rem);
 	width: 0.25rem;
 }
+
+.colorpicker-header .codicon-color-mode {
+	display: none;
+}
+
+.colorpicker-header .picked-color {
+	cursor: default;
+	pointer-events: none;
+}

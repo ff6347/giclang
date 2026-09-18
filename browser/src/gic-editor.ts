@@ -180,7 +180,7 @@ export function createGicEditor(
 		scrollBeyondLastLine: false,
 		detectIndentation: true,
 		wordBasedSuggestions: "off",
-		colorDecorators: false,
+		colorDecorators: true,
 		value: initialSource,
 		lineNumbers: "on",
 		formatOnPaste: true,
