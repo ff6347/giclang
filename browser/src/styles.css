@@ -56,12 +56,12 @@ input {
 
 .application-menu-trigger[data-pressed],
 .application-menu-trigger:hover {
-	background-color: #cccccc;
+	background-color: white;
 }
 
 .application-menu-popup {
 	background-color: #ffffff;
-	border: 1px solid black;
+	border: 2px dashed black;
 	padding: 0.25rem;
 }
 
