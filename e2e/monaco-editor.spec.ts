@@ -281,7 +281,7 @@ test("persists configurable format-on-save behavior", async ({ page }) => {
 	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(source);
 
 	await page.getByRole("tab", { name: "Settings" }).click();
-	await setting.uncheck();
+	await setting.click();
 	await page.reload();
 	await page
 		.getByRole("alertdialog", { name: "Recover unsaved sketch?" })

@@ -212,3 +212,34 @@ input {
 .padded-panel {
 	padding: 1rem;
 }
+
+.settings-option {
+	align-items: center;
+	display: flex;
+	gap: 0.5rem;
+}
+
+.settings-checkbox {
+	align-items: center;
+	border: 2px solid currentColor;
+	display: inline-flex;
+	flex: none;
+	height: 1rem;
+	justify-content: center;
+	width: 1rem;
+}
+
+.settings-checkbox:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.settings-checkbox-indicator::after {
+	border-bottom: 2px solid currentColor;
+	border-right: 2px solid currentColor;
+	content: "";
+	display: block;
+	height: 0.5rem;
+	transform: rotate(45deg) translate(-0.125rem, -0.125rem);
+	width: 0.25rem;
+}

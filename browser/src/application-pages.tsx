@@ -1,8 +1,8 @@
 // ABOUTME: Renders settings and placeholder content for application-level tabs.
 // ABOUTME: Keeps non-Code pages separate from the persistent IDE workspace.
 
-import type { ChangeEvent } from "react";
 import { Button } from "@base-ui/react/button";
+import { Checkbox } from "@base-ui/react/checkbox";
 
 export function SettingsView({
 	formatOnSave,
@@ -13,19 +13,17 @@ export function SettingsView({
 	onFormatOnSaveChange: (checked: boolean) => void;
 	onResetLayout: () => void;
 }) {
-	const handleFormatOnSaveChange = (event: ChangeEvent<HTMLInputElement>) => {
-		onFormatOnSaveChange(event.target.checked);
-	};
-
 	return (
 		<section aria-label="Settings" className="workspace-panel padded-panel">
 			<h2>Workspace</h2>
-			<label>
-				<input
+			<label className="settings-option">
+				<Checkbox.Root
 					checked={formatOnSave}
-					type="checkbox"
-					onChange={handleFormatOnSaveChange}
-				/>
+					className="settings-checkbox"
+					onCheckedChange={onFormatOnSaveChange}
+				>
+					<Checkbox.Indicator className="settings-checkbox-indicator" />
+				</Checkbox.Root>
 				Format on save
 			</label>
 			<Button
@@ -35,11 +33,6 @@ export function SettingsView({
 			>
 				Reset Layout
 			</Button>
-			<h2>Agent provider</h2>
-			<p>
-				Agent provider configuration is available in the desktop application
-				when agent support is installed.
-			</p>
 		</section>
 	);
 }

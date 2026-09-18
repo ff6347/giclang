@@ -80,9 +80,7 @@ test("places Problems and Output beneath Preview in the middle column", async ({
 	expect(editorBox!.x).toBeLessThan(previewBox!.x);
 });
 
-test("places application preferences and provider guidance in Settings", async ({
-	page,
-}) => {
+test("places application preferences in Settings", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Settings" }).click();
 
@@ -94,12 +92,9 @@ test("places application preferences and provider guidance in Settings", async (
 	await expect(
 		page.getByRole("button", { name: "Reset Layout" }),
 	).toBeVisible();
-	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
-		"Agent provider",
-	);
-	await expect(page.getByRole("region", { name: "Settings" })).toContainText(
-		"Agent provider configuration is available in the desktop application",
-	);
+	await expect(
+		page.getByRole("region", { name: "Settings" }),
+	).not.toContainText("Agent provider");
 });
 
 test("shows examples and explicit Docs and About placeholders", async ({
