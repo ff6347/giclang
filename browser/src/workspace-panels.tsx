@@ -60,9 +60,11 @@ export function EditorPanel({
 export function PreviewPanel({
 	canvasRef,
 	isCurrentSourceRendered,
+	onDownloadStandalone,
 }: {
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 	isCurrentSourceRendered: boolean;
+	onDownloadStandalone: () => void;
 }) {
 	useEffect(() => {
 		canvasRef.current?.getContext("2d");
@@ -88,8 +90,9 @@ export function PreviewPanel({
 			<Button
 				aria-label="Download standalone HTML"
 				className="preview-html-download"
-				disabled
+				disabled={!isCurrentSourceRendered}
 				type="button"
+				onClick={onDownloadStandalone}
 			>
 				<Code aria-hidden="true" />
 			</Button>

@@ -28,8 +28,9 @@
 		"lint:fix": "oxlint --fix",
 		"typecheck": "tsc --noEmit",
 		"typecheck:browser": "tsc --project browser/tsconfig.json --noEmit",
-		"build:browser": "vite build",
-		"dev:browser": "vite"
+		"build:standalone": "node scripts/build-standalone.mjs",
+		"build:browser": "pnpm build:standalone && vite build",
+		"dev:browser": "pnpm build:standalone && vite"
 	},
 	"dependencies": {
 		"@base-ui/react": "1.8.0",

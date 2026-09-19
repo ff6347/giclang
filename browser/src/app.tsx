@@ -44,6 +44,7 @@ import {
 } from "./workspace-panels.tsx";
 import { usePreview } from "./use-preview.ts";
 import { examples, useDocument } from "./use-document.ts";
+import { downloadStandaloneHtml } from "./standalone-export.ts";
 
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
 
@@ -126,6 +127,9 @@ export function App() {
 					<PreviewPanel
 						canvasRef={canvasRef}
 						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
+						onDownloadStandalone={() =>
+							void downloadStandaloneHtml(documents.documentState.source)
+						}
 					/>
 				);
 			case PROBLEMS_ID:
