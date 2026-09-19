@@ -23,6 +23,11 @@ export function startStandalonePreview(source: string, workerSource: string) {
 		const context = canvas.getContext("2d");
 		if (context) clearCanvas(context, canvas);
 	};
+	const showOutput = (entries: { line: number; text: string }[]) => {
+		output.textContent = entries
+			.map((entry) => `Line ${entry.line + 1}: ${entry.text}`)
+			.join("\n");
+	};
 	const run = (currentSource: string) => {
 		const url = URL.createObjectURL(
 			new Blob([workerSource], { type: "text/javascript" }),
@@ -35,6 +40,7 @@ export function startStandalonePreview(source: string, workerSource: string) {
 			worker.terminate();
 			activeWorker = null;
 			clear();
+			output.textContent = "";
 			diagnostics.textContent = "The preview took too long and was terminated.";
 		}, 500);
 		worker.onmessage = ({ data }) => {
@@ -42,19 +48,13 @@ export function startStandalonePreview(source: string, workerSource: string) {
 			window.clearTimeout(timeout);
 			worker.terminate();
 			activeWorker = null;
+			showOutput(data.output);
 			if (data.ok) {
 				renderToCanvas(canvas, data.commands);
 				diagnostics.textContent = "";
-				output.textContent = data.output
-					.map(
-						(entry: { line: number; text: string }) =>
-							`Line ${entry.line + 1}: ${entry.text}`,
-					)
-					.join("\n");
 				return;
 			}
 			clear();
-			output.textContent = "";
 			diagnostics.textContent = data.diagnostics
 				.map(
 					(diagnostic: { line: number; message: string }) =>
@@ -69,6 +69,8 @@ export function startStandalonePreview(source: string, workerSource: string) {
 		activeWorker?.terminate();
 		activeWorker = null;
 		clear();
+		diagnostics.textContent = "";
+		output.textContent = "";
 		timer = window.setTimeout(() => run(editor.value), 100);
 	};
 	editor.value = source;

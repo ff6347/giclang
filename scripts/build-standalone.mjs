@@ -32,9 +32,6 @@ for (const { entry, fileName, name } of entries) {
 				name,
 			},
 			outDir: outputDirectory,
-			rollupOptions: {
-				output: { inlineDynamicImports: true },
-			},
 		},
 		configFile: false,
 	});
