@@ -46,7 +46,12 @@ import { usePreview } from "./use-preview.ts";
 import { examples, useDocument } from "./use-document.ts";
 import { downloadStandaloneHtml } from "./standalone-export.ts";
 
+const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
+
+function initialCanvasFrame(): boolean {
+	return localStorage.getItem(CANVAS_FRAME_STORAGE_KEY) !== "false";
+}
 
 function initialFormatOnSave(): boolean {
 	return localStorage.getItem(FORMAT_ON_SAVE_STORAGE_KEY) !== "false";
@@ -57,6 +62,7 @@ function countLabel(name: string, count: number): string {
 }
 
 export function App() {
+	const [canvasFrame, setCanvasFrame] = useState(initialCanvasFrame);
 	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
 	const [model, setModel] = useState(loadWorkspace);
 	const [, setLayoutRevision] = useState(0);
@@ -88,6 +94,11 @@ export function App() {
 		const defaultModel = createDefaultWorkspace();
 		saveWorkspace(defaultModel);
 		setModel(defaultModel);
+	};
+
+	const updateCanvasFrame = (checked: boolean) => {
+		setCanvasFrame(checked);
+		localStorage.setItem(CANVAS_FRAME_STORAGE_KEY, String(checked));
 	};
 
 	const updateFormatOnSave = (checked: boolean) => {
@@ -125,6 +136,7 @@ export function App() {
 			case PREVIEW_ID:
 				return (
 					<PreviewPanel
+						canvasFrame={canvasFrame}
 						canvasRef={canvasRef}
 						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
 						onDownloadStandalone={() =>
@@ -139,7 +151,9 @@ export function App() {
 			case SETTINGS_ID:
 				return (
 					<SettingsView
+						canvasFrame={canvasFrame}
 						formatOnSave={formatOnSave}
+						onCanvasFrameChange={updateCanvasFrame}
 						onFormatOnSaveChange={updateFormatOnSave}
 						onResetLayout={resetLayout}
 					/>

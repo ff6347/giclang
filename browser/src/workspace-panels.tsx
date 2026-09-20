@@ -58,10 +58,12 @@ export function EditorPanel({
 }
 
 export function PreviewPanel({
+	canvasFrame,
 	canvasRef,
 	isCurrentSourceRendered,
 	onDownloadStandalone,
 }: {
+	canvasFrame: boolean;
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 	isCurrentSourceRendered: boolean;
 	onDownloadStandalone: () => void;
@@ -86,7 +88,13 @@ export function PreviewPanel({
 
 	return (
 		<section aria-label="Preview" className="workspace-panel preview-panel">
-			<canvas id="canvas" ref={canvasRef} width="100" height="100"></canvas>
+			<canvas
+				className={canvasFrame ? "canvas-frame" : undefined}
+				id="canvas"
+				ref={canvasRef}
+				width="100"
+				height="100"
+			></canvas>
 			<Button
 				aria-label="Download standalone HTML"
 				className="preview-html-download"

@@ -5,11 +5,15 @@ import { Button } from "@base-ui/react/button";
 import { Checkbox } from "@base-ui/react/checkbox";
 
 export function SettingsView({
+	canvasFrame,
 	formatOnSave,
+	onCanvasFrameChange,
 	onFormatOnSaveChange,
 	onResetLayout,
 }: {
+	canvasFrame: boolean;
 	formatOnSave: boolean;
+	onCanvasFrameChange: (checked: boolean) => void;
 	onFormatOnSaveChange: (checked: boolean) => void;
 	onResetLayout: () => void;
 }) {
@@ -25,6 +29,16 @@ export function SettingsView({
 					<Checkbox.Indicator className="settings-checkbox-indicator" />
 				</Checkbox.Root>
 				Format on save
+			</label>
+			<label className="settings-option">
+				<Checkbox.Root
+					checked={canvasFrame}
+					className="settings-checkbox"
+					onCheckedChange={onCanvasFrameChange}
+				>
+					<Checkbox.Indicator className="settings-checkbox-indicator" />
+				</Checkbox.Root>
+				Canvas frame
 			</label>
 			<Button
 				className="application-button"

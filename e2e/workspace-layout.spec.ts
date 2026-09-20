@@ -104,11 +104,51 @@ test("places application preferences in Settings", async ({ page }) => {
 		page.getByRole("checkbox", { name: "Format on save" }),
 	).toBeVisible();
 	await expect(
+		page.getByRole("checkbox", { name: "Canvas frame" }),
+	).toBeChecked();
+	await expect(
 		page.getByRole("button", { name: "Reset Layout" }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("region", { name: "Settings" }),
 	).not.toContainText("Agent provider");
+});
+
+test("persists the Canvas frame setting across reloads", async ({ page }) => {
+	const canvasStyle = () =>
+		page.locator("#canvas").evaluate((canvas) => {
+			const style = getComputedStyle(canvas);
+			return {
+				borderBottomWidth: style.borderBottomWidth,
+				borderRightWidth: style.borderRightWidth,
+				boxShadow: style.boxShadow,
+				imageRendering: style.imageRendering,
+			};
+		});
+
+	await page.goto("/");
+	await expect.poll(canvasStyle).toEqual({
+		borderBottomWidth: "2px",
+		borderRightWidth: "2px",
+		boxShadow: "rgb(0, 0, 0) 3px 3px 0px 0px",
+		imageRendering: "pixelated",
+	});
+
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await page.getByRole("checkbox", { name: "Canvas frame" }).uncheck();
+	await page.getByRole("tab", { name: "Gestalten" }).click();
+	await expect.poll(canvasStyle).toEqual({
+		borderBottomWidth: "0px",
+		borderRightWidth: "0px",
+		boxShadow: "none",
+		imageRendering: "pixelated",
+	});
+
+	await page.reload();
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await expect(
+		page.getByRole("checkbox", { name: "Canvas frame" }),
+	).not.toBeChecked();
 });
 
 test("shows examples and explicit Docs and About placeholders", async ({

@@ -74,6 +74,16 @@ input {
 	font: inherit;
 }
 
+canvas {
+	image-rendering: pixelated;
+}
+
+.canvas-frame {
+	box-shadow: 3px 3px 0 var(--color-text);
+	border-bottom: 2px solid var(--color-text);
+	border-right: 2px solid var(--color-text);
+}
+
 .app-shell {
 	display: flex;
 	flex-direction: column;
