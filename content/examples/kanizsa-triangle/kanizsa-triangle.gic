@@ -1,0 +1,19 @@
+// ABOUTME: Uses three dark circular inducers to make a white triangle appear on a white field.
+// ABOUTME: Demonstrates closure by masking each inducer toward one implied triangular form.
+// Adapted from Fabian Morón Zirfas's Kanizsa's Triangle:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/processing/Kanizsa_s_Triangle
+
+background("#ffffff");
+noFill();
+stroke("#000000");
+strokeWidth(0.2);
+triangle(50, 25, 28.35, 62.5, 71.65, 62.5);
+
+noStroke();
+fill("#000000");
+circle(28.35, 37.5, 5);
+circle(71.65, 37.5, 5);
+circle(50, 75, 5);
+
+fill("#ffffff");
+triangle(28.35, 37.5, 71.65, 37.5, 50, 75);
