@@ -36,12 +36,10 @@ import {
 	ExamplesView,
 	SettingsView,
 } from "./application-pages.tsx";
-import {
-	EditorPanel,
-	OutputPanel,
-	PreviewPanel,
-	ProblemsPanel,
-} from "./workspace-panels.tsx";
+import { ProblemsPanel } from "./problems-panel.tsx";
+import { OutputPanel } from "./output-panel.tsx";
+import { PreviewPanel } from "./preview-panel.tsx";
+import { EditorPanel } from "./editor-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
 import { useDocument } from "../hooks/use-document.ts";
