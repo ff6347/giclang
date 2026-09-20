@@ -60,6 +60,7 @@ This is one pnpm package, not a monorepo.
 ## Architecture Boundaries
 
 - Keep modules imported by `core.ts` independent of Node, DOM, Canvas, Monaco, workers, desktop shells, and provider APIs.
+- Product Markdown under `content/` starts with YAML frontmatter. Do not add `ABOUTME` comments because these files are authored application content.
 - GIC uses a tree-walking interpreter; never evaluate GIC source as JavaScript.
 - `runSource` owns the shared parse → analyze → execute pipeline. Hosts only adapt and present its result.
 - Drawing crosses host boundaries as an ordered, serializable `Command[]`. `print` crosses as structured `OutputEntry[]`.

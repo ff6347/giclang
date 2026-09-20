@@ -35,13 +35,7 @@ function metadataList(
 }
 
 export function compileMarkdown(path: string, source: string): MarkdownContent {
-	const about = /^<!-- ABOUTME: .+ -->\r?\n<!-- ABOUTME: .+ -->\r?\n/.exec(
-		source,
-	);
-	if (about === null) {
-		throw new Error(`Content '${path}' requires two ABOUTME comments.`);
-	}
-	const parsed = matter(source.slice(about[0].length));
+	const parsed = matter(source);
 	const metadata: unknown = parsed.data;
 	if (
 		typeof metadata !== "object" ||

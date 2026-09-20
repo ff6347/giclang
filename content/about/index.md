@@ -1,5 +1,3 @@
-<!-- ABOUTME: Introduces Gestalten in Code and credits its interface dependencies. -->
-<!-- ABOUTME: Supplies the bundled About content for browser and desktop editions. -->
 ---
 title: About
 order: 10

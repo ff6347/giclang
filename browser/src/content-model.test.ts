@@ -20,9 +20,7 @@ describe("Markdown content", () => {
 	it("compiles metadata, Markdown, and trusted embedded HTML", () => {
 		const content = compileMarkdown(
 			"content/docs/repeat.md",
-			`<!-- ABOUTME: Explains repeated patterns in GIC sketches. -->
-<!-- ABOUTME: Introduces nested loops through one focused example. -->
----
+			`---
 title: Repeated patterns
 order: 20
 ---
@@ -48,9 +46,7 @@ Use **repeat** for a pattern.
 			() =>
 				compileMarkdown(
 					"content/docs/repeat.md",
-					`<!-- ABOUTME: Explains repeated patterns in GIC sketches. -->
-<!-- ABOUTME: Introduces nested loops through one focused example. -->
----
+					`---
 title: Repeated patterns
 ---
 
@@ -64,9 +60,7 @@ Missing an order.
 	it("retains example categories and tags for future catalog filtering", () => {
 		const content = compileMarkdown(
 			"content/examples/repeat/description.md",
-			`<!-- ABOUTME: Describes one repeated grid example. -->
-<!-- ABOUTME: Supplies catalog metadata for discovery and filtering. -->
----
+			`---
 title: Repeated grid
 order: 20
 categories: [grid, repeat]
@@ -86,9 +80,7 @@ Builds a regular rectangle grid.
 			() =>
 				compileMarkdown(
 					"content/examples/repeat/description.md",
-					`<!-- ABOUTME: Describes one repeated grid example. -->
-<!-- ABOUTME: Omits filtering metadata to exercise validation. -->
----
+					`---
 title: Repeated grid
 order: 20
 ---

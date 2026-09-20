@@ -1,5 +1,3 @@
-<!-- ABOUTME: Describes the repeated-grid example for the bundled catalog. -->
-<!-- ABOUTME: Highlights nested repetition and ordered drawing styles. -->
 ---
 title: Repeated grid
 order: 20

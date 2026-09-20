@@ -20,9 +20,10 @@ test("presents bundled About and documentation content without navigation", asyn
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
 	await expect(docs.getByRole("button")).toHaveCount(0);
-	await expect(
-		docs.getByRole("heading", { level: 2, name: "Language reference" }),
-	).toHaveCount(1);
+	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
+		"Language reference",
+		"Repeat",
+	]);
 	await expect(
 		page.getByText("Language reference and help for writing GIC programs."),
 	).toBeVisible();
