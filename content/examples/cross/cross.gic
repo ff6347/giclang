@@ -1,0 +1,13 @@
+// ABOUTME: Frames two opposing diagonals inside a square field.
+// ABOUTME: Preserves the original dark-red cross against a fine black border.
+// Adapted from Cross by Fabian Morón Zirfas: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/cross
+
+background("#ffffff");
+noFill();
+stroke("#000000");
+strokeWidth(0.2);
+rect(5, 5, 90, 90);
+
+stroke("#910000");
+line(10, 10, 90, 90);
+line(90, 10, 10, 90);
