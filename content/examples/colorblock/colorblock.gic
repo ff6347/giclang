@@ -1,0 +1,16 @@
+// ABOUTME: Places three touching monochromatic color blocks at the canvas center.
+// ABOUTME: Preserves a fixed color interpolation study with a precomputed midpoint.
+// Adapted from Colorblock by Julia Hilt:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/color/p5js/colorblock
+
+background("#626262");
+noStroke();
+
+fill("#545a3a");
+rect(31.25, 31.25, 12.5, 37.5);
+
+fill("#5a543a");
+rect(43.75, 31.25, 12.5, 37.5);
+
+fill("#5a493a");
+rect(56.25, 31.25, 12.5, 37.5);
