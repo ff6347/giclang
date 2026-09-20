@@ -21,3 +21,7 @@
 - [content] The follow-up form cohort adds Proximity and Similarity, both created by Fabian Morón Zirfas.
 - [decision] `form/2d/categories` is not a low-hanging adaptation because its rounded rectangles are central to the composition and GIC does not provide them; the unindexed source also records no original author metadata.
 - [verification] Proximity and Similarity passed `gic check`, headless command execution, visible Canvas rendering, core and compact tests, both TypeScript projects, lint, formatting, browser production build, and all 76 Playwright tests.
+- [content] The grid cohort adds Corridor by Julia Hilt; Fishing Net, Grid Closure, Grid Contrast, Grid Symmetry, and Hidden Room by Edmundo Mejía Galindo; Lines by Julia Hilt; and Vision by Fabian Morón Zirfas.
+- [content] The repeat and chance cohorts add Hidden Circles by Natalie Schreiber; Splatter and Random Circles by Fabian Morón Zirfas; Circle Bubbles and Hairy Story by Edmundo Mejía Galindo; and Dots and Mice Nip by Julia Hilt.
+- [decision] The p5.js and Processing Random Circles sources share one adaptation because they express the same teaching idea; its description retains both pinned source links and the original author.
+- [verification] All 15 added bundles passed `gic check`, headless command execution, and visible Canvas rendering. Core and compact tests, both TypeScript projects, lint, formatting, browser production build, and all 76 Playwright tests passed; one named CSS background test required its configured retry and is tracked by git-bug issue `588f7ac`.
