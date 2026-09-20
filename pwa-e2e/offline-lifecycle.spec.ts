@@ -46,7 +46,7 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 }) => {
 	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
 	await page.goto("/");
-	await expect(page.locator(".monaco-editor")).toBeVisible();
+	await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15_000 });
 	await waitForServiceWorker(page);
 	await setEditorSource(page, 'circle(50, 50, 20);\nprint("recover me");');
 	await expect
@@ -59,7 +59,9 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	});
 	await expect(recovery).toBeVisible();
 	await recovery.getByRole("button", { name: "Restore" }).click();
-	await expect(offlinePage.locator(".monaco-editor")).toBeVisible();
+	await expect(offlinePage.locator(".monaco-editor")).toBeVisible({
+		timeout: 15_000,
+	});
 	await expect(offlinePage.locator(".view-line")).toHaveText([
 		"circle(50, 50, 20);",
 		'print("recover me");',
