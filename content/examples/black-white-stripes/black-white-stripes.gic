@@ -1,0 +1,12 @@
+// ABOUTME: Alternates solid black bars with equal white intervals across the canvas.
+// ABOUTME: Demonstrates repetition and figure-ground balance with a minimal stripe pattern.
+// Adapted from “Black and White Stripes” by Fabian Morón Zirfas:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/repeat/p5js/stripes
+
+background("#ffffff");
+noStroke();
+fill("#000000");
+
+repeat(x, 0, 100, 20) {
+	rect(x, 0, 10, 100);
+}

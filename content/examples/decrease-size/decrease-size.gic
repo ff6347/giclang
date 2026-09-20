@@ -1,0 +1,23 @@
+// ABOUTME: Layers shrinking black and white circles around a seeded random center.
+// ABOUTME: Demonstrates repetition, alternating contrast, and progressive decrease in scale.
+// Adapted from “Decrease Size” by Fabian Morón Zirfas:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/repeat/p5js/decrease-size
+
+randomSeed(330);
+background("#ffffff");
+noStroke();
+
+let x = random(0, 100);
+let y = random(0, 100);
+let radius = 100;
+let decrement = radius / 30;
+
+repeat(i, 0, 30) {
+	if (i % 2 == 0) {
+		fill("#000000");
+	} else {
+		fill("#ffffff");
+	}
+	circle(x, y, radius);
+	radius = radius - decrement;
+}
