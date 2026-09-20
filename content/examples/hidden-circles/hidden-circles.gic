@@ -1,0 +1,28 @@
+// ABOUTME: Builds a field of vertical lines interrupted by concentric white circles.
+// ABOUTME: Demonstrates repetition, accumulation, and connected elements through negative space.
+// Inspired by Natalie Schreiber's Hidden Circles:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/repeat/p5js/hidden-circles
+
+background("#ffffff");
+stroke("#000000");
+strokeWidth(0.4);
+
+let distance = 4;
+repeat(i, 0, 26) {
+	let x = i * distance;
+	line(x, 0, x, 100);
+}
+
+fill("#ffffff");
+noStroke();
+circle(50, 50, 3.5);
+
+noFill();
+stroke("#ffffff");
+strokeWidth(2.4);
+
+let radius = 100;
+repeat(i, 80, 500, 10) {
+	radius = (radius + i) * 0.9;
+	ellipse(50, 50, radius / 5, radius / 5);
+}
