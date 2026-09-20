@@ -12,14 +12,22 @@ const serviceWorker = fileURLToPath(
 const fixtureDirectory = new URL("../browser/.pwa-test/", import.meta.url);
 const initialServiceWorker = new URL("sw-initial.js", fixtureDirectory);
 const updatedServiceWorker = new URL("sw-updated.js", fixtureDirectory);
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
 function build(version) {
-	execFileSync(pnpm, ["build:browser"], {
+	const options = {
 		cwd: projectRoot,
 		env: { ...process.env, GIC_PWA_TEST_VERSION: version },
 		stdio: "inherit",
-	});
+	};
+	if (process.platform === "win32") {
+		execFileSync(
+			process.env["ComSpec"] ?? "cmd.exe",
+			["/d", "/s", "/c", "pnpm build:browser"],
+			options,
+		);
+		return;
+	}
+	execFileSync("pnpm", ["build:browser"], options);
 }
 
 await mkdir(fixtureDirectory, { recursive: true });
