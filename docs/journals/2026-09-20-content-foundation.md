@@ -13,3 +13,8 @@
 - [decision] Product Markdown starts directly with frontmatter and contains no agent-facing `ABOUTME` comments. Vite watches the complete `content/` tree and reloads the content catalog when files are created or deleted.
 - [decision] Browser source is grouped by responsibility: React views in `components/`, React orchestration in `hooks/`, reusable browser services and models in `lib/`, and browser-local unit tests in `tests/`. Entry points, workers, styles, and declarations remain at `browser/src` root.
 - [verification] Core and compact tests, both TypeScript projects, lint, formatting, browser production build, all 76 Firefox acceptance tests, and a headless Chrome walkthrough passed. Creating and deleting a Markdown document while Vite was running updated the visible ordered documentation without restarting the server.
+- [decision] Legacy example migration adapts recognizable visual and teaching ideas to current GIC without adding language capabilities. Unsupported behavior is omitted rather than simulated as equivalent.
+- [decision] Visible example descriptions retain the original author's name and link to the source directory at a pinned revision.
+- [content] The first form cohort adds An Obvious Circle by Jeanette Knipp, Close the Triangle by Jakob von Kietzell, Criss Cross by Paulina Mrksic, and Geometrical Shape and Pyramid by Julia Hilt.
+- [technique] Example thumbnails are captured from the actual successful 100×100 GIC Canvas render after opening each bundle through the Examples panel.
+- [verification] All five sources passed `gic check` and headless command execution. Core and compact tests, both TypeScript projects, lint, formatting, the browser production build, all 76 Playwright tests, and a headless browser walkthrough passed.
