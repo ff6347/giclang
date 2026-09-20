@@ -1,0 +1,24 @@
+// ABOUTME: Draws a diagonal procession of expanding, overlapping circle outlines.
+// ABOUTME: Uses scalar arithmetic to build the composition from three base sizes.
+// Inspired by “Circles bubbles” by Edmundo Mejía Galindo: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/circle-bubbles
+
+background("#000000");
+noFill();
+stroke("#ffffff");
+strokeWidth(1);
+
+let a = 10;
+let b = 24;
+let c = 36;
+
+ellipse(a, a, a, a);
+ellipse(a + 20, a + 20, a + 20, a + 20);
+ellipse(b + 20, b + 20, b + 20, b + 20);
+ellipse(c + 20, c + 20, c + 20, c + 20);
+
+a = a + c;
+b = 100 - b;
+
+ellipse(a + 20, a + 20, a + 20, a + 20);
+ellipse(b + 20, b + 20, b + 20, b + 20);
+ellipse(c + 60, c + 60, c + 60, c + 60);
