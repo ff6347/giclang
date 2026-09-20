@@ -30,12 +30,10 @@ import {
 	saveWorkspace,
 	SETTINGS_ID,
 } from "../lib/workspace-model.ts";
-import {
-	AboutView,
-	DocsView,
-	ExamplesView,
-	SettingsView,
-} from "./application-pages.tsx";
+import { SettingsPanel } from "./settings-panel.tsx";
+import { ExamplesPanel } from "./examples-panel.tsx";
+import { AboutPanel } from "./about-panel.tsx";
+import { DocsPanel } from "./docs-panel.tsx";
 import { ProblemsPanel } from "./problems-panel.tsx";
 import { OutputPanel } from "./output-panel.tsx";
 import { PreviewPanel } from "./preview-panel.tsx";
@@ -149,7 +147,7 @@ export function App() {
 				return <OutputPanel entries={preview.state.output} />;
 			case SETTINGS_ID:
 				return (
-					<SettingsView
+					<SettingsPanel
 						canvasFrame={canvasFrame}
 						formatOnSave={formatOnSave}
 						onCanvasFrameChange={updateCanvasFrame}
@@ -159,15 +157,15 @@ export function App() {
 				);
 			case EXAMPLES_ID:
 				return (
-					<ExamplesView
+					<ExamplesPanel
 						examples={productContent.examples}
 						onOpen={documents.requestExample}
 					/>
 				);
 			case DOCS_ID:
-				return <DocsView docs={productContent.docs} />;
+				return <DocsPanel docs={productContent.docs} />;
 			case ABOUT_ID:
-				return <AboutView content={productContent.about} />;
+				return <AboutPanel content={productContent.about} />;
 			default:
 				throw new Error(`Unknown layout panel '${node.getComponent()}'.`);
 		}
