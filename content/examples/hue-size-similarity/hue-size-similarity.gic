@@ -1,0 +1,36 @@
+// ABOUTME: Repeats colored circles in hue columns and size bands with small seeded variation.
+// ABOUTME: Demonstrates similarity by making hue and scale form simultaneous visual groups.
+// Adapted from “Similarity by Hue and Size” by josues:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/hue-size-similarity
+
+randomSeed(480);
+background("#fcfcfc");
+noStroke();
+
+let columnStep = 94 / 10;
+let rowStep = 94 / 15;
+repeat(column, 0, 10) {
+	if (column < 4) {
+		fill("#d85a4a");
+	} else {
+		if (column < 7) {
+			fill("#3b8f9c");
+		} else {
+			fill("#6359a5");
+		}
+	}
+
+	repeat(row, 0, 15) {
+		let radius = 1.5;
+		if (row % 3 == 0) {
+			radius = random(1, 1.2);
+		} else {
+			if (row % 3 == 1) {
+				radius = random(1.4, 1.6);
+			} else {
+				radius = random(1.8, 2);
+			}
+		}
+		circle(6 + column * columnStep, 6 + row * rowStep, radius);
+	}
+}

@@ -1,0 +1,19 @@
+// ABOUTME: Repeats a fine grid of gray circles with deliberately varied border weights.
+// ABOUTME: Demonstrates Prägnanz by letting edge strength subtly organize an otherwise uniform field.
+// Adapted from “Praegnanz by Varying Edges” by josues:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/praegnanz-borders
+
+randomSeed(470);
+background("#fcfcfc");
+fill("#dcdcdc");
+stroke("#000000");
+
+let step = 94 / 15;
+repeat(column, 0, 15) {
+	repeat(row, 0, 15) {
+		let x = 6 + column * step;
+		let y = 6 + row * step;
+		strokeWidth(random(0.02, 0.1));
+		circle(x, y, random(1.2, 1.6));
+	}
+}
