@@ -151,9 +151,7 @@ test("persists the Canvas frame setting across reloads", async ({ page }) => {
 	).not.toBeChecked();
 });
 
-test("shows examples and explicit Docs and About placeholders", async ({
-	page,
-}) => {
+test("shows bundled Examples, Docs, and About content", async ({ page }) => {
 	await page.goto("/");
 	const placeholders = [
 		{ name: "Examples", text: "repeat.gic" },

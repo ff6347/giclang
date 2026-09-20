@@ -3,10 +3,8 @@
 
 import { useRef, useState } from "react";
 import { applySaveFormatting } from "../../src/language-service.ts";
-import connectedNodesExample from "../../examples/connected-nodes.gic?raw";
-import repeatExample from "../../examples/repeat.gic?raw";
-import reusableMotifExample from "../../examples/reusable-motif.gic?raw";
 import { BrowserDocumentAdapter } from "./browser-document-adapter.ts";
+import { productContent } from "./content.ts";
 import {
 	createExampleDocument,
 	createRecoveredDocument,
@@ -15,12 +13,6 @@ import {
 	updateDocumentSource,
 	type DocumentState,
 } from "./document-model.ts";
-
-export const examples = {
-	"connected-nodes.gic": connectedNodesExample,
-	"repeat.gic": repeatExample,
-	"reusable-motif.gic": reusableMotifExample,
-};
 
 function normalizeFileName(name: string): string {
 	const trimmedName = name.trim();
@@ -128,10 +120,16 @@ export function useDocument(
 			}
 			void open();
 		},
-		requestExample(name: keyof typeof examples) {
+		requestExample(id: string) {
+			const example = productContent.examples.find(
+				(candidate) => candidate.id === id,
+			);
+			if (example === undefined) {
+				throw new Error(`Unknown example '${id}'.`);
+			}
 			const open = () => {
 				discardRecovery();
-				replace(createExampleDocument(name, examples[name]));
+				replace(createExampleDocument(example.fileName, example.source));
 				onExampleOpened();
 			};
 			if (documentState.isDirty) {

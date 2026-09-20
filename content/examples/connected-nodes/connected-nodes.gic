@@ -1,3 +1,5 @@
+// ABOUTME: Draws nearby random points as connected visual groups.
+// ABOUTME: Demonstrates distance calculation, conditionals, and repeated drawing.
 // based on https://gestalten-in-code.qawsed.site/chance/connect/
 // by Fabian Morón Zirfas
 // Tags: Basil.js, chance, repeat, Law of Proximity, Law of Connected Elements

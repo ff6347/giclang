@@ -9,7 +9,10 @@ test("renders the connected-nodes example on black with grey strokes", async ({
 	page,
 }) => {
 	const source = await readFile(
-		new URL("../examples/connected-nodes.gic", import.meta.url),
+		new URL(
+			"../content/examples/connected-nodes/connected-nodes.gic",
+			import.meta.url,
+		),
 		"utf8",
 	);
 	await page.goto("/");

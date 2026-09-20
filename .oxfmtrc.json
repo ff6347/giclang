@@ -5,6 +5,7 @@
 	"semi": true,
 	"singleQuote": false,
 	"useTabs": true,
+	"ignorePatterns": ["content/**/*.md"],
 	"overrides": [
 		{
 			"files": ["*.yml", "*.yaml"],

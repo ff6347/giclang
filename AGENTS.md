@@ -46,11 +46,12 @@ This is one pnpm package, not a monorepo.
   - `main.ts` — Node CLI entry point.
 - `src/tests/` — core, parser, analyzer, interpreter, formatter, and CLI tests.
 - `browser/` — Vite application rooted at `browser/index.html`.
+- `browser/src/content.ts`, `content-model.ts`, `markdown-content.ts` — product-content discovery, validation, and trusted Markdown compilation.
 - `browser/src/worker.ts` — runs the shared core away from the UI thread.
 - `browser/src/render-to-canvas.ts` — renders drawing commands to Canvas.
 - `browser/src/*.test.ts` — unit tests for browser-specific pure functions.
+- `content/` — host-neutral About, documentation, and immutable example bundles for the PWA and desktop application.
 - `e2e/` — Playwright Firefox tests of visible browser behavior.
-- `examples/` — shipped `.gic` programs and selected acceptance fixtures.
 - `docs/decisions/` — architecture decision records.
 - `docs/milestones/` and `docs/LESSONS.md` — capability definitions and completion ledger.
 - `docs/plans/` — active delivery plans.

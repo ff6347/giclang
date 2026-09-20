@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { setEditorSource } from "./editor.ts";
 
 const repeatExamplePath = fileURLToPath(
-	new URL("../examples/repeat.gic", import.meta.url),
+	new URL("../content/examples/repeat/repeat.gic", import.meta.url),
 );
 
 async function chooseFileCommand(

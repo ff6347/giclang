@@ -56,7 +56,10 @@ test("renders the reusable motif example through function calls", async ({
 	page,
 }) => {
 	const source = await readFile(
-		new URL("../examples/reusable-motif.gic", import.meta.url),
+		new URL(
+			"../content/examples/reusable-motif/reusable-motif.gic",
+			import.meta.url,
+		),
 		"utf8",
 	);
 	await page.goto("/");

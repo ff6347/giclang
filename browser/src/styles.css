@@ -97,6 +97,43 @@ canvas {
 	position: relative;
 }
 
+.content-layout {
+	display: flex;
+	gap: var(--s4);
+}
+
+.content-article {
+	flex: 1;
+	min-width: 0;
+}
+
+.content-card-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s3);
+	list-style: none;
+	margin: var(--s0);
+	padding: var(--s0);
+}
+
+.content-card {
+	align-items: flex-start;
+	display: flex;
+	gap: var(--s3);
+}
+
+.content-card h3,
+.content-article h3,
+.content-markdown h3 {
+	padding-top: var(--s0);
+}
+
+.example-thumbnail {
+	border: 2px solid var(--color-text);
+	flex: none;
+	image-rendering: pixelated;
+}
+
 .application-chrome {
 	align-items: center;
 	background-color: var(--color-chrome);

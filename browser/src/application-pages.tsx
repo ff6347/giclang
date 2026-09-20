@@ -1,8 +1,14 @@
-// ABOUTME: Renders settings and placeholder content for application-level tabs.
+// ABOUTME: Renders settings and bundled content for application-level tabs.
 // ABOUTME: Keeps non-Code pages separate from the persistent IDE workspace.
 
+import { useState } from "react";
 import { Button } from "@base-ui/react/button";
 import { Checkbox } from "@base-ui/react/checkbox";
+import type {
+	DocumentationContent,
+	ExampleContent,
+	MarkdownContent,
+} from "./content-model.ts";
 
 export function SettingsView({
 	canvasFrame,
@@ -55,22 +61,33 @@ export function ExamplesView({
 	examples,
 	onOpen,
 }: {
-	examples: string[];
-	onOpen: (name: string) => void;
+	examples: ExampleContent[];
+	onOpen: (id: string) => void;
 }) {
 	return (
 		<section className="workspace-panel padded-panel">
 			<h2>Examples</h2>
-			<ul className="application-list">
-				{examples.map((name) => (
-					<li key={name}>
-						<Button
-							className="application-button"
-							type="button"
-							onClick={() => onOpen(name)}
-						>
-							{name}
-						</Button>
+			<ul className="content-card-list">
+				{examples.map((example) => (
+					<li className="content-card" key={example.id}>
+						<img
+							alt={`${example.title} thumbnail`}
+							className="example-thumbnail"
+							height="100"
+							src={example.thumbnailUrl}
+							width="100"
+						/>
+						<div>
+							<h3>{example.title}</h3>
+							<Markdown content={example} />
+							<Button
+								className="application-button"
+								type="button"
+								onClick={() => onOpen(example.id)}
+							>
+								{example.fileName}
+							</Button>
+						</div>
 					</li>
 				))}
 			</ul>
@@ -78,42 +95,55 @@ export function ExamplesView({
 	);
 }
 
-export function DocsView() {
+export function DocsView({ docs }: { docs: DocumentationContent[] }) {
+	const [selectedId, setSelectedId] = useState(docs[0]?.id);
+	const selected = docs.find(({ id }) => id === selectedId) ?? docs[0];
+
 	return (
 		<section className="workspace-panel padded-panel">
 			<h2>Docs</h2>
-			<p>Language reference and help for writing GIC programs.</p>
+			<div className="content-layout">
+				<nav aria-label="Documentation topics">
+					<ul className="application-list">
+						{docs.map((doc) => (
+							<li key={doc.id}>
+								<Button
+									aria-pressed={doc.id === selected?.id}
+									className="application-button"
+									type="button"
+									onClick={() => setSelectedId(doc.id)}
+								>
+									{doc.title}
+								</Button>
+							</li>
+						))}
+					</ul>
+				</nav>
+				{selected && (
+					<article aria-label={selected.title} className="content-article">
+						<h3>{selected.title}</h3>
+						<Markdown content={selected} />
+					</article>
+				)}
+			</div>
 		</section>
 	);
 }
 
-export function AboutView() {
+export function AboutView({ content }: { content: MarkdownContent }) {
 	return (
 		<section className="workspace-panel padded-panel">
-			<h2>About</h2>
-			<p>
-				Gestalten in Code is a small C-style language for creating
-				two-dimensional generative graphics and teaching programming
-				fundamentals.
-			</p>
-			<h3>Built with</h3>
-			<ul className="application-list">
-				<li>
-					<a href="https://react.dev/">React</a>
-				</li>
-				<li>
-					<a href="https://microsoft.github.io/monaco-editor/">Monaco Editor</a>
-				</li>
-				<li>
-					<a href="https://github.com/caplin/FlexLayout">FlexLayout</a>
-				</li>
-				<li>
-					<a href="https://base-ui.com/">Base UI</a>
-				</li>
-				<li>
-					<a href="https://pixelarticons.com/">Pixel Art Icons</a> (MIT License)
-				</li>
-			</ul>
+			<h2>{content.title}</h2>
+			<Markdown content={content} />
 		</section>
+	);
+}
+
+function Markdown({ content }: { content: MarkdownContent }) {
+	return (
+		<div
+			className="content-markdown"
+			dangerouslySetInnerHTML={{ __html: content.html }}
+		/>
 	);
 }

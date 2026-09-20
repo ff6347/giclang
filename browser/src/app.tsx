@@ -42,8 +42,9 @@ import {
 	PreviewPanel,
 	ProblemsPanel,
 } from "./workspace-panels.tsx";
+import { productContent } from "./content.ts";
 import { usePreview } from "./use-preview.ts";
-import { examples, useDocument } from "./use-document.ts";
+import { useDocument } from "./use-document.ts";
 import { downloadStandaloneHtml } from "./standalone-export.ts";
 
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
@@ -161,16 +162,14 @@ export function App() {
 			case EXAMPLES_ID:
 				return (
 					<ExamplesView
-						examples={Object.keys(examples)}
-						onOpen={(name) =>
-							documents.requestExample(name as keyof typeof examples)
-						}
+						examples={productContent.examples}
+						onOpen={documents.requestExample}
 					/>
 				);
 			case DOCS_ID:
-				return <DocsView />;
+				return <DocsView docs={productContent.docs} />;
 			case ABOUT_ID:
-				return <AboutView />;
+				return <AboutView content={productContent.about} />;
 			default:
 				throw new Error(`Unknown layout panel '${node.getComponent()}'.`);
 		}
