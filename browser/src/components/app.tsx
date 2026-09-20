@@ -41,7 +41,9 @@ import { EditorPanel } from "./editor-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
 import { useDocument } from "../hooks/use-document.ts";
+import { useAppUpdate } from "../hooks/use-app-update.ts";
 import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
+import { AppUpdate } from "./app-update.tsx";
 
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
@@ -65,6 +67,7 @@ export function App() {
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const openFile = useRef<HTMLInputElement>(null);
+	const appUpdate = useAppUpdate();
 	const preview = usePreview(canvasRef);
 	const selectGestalten = () => {
 		model.doAction(Actions.selectTab(CODE_ID));
@@ -209,6 +212,13 @@ export function App() {
 						</Menu.Portal>
 					</Menu.Root>
 				</Menubar>
+				{appUpdate.isWaiting && (
+					<AppUpdate
+						isPostponed={appUpdate.isPostponed}
+						onApply={appUpdate.applyUpdate}
+						onPostpone={appUpdate.postponeUpdate}
+					/>
+				)}
 				<input
 					accept=".gic"
 					hidden

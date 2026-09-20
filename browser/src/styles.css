@@ -148,6 +148,18 @@ canvas {
 	display: flex;
 }
 
+.application-update {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s2);
+	margin-left: auto;
+}
+
+.application-update p {
+	margin: var(--s0);
+}
+
 .application-menu-trigger {
 	background-color: var(--color-background);
 	border: 2px solid var(--color-text);
