@@ -24,6 +24,12 @@ function documentTab(page: import("@playwright/test").Page, name: string) {
 	return page.getByRole("tab", { name, exact: true });
 }
 
+function exampleCard(page: import("@playwright/test").Page, title: string) {
+	return page.getByRole("listitem").filter({
+		has: page.getByRole("heading", { name: title }),
+	});
+}
+
 test("offers PWA document commands through the File menu", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("menuitem", { name: "File", exact: true }).click();
@@ -73,7 +79,9 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Examples" }).click();
-	await page.getByRole("button", { name: "repeat.gic" }).click();
+	await exampleCard(page, "Repeated grid")
+		.getByRole("button", { name: "Load this example" })
+		.click();
 
 	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
@@ -145,7 +153,9 @@ test("shows a chosen example after discarding dirty work", async ({ page }) => {
 	await page.goto("/");
 	await setEditorSource(page, "point(10, 10);");
 	await page.getByRole("tab", { name: "Examples" }).click();
-	await page.getByRole("button", { name: "repeat.gic" }).click();
+	await exampleCard(page, "Repeated grid")
+		.getByRole("button", { name: "Load this example" })
+		.click();
 
 	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
 	await expect(discard).toBeVisible();

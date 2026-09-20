@@ -153,13 +153,13 @@ test("persists the Canvas frame setting across reloads", async ({ page }) => {
 
 test("shows bundled Examples, Docs, and About content", async ({ page }) => {
 	await page.goto("/");
-	const placeholders = [
-		{ name: "Examples", text: "repeat.gic" },
+	const content = [
+		{ name: "Examples", text: "Repeated grid" },
 		{ name: "Docs", text: "Language reference and help" },
 		{ name: "About", text: "Pixel Art Icons" },
 	];
 
-	for (const { name, text } of placeholders) {
+	for (const { name, text } of content) {
 		await page.getByRole("tab", { name }).click();
 		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
 	}
@@ -175,30 +175,31 @@ test("applies the shared spacing and heading scale to application pages", async 
 		.getByRole("tabpanel", { name: "About" })
 		.evaluate((panel) => {
 			const content = panel.querySelector(".padded-panel");
-			const h2 = panel.querySelector("h2");
-			const h3 = panel.querySelector("h3");
+			const headings = panel.querySelectorAll("h2");
+			const title = headings.item(0);
+			const sectionTitle = headings.item(1);
 			if (
 				!(content instanceof HTMLElement) ||
-				!(h2 instanceof HTMLElement) ||
-				!(h3 instanceof HTMLElement)
+				!(title instanceof HTMLElement) ||
+				!(sectionTitle instanceof HTMLElement)
 			) {
 				throw new Error("About typography was not rendered.");
 			}
 			return {
 				contentGap: getComputedStyle(content).gap,
 				contentPadding: getComputedStyle(content).padding,
-				h2FontSize: getComputedStyle(h2).fontSize,
-				h2FontWeight: getComputedStyle(h2).fontWeight,
-				h3FontSize: getComputedStyle(h3).fontSize,
+				sectionTitleFontSize: getComputedStyle(sectionTitle).fontSize,
+				titleFontSize: getComputedStyle(title).fontSize,
+				titleFontWeight: getComputedStyle(title).fontWeight,
 			};
 		});
 
 	expect(styles).toEqual({
 		contentGap: "16px",
 		contentPadding: "16px",
-		h2FontSize: "25.008px",
-		h2FontWeight: "500",
-		h3FontSize: "20px",
+		sectionTitleFontSize: "25.008px",
+		titleFontSize: "25.008px",
+		titleFontWeight: "500",
 	});
 });
 

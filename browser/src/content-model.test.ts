@@ -8,8 +8,10 @@ import { compileMarkdown } from "./markdown-content.ts";
 
 function page(title: string, order: number): MarkdownContent {
 	return {
+		categories: [],
 		html: `<p>${title}</p>`,
 		order,
+		tags: [],
 		title,
 	};
 }
@@ -32,9 +34,11 @@ Use **repeat** for a pattern.
 		);
 
 		assert.deepEqual(content, {
+			categories: [],
 			html: `<p>Use <strong>repeat</strong> for a pattern.</p>
 <details><summary>More</summary>Nested loops are supported.</details>`,
 			order: 20,
+			tags: [],
 			title: "Repeated patterns",
 		});
 	});
@@ -54,6 +58,45 @@ Missing an order.
 `,
 				),
 			/Content 'content\/docs\/repeat\.md' requires a numeric 'order'\./,
+		);
+	});
+
+	it("retains example categories and tags for future catalog filtering", () => {
+		const content = compileMarkdown(
+			"content/examples/repeat/description.md",
+			`<!-- ABOUTME: Describes one repeated grid example. -->
+<!-- ABOUTME: Supplies catalog metadata for discovery and filtering. -->
+---
+title: Repeated grid
+order: 20
+categories: [grid, repeat]
+tags: [rectangles, nested repetition]
+---
+
+Builds a regular rectangle grid.
+`,
+		);
+
+		assert.deepEqual(content.categories, ["grid", "repeat"]);
+		assert.deepEqual(content.tags, ["rectangles", "nested repetition"]);
+	});
+
+	it("requires example categories and tags", () => {
+		assert.throws(
+			() =>
+				compileMarkdown(
+					"content/examples/repeat/description.md",
+					`<!-- ABOUTME: Describes one repeated grid example. -->
+<!-- ABOUTME: Omits filtering metadata to exercise validation. -->
+---
+title: Repeated grid
+order: 20
+---
+
+Builds a regular rectangle grid.
+`,
+				),
+			/requires 'categories' to be a list of non-empty strings/,
 		);
 	});
 });

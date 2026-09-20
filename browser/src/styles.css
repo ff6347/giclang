@@ -97,19 +97,10 @@ canvas {
 	position: relative;
 }
 
-.content-layout {
-	display: flex;
-	gap: var(--s4);
-}
-
-.content-article {
-	flex: 1;
-	min-width: 0;
-}
-
 .content-card-list {
+	align-items: flex-start;
 	display: flex;
-	flex-direction: column;
+	flex-flow: row wrap;
 	gap: var(--s3);
 	list-style: none;
 	margin: var(--s0);
@@ -118,14 +109,24 @@ canvas {
 
 .content-card {
 	align-items: flex-start;
+	border: 2px solid var(--color-text);
+	box-sizing: border-box;
 	display: flex;
+	flex: 0 1 18rem;
+	flex-direction: column;
 	gap: var(--s3);
+	max-width: 100%;
+	padding: var(--s3);
+	width: 18rem;
 }
 
 .content-card h3,
-.content-article h3,
 .content-markdown h3 {
 	padding-top: var(--s0);
+}
+
+.content-document > section + section {
+	margin-top: var(--s5);
 }
 
 .example-thumbnail {

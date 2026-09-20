@@ -2,8 +2,10 @@
 // ABOUTME: Validates stable identifiers and complete example source bundles.
 
 export interface MarkdownContent {
+	readonly categories: string[];
 	readonly html: string;
 	readonly order: number;
+	readonly tags: string[];
 	readonly title: string;
 }
 

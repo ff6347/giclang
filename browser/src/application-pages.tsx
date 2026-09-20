@@ -1,7 +1,6 @@
 // ABOUTME: Renders settings and bundled content for application-level tabs.
 // ABOUTME: Keeps non-Code pages separate from the persistent IDE workspace.
 
-import { useState } from "react";
 import { Button } from "@base-ui/react/button";
 import { Checkbox } from "@base-ui/react/checkbox";
 import type {
@@ -85,7 +84,7 @@ export function ExamplesView({
 								type="button"
 								onClick={() => onOpen(example.id)}
 							>
-								{example.fileName}
+								Load this example
 							</Button>
 						</div>
 					</li>
@@ -96,37 +95,18 @@ export function ExamplesView({
 }
 
 export function DocsView({ docs }: { docs: DocumentationContent[] }) {
-	const [selectedId, setSelectedId] = useState(docs[0]?.id);
-	const selected = docs.find(({ id }) => id === selectedId) ?? docs[0];
-
 	return (
-		<section className="workspace-panel padded-panel">
-			<h2>Docs</h2>
-			<div className="content-layout">
-				<nav aria-label="Documentation topics">
-					<ul className="application-list">
-						{docs.map((doc) => (
-							<li key={doc.id}>
-								<Button
-									aria-pressed={doc.id === selected?.id}
-									className="application-button"
-									type="button"
-									onClick={() => setSelectedId(doc.id)}
-								>
-									{doc.title}
-								</Button>
-							</li>
-						))}
-					</ul>
-				</nav>
-				{selected && (
-					<article aria-label={selected.title} className="content-article">
-						<h3>{selected.title}</h3>
-						<Markdown content={selected} />
-					</article>
-				)}
-			</div>
-		</section>
+		<article
+			aria-label="Docs"
+			className="workspace-panel padded-panel content-document"
+		>
+			{docs.map((doc) => (
+				<section key={doc.id}>
+					<h2>{doc.title}</h2>
+					<Markdown content={doc} />
+				</section>
+			))}
+		</article>
 	);
 }
 

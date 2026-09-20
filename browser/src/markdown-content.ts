@@ -10,6 +10,30 @@ const markdown = new MarkdownIt({
 	linkify: true,
 });
 
+function metadataList(
+	metadata: Record<string, unknown>,
+	name: "categories" | "tags",
+	path: string,
+	required: boolean,
+): string[] {
+	const value = metadata[name];
+	if (
+		!Array.isArray(value) ||
+		value.some((entry) => typeof entry !== "string" || entry.trim() === "")
+	) {
+		if (value === undefined && !required) {
+			return [];
+		}
+		throw new Error(
+			`Content '${path}' requires '${name}' to be a list of non-empty strings.`,
+		);
+	}
+	if (required && value.length === 0) {
+		throw new Error(`Content '${path}' requires at least one '${name}' entry.`);
+	}
+	return value.map((entry: string) => entry.trim());
+}
+
 export function compileMarkdown(path: string, source: string): MarkdownContent {
 	const about = /^<!-- ABOUTME: .+ -->\r?\n<!-- ABOUTME: .+ -->\r?\n/.exec(
 		source,
@@ -35,10 +59,20 @@ export function compileMarkdown(path: string, source: string): MarkdownContent {
 	) {
 		throw new Error(`Content '${path}' requires a numeric 'order'.`);
 	}
+	const normalizedPath = path.replaceAll("\\", "/");
+	const isExampleDescription =
+		/(?:^|\/)content\/examples\/[^/]+\/description\.md$/.test(normalizedPath);
 
 	return {
+		categories: metadataList(
+			metadata,
+			"categories",
+			path,
+			isExampleDescription,
+		),
 		html: markdown.render(parsed.content).trimEnd(),
 		order: metadata.order,
+		tags: metadataList(metadata, "tags", path, isExampleDescription),
 		title: metadata.title.trim(),
 	};
 }
