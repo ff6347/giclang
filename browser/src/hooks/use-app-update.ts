@@ -6,12 +6,13 @@ import { registerSW } from "virtual:pwa-register";
 
 type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
-export function useAppUpdate() {
+export function useAppUpdate(enabled = true) {
 	const [isPostponed, setIsPostponed] = useState(false);
 	const [isWaiting, setIsWaiting] = useState(false);
 	const updateServiceWorker = useRef<UpdateServiceWorker>(async () => {});
 
 	useEffect(() => {
+		if (!enabled) return;
 		updateServiceWorker.current = registerSW({
 			immediate: true,
 			onNeedRefresh() {
@@ -22,7 +23,7 @@ export function useAppUpdate() {
 				console.error("Unable to prepare offline use.", error);
 			},
 		});
-	}, []);
+	}, [enabled]);
 
 	return {
 		applyUpdate() {

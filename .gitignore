@@ -151,3 +151,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Tauri files
+src-tauri/gen/
+src-tauri/target/

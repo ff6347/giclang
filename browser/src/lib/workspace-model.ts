@@ -8,6 +8,7 @@ import {
 	TabSetNode,
 	type IJsonModel,
 } from "flexlayout-react";
+import type { ApplicationSettings } from "./application-settings.ts";
 
 export const CODE_ID = "code";
 export const SETTINGS_ID = "settings";
@@ -159,8 +160,10 @@ export function createDefaultWorkspace(): Model {
 	return Model.fromJson(defaultLayout());
 }
 
-export function loadWorkspace(): Model {
-	const stored = localStorage.getItem(STORAGE_KEY);
+export function loadWorkspace(
+	settings: ApplicationSettings = localStorage,
+): Model {
+	const stored = settings.getItem(STORAGE_KEY);
 	if (stored === null) {
 		return createDefaultWorkspace();
 	}
@@ -183,19 +186,22 @@ export function loadWorkspace(): Model {
 		const model = Model.fromJson(layout);
 		const removedTutor = removeTutor(model);
 		validateWorkspace(model);
-		if (removedTutor) saveWorkspace(model);
+		if (removedTutor) saveWorkspace(model, settings);
 		return model;
 	} catch {
 		return createDefaultWorkspace();
 	}
 }
 
-export function saveWorkspace(model: Model): void {
+export function saveWorkspace(
+	model: Model,
+	settings: ApplicationSettings = localStorage,
+): void {
 	const stored: StoredWorkspace = {
 		layout: model.toJson(),
 		version: STORAGE_VERSION,
 	};
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+	settings.setItem(STORAGE_KEY, JSON.stringify(stored));
 }
 
 function requireTab(model: Model, tabId: string): TabNode {

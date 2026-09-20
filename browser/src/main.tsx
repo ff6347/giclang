@@ -3,6 +3,7 @@
 
 import { createRoot } from "react-dom/client";
 import { App } from "./components/app.tsx";
+import { createApplicationHost } from "./lib/application-host.ts";
 import "./styles.css";
 
 const root = document.querySelector("#app");
@@ -10,4 +11,7 @@ if (!(root instanceof HTMLElement)) {
 	throw new Error("#app not found");
 }
 
-createRoot(root).render(<App />);
+const host = await createApplicationHost();
+createRoot(root).render(
+	<App settings={host.settings} supportsAppUpdates={host.supportsAppUpdates} />,
+);

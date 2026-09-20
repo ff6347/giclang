@@ -52,6 +52,7 @@ This is one pnpm package, not a monorepo.
 - `browser/src/lib/` — browser adapters, models, Monaco integration, Canvas rendering, and export helpers.
 - `browser/src/worker.ts` — runs the shared core away from the UI thread.
 - `browser/src/tests/` — unit tests for browser-specific pure functions.
+- `src-tauri/` — Tauri shell, capabilities, native settings bridge, and desktop package configuration.
 - `content/` — host-neutral About, documentation, and immutable example bundles for the PWA and desktop application.
 - `e2e/` — Playwright Firefox tests of visible browser behavior.
 - `docs/decisions/` — architecture decision records.
@@ -90,7 +91,10 @@ Use the Node and pnpm versions declared in `mise.toml`.
 | `pnpm fmt:check` | Check formatting with oxfmt. |
 | `pnpm format` | Format supported files. |
 | `pnpm build:browser` | Build browser production assets with Vite. |
+| `pnpm build:desktop` | Build packaged desktop applications with Tauri. |
 | `pnpm dev:browser --host 127.0.0.1` | Start the browser development server. |
+| `pnpm dev:desktop` | Start the shared IDE in the Tauri development shell. |
+| `pnpm test:desktop` | Run native bridge and persistence tests. |
 | `pnpm test:e2e` | Run Playwright acceptance tests in Firefox. |
 
 ## Project Test Seams
@@ -104,6 +108,7 @@ Follow the global TDD rules using the narrowest project seam that proves the beh
 - CLI behavior: spawn the real entry point and assert stdout, stderr, and exit status with terminal color disabled.
 - Browser adapter behavior: use browser-local Node tests for pure conversion functions.
 - User-visible browser behavior: drive the real editor, worker, and Canvas with Playwright; do not add test-only DOM state.
+- Desktop bridge behavior: use Rust tests with temporary real files, then build and exercise the packaged application.
 - Canvas pixels: use exact values in fully covered areas and visible-difference checks on antialiased edges.
 - Tutor integration: use a deterministic provider for behavior tests and separate real-login smoke checks for supported providers.
 
@@ -131,6 +136,15 @@ For browser changes, also run:
 pnpm typecheck:browser
 pnpm build:browser
 pnpm test:e2e
+```
+
+For desktop changes, also run:
+
+```bash
+pnpm test:desktop
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+pnpm build:desktop
 ```
 
 ## Issue Target

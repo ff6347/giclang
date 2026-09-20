@@ -44,34 +44,47 @@ import { useDocument } from "../hooks/use-document.ts";
 import { useAppUpdate } from "../hooks/use-app-update.ts";
 import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
 import { AppUpdate } from "./app-update.tsx";
+import type { ApplicationSettings } from "../lib/application-settings.ts";
 
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
 
-function initialCanvasFrame(): boolean {
-	return localStorage.getItem(CANVAS_FRAME_STORAGE_KEY) !== "false";
+function initialCanvasFrame(settings: ApplicationSettings): boolean {
+	return settings.getItem(CANVAS_FRAME_STORAGE_KEY) !== "false";
 }
 
-function initialFormatOnSave(): boolean {
-	return localStorage.getItem(FORMAT_ON_SAVE_STORAGE_KEY) !== "false";
+function initialFormatOnSave(settings: ApplicationSettings): boolean {
+	return settings.getItem(FORMAT_ON_SAVE_STORAGE_KEY) !== "false";
 }
 
 function countLabel(name: string, count: number): string {
 	return count === 0 ? name : `${name} (${count})`;
 }
 
-export function App() {
-	const [canvasFrame, setCanvasFrame] = useState(initialCanvasFrame);
-	const [formatOnSave, setFormatOnSave] = useState(initialFormatOnSave);
-	const [model, setModel] = useState(loadWorkspace);
+interface AppProps {
+	readonly settings?: ApplicationSettings;
+	readonly supportsAppUpdates?: boolean;
+}
+
+export function App({
+	settings = localStorage,
+	supportsAppUpdates = true,
+}: AppProps) {
+	const [canvasFrame, setCanvasFrame] = useState(() =>
+		initialCanvasFrame(settings),
+	);
+	const [formatOnSave, setFormatOnSave] = useState(() =>
+		initialFormatOnSave(settings),
+	);
+	const [model, setModel] = useState(() => loadWorkspace(settings));
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const openFile = useRef<HTMLInputElement>(null);
-	const appUpdate = useAppUpdate();
+	const appUpdate = useAppUpdate(supportsAppUpdates);
 	const preview = usePreview(canvasRef);
 	const selectGestalten = () => {
 		model.doAction(Actions.selectTab(CODE_ID));
-		saveWorkspace(model);
+		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
 	const documents = useDocument(formatOnSave, selectGestalten);
@@ -86,24 +99,24 @@ export function App() {
 	}, [documents.documentState, model]);
 
 	const layoutChanged = (changedModel: Model) => {
-		saveWorkspace(changedModel);
+		saveWorkspace(changedModel, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
 
 	const resetLayout = () => {
 		const defaultModel = createDefaultWorkspace();
-		saveWorkspace(defaultModel);
+		saveWorkspace(defaultModel, settings);
 		setModel(defaultModel);
 	};
 
 	const updateCanvasFrame = (checked: boolean) => {
 		setCanvasFrame(checked);
-		localStorage.setItem(CANVAS_FRAME_STORAGE_KEY, String(checked));
+		settings.setItem(CANVAS_FRAME_STORAGE_KEY, String(checked));
 	};
 
 	const updateFormatOnSave = (checked: boolean) => {
 		setFormatOnSave(checked);
-		localStorage.setItem(FORMAT_ON_SAVE_STORAGE_KEY, String(checked));
+		settings.setItem(FORMAT_ON_SAVE_STORAGE_KEY, String(checked));
 	};
 
 	const updateSource = (nextSource: string) => {
