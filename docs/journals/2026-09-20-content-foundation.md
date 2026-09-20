@@ -18,3 +18,6 @@
 - [content] The first form cohort adds An Obvious Circle by Jeanette Knipp, Close the Triangle by Jakob von Kietzell, Criss Cross by Paulina Mrksic, and Geometrical Shape and Pyramid by Julia Hilt.
 - [technique] Example thumbnails are captured from the actual successful 100×100 GIC Canvas render after opening each bundle through the Examples panel.
 - [verification] All five sources passed `gic check` and headless command execution. Core and compact tests, both TypeScript projects, lint, formatting, the browser production build, all 76 Playwright tests, and a headless browser walkthrough passed.
+- [content] The follow-up form cohort adds Proximity and Similarity, both created by Fabian Morón Zirfas.
+- [decision] `form/2d/categories` is not a low-hanging adaptation because its rounded rectangles are central to the composition and GIC does not provide them; the unindexed source also records no original author metadata.
+- [verification] Proximity and Similarity passed `gic check`, headless command execution, visible Canvas rendering, core and compact tests, both TypeScript projects, lint, formatting, browser production build, and all 76 Playwright tests.
