@@ -33,3 +33,5 @@
 - [decision] Chance-dependent sketches use bounded seeded randomness instead of continuous drawing or Gaussian sampling. Similarity by Hue and Size makes the source title's hue grouping explicit with a fixed CSS palette while retaining the legacy grid and scale variation.
 - [verification] All nine bundles passed the source CLI check and headless execution, then rendered visibly through the Examples panel with enabled PNG export and captured 100×100 thumbnails.
 - [verification] Core and compact tests, both TypeScript projects, lint, formatting, browser production build, and all 76 Playwright tests passed for the final approved cohort.
+- [inventory] The exhaustive pinned-source audit classified 107 remaining executable sketch directories: 92 excluded from v0.9, 5 duplicates, and 10 compatible lower-priority candidates. The complete per-directory table is recorded on git-bug issue `4986a39`.
+- [decision] The ten deferred compatible adaptations move to follow-up issue `2b97835`; this lets the completed migration inventory close without conflating workshop-ready examples with lower-priority deliberate rewrites.
