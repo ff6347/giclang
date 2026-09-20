@@ -1,0 +1,11 @@
+// ABOUTME: Reveals an incomplete triangle across contrasting color fields.
+// ABOUTME: Demonstrates closure through background, rectangle, and triangle layering.
+// Inspired by Jakob von Kietzell's Close the Triangle:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/closethetriangle
+
+background("#39df91");
+noStroke();
+fill("#333333");
+rect(0, 0, 50, 100);
+fill("#39df91");
+triangle(30, 20, 20, 60, 76, 50);

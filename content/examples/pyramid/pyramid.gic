@@ -1,0 +1,12 @@
+// ABOUTME: Builds a pyramid from adjoining light and dark triangles.
+// ABOUTME: Demonstrates spatial depth through contrast and shared edges.
+// Inspired by Julia Hilt's Pyramid:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/pyramid
+
+background("#fafafa");
+stroke("#000000");
+strokeWidth(0.2);
+fill("#fafafa");
+triangle(20, 60, 50, 25, 50, 75);
+fill("#000000");
+triangle(50, 75, 50, 25, 80, 60);

@@ -1,0 +1,24 @@
+// ABOUTME: Suggests a circle through intersecting lines and negative space.
+// ABOUTME: Demonstrates closure, contrasting stroke widths, and layered drawing.
+// Inspired by Jeanette Knipp's An Obvious Circle:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/an-obvious-circle
+
+background("#ffffff");
+noStroke();
+fill("#3c3c3c");
+ellipse(40, 40, 70, 70);
+
+stroke("#ffffff");
+strokeWidth(6);
+line(0, 20, 80, 40);
+line(0, 40, 80, 34);
+line(0, 54, 80, 62);
+line(0, 12, 80, 10);
+
+strokeWidth(0.4);
+line(36, 80, 60, 0);
+line(39, 80, 54, 0);
+line(38, 80, 56, 0);
+line(35, 80, 42, 0);
+line(26, 80, 6, 0);
+line(12, 66, 32, 0);
