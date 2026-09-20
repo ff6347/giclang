@@ -1,0 +1,28 @@
+// ABOUTME: Accumulates seeded, translucent circles that decrease toward a shared center.
+// ABOUTME: Demonstrates finite repetition, layered color, and progressively bounded scale.
+// Adapted from “Colorful circles” by Malte Völkner:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/colorfulcircles
+
+randomSeed(460);
+background("#ffffff");
+noStroke();
+
+let radius = 50;
+let decrement = radius / 60;
+repeat(i, 0, 60) {
+	if (i % 4 == 0) {
+		fill("#2563eb80");
+	} else {
+		if (i % 4 == 1) {
+			fill("#7c3aed80");
+		} else {
+			if (i % 4 == 2) {
+				fill("#0891b280");
+			} else {
+				fill("#db277780");
+			}
+		}
+	}
+	circle(50, 50, random(0, radius));
+	radius = radius - decrement;
+}

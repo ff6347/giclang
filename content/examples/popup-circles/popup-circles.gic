@@ -1,0 +1,16 @@
+// ABOUTME: Places a regular grid of purple circles with seeded variation in diameter.
+// ABOUTME: Demonstrates how bounded chance can enliven a repeated geometric field.
+// Adapted from “Popup Circles” by Daniele Maselli:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/popup-circles
+
+randomSeed(450);
+background("#000000");
+fill("#8e3fb0");
+stroke("#000000");
+strokeWidth(0.6);
+
+repeat(y, 2, 100, 5) {
+	repeat(x, 2, 100, 5) {
+		circle(x, y, random(1, 4));
+	}
+}
