@@ -102,6 +102,45 @@ test("requires Save As for an editable bundled example", async ({ page }) => {
 	);
 });
 
+test("presents Save As with the shared Base UI control styling", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await chooseFileCommand(page, "Save As");
+
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await expect(dialog).toBeVisible();
+	const styles = await dialog.evaluate((element) => {
+		const form = element.querySelector("form");
+		const field = element.querySelector(".application-field");
+		const input = element.querySelector("input");
+		if (
+			!(form instanceof HTMLFormElement) ||
+			!(field instanceof HTMLElement) ||
+			!(input instanceof HTMLInputElement)
+		) {
+			throw new Error("Save As controls were not rendered.");
+		}
+		return {
+			fieldDisplay: getComputedStyle(field).display,
+			fieldGap: getComputedStyle(field).gap,
+			formDisplay: getComputedStyle(form).display,
+			formGap: getComputedStyle(form).gap,
+			inputBorder: getComputedStyle(input).border,
+			inputBoxShadow: getComputedStyle(input).boxShadow,
+		};
+	});
+
+	expect(styles).toEqual({
+		fieldDisplay: "flex",
+		fieldGap: "8px",
+		formDisplay: "flex",
+		formGap: "16px",
+		inputBorder: "2px solid rgb(0, 0, 0)",
+		inputBoxShadow: "rgb(0, 0, 0) 3px 3px 0px 0px",
+	});
+});
+
 test("shows a chosen example after discarding dirty work", async ({ page }) => {
 	await page.goto("/");
 	await setEditorSource(page, "point(10, 10);");

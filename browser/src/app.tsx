@@ -7,7 +7,7 @@ import { Menu } from "@base-ui/react/menu";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Button } from "@base-ui/react/button";
 import { Dialog } from "@base-ui/react/dialog";
-import { Input } from "@base-ui/react/input";
+import { Field } from "@base-ui/react/field";
 import {
 	Actions,
 	Layout,
@@ -231,6 +231,7 @@ export function App() {
 							<Dialog.Popup className="recovery-popup">
 								<Dialog.Title>Save sketch as</Dialog.Title>
 								<form
+									className="application-form"
 									onSubmit={(event) => {
 										event.preventDefault();
 										const name = new FormData(event.currentTarget).get(
@@ -239,24 +240,27 @@ export function App() {
 										if (typeof name === "string") documents.saveAs(name);
 									}}
 								>
-									<label>
-										File name
-										<Input
+									<Field.Root className="application-field">
+										<Field.Label>File name</Field.Label>
+										<Field.Control
+											className="application-input"
 											defaultValue="sketch.gic"
 											name="file-name"
 											required
 										/>
-									</label>
-									<Button className="application-button" type="submit">
-										Save copy
-									</Button>
-									<Button
-										className="application-button"
-										type="button"
-										onClick={documents.cancelSaveAs}
-									>
-										Cancel
-									</Button>
+									</Field.Root>
+									<div className="application-actions">
+										<Button className="application-button" type="submit">
+											Save copy
+										</Button>
+										<Button
+											className="application-button"
+											type="button"
+											onClick={documents.cancelSaveAs}
+										>
+											Cancel
+										</Button>
+									</div>
 								</form>
 							</Dialog.Popup>
 						</Dialog.Viewport>

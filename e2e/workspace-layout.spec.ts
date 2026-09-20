@@ -1,5 +1,5 @@
 // ABOUTME: Verifies the persistent, keyboard-operable browser IDE workspace.
-// ABOUTME: Covers panel visibility, status tabs, error reopening, and reset behavior.
+// ABOUTME: Covers panel visibility, vertical status panels, persistence, and reset behavior.
 
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "./editor.ts";
@@ -54,7 +54,7 @@ test("uses Monaco's font stack throughout the application", async ({
 	expect(fonts.editor).toContain("IBM Plex Mono");
 });
 
-test("places Problems and Output beneath Preview in the middle column", async ({
+test("stacks Preview, Output, and Problems beside the editor", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -68,16 +68,30 @@ test("places Problems and Output beneath Preview in the middle column", async ({
 	const problemsBox = await page
 		.getByRole("region", { name: "Problems" })
 		.boundingBox();
+	const outputBox = await page
+		.getByRole("region", { name: "Output" })
+		.boundingBox();
 
 	expect(editorBox).not.toBeNull();
 	expect(previewBox).not.toBeNull();
 	expect(problemsBox).not.toBeNull();
-	expect(problemsBox!.y).toBeGreaterThanOrEqual(
+	expect(outputBox).not.toBeNull();
+	expect(outputBox!.y).toBeGreaterThanOrEqual(
 		previewBox!.y + previewBox!.height,
 	);
-	expect(problemsBox!.x).toBeCloseTo(previewBox!.x, 0);
-	expect(problemsBox!.width).toBeCloseTo(previewBox!.width, 0);
+	expect(problemsBox!.y).toBeGreaterThanOrEqual(
+		outputBox!.y + outputBox!.height,
+	);
+	for (const box of [outputBox!, problemsBox!]) {
+		expect(box.x).toBeCloseTo(previewBox!.x, 0);
+		expect(box.width).toBeCloseTo(previewBox!.width, 0);
+	}
 	expect(editorBox!.x).toBeLessThan(previewBox!.x);
+	expect(editorBox!.y).toBeCloseTo(previewBox!.y, 0);
+	expect(editorBox!.y + editorBox!.height).toBeCloseTo(
+		problemsBox!.y + problemsBox!.height,
+		0,
+	);
 });
 
 test("places application preferences in Settings", async ({ page }) => {
@@ -111,6 +125,43 @@ test("shows examples and explicit Docs and About placeholders", async ({
 		await page.getByRole("tab", { name }).click();
 		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
 	}
+});
+
+test("applies the shared spacing and heading scale to application pages", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "About" }).click();
+
+	const styles = await page
+		.getByRole("tabpanel", { name: "About" })
+		.evaluate((panel) => {
+			const content = panel.querySelector(".padded-panel");
+			const h2 = panel.querySelector("h2");
+			const h3 = panel.querySelector("h3");
+			if (
+				!(content instanceof HTMLElement) ||
+				!(h2 instanceof HTMLElement) ||
+				!(h3 instanceof HTMLElement)
+			) {
+				throw new Error("About typography was not rendered.");
+			}
+			return {
+				contentGap: getComputedStyle(content).gap,
+				contentPadding: getComputedStyle(content).padding,
+				h2FontSize: getComputedStyle(h2).fontSize,
+				h2FontWeight: getComputedStyle(h2).fontWeight,
+				h3FontSize: getComputedStyle(h3).fontSize,
+			};
+		});
+
+	expect(styles).toEqual({
+		contentGap: "16px",
+		contentPadding: "16px",
+		h2FontSize: "25.008px",
+		h2FontWeight: "500",
+		h3FontSize: "20px",
+	});
 });
 
 test("recovers from invalid persisted layout state", async ({ page }) => {
@@ -192,9 +243,7 @@ test("removes Agent from a persisted workspace", async ({ page }) => {
 	);
 });
 
-test("persists keyboard resizing and the selected status tab", async ({
-	page,
-}) => {
+test("persists keyboard resizing", async ({ page }) => {
 	await page.goto("/");
 
 	const editor = page.getByRole("region", { name: "Editor" });
@@ -209,14 +258,8 @@ test("persists keyboard resizing and the selected status tab", async ({
 	const resizedWidth = (await editor.boundingBox())?.width;
 	expect(resizedWidth).toBeGreaterThan(initialWidth!);
 
-	await page.getByRole("tab", { name: "Output" }).click();
-
 	await page.reload();
 
-	await expect(page.getByRole("tab", { name: "Output" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
 	expect((await editor.boundingBox())?.width).toBeCloseTo(resizedWidth!, 0);
 });
 
@@ -308,12 +351,11 @@ if (size > 20) {
 	);
 });
 
-test("Reset Layout restores workspace geometry and the default status tab", async ({
+test("Reset Layout restores workspace geometry and visible status panels", async ({
 	page,
 }) => {
 	await page.goto("/");
 	await setEditorSource(page, "circle(50, 50, 30);");
-	await page.getByRole("tab", { name: "Output" }).click();
 	const splitter = page
 		.locator("[role='separator'][aria-orientation='vertical']")
 		.first();
@@ -330,9 +372,7 @@ test("Reset Layout restores workspace geometry and the default status tab", asyn
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
-	await expect(page.getByRole("tab", { name: "Problems" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
+	await expect(page.getByRole("region", { name: "Output" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Problems" })).toBeVisible();
 	await expect(page.locator(".view-line")).toHaveText("circle(50, 50, 30);");
 });

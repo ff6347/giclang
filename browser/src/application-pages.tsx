@@ -47,7 +47,7 @@ export function ExamplesView({
 	return (
 		<section className="workspace-panel padded-panel">
 			<h2>Examples</h2>
-			<ul>
+			<ul className="application-list">
 				{examples.map((name) => (
 					<li key={name}>
 						<Button
@@ -83,7 +83,7 @@ export function AboutView() {
 				fundamentals.
 			</p>
 			<h3>Built with</h3>
-			<ul>
+			<ul className="application-list">
 				<li>
 					<a href="https://react.dev/">React</a>
 				</li>

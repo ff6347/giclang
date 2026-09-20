@@ -1,15 +1,72 @@
 /* ABOUTME: Sizes the nested FlexLayout application and Code workspace panels. */
 /* ABOUTME: Keeps editor, preview, status, and tutor content usable across window sizes. */
 
+:root {
+	--s0: 0px;
+	--s1: 4px;
+	--s2: 8px;
+	--s3: 16px;
+	--s4: 24px;
+	--s5: 32px;
+	--s6: 64px;
+	--s7: 72px;
+	--s8: 96px;
+	--s9: 128px;
+	--s10: 256px;
+	--color-background: #ffffff;
+	--color-chrome: #f0f0f0;
+	--color-control: #cccccc;
+	--color-text: #000000;
+}
+
 html,
 body,
 #app {
 	height: 100%;
-	margin: 0;
+	margin: var(--s0);
 }
 
 body {
+	background-color: var(--color-background);
+	color: var(--color-text);
 	font-family: "IBM Plex Mono", monospace;
+}
+
+h1 {
+	font-size: 1.953rem;
+}
+
+h2 {
+	font-size: 1.563rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+}
+
+h4 {
+	font-size: 1rem;
+}
+
+h5 {
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+h6 {
+	font-size: 0.64rem;
+	font-weight: 600;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-weight: 500;
+	margin: var(--s0);
+	padding: 1.33em var(--s0) 0.33em;
 }
 
 button,
@@ -32,11 +89,11 @@ input {
 
 .application-chrome {
 	align-items: center;
-	background-color: #f0f0f0;
+	background-color: var(--color-chrome);
 	display: flex;
-	gap: 1rem;
-	min-height: 2rem;
-	padding: 0 0.5rem;
+	gap: var(--s3);
+	min-height: var(--s5);
+	padding: var(--s0) var(--s2);
 }
 
 .application-menubar {
@@ -44,16 +101,16 @@ input {
 }
 
 .application-menu-trigger {
-	background-color: #ffffff;
-	border: 2px solid black;
-	box-shadow: 3px 3px 0 black;
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
 	font: inherit;
-	padding: 0.25rem 0.5rem;
+	padding: var(--s1) var(--s2);
 }
 
 .application-menu-trigger[data-pressed],
 .application-menu-trigger:hover {
-	background-color: #cccccc;
+	background-color: var(--color-control);
 }
 
 .application-menu-trigger[data-pressed] {
@@ -62,10 +119,10 @@ input {
 }
 
 .application-menu-popup {
-	background-color: #ffffff;
-	border: 2px solid black;
-	box-shadow: 4px 4px 0 black;
-	padding: 0.25rem;
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: var(--s1) var(--s1) var(--s0) var(--color-text);
+	padding: var(--s1);
 	z-index: 1000;
 }
 
@@ -74,16 +131,16 @@ input {
 }
 
 .application-menu-item {
-	padding: 0.25rem 1rem;
+	padding: var(--s1) var(--s3);
 }
 
 .application-menu-item[data-highlighted] {
-	background-color: black;
-	color: #ffffff;
+	background-color: var(--color-text);
+	color: var(--color-background);
 }
 
 .recovery-backdrop {
-	background-color: black;
+	background-color: var(--color-text);
 	inset: 0;
 	opacity: 0.2;
 	position: fixed;
@@ -100,38 +157,67 @@ input {
 }
 
 .recovery-popup {
-	background-color: #ffffff;
-	border: 4px solid black;
+	background-color: var(--color-background);
+	border: 4px solid var(--color-text);
 	display: flex;
 	flex-direction: column;
-	gap: 1rem;
-	max-width: calc(100vw - 3rem);
-	padding: 2rem;
+	gap: var(--s3);
+	max-width: calc(100vw - var(--s4) * 2);
+	padding: var(--s5);
 	width: 32rem;
 }
 
 .recovery-popup h2,
 .recovery-popup p {
-	margin: 0;
+	margin: var(--s0);
 }
 
+.application-actions,
 .recovery-actions {
 	display: flex;
-	gap: 0.25rem;
+	flex-wrap: wrap;
+	gap: var(--s2);
+}
+
+.application-form,
+.application-field {
+	display: flex;
+	flex-direction: column;
+}
+
+.application-form {
+	gap: var(--s3);
+}
+
+.application-field {
+	gap: var(--s2);
+}
+
+.application-input {
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	color: var(--color-text);
+	padding: var(--s2);
+}
+
+.application-input:focus-visible {
+	outline: 2px solid var(--color-text);
+	outline-offset: 2px;
 }
 
 .application-button,
 .recovery-button {
-	background-color: #ffffff;
-	border: 2px solid black;
-	box-shadow: 3px 3px 0 black;
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
 	font: inherit;
-	padding: 0.25rem 0.5rem;
+	padding: var(--s1) var(--s2);
 }
 
 .application-button:hover,
 .recovery-button:hover {
-	background-color: #cccccc;
+	background-color: var(--color-control);
 }
 
 .application-button:active,
@@ -141,35 +227,35 @@ input {
 }
 
 .flexlayout__tab_button--selected {
-	background-color: #ffffff;
-	border: 2px solid black;
-	border-bottom-color: #ffffff;
-	box-shadow: 3px 3px 0 black;
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	border-bottom-color: var(--color-background);
+	box-shadow: 3px 3px 0 var(--color-text);
 	margin-bottom: -2px;
 	position: relative;
 	z-index: 1;
 }
 
 .flexlayout__tab_button--unselected {
-	background-color: #cccccc;
+	background-color: var(--color-control);
 }
 
 .flexlayout__tabset_tabbar_inner {
-	background-color: #f0f0f0;
+	background-color: var(--color-chrome);
 	/*background-image: url("/images/striped-tile.svg");*/
 }
 
 .flexlayout__tabset {
-	border: 2px solid black;
+	border: 2px solid var(--color-text);
 	box-sizing: border-box;
 }
 
 .flexlayout__tab {
-	border-top: 2px solid black;
+	border-top: 2px solid var(--color-text);
 }
 
 .flexlayout__splitter {
-	background-color: black;
+	background-color: var(--color-text);
 }
 
 .flexlayout__splitter::after {
@@ -179,14 +265,14 @@ input {
 }
 
 .flexlayout__splitter_horz::after {
-	border-left: 2px dashed black;
+	border-left: 2px dashed var(--color-text);
 	bottom: 0;
 	left: 50%;
 	top: 0;
 }
 
 .flexlayout__splitter_vert::after {
-	border-top: 2px dashed black;
+	border-top: 2px dashed var(--color-text);
 	left: 0;
 	right: 0;
 	top: 50%;
@@ -212,31 +298,59 @@ input {
 
 .preview-download,
 .preview-html-download {
-	bottom: 0.5em;
-	height: 1em;
-	padding: 0;
-	position: absolute;
-	right: 0.5em;
-	width: 1em;
-	background: transparent;
-	display: flex;
 	align-items: center;
-	justify-content: center;
+	background: transparent;
 	border: none;
+	bottom: var(--s2);
+	position: absolute;
+	display: flex;
+	height: var(--s3);
+	justify-content: center;
+	padding: var(--s0);
+	right: var(--s2);
+	width: var(--s3);
 }
 
 .preview-html-download {
-	right: 2em;
+	right: var(--s5);
 }
 
 .padded-panel {
-	padding: 1rem;
+	align-items: flex-start;
+	display: flex;
+	flex-direction: column;
+	gap: var(--s3);
+	padding: var(--s3);
+}
+
+.padded-panel > p,
+.application-list {
+	margin: var(--s0);
+}
+
+.application-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s2);
+	padding-inline-start: var(--s4);
+}
+
+#problems,
+#output {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s2);
+}
+
+#problems p,
+#output p {
+	margin: var(--s0);
 }
 
 .settings-option {
 	align-items: center;
 	display: flex;
-	gap: 0.5rem;
+	gap: var(--s2);
 }
 
 .settings-checkbox {

@@ -23,10 +23,11 @@ const APPLICATION_TABSET_ID = "application-tabs";
 const CODE_SUBLAYOUT_ID = "code-workspace";
 const EDITOR_TABSET_ID = "editor-tabset";
 const PREVIEW_TABSET_ID = "preview-tabset";
-const STATUS_TABSET_ID = "status-tabset";
+const PROBLEMS_TABSET_ID = "problems-tabset";
+const OUTPUT_TABSET_ID = "output-tabset";
 const TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -49,7 +50,7 @@ function defaultLayout(): IJsonModel {
 						{
 							type: "tabset",
 							id: EDITOR_TABSET_ID,
-							weight: 35,
+							weight: 52,
 							children: [
 								{
 									type: "tab",
@@ -61,12 +62,12 @@ function defaultLayout(): IJsonModel {
 						},
 						{
 							type: "row",
-							weight: 30,
+							weight: 48,
 							children: [
 								{
 									type: "tabset",
 									id: PREVIEW_TABSET_ID,
-									weight: 55,
+									weight: 33,
 									children: [
 										{
 											type: "tab",
@@ -78,21 +79,27 @@ function defaultLayout(): IJsonModel {
 								},
 								{
 									type: "tabset",
-									id: STATUS_TABSET_ID,
-									selected: 0,
-									weight: 45,
+									id: OUTPUT_TABSET_ID,
+									weight: 34,
+									children: [
+										{
+											type: "tab",
+											id: OUTPUT_ID,
+											name: "Output",
+											component: OUTPUT_ID,
+										},
+									],
+								},
+								{
+									type: "tabset",
+									id: PROBLEMS_TABSET_ID,
+									weight: 33,
 									children: [
 										{
 											type: "tab",
 											id: PROBLEMS_ID,
 											name: "Problems",
 											component: PROBLEMS_ID,
-										},
-										{
-											type: "tab",
-											id: OUTPUT_ID,
-											name: "Output",
-											component: OUTPUT_ID,
 										},
 									],
 								},
@@ -232,6 +239,6 @@ function validateWorkspace(model: Model): void {
 	}
 	validatePanel(model, EDITOR_ID, EDITOR_TABSET_ID);
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
-	validatePanel(model, PROBLEMS_ID, STATUS_TABSET_ID);
-	validatePanel(model, OUTPUT_ID, STATUS_TABSET_ID);
+	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
+	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);
 }
