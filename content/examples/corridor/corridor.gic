@@ -1,0 +1,14 @@
+// ABOUTME: Builds a corridor illusion from two fans of converging lines.
+// ABOUTME: Demonstrates spatial depth through mirrored vanishing points on a grid.
+// Inspired by Julia Hilt's corridor:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/corridor
+
+background("#fafafa");
+stroke("#262626");
+strokeWidth(0.2);
+
+line(50, 40, 50, 60);
+repeat(x, 0, 101, 5) {
+	line(x, 0, 50, 40);
+	line(x, 100, 50, 60);
+}
