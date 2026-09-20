@@ -1,7 +1,7 @@
 // ABOUTME: Converts platform-neutral colors into Canvas-compatible style strings.
 // ABOUTME: Supports tagged OKLCH and CSS colors in the browser renderer.
 
-import type { Color } from "../../src/commands.ts";
+import type { Color } from "../../../src/commands.ts";
 
 export function colorToCanvasStyle(color: Color): string {
 	if (color.kind === "oklch") {

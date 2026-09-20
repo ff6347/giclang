@@ -2,9 +2,9 @@
 // ABOUTME: Keeps React panels independent from portable file and storage operations.
 
 import { useRef, useState } from "react";
-import { applySaveFormatting } from "../../src/language-service.ts";
-import { BrowserDocumentAdapter } from "./browser-document-adapter.ts";
-import { productContent } from "./content.ts";
+import { applySaveFormatting } from "../../../src/language-service.ts";
+import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
+import { productContent } from "../lib/content.ts";
 import {
 	createExampleDocument,
 	createRecoveredDocument,
@@ -12,7 +12,7 @@ import {
 	openDocument,
 	updateDocumentSource,
 	type DocumentState,
-} from "./document-model.ts";
+} from "../lib/document-model.ts";
 
 function normalizeFileName(name: string): string {
 	const trimmedName = name.trim();

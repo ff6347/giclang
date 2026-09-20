@@ -22,6 +22,8 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(docs.getByRole("button")).toHaveCount(0);
 	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
 		"Language reference",
+		"Conditions",
+		"Drawing",
 		"Repeat",
 	]);
 	await expect(

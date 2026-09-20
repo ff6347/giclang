@@ -8,10 +8,10 @@ import {
 	useState,
 	type RefObject,
 } from "react";
-import Worker from "./worker.ts?worker";
-import type { RunResult } from "../../src/core.ts";
-import { setEditorDiagnostics, type GicEditor } from "./gic-editor.ts";
-import { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
+import Worker from "../worker.ts?worker";
+import type { RunResult } from "../../../src/core.ts";
+import { setEditorDiagnostics, type GicEditor } from "../lib/gic-editor.ts";
+import { clearCanvas, renderToCanvas } from "../lib/render-to-canvas.ts";
 
 const TIMEOUT_IN_MS = 500;
 

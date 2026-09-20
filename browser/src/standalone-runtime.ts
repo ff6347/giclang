@@ -1,7 +1,7 @@
 // ABOUTME: Renders standalone GIC execution results inside an exported HTML document.
 // ABOUTME: Preserves preview debounce, cancellation, diagnostics, and output behavior.
 
-import { renderToCanvas, clearCanvas } from "./render-to-canvas.ts";
+import { renderToCanvas, clearCanvas } from "./lib/render-to-canvas.ts";
 
 export function startStandalonePreview(source: string, workerSource: string) {
 	const editor = document.querySelector("textarea");

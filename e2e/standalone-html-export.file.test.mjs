@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "@playwright/test";
-import { standaloneHtml } from "../browser/src/standalone-export.ts";
+import { standaloneHtml } from "../browser/src/lib/standalone-export.ts";
 
 const outputDirectory = resolve("test-results/standalone-html-export");
 const artifactPath = resolve(outputDirectory, "sketch.html");

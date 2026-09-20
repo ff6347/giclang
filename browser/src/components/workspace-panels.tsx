@@ -4,7 +4,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { Button } from "@base-ui/react/button";
 import { Code, Download } from "pixelarticons/react";
-import { createGicEditor, type GicEditor } from "./gic-editor.ts";
+import { createGicEditor, type GicEditor } from "../lib/gic-editor.ts";
 
 interface EditorPanelProps {
 	onEditorReady: (editor: GicEditor | null) => void;

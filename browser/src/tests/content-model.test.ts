@@ -3,8 +3,11 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createProductContent, type MarkdownContent } from "./content-model.ts";
-import { compileMarkdown } from "./markdown-content.ts";
+import {
+	createProductContent,
+	type MarkdownContent,
+} from "../lib/content-model.ts";
+import { compileMarkdown } from "../lib/markdown-content.ts";
 
 function page(title: string, order: number): MarkdownContent {
 	return {

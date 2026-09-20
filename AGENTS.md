@@ -46,10 +46,12 @@ This is one pnpm package, not a monorepo.
   - `main.ts` — Node CLI entry point.
 - `src/tests/` — core, parser, analyzer, interpreter, formatter, and CLI tests.
 - `browser/` — Vite application rooted at `browser/index.html`.
-- `browser/src/content.ts`, `content-model.ts`, `markdown-content.ts` — product-content discovery, validation, and trusted Markdown compilation.
+- `browser/src/components/` — React application and workspace presentation.
+- `browser/src/hooks/` — React document and preview orchestration.
+- `browser/src/lib/content.ts`, `content-model.ts`, `markdown-content.ts` — product-content discovery, validation, and trusted Markdown compilation.
+- `browser/src/lib/` — browser adapters, models, Monaco integration, Canvas rendering, and export helpers.
 - `browser/src/worker.ts` — runs the shared core away from the UI thread.
-- `browser/src/render-to-canvas.ts` — renders drawing commands to Canvas.
-- `browser/src/*.test.ts` — unit tests for browser-specific pure functions.
+- `browser/src/tests/` — unit tests for browser-specific pure functions.
 - `content/` — host-neutral About, documentation, and immutable example bundles for the PWA and desktop application.
 - `e2e/` — Playwright Firefox tests of visible browser behavior.
 - `docs/decisions/` — architecture decision records.
@@ -109,7 +111,7 @@ Focused test examples:
 
 ```bash
 node --test src/tests/interpreter.functions.test.ts
-node --test browser/src/color-conversion.test.ts
+node --test browser/src/tests/color-conversion.test.ts
 pnpm exec playwright test e2e/static-preview.spec.ts
 ```
 

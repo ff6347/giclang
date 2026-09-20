@@ -2,7 +2,7 @@
 // ABOUTME: Keeps browser startup separate from workspace and preview behavior.
 
 import { createRoot } from "react-dom/client";
-import { App } from "./app.tsx";
+import { App } from "./components/app.tsx";
 import "./styles.css";
 
 const root = document.querySelector("#app");

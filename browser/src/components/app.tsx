@@ -29,7 +29,7 @@ import {
 	PROBLEMS_ID,
 	saveWorkspace,
 	SETTINGS_ID,
-} from "./workspace-model.ts";
+} from "../lib/workspace-model.ts";
 import {
 	AboutView,
 	DocsView,
@@ -42,10 +42,10 @@ import {
 	PreviewPanel,
 	ProblemsPanel,
 } from "./workspace-panels.tsx";
-import { productContent } from "./content.ts";
-import { usePreview } from "./use-preview.ts";
-import { useDocument } from "./use-document.ts";
-import { downloadStandaloneHtml } from "./standalone-export.ts";
+import { productContent } from "../lib/content.ts";
+import { usePreview } from "../hooks/use-preview.ts";
+import { useDocument } from "../hooks/use-document.ts";
+import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
 
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";

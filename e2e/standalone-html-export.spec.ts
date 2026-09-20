@@ -3,7 +3,7 @@
 
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { standaloneHtml } from "../browser/src/standalone-export.ts";
+import { standaloneHtml } from "../browser/src/lib/standalone-export.ts";
 import { setEditorSource } from "./editor.ts";
 
 test("downloads the exact current standalone HTML artifact", async ({

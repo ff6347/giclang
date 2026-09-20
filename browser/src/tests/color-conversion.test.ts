@@ -4,7 +4,7 @@
 
 import assert from "node:assert";
 import test, { describe } from "node:test";
-import { colorToCanvasStyle } from "./color-conversion.ts";
+import { colorToCanvasStyle } from "../lib/color-conversion.ts";
 
 describe("Canvas color conversion", () => {
 	test("should convert OKLCH alpha to a percentage", () => {

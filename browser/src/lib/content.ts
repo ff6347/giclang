@@ -4,25 +4,28 @@
 import { createProductContent, type MarkdownContent } from "./content-model.ts";
 
 const about = import.meta.glob<MarkdownContent>(
-	"../../content/about/index.md",
+	"../../../content/about/index.md",
 	{
 		eager: true,
 		import: "default",
 	},
 );
-const docs = import.meta.glob<MarkdownContent>("../../content/docs/**/*.md", {
-	eager: true,
-	import: "default",
-});
+const docs = import.meta.glob<MarkdownContent>(
+	"../../../content/docs/**/*.md",
+	{
+		eager: true,
+		import: "default",
+	},
+);
 const exampleDescriptions = import.meta.glob<MarkdownContent>(
-	"../../content/examples/*/description.md",
+	"../../../content/examples/*/description.md",
 	{
 		eager: true,
 		import: "default",
 	},
 );
 const exampleSources = import.meta.glob<string>(
-	"../../content/examples/*/*.gic",
+	"../../../content/examples/*/*.gic",
 	{
 		eager: true,
 		import: "default",
@@ -30,7 +33,7 @@ const exampleSources = import.meta.glob<string>(
 	},
 );
 const exampleThumbnails = import.meta.glob<string>(
-	"../../content/examples/*/thumbnail.png",
+	"../../../content/examples/*/thumbnail.png",
 	{
 		eager: true,
 		import: "default",

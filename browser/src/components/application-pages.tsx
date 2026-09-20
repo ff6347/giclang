@@ -7,7 +7,7 @@ import type {
 	DocumentationContent,
 	ExampleContent,
 	MarkdownContent,
-} from "./content-model.ts";
+} from "../lib/content-model.ts";
 
 export function SettingsView({
 	canvasFrame,

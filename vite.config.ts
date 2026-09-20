@@ -5,8 +5,8 @@ import { readdir } from "node:fs/promises";
 import { isAbsolute, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
-import { validateExampleFiles } from "./browser/src/content-model.ts";
-import { compileMarkdown } from "./browser/src/markdown-content.ts";
+import { validateExampleFiles } from "./browser/src/lib/content-model.ts";
+import { compileMarkdown } from "./browser/src/lib/markdown-content.ts";
 
 const CONTENT_ROOT = fileURLToPath(new URL("./content/", import.meta.url));
 

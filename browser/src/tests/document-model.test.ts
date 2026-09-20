@@ -12,7 +12,7 @@ import {
 	readRecovery,
 	updateDocumentSource,
 	writeRecovery,
-} from "./document-model.ts";
+} from "../lib/document-model.ts";
 
 class MemoryStorage implements Storage {
 	#values = new Map<string, string>();

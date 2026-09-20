@@ -4,15 +4,15 @@
 import * as monaco from "monaco-editor/editor/editor.api.js";
 import "monaco-editor/features/register.all.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
-import type { Diagnostic } from "../../src/core.ts";
-import { builtIns } from "../../src/built-ins.ts";
+import type { Diagnostic } from "../../../src/core.ts";
+import { builtIns } from "../../../src/built-ins.ts";
 import {
 	completeSource,
 	formatSourceDocument,
 	hoverSource,
 	signatureHelpSource,
-} from "../../src/language-service.ts";
-import { keywords } from "../../src/keywords.ts";
+} from "../../../src/language-service.ts";
+import { keywords } from "../../../src/keywords.ts";
 
 globalThis.MonacoEnvironment = {
 	getWorker() {
