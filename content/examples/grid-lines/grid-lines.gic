@@ -1,0 +1,13 @@
+// ABOUTME: Draws overlapping concentric circles from opposite Canvas edges.
+// ABOUTME: Demonstrates how repeated outlines create a curved grid and central interference.
+// Inspired by Julia Hilt's lines: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/lines
+
+background("#ffffff");
+noFill();
+stroke("#000000");
+strokeWidth(0.2);
+
+repeat(radius, 2, 100, 2) {
+	circle(0, 50, radius * 2);
+	circle(100, 50, radius * 2);
+}

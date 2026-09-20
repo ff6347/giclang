@@ -1,0 +1,31 @@
+// ABOUTME: Draws a dense geometric grid with small dark circles at selected intersections.
+// ABOUTME: Demonstrates how repeated lines can camouflage a regular dot pattern.
+// Inspired by Fabian Morón Zirfas's Vision: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/processing/vision
+
+background("#ffffff");
+stroke("#808080");
+strokeWidth(1.6);
+
+let counter = 0;
+repeat(i, 5, 100, 10) {
+	line(i, 0, i, 100);
+	line(0, i, 100, i);
+
+	if (counter % 2 == 0) {
+		line(i - 5, 0, i + 95, 100);
+		line(0, i + 15, 100, i + 115);
+		line(i + 5, 0, 0, i + 5);
+		line(100, i + 5, i + 5, 100);
+	}
+
+	counter = counter + 1;
+}
+
+fill("#0a0a0a");
+stroke("#ffffff");
+strokeWidth(0.2);
+repeat(x, 5, 100, 40) {
+	repeat(y, 5, 100, 20) {
+		circle(x, y, 2.4);
+	}
+}

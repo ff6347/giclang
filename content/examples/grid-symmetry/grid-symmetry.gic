@@ -1,0 +1,13 @@
+// ABOUTME: Draws a square whose upper edge fans into evenly spaced diagonals.
+// ABOUTME: Demonstrates how repeated converging lines create depth and apparent motion.
+// Inspired by Edmundo Mejía Galindo's Law of Symetry and chance: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/grid-symetry
+
+background("#ffffff");
+noFill();
+stroke("#010101");
+strokeWidth(0.2);
+rect(40, 40, 20, 20);
+
+repeat(y, 40, 60, 1) {
+	line(60, 40, 40, y);
+}

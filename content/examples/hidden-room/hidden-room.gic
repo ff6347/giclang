@@ -1,0 +1,15 @@
+// ABOUTME: Draws a field of horizontal lines interrupted by a centered white room.
+// ABOUTME: Demonstrates how regular repetition and negative space define a hidden shape.
+// Inspired by Edmundo Mejía Galindo's Hidden Room: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/hidden-room
+
+background("#fafafa");
+stroke("#4d4d4d");
+strokeWidth(0.4);
+
+repeat(y, 0, 101, 1) {
+	line(0, y, 100, y);
+}
+
+noStroke();
+fill("#ffffff");
+rect(33.33, 33.33, 33.34, 33.34);
