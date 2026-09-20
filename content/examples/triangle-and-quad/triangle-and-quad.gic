@@ -1,0 +1,11 @@
+// ABOUTME: Overlaps two outlined triangles whose intersections imply a shifting quadrilateral.
+// ABOUTME: Demonstrates how closure favors the simpler triangular forms over their shared shape.
+// Adapted from Fabian Morón Zirfas's Triangle and Quad:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/processing/triangle_and_quad
+
+background("#ffffff");
+noFill();
+stroke("#000000");
+strokeWidth(1);
+triangle(34, 3, 54, 95, 126, 31);
+triangle(4, 56, 75, 114, 90, 24);
