@@ -68,6 +68,16 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	]);
 	await expect(offlinePage.locator("#output")).toHaveText("Line 2: recover me");
 
+	await setEditorSource(offlinePage, "cir");
+	await offlinePage.keyboard.press("Control+Space");
+	await expect(
+		offlinePage
+			.locator(".suggest-widget")
+			.getByText("circle", { exact: true })
+			.first(),
+	).toBeVisible();
+	await offlinePage.keyboard.press("Escape");
+
 	const source =
 		'background("white");\nfill("black");\ncircle(50, 50, 20);\nprint("offline");';
 	await setEditorSource(offlinePage, source);
@@ -116,15 +126,6 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	const sketchDownload = offlinePage.waitForEvent("download");
 	await chooseFileCommand(offlinePage, "Save");
 	expect((await sketchDownload).suggestedFilename()).toBe("repeat.gic");
-
-	await setEditorSource(offlinePage, "cir");
-	await offlinePage.keyboard.press("Control+Space");
-	await expect(
-		offlinePage
-			.locator(".suggest-widget")
-			.getByText("circle", { exact: true })
-			.first(),
-	).toBeVisible();
 });
 
 test.afterEach(async () => {
