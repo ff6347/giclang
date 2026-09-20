@@ -1,0 +1,29 @@
+// ABOUTME: Weaves four diagonal line families into a regular diamond lattice.
+// ABOUTME: Offsets two circle grids so one dot sits inside every diamond.
+// Adapted from Fabian Morón Zirfas's Diagonal Grid:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/processing/diagonal_grid
+
+background("#ffffff");
+stroke("#00ff00");
+strokeWidth(0.2);
+
+let step = 5;
+repeat(i, 0, 20) {
+	line(0, i * step, 100 - i * step, 100);
+	line(i * step, 0, 100, 100 - i * step);
+	line(i * step, 0, 0, i * step);
+	line(100, i * step, i * step, 100);
+}
+
+fill("#00ffff");
+repeat(x, 0, 101, step) {
+	repeat(y, step / 2, 100, step) {
+		circle(x, y, step / 8);
+	}
+}
+
+repeat(x, step / 2, 100, step) {
+	repeat(y, 0, 101, step) {
+		circle(x, y, step / 8);
+	}
+}
