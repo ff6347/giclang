@@ -1,0 +1,21 @@
+// ABOUTME: Alternates filled and outlined circles across a regular grid.
+// ABOUTME: Demonstrates similarity through repeated shapes with contrasting styles.
+// Inspired by Fabian Morón Zirfas's Similarity:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/processing/similarity
+
+background("#ffffff");
+stroke("#000000");
+strokeWidth(0.2);
+
+repeat(x, 10, 100, 10) {
+	let flip = 0;
+	repeat(y, 10, 100, 10) {
+		if (flip % 2 == 0) {
+			fill("#000000");
+		} else {
+			fill("#ffffff");
+		}
+		circle(x, y, 2.5);
+		flip = flip + 1;
+	}
+}
