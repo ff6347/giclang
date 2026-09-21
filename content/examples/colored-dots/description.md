@@ -1,6 +1,7 @@
 ---
 title: Colored Dots
 order: 520
+enabled: false
 categories: [color, form]
 tags: [similarity, contrast, circles, color]
 ---

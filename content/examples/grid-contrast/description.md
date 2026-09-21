@@ -1,6 +1,7 @@
 ---
 title: Law of Symetry and Figured-Ground
 order: 230
+enabled: false
 categories: [grid, form]
 tags: [contrast, symmetry, figure-ground]
 ---

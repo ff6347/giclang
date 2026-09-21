@@ -1,6 +1,7 @@
 ---
 title: Praegnanz by Varying Edges
 order: 470
+enabled: false
 categories: [chance, form, repeat]
 tags: [prägnanz, borders, circles, variation]
 ---

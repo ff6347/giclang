@@ -1,6 +1,7 @@
 ---
 title: Splatter
 order: 310
+enabled: false
 categories: [chance, repeat]
 tags: [circles, random, seeded-randomness]
 ---

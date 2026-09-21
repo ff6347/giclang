@@ -1,6 +1,7 @@
 ---
 title: Rotate Rect
 order: 193
+enabled: false
 categories: [form]
 tags: [rotation, quadrilaterals, figure-ground, contrast]
 ---

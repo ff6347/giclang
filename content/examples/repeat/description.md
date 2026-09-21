@@ -1,6 +1,7 @@
 ---
 title: Repeated grid
 order: 20
+enabled: false
 categories: [grid, repeat]
 tags: [rectangles, nested repetition]
 ---

@@ -35,3 +35,6 @@
 - [verification] Core and compact tests, both TypeScript projects, lint, formatting, browser production build, and all 76 Playwright tests passed for the final approved cohort.
 - [inventory] The exhaustive pinned-source audit classified 107 remaining executable sketch directories: 92 excluded from v0.9, 5 duplicates, and 10 compatible lower-priority candidates. The complete per-directory table is recorded on git-bug issue `4986a39`.
 - [decision] The ten deferred compatible adaptations move to follow-up issue `2b97835`; this lets the completed migration inventory close without conflating workshop-ready examples with lower-priority deliberate rewrites.
+- [decision] Example descriptions require an explicit boolean `enabled` field. Product-content assembly validates every complete bundle, then excludes disabled examples before they reach the application.
+- [content] All 44 current examples are disabled pending review. The in-progress HSB replacement is included as the renamed OKLCH Triadic bundle.
+- [verification] Metadata and discovery tests, core and compact suites, both TypeScript projects, lint, formatting, browser build, and all 73 applicable Playwright tests passed. Direct browser inspection confirmed an empty Examples list.

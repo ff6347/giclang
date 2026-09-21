@@ -1,6 +1,7 @@
 ---
 title: Black and White Stripes
 order: 320
+enabled: false
 categories: [repeat, form]
 tags: [stripes, figure-ground, sol-lewitt]
 ---

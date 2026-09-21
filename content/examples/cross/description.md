@@ -1,6 +1,7 @@
 ---
 title: Cross
 order: 170
+enabled: false
 categories: [form]
 tags: [diagonals, symmetry, sol-lewitt]
 ---

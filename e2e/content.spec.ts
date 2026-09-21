@@ -1,5 +1,5 @@
-// ABOUTME: Verifies bundled Markdown and example content through the workspace UI.
-// ABOUTME: Covers About, Docs, example descriptions, thumbnails, and editable copies.
+// ABOUTME: Verifies bundled Markdown and example visibility through the workspace UI.
+// ABOUTME: Covers About, Docs, and disabled example exclusion.
 
 import { expect, test } from "@playwright/test";
 
@@ -32,49 +32,16 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(page).toHaveURL("/");
 });
 
-test("shows static example content and opens its source as an unsaved copy", async ({
-	page,
-}) => {
+test("hides disabled examples from the application", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Examples" }).click();
 
+	const examples = page.getByRole("tabpanel", { name: "Examples" });
 	await expect(
-		page.getByRole("heading", { name: "Repeated grid" }),
+		examples.getByRole("heading", { name: "Examples" }),
 	).toBeVisible();
+	await expect(examples.getByRole("listitem")).toHaveCount(0);
 	await expect(
-		page.getByRole("img", { name: "Repeated grid thumbnail" }),
-	).toBeVisible();
-	await expect(page.getByText("nested repeat statements")).toBeVisible();
-
-	const repeatedGrid = page
-		.getByRole("listitem")
-		.filter({ hasText: "Repeated grid" });
-	await repeatedGrid.getByRole("button", { name: "Load this example" }).click();
-	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(
-		page.getByRole("tab", { name: "repeat.gic", exact: true }),
-	).toBeVisible();
-});
-
-test("wraps example cards at a compact width", async ({ page }) => {
-	await page.setViewportSize({ height: 800, width: 1100 });
-	await page.goto("/");
-	await page.getByRole("tab", { name: "Examples" }).click();
-
-	const cards = page.getByRole("listitem");
-	const first = await cards.nth(0).boundingBox();
-	const second = await cards.nth(1).boundingBox();
-	expect(first).not.toBeNull();
-	expect(second).not.toBeNull();
-	expect(first!.width).toBeLessThanOrEqual(288);
-	expect(second!.y).toBeCloseTo(first!.y, 0);
-
-	await page.setViewportSize({ height: 800, width: 360 });
-	await expect(cards.nth(0)).toBeVisible();
-	const narrow = await cards.nth(0).boundingBox();
-	expect(narrow).not.toBeNull();
-	expect(narrow!.width).toBeLessThan(360);
+		examples.getByRole("button", { name: "Load this example" }),
+	).toHaveCount(0);
 });

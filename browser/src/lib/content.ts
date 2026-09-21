@@ -1,7 +1,11 @@
 // ABOUTME: Imports repository-authored product content through Vite's asset graph.
 // ABOUTME: Exposes validated About, documentation, and example records to React.
 
-import { createProductContent, type MarkdownContent } from "./content-model.ts";
+import {
+	createProductContent,
+	type ExampleDescription,
+	type MarkdownContent,
+} from "./content-model.ts";
 
 const about = import.meta.glob<MarkdownContent>(
 	"../../../content/about/index.md",
@@ -17,7 +21,7 @@ const docs = import.meta.glob<MarkdownContent>(
 		import: "default",
 	},
 );
-const exampleDescriptions = import.meta.glob<MarkdownContent>(
+const exampleDescriptions = import.meta.glob<ExampleDescription>(
 	"../../../content/examples/*/description.md",
 	{
 		eager: true,

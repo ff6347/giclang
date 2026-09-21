@@ -1,6 +1,7 @@
 ---
 title: Fishing Net
 order: 210
+enabled: false
 categories: [grid, repeat]
 tags: [connected-elements, similarity, contrast]
 ---

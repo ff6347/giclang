@@ -1,6 +1,7 @@
 ---
 title: Kanizsa's Triangle
 order: 192
+enabled: false
 categories: [form]
 tags: [closure, illusion, triangles, figure-ground]
 ---

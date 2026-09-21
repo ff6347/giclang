@@ -1,6 +1,7 @@
 ---
 title: Geometrical Shape
 order: 130
+enabled: false
 categories: [form]
 tags: [continuity, lines, ambiguity]
 ---

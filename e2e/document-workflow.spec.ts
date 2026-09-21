@@ -1,4 +1,4 @@
-// ABOUTME: Verifies visible portable open, save, example, and recovery workflows.
+// ABOUTME: Verifies visible portable open, save, and recovery workflows.
 // ABOUTME: Uses local files and browser downloads without persistent file handles.
 
 import { expect, test } from "@playwright/test";
@@ -22,12 +22,6 @@ async function chooseFileCommand(
 
 function documentTab(page: import("@playwright/test").Page, name: string) {
 	return page.getByRole("tab", { name, exact: true });
-}
-
-function exampleCard(page: import("@playwright/test").Page, title: string) {
-	return page.getByRole("listitem").filter({
-		has: page.getByRole("heading", { name: title }),
-	});
 }
 
 test("offers PWA document commands through the File menu", async ({ page }) => {
@@ -70,46 +64,6 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	).not.toBeVisible();
 });
 
-test("requires Save As for an editable bundled example", async ({ page }) => {
-	const source = "if(true){point(10,10);}";
-	const formatted = `if (true) {
-	point(10, 10);
-}
-`;
-
-	await page.goto("/");
-	await page.getByRole("tab", { name: "Examples" }).click();
-	await exampleCard(page, "Repeated grid")
-		.getByRole("button", { name: "Load this example" })
-		.click();
-
-	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(documentTab(page, "repeat.gic")).toBeVisible();
-	await page.getByRole("menuitem", { name: "File", exact: true }).click();
-	await expect(
-		page
-			.getByRole("menu", { name: "File" })
-			.getByRole("menuitem", { name: "Save", exact: true }),
-	).toBeDisabled();
-	await page.getByRole("menuitem", { name: "File", exact: true }).click();
-	await setEditorSource(page, source);
-	await expect(documentTab(page, "repeat.gic *")).toBeVisible();
-
-	await chooseFileCommand(page, "Save As");
-	await page.getByLabel("File name").fill("my-repeat");
-	const download = page.waitForEvent("download");
-	await page.getByRole("button", { name: "Save copy" }).click();
-
-	expect((await download).suggestedFilename()).toBe("my-repeat.gic");
-	await expect(documentTab(page, "my-repeat.gic")).toBeVisible();
-	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
-		formatted,
-	);
-});
-
 test("presents Save As with the shared Base UI control styling", async ({
 	page,
 }) => {
@@ -147,25 +101,6 @@ test("presents Save As with the shared Base UI control styling", async ({
 		inputBorder: "2px solid rgb(0, 0, 0)",
 		inputBoxShadow: "rgb(0, 0, 0) 3px 3px 0px 0px",
 	});
-});
-
-test("shows a chosen example after discarding dirty work", async ({ page }) => {
-	await page.goto("/");
-	await setEditorSource(page, "point(10, 10);");
-	await page.getByRole("tab", { name: "Examples" }).click();
-	await exampleCard(page, "Repeated grid")
-		.getByRole("button", { name: "Load this example" })
-		.click();
-
-	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
-	await expect(discard).toBeVisible();
-	await discard.getByRole("button", { name: "Discard changes" }).click();
-
-	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(documentTab(page, "repeat.gic")).toBeVisible();
 });
 
 test("cancels replacement of dirty work until the student confirms discard", async ({

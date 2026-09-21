@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	createProductContent,
+	type ExampleDescription,
 	type MarkdownContent,
 } from "../lib/content-model.ts";
 import { compileMarkdown } from "../lib/markdown-content.ts";
@@ -16,6 +17,17 @@ function page(title: string, order: number): MarkdownContent {
 		order,
 		tags: [],
 		title,
+	};
+}
+
+function examplePage(
+	title: string,
+	order: number,
+	enabled = true,
+): ExampleDescription {
+	return {
+		...page(title, order),
+		enabled,
 	};
 }
 
@@ -68,6 +80,7 @@ title: Repeated grid
 order: 20
 categories: [grid, repeat]
 tags: [rectangles, nested repetition]
+enabled: true
 ---
 
 Builds a regular rectangle grid.
@@ -76,6 +89,28 @@ Builds a regular rectangle grid.
 
 		assert.deepEqual(content.categories, ["grid", "repeat"]);
 		assert.deepEqual(content.tags, ["rectangles", "nested repetition"]);
+		assert.equal("enabled" in content && content.enabled, true);
+	});
+
+	it("requires example enablement metadata", () => {
+		for (const enabled of ["", "enabled: no\n"]) {
+			assert.throws(
+				() =>
+					compileMarkdown(
+						"content/examples/repeat/description.md",
+						`---
+title: Repeated grid
+order: 20
+categories: [grid]
+tags: [rectangles]
+${enabled}---
+
+Builds a regular rectangle grid.
+`,
+					),
+				/requires 'enabled' to be a boolean/,
+			);
+		}
 	});
 
 	it("requires example categories and tags", () => {
@@ -86,6 +121,7 @@ Builds a regular rectangle grid.
 					`---
 title: Repeated grid
 order: 20
+enabled: true
 ---
 
 Builds a regular rectangle grid.
@@ -107,11 +143,11 @@ describe("product content", () => {
 				"../../content/docs/drawing.md": page("Drawing", 10),
 			},
 			exampleDescriptions: {
-				"../../content/examples/repeat/description.md": page(
+				"../../content/examples/repeat/description.md": examplePage(
 					"Repeated grid",
 					20,
 				),
-				"../../content/examples/motif/description.md": page(
+				"../../content/examples/motif/description.md": examplePage(
 					"Reusable motif",
 					10,
 				),
@@ -157,6 +193,30 @@ describe("product content", () => {
 		assert.equal(content.examples[0]?.thumbnailUrl, "/motif.png");
 	});
 
+	it("omits disabled examples from product content", () => {
+		const content = createProductContent({
+			about: {
+				"../../content/about/index.md": page("About", 10),
+			},
+			docs: {},
+			exampleDescriptions: {
+				"../../content/examples/repeat/description.md": examplePage(
+					"Repeated grid",
+					20,
+					false,
+				),
+			},
+			exampleSources: {
+				"../../content/examples/repeat/repeat.gic": "repeat source",
+			},
+			exampleThumbnails: {
+				"../../content/examples/repeat/thumbnail.png": "/repeat.png",
+			},
+		});
+
+		assert.deepEqual(content.examples, []);
+	});
+
 	it("rejects an incomplete example folder", () => {
 		assert.throws(
 			() =>
@@ -166,7 +226,7 @@ describe("product content", () => {
 					},
 					docs: {},
 					exampleDescriptions: {
-						"../../content/examples/repeat/description.md": page(
+						"../../content/examples/repeat/description.md": examplePage(
 							"Repeated grid",
 							20,
 						),

@@ -1,6 +1,7 @@
 ---
 title: Circle Raster
 order: 340
+enabled: false
 categories: [repeat, grid]
 tags: [circles, raster, similarity, salience]
 ---

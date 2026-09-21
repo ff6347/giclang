@@ -1,6 +1,7 @@
 ---
 title: Colorful Circles
 order: 460
+enabled: false
 categories: [chance, color, repeat]
 tags: [circles, transparency, accumulation, scale]
 ---

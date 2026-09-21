@@ -1,6 +1,7 @@
 ---
 title: Concentric Arcs
 order: 180
+enabled: false
 categories: [form, repeat]
 tags: [arcs, circles, changing-stroke-width]
 ---

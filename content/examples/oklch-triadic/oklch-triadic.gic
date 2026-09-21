@@ -1,16 +1,15 @@
 // ABOUTME: Fills the canvas with three fixed, hue-separated vertical color fields.
-// ABOUTME: Preserves an HSB study using literal CSS colors rather than a color mode.
+// ABOUTME: Shows a triadic color selection by shifting the hue by 120 degrees.
 // Adapted from HSB by Fabian Morón Zirfas:
 // https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/color/p5js/hsb
-
-background("#ffffff");
+background("white");
 noStroke();
-
-fill("#b2cc70");
+let hue = 120;
+fill(81, 39, hue);
 rect(0, 0, 100 / 3, 100);
-
-fill("#70b2cc");
+hue = hue + 120;
+fill(81, 39, hue);
 rect(100 / 3, 0, 100 / 3, 100);
-
-fill("#cc70b2");
+hue = hue + 120;
+fill(81, 39, 360);
 rect(200 / 3, 0, 100 / 3, 100);

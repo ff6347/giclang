@@ -1,6 +1,7 @@
 ---
 title: Decrease Size
 order: 330
+enabled: false
 categories: [repeat, chance]
 tags: [circles, scale, contrast, sol-lewitt]
 ---

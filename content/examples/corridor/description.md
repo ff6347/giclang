@@ -1,6 +1,7 @@
 ---
 title: corridor
 order: 200
+enabled: false
 categories: [grid]
 tags: [space, perspective, vanishing-points]
 ---
