@@ -25,3 +25,16 @@
 - [risk] Windows packaging and the equivalent packaged workflow smoke test remain unrun.
 - [risk] Linux packaging is best-effort and remains unrecorded.
 - [risk] Git-bug issue `f264662` remains open until packaged-runtime behavior and required platform evidence pass.
+
+## Native Documents and Presentation
+
+- [decision] Native GiC, File, and Edit menus replace the in-window File menu in the desktop host. Open, Save, and Save As use native dialogs; Settings uses `Cmd+,`; Edit exposes Undo, Redo, and Format Document.
+- [decision] Native dialogs run from asynchronous Tauri commands. Blocking dialogs on the main event thread terminated the macOS application.
+- [decision] The native document store retains one active path behind a random UUID. Opening or saving another document revokes the previous capability.
+- [decision] Cancelling Open or Save As is a no-op. Recovery is cleared and formatted source is committed only after a successful replacement or save.
+- [decision] The macOS package is named GiC and uses a transparent native title bar with its redundant title hidden.
+- [decision] FlexLayout owns webview drag/drop. Tabs use grab/grabbing cursors, a self-contained drag badge, and square, visible drop previews.
+- [decision] Appearance mode and palette are stored separately. System selects the configured light or dark palette as macOS changes; VS Light and VS Dark are the defaults.
+- [decision] GiC ships VS Light, macOS Classic, Catppuccin Latte, VS Dark, Nord, Catppuccin Frappé, Catppuccin Macchiato, and Catppuccin Mocha application and Monaco palettes.
+- [evidence] Human macOS checks passed native Open, Save As, panel dragging, native menu structure, and drag affordances after the packaged fixes.
+- [risk] The complete exact-candidate landing gates were not run after the final theme expansion.

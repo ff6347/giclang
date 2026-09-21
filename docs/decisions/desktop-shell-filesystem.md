@@ -77,8 +77,10 @@ The tutor-less PWA does not use the desktop bridge. It opens source through uplo
 
 ## Current Baseline
 
-- The shared browser preview already runs from built web assets and uses a browser-neutral core.
-- The repository has no production desktop bridge, credential store, or one-document adapter.
+- The shared browser preview runs from built web assets and uses a browser-neutral core.
+- The production Tauri shell packages the shared IDE and exposes allowlisted settings plus native one-document Open, Save, and Save As operations.
+- Native document paths stay behind one active random capability. The desktop webview receives only document identity, name, and source.
+- Desktop settings and recovery use separate host boundaries; the production credential store remains pending tutor work.
 - The retained [Tauri shell spike](../../spikes/tauri-app-shell/) packages built assets, exercises webview/Rust callbacks and lifecycle, and tests an opaque-document-ID adapter without a development server or companion process.
 - The retained [Tauri/Rig tutor spike](../../spikes/tauri-rig-tutor/) streams OpenCode Zen and ChatGPT subscription responses through a packaged UI. It owns credentials and provider calls in Rust and exposes typed events to the webview.
 - The retained [Electron spike](../../spikes/electron-app-shell/) establishes a fallback and size comparison; it is not the selected runtime.
