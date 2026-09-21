@@ -46,7 +46,7 @@ test("hides disabled examples from the application", async ({ page }) => {
 	).toHaveCount(0);
 });
 
-test("expands overflowing example cards over neighboring cards on hover", async ({
+test("animates overflowing example cards above neighboring cards on hover", async ({
 	page,
 }) => {
 	await page.setViewportSize({ height: 800, width: 1024 });
@@ -68,12 +68,24 @@ test("expands overflowing example cards over neighboring cards on hover", async 
 	expect(collapsed!.height).toBeCloseTo(288, 0);
 
 	await card.hover();
+	await page.waitForTimeout(60);
+
+	const expanding = await cardContent.boundingBox();
+	expect(expanding).not.toBeNull();
+	expect(expanding!.height).toBeGreaterThan(collapsed!.height);
+
+	await page.waitForTimeout(240);
 
 	const expanded = await cardContent.boundingBox();
 	const neighborAfter = await neighboringCard.boundingBox();
 	expect(expanded).not.toBeNull();
 	expect(neighborAfter).not.toBeNull();
-	expect(expanded!.height).toBeGreaterThan(collapsed!.height);
+	expect(expanding!.height).toBeLessThan(expanded!.height);
+	expect(
+		await cardContent.evaluate(
+			(element) => getComputedStyle(element).boxShadow,
+		),
+	).toBe("rgb(0, 0, 0) 3px 3px 0px 0px");
 	expect(neighborAfter!.y).toBeCloseTo(neighborBefore!.y, 0);
 	expect(
 		await page.evaluate(
