@@ -123,11 +123,17 @@ canvas {
 	display: flex;
 	flex-direction: column;
 	gap: var(--s3);
-	height: 100%;
-	inset: 0;
+	left: 0;
+	max-height: 100%;
+	min-height: 100%;
 	overflow: hidden;
 	padding: var(--s3);
 	position: absolute;
+	right: 0;
+	top: 0;
+	transition:
+		box-shadow 160ms ease-out,
+		max-height 200ms ease-in-out;
 }
 
 .content-card:is(:hover, :focus-within) {
@@ -135,10 +141,14 @@ canvas {
 }
 
 .content-card:is(:hover, :focus-within) .content-card-content {
-	bottom: auto;
-	height: auto;
-	min-height: 100%;
-	overflow: visible;
+	box-shadow: 3px 3px 0 var(--color-text);
+	max-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.content-card-content {
+		transition: none;
+	}
 }
 
 .content-card h3,

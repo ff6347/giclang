@@ -40,3 +40,5 @@
 - [verification] Metadata and discovery tests, core and compact suites, both TypeScript projects, lint, formatting, browser build, and all 73 applicable Playwright tests passed. Direct browser inspection confirmed an empty Examples list.
 - [decision] Example cards reserve an 18rem collapsed slot; their content expands in place on hover or keyboard focus, above neighboring cards rather than reflowing the catalog.
 - [verification] The hover acceptance test confirms an overflowing card exposes its full content above the lower row without moving it. Core and compact suites, both TypeScript projects, lint, formatting, browser build, and all 74 Playwright tests passed.
+- [decision] Expanded cards animate `max-height` for 200ms and gain the application’s 3px hard shadow. Reduced-motion users receive the expanded state without a transition.
+- [verification] Browser inspection measured the first card growing from 288px through 359px to 456px, with the hard shadow reaching `3px 3px 0`; all 74 Playwright tests still passed.
