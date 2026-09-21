@@ -15,23 +15,25 @@ export function ExamplesPanel({
 			<ul className="content-card-list">
 				{examples.map((example) => (
 					<li className="content-card" key={example.id}>
-						<img
-							alt={`${example.title} thumbnail`}
-							className="example-thumbnail"
-							height="100"
-							src={example.thumbnailUrl}
-							width="100"
-						/>
-						<div>
-							<h3>{example.title}</h3>
-							<Markdown content={example} />
-							<Button
-								className="application-button"
-								type="button"
-								onClick={() => onOpen(example.id)}
-							>
-								Load this example
-							</Button>
+						<div className="content-card-content">
+							<img
+								alt={`${example.title} thumbnail`}
+								className="example-thumbnail"
+								height="100"
+								src={example.thumbnailUrl}
+								width="100"
+							/>
+							<div>
+								<h3>{example.title}</h3>
+								<Markdown content={example} />
+								<Button
+									className="application-button"
+									type="button"
+									onClick={() => onOpen(example.id)}
+								>
+									Load this example
+								</Button>
+							</div>
 						</div>
 					</li>
 				))}

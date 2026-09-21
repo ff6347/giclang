@@ -40,8 +40,52 @@ test("hides disabled examples from the application", async ({ page }) => {
 	await expect(
 		examples.getByRole("heading", { name: "Examples" }),
 	).toBeVisible();
-	await expect(examples.getByRole("listitem")).toHaveCount(0);
+	await expect(examples.getByRole("listitem")).toHaveCount(7);
 	await expect(
-		examples.getByRole("button", { name: "Load this example" }),
+		examples.getByRole("heading", { name: "An Obvious Circle" }),
 	).toHaveCount(0);
+});
+
+test("expands overflowing example cards over neighboring cards on hover", async ({
+	page,
+}) => {
+	await page.setViewportSize({ height: 800, width: 1024 });
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Examples" }).click();
+
+	const card = page
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("heading", { name: "Geometrical Shape" }) });
+	const neighboringCard = page
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("heading", { name: "lines" }) });
+	const cardContent = card.locator(".content-card-content");
+	const collapsed = await cardContent.boundingBox();
+	const neighborBefore = await neighboringCard.boundingBox();
+
+	expect(collapsed).not.toBeNull();
+	expect(neighborBefore).not.toBeNull();
+	expect(collapsed!.height).toBeCloseTo(288, 0);
+
+	await card.hover();
+
+	const expanded = await cardContent.boundingBox();
+	const neighborAfter = await neighboringCard.boundingBox();
+	expect(expanded).not.toBeNull();
+	expect(neighborAfter).not.toBeNull();
+	expect(expanded!.height).toBeGreaterThan(collapsed!.height);
+	expect(neighborAfter!.y).toBeCloseTo(neighborBefore!.y, 0);
+	expect(
+		await page.evaluate(
+			({ x, y }) =>
+				document
+					.elementFromPoint(x, y)
+					?.closest(".content-card")
+					?.querySelector("h3")?.textContent,
+			{
+				x: neighborAfter!.x + 10,
+				y: neighborAfter!.y + 10,
+			},
+		),
+	).toBe("Geometrical Shape");
 });

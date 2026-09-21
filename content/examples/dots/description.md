@@ -1,7 +1,7 @@
 ---
 title: Dots
 order: 410
-enabled: false
+enabled: true
 categories: [chance, form]
 tags: [circles, direction of reading, repetition]
 ---

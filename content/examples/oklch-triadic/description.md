@@ -1,7 +1,7 @@
 ---
 title: OKLCH Triadic
 order: 500
-enabled: false
+enabled: true
 categories: [color]
 tags: [hue, chroma, lightness, color fields]
 ---
