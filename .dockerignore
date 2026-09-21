@@ -1,0 +1,6 @@
+spikes/**
+node_modules/**
+docs/**
+e2e/**
+pwa-e2e/**
+tests-files/**
