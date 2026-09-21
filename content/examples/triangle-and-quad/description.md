@@ -1,7 +1,7 @@
 ---
 title: Triangle and Quad
 order: 191
-enabled: false
+enabled: true
 categories: [form, chance]
 tags: [triangles, closure, ambiguity, quadrilaterals]
 ---

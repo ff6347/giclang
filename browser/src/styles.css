@@ -113,6 +113,7 @@ canvas {
 	max-width: 100%;
 	position: relative;
 	width: 18rem;
+	perspective: 800px;
 }
 
 .content-card-content {
@@ -131,7 +132,9 @@ canvas {
 	position: absolute;
 	right: 0;
 	top: 0;
+	transform: translateZ(0);
 	transition:
+		transform 160ms ease-out,
 		box-shadow 160ms ease-out,
 		max-height 200ms ease-in-out;
 }
@@ -143,6 +146,7 @@ canvas {
 .content-card:is(:hover, :focus-within) .content-card-content {
 	box-shadow: 3px 3px 0 var(--color-text);
 	max-height: 100vh;
+	transform: translateZ(50px);
 }
 
 @media (prefers-reduced-motion: reduce) {

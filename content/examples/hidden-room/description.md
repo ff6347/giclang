@@ -1,7 +1,7 @@
 ---
 title: Hidden Room
 order: 250
-enabled: false
+enabled: true
 categories: [grid, repeat, form]
 tags: [negative-space, figure-ground, horizontal-lines]
 ---

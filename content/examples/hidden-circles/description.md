@@ -1,7 +1,7 @@
 ---
 title: Hidden Circles
 order: 300
-enabled: false
+enabled: true
 categories: [repeat]
 tags: [circles, grid, connected-elements]
 ---

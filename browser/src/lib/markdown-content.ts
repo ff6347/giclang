@@ -9,6 +9,19 @@ const markdown = new MarkdownIt({
 	html: true,
 	linkify: true,
 });
+const defaultLinkOpen = markdown.renderer.rules.link_open;
+
+markdown.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+	const token = tokens[idx];
+
+	if (!token) return self.renderToken(tokens, idx, options);
+	token.attrSet("target", "_blank");
+	token.attrJoin("rel", "noopener noreferrer"); // Secure new-tab links.
+
+	return defaultLinkOpen
+		? defaultLinkOpen(tokens, idx, options, env, self)
+		: self.renderToken(tokens, idx, options);
+};
 
 function metadataList(
 	metadata: Record<string, unknown>,

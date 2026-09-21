@@ -1,7 +1,7 @@
 ---
 title: Groups
 order: 290
-enabled: false
+enabled: true
 categories: [grid, repeat, chance]
 tags: [similarity, squares, gestalt]
 ---

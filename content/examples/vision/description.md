@@ -1,7 +1,7 @@
 ---
 title: Vision
 order: 270
-enabled: false
+enabled: true
 categories: [grid, repeat]
 tags: [optical-illusion, circles, camouflage]
 ---
