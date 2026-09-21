@@ -1,0 +1,9 @@
+# ABOUTME: Serves the built GIC PWA and falls back to its application shell.
+# ABOUTME: Prevents stale HTTP caches from delaying service-worker updates.
+:80 {
+	root * /srv
+	encode zstd gzip
+	header /sw.js Cache-Control "no-cache, no-store, must-revalidate"
+	try_files {path} /index.html
+	file_server
+}
