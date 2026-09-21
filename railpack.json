@@ -1,0 +1,8 @@
+{
+	"$schema": "https://schema.railpack.com",
+	"steps": {
+		"build": {
+			"commands": ["pnpm run build:browser", "cp -R browser/dist dist"]
+		}
+	}
+}
