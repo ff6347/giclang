@@ -1,7 +1,7 @@
 ---
 title: Similarity
 order: 160
-enabled: false
+enabled: true
 categories: [form, grid, repeat]
 tags: [similarity, circles, contrast]
 ---

@@ -1,7 +1,7 @@
 ---
 title: Random Circles
 order: 440
-enabled: false
+enabled: true
 categories: [chance, repeat]
 tags: [randomness, circles, grid, similarity]
 ---

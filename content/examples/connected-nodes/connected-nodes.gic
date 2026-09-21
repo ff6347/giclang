@@ -8,15 +8,15 @@ func dist(x1, y1, x2, y2){
 	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
-let num = 100;
-let diam = 5;
-let maxDistance = diam * 3;
+let num = 50;
+let diam = 3;
+let maxDistance = diam * 10;
 let x = random(0, 100);
 let y = random(0, 100);
 background(0, 0, 0);
 fill(100, 0, 0);
-stroke(60, 0, 0);
-strokeWidth(1);
+stroke(60, 50, 30);
+strokeWidth(1.5);
 repeat(i, 0, num){
 	let px = x;
 	let py = y;

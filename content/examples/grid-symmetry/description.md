@@ -1,7 +1,7 @@
 ---
 title: Law of Symetry and chance
 order: 240
-enabled: false
+enabled: true
 categories: [grid, repeat]
 tags: [symmetry, converging-lines, depth]
 ---

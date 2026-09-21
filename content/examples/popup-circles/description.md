@@ -1,7 +1,7 @@
 ---
 title: Popup Circles
 order: 450
-enabled: false
+enabled: true
 categories: [chance, repeat]
 tags: [circles, grid, variation, similarity]
 ---

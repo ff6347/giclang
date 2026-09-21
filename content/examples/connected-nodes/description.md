@@ -1,7 +1,7 @@
 ---
 title: Connected nodes
 order: 10
-enabled: false
+enabled: true
 categories: [chance, repeat]
 tags: [distance, functions, conditionals]
 ---

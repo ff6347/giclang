@@ -1,0 +1,5 @@
+// ABOUTME: pareto distribution
+// https://en.wikipedia.org/wiki/Pareto_distribution
+repeat(_, 0, 500) {
+	circle((1 / sqrt(random(0, 1))) * 50 - WIDTH / 2, random(0, HEIGHT), random(0, 4));
+}
