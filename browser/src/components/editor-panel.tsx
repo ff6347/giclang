@@ -2,13 +2,19 @@
 // ABOUTME: Synchronizes source, save actions, and editor lifecycle with React.
 
 import { useRef, useEffect } from "react";
-import { type GicEditor, createGicEditor } from "../lib/gic-editor.ts";
+import {
+	type GicEditor,
+	createGicEditor,
+	setEditorTheme,
+} from "../lib/gic-editor.ts";
+import type { ResolvedTheme } from "../lib/theme.ts";
 
 export interface EditorPanelProps {
 	onEditorReady: (editor: GicEditor | null) => void;
 	onSave: () => void;
 	onSourceChange: (source: string) => void;
 	source: string;
+	theme: ResolvedTheme;
 }
 
 export function EditorPanel({
@@ -16,6 +22,7 @@ export function EditorPanel({
 	onSave,
 	onSourceChange,
 	source,
+	theme,
 }: EditorPanelProps) {
 	const container = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<GicEditor | null>(null);
@@ -32,6 +39,7 @@ export function EditorPanel({
 			container.current,
 			(source) => onSourceChangeRef.current(source),
 			() => onSaveRef.current(),
+			theme,
 			source,
 		);
 		editorRef.current = editor;
@@ -47,6 +55,10 @@ export function EditorPanel({
 		if (editorRef.current?.getValue() !== source)
 			editorRef.current?.setValue(source);
 	}, [source]);
+
+	useEffect(() => {
+		setEditorTheme(theme);
+	}, [theme]);
 
 	return (
 		<section aria-label="Editor" className="workspace-panel">

@@ -17,6 +17,63 @@
 	--color-chrome: #f0f0f0;
 	--color-control: #cccccc;
 	--color-text: #000000;
+	color-scheme: light;
+}
+
+:root[data-theme="macos-classic"] {
+	--color-background: #ffffff;
+	--color-chrome: #eaeaea;
+	--color-control: #ececec;
+	--color-text: #000000;
+	color-scheme: light;
+}
+
+:root[data-theme="catppuccin-latte"] {
+	--color-background: #eff1f5;
+	--color-chrome: #e6e9ef;
+	--color-control: #ccd0da;
+	--color-text: #4c4f69;
+	color-scheme: light;
+}
+
+:root[data-theme="vs-dark"] {
+	--color-background: #1e1e1e;
+	--color-chrome: #252526;
+	--color-control: #3c3c3c;
+	--color-text: #f0f0f0;
+	color-scheme: dark;
+}
+
+:root[data-theme="nord"] {
+	--color-background: #2e3440;
+	--color-chrome: #3b4252;
+	--color-control: #434c5e;
+	--color-text: #d8dee9;
+	color-scheme: dark;
+}
+
+:root[data-theme="catppuccin-frappe"] {
+	--color-background: #303446;
+	--color-chrome: #292c3c;
+	--color-control: #414559;
+	--color-text: #c6d0f5;
+	color-scheme: dark;
+}
+
+:root[data-theme="catppuccin-macchiato"] {
+	--color-background: #24273a;
+	--color-chrome: #1e2030;
+	--color-control: #363a4f;
+	--color-text: #cad3f5;
+	color-scheme: dark;
+}
+
+:root[data-theme="catppuccin-mocha"] {
+	--color-background: #1e1e2e;
+	--color-chrome: #181825;
+	--color-control: #313244;
+	--color-text: #cdd6f4;
+	color-scheme: dark;
 }
 
 html,
@@ -284,6 +341,47 @@ canvas {
 .recovery-button:active {
 	box-shadow: none;
 	transform: translate(3px, 3px);
+}
+
+.flexlayout__layout {
+	--fl-color-drag1: var(--color-text);
+	--fl-color-drag1-background: color-mix(
+		in srgb,
+		var(--color-control) 35%,
+		transparent
+	);
+	--fl-color-drag2: var(--color-text);
+	--fl-color-drag2-background: color-mix(
+		in srgb,
+		var(--color-control) 25%,
+		transparent
+	);
+	--fl-color-drag-rect: var(--color-text);
+	--fl-color-drag-rect-background: var(--color-background);
+	--fl-color-drag-rect-border: var(--color-text);
+	--fl-font-family: inherit;
+	--fl-font-size: inherit;
+}
+
+.flexlayout__drag_rect,
+.flexlayout__outline_rect,
+.flexlayout__outline_rect_edge {
+	border-radius: 0;
+}
+
+.flexlayout__tab_button {
+	cursor: grab;
+	line-height: 1;
+	padding: 1px var(--s1);
+}
+
+.flexlayout__tab_button:active {
+	cursor: grabbing;
+}
+
+.flexlayout__tab_button_stretch {
+	line-height: 1;
+	padding: 1px var(--s1);
 }
 
 .flexlayout__tab_button--selected {

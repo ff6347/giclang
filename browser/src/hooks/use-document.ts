@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { applySaveFormatting } from "../../../src/language-service.ts";
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
+import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
 	createExampleDocument,
 	createRecoveredDocument,
@@ -22,8 +23,10 @@ function normalizeFileName(name: string): string {
 export function useDocument(
 	formatOnSave: boolean,
 	onExampleOpened: () => void,
+	desktop: DesktopHost | undefined,
 ) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
+	const desktopDocumentId = useRef<string | undefined>(undefined);
 	const initialRecovery = useRef(adapter.readRecovery()).current;
 	const knownRecoveryUpdatedAt = useRef(initialRecovery?.updatedAt ?? 0);
 	const pendingReplacement = useRef<(() => Promise<void> | void) | undefined>(
@@ -54,29 +57,61 @@ export function useDocument(
 		setDocumentState(nextDocument);
 	};
 
+	const replaceDocument = (
+		nextDocument: DocumentState,
+		documentId?: string,
+	) => {
+		desktopDocumentId.current = documentId;
+		replace(nextDocument);
+	};
+
 	const discardRecovery = () => {
 		adapter.clearRecovery(knownRecoveryUpdatedAt.current);
 		knownRecoveryUpdatedAt.current = 0;
 	};
 
-	const format = () => {
-		const source = applySaveFormatting(documentState.source, { formatOnSave });
-		if (source !== documentState.source) {
-			const nextDocument = updateDocumentSource(documentState, source);
-			replace(nextDocument);
-			persistRecovery(nextDocument);
-		}
-		return source;
-	};
+	const sourceForSave = () =>
+		applySaveFormatting(documentState.source, { formatOnSave });
 
-	const save = (name: string) => {
-		const source = format();
+	const saveBrowserDocument = (name: string) => {
+		const source = sourceForSave();
 		const savedName = normalizeFileName(name);
 		adapter.download(savedName, source);
 		adapter.recordRecent(savedName);
 		discardRecovery();
-		replace(openDocument(savedName, source));
+		replaceDocument(openDocument(savedName, source));
 		setSaveAsOpen(false);
+	};
+
+	const saveDesktopDocumentAs = async () => {
+		if (desktop === undefined) return;
+		const source = sourceForSave();
+		const suggestedName = documentState.displayName.endsWith(".gic")
+			? documentState.displayName
+			: "sketch.gic";
+		const saved = await desktop.saveDocumentAs(source, suggestedName);
+		if (saved === null) return;
+		discardRecovery();
+		replaceDocument(openDocument(saved.name, saved.source), saved.documentId);
+	};
+
+	const saveDesktopDocument = async () => {
+		if (desktop === undefined) return;
+		const documentId = desktopDocumentId.current;
+		if (!documentState.canSave || documentId === undefined) {
+			await saveDesktopDocumentAs();
+			return;
+		}
+		const source = sourceForSave();
+		await desktop.saveDocument(documentId, source);
+		discardRecovery();
+		replace(openDocument(documentState.displayName, source));
+	};
+
+	const runDesktopOperation = (operation: () => Promise<void>) => {
+		void operation().catch(() => {
+			window.alert("GIC could not complete the desktop file operation.");
+		});
 	};
 
 	return {
@@ -91,17 +126,25 @@ export function useDocument(
 			persistRecovery(nextDocument);
 		},
 		requestSave() {
+			if (desktop !== undefined) {
+				runDesktopOperation(saveDesktopDocument);
+				return;
+			}
 			if (documentState.canSave) {
-				save(documentState.displayName);
+				saveBrowserDocument(documentState.displayName);
 				return;
 			}
 			setSaveAsOpen(true);
 		},
 		openSaveAs() {
+			if (desktop !== undefined) {
+				runDesktopOperation(saveDesktopDocumentAs);
+				return;
+			}
 			setSaveAsOpen(true);
 		},
 		saveAs(name: string) {
-			save(name);
+			saveBrowserDocument(name);
 		},
 		cancelSaveAs() {
 			setSaveAsOpen(false);
@@ -111,7 +154,7 @@ export function useDocument(
 				const openedFile = await adapter.readFile(file);
 				discardRecovery();
 				adapter.recordRecent(openedFile.name);
-				replace(openDocument(openedFile.name, openedFile.source));
+				replaceDocument(openDocument(openedFile.name, openedFile.source));
 			};
 			if (documentState.isDirty) {
 				pendingReplacement.current = open;
@@ -119,6 +162,27 @@ export function useDocument(
 				return;
 			}
 			void open();
+		},
+		requestDesktopOpen() {
+			if (desktop === undefined) return;
+			const chooseDocument = async () => {
+				const openedDocument = await desktop.openDocument();
+				if (openedDocument === null) return;
+				const open = () => {
+					discardRecovery();
+					replaceDocument(
+						openDocument(openedDocument.name, openedDocument.source),
+						openedDocument.documentId,
+					);
+				};
+				if (documentState.isDirty) {
+					pendingReplacement.current = open;
+					setDiscardOpen(true);
+					return;
+				}
+				open();
+			};
+			runDesktopOperation(chooseDocument);
 		},
 		requestExample(id: string) {
 			const example = productContent.examples.find(
@@ -129,7 +193,9 @@ export function useDocument(
 			}
 			const open = () => {
 				discardRecovery();
-				replace(createExampleDocument(example.fileName, example.source));
+				replaceDocument(
+					createExampleDocument(example.fileName, example.source),
+				);
 				onExampleOpened();
 			};
 			if (documentState.isDirty) {
@@ -141,7 +207,6 @@ export function useDocument(
 		},
 		confirmDiscard() {
 			setDiscardOpen(false);
-			discardRecovery();
 			const replacement = pendingReplacement.current;
 			pendingReplacement.current = undefined;
 			if (replacement !== undefined) void replacement();
@@ -152,7 +217,7 @@ export function useDocument(
 		},
 		restoreRecovery() {
 			if (initialRecovery !== undefined) {
-				replace(createRecoveredDocument(initialRecovery.document));
+				replaceDocument(createRecoveredDocument(initialRecovery.document));
 			}
 			setRecoveryOpen(false);
 		},

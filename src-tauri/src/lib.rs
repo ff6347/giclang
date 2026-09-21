@@ -1,12 +1,23 @@
 // ABOUTME: Implements the narrow native boundary for the GIC desktop application.
 // ABOUTME: Persists approved non-secret settings without exposing filesystem paths.
 
+mod desktop_menu;
+mod documents;
+
+use documents::{DocumentStore, OpenedDocument};
 use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex};
-use tauri::{Manager, State};
+use tauri::{AppHandle, Manager, State};
+use tauri_plugin_dialog::DialogExt;
 use tempfile::NamedTempFile;
 
-const ALLOWED_SETTING_KEYS: [&str; 3] =
-    ["gic.canvasFrame", "gic.formatOnSave", "gic.workspaceLayout"];
+const ALLOWED_SETTING_KEYS: [&str; 6] = [
+    "gic.appearance",
+    "gic.canvasFrame",
+    "gic.darkTheme",
+    "gic.formatOnSave",
+    "gic.lightTheme",
+    "gic.workspaceLayout",
+];
 
 struct SettingsStore {
     access: Mutex<()>,
@@ -83,9 +94,60 @@ fn write_setting(key: &str, value: &str, store: State<'_, SettingsStore>) -> Res
     store.write(key, value)
 }
 
+#[tauri::command]
+async fn open_gic(
+    app: AppHandle,
+    store: State<'_, DocumentStore>,
+) -> Result<Option<OpenedDocument>, String> {
+    let selected = app
+        .dialog()
+        .file()
+        .add_filter("GIC sketch", &["gic"])
+        .blocking_pick_file();
+    selected
+        .map(|path| {
+            path.into_path()
+                .map_err(|_| "Unable to use the selected sketch.".to_owned())
+                .and_then(|path| store.open_path(path))
+        })
+        .transpose()
+}
+
+#[tauri::command]
+fn save_gic(
+    document_id: &str,
+    source: &str,
+    store: State<'_, DocumentStore>,
+) -> Result<(), String> {
+    store.save(document_id, source)
+}
+
+#[tauri::command]
+async fn save_gic_as(
+    app: AppHandle,
+    source: &str,
+    suggested_name: &str,
+    store: State<'_, DocumentStore>,
+) -> Result<Option<OpenedDocument>, String> {
+    let selected = app
+        .dialog()
+        .file()
+        .add_filter("GIC sketch", &["gic"])
+        .set_file_name(suggested_name)
+        .blocking_save_file();
+    selected
+        .map(|path| {
+            path.into_path()
+                .map_err(|_| "Unable to use the selected sketch location.".to_owned())
+                .and_then(|path| store.save_path(path, source))
+        })
+        .transpose()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let settings_path = app
                 .path()
@@ -93,9 +155,17 @@ pub fn run() {
                 .map_err(std::io::Error::other)?
                 .join("settings.json");
             app.manage(SettingsStore::new(settings_path));
+            app.manage(DocumentStore::default());
+            desktop_menu::install(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![read_settings, write_setting])
+        .invoke_handler(tauri::generate_handler![
+            open_gic,
+            read_settings,
+            save_gic,
+            save_gic_as,
+            write_setting
+        ])
         .run(tauri::generate_context!())
         .expect("failed to run the GIC desktop application");
 }

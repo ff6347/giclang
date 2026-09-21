@@ -3,5 +3,9 @@
 	"identifier": "main-window",
 	"description": "Allows standard window operations and close after settings flush.",
 	"windows": ["main"],
-	"permissions": ["core:default", "core:window:allow-destroy"]
+	"permissions": [
+		"core:default",
+		"core:window:allow-destroy",
+		"core:window:allow-set-theme"
+	]
 }

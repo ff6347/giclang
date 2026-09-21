@@ -13,6 +13,8 @@ import {
 	signatureHelpSource,
 } from "../../../src/language-service.ts";
 import { keywords } from "../../../src/keywords.ts";
+import { editorThemeName, registerEditorThemes } from "./editor-themes.ts";
+import type { ResolvedTheme } from "./theme.ts";
 
 globalThis.MonacoEnvironment = {
 	getWorker() {
@@ -168,11 +170,13 @@ export function createGicEditor(
 	container: HTMLElement,
 	onSourceChange: (source: string) => void,
 	onSave: () => void,
+	theme: ResolvedTheme,
 	initialSource = "",
 ): GicEditor {
 	registerGicLanguage();
+	registerEditorThemes();
 	const editor = monaco.editor.create(container, {
-		theme: "vs",
+		theme: editorThemeName(theme),
 		ariaLabel: "GiC",
 		automaticLayout: true,
 		language: LANGUAGE_ID,
@@ -205,6 +209,11 @@ export function createGicEditor(
 	});
 	editor.focus();
 	return editor;
+}
+
+export function setEditorTheme(theme: ResolvedTheme): void {
+	registerEditorThemes();
+	monaco.editor.setTheme(editorThemeName(theme));
 }
 
 export function setEditorDiagnostics(

@@ -1,7 +1,7 @@
 // ABOUTME: Composes the React IDE shell around the persisted FlexLayout model.
 // ABOUTME: Coordinates panel controls, preview status, and error-driven layout behavior.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Menubar } from "@base-ui/react/menubar";
 import { Menu } from "@base-ui/react/menu";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -45,9 +45,21 @@ import { useAppUpdate } from "../hooks/use-app-update.ts";
 import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
 import { AppUpdate } from "./app-update.tsx";
 import type { ApplicationSettings } from "../lib/application-settings.ts";
+import type { DesktopHost, DesktopMenuAction } from "../lib/desktop-host.ts";
+import type { GicEditor } from "../lib/gic-editor.ts";
+import {
+	parseAppearance,
+	parseDarkTheme,
+	parseLightTheme,
+	resolveWindowTheme,
+} from "../lib/theme.ts";
+import { useTheme } from "../hooks/use-theme.ts";
 
+const APPEARANCE_STORAGE_KEY = "gic.appearance";
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
+const DARK_THEME_STORAGE_KEY = "gic.darkTheme";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
+const LIGHT_THEME_STORAGE_KEY = "gic.lightTheme";
 
 function initialCanvasFrame(settings: ApplicationSettings): boolean {
 	return settings.getItem(CANVAS_FRAME_STORAGE_KEY) !== "false";
@@ -61,12 +73,20 @@ function countLabel(name: string, count: number): string {
 	return count === 0 ? name : `${name} (${count})`;
 }
 
+function renderDragBadge(content: ReactNode): ReactNode {
+	// Tauri's WebKit webview needs an explicit drag component instead of a
+	// snapshot of the existing tab element.
+	return content;
+}
+
 interface AppProps {
+	readonly desktop: DesktopHost | undefined;
 	readonly settings?: ApplicationSettings;
 	readonly supportsAppUpdates?: boolean;
 }
 
 export function App({
+	desktop,
 	settings = localStorage,
 	supportsAppUpdates = true,
 }: AppProps) {
@@ -76,9 +96,22 @@ export function App({
 	const [formatOnSave, setFormatOnSave] = useState(() =>
 		initialFormatOnSave(settings),
 	);
+	const [appearance, setAppearance] = useState(() =>
+		parseAppearance(settings.getItem(APPEARANCE_STORAGE_KEY)),
+	);
+	const [lightTheme, setLightTheme] = useState(() =>
+		parseLightTheme(settings.getItem(LIGHT_THEME_STORAGE_KEY)),
+	);
+	const [darkTheme, setDarkTheme] = useState(() =>
+		parseDarkTheme(settings.getItem(DARK_THEME_STORAGE_KEY)),
+	);
+	const theme = useTheme(appearance, lightTheme, darkTheme);
 	const [model, setModel] = useState(() => loadWorkspace(settings));
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const editorRef = useRef<GicEditor | null>(null);
+	const modelRef = useRef(model);
+	modelRef.current = model;
 	const openFile = useRef<HTMLInputElement>(null);
 	const appUpdate = useAppUpdate(supportsAppUpdates);
 	const preview = usePreview(canvasRef);
@@ -87,7 +120,66 @@ export function App({
 		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
-	const documents = useDocument(formatOnSave, selectGestalten);
+	const documents = useDocument(formatOnSave, selectGestalten, desktop);
+	const documentsRef = useRef(documents);
+	documentsRef.current = documents;
+
+	useEffect(() => {
+		if (desktop === undefined) return;
+		void desktop.setWindowTheme(resolveWindowTheme(appearance)).catch(() => {
+			window.alert("GIC could not apply the selected window appearance.");
+		});
+	}, [appearance, desktop]);
+
+	useEffect(() => {
+		if (desktop === undefined) return;
+		let disposed = false;
+		let unlisten: (() => void) | undefined;
+		const handleMenuAction = (action: DesktopMenuAction) => {
+			if (action === "open") {
+				documentsRef.current.requestDesktopOpen();
+				return;
+			}
+			if (action === "save") {
+				documentsRef.current.requestSave();
+				return;
+			}
+			if (action === "saveAs") {
+				documentsRef.current.openSaveAs();
+				return;
+			}
+			const editor = editorRef.current;
+			if (action === "settings") {
+				modelRef.current.doAction(Actions.selectTab(SETTINGS_ID));
+				saveWorkspace(modelRef.current, settings);
+				setLayoutRevision((revision) => revision + 1);
+				return;
+			}
+			if (action === "format") {
+				editor?.focus();
+				void editor?.getAction("editor.action.formatDocument")?.run();
+				return;
+			}
+			editor?.focus();
+			editor?.trigger("desktop-menu", action, null);
+		};
+		void desktop
+			.onMenuAction(handleMenuAction)
+			.then((stopListening) => {
+				if (disposed) {
+					stopListening();
+					return;
+				}
+				unlisten = stopListening;
+			})
+			.catch(() => {
+				window.alert("GIC could not connect the native application menu.");
+			});
+		return () => {
+			disposed = true;
+			unlisten?.();
+		};
+	}, [desktop]);
 
 	useEffect(() => {
 		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));
@@ -119,6 +211,21 @@ export function App({
 		settings.setItem(FORMAT_ON_SAVE_STORAGE_KEY, String(checked));
 	};
 
+	const updateAppearance = (nextAppearance: typeof appearance) => {
+		setAppearance(nextAppearance);
+		settings.setItem(APPEARANCE_STORAGE_KEY, nextAppearance);
+	};
+
+	const updateLightTheme = (nextTheme: typeof lightTheme) => {
+		setLightTheme(nextTheme);
+		settings.setItem(LIGHT_THEME_STORAGE_KEY, nextTheme);
+	};
+
+	const updateDarkTheme = (nextTheme: typeof darkTheme) => {
+		setDarkTheme(nextTheme);
+		settings.setItem(DARK_THEME_STORAGE_KEY, nextTheme);
+	};
+
 	const updateSource = (nextSource: string) => {
 		documents.updateSource(nextSource);
 		preview.onSourceChange(nextSource);
@@ -140,10 +247,14 @@ export function App({
 			case EDITOR_ID:
 				return (
 					<EditorPanel
-						onEditorReady={preview.setEditor}
+						onEditorReady={(editor) => {
+							editorRef.current = editor;
+							preview.setEditor(editor);
+						}}
 						onSave={documents.requestSave}
 						onSourceChange={updateSource}
 						source={documents.documentState.source}
+						theme={theme}
 					/>
 				);
 			case PREVIEW_ID:
@@ -164,10 +275,16 @@ export function App({
 			case SETTINGS_ID:
 				return (
 					<SettingsPanel
+						appearance={appearance}
 						canvasFrame={canvasFrame}
+						darkTheme={darkTheme}
 						formatOnSave={formatOnSave}
+						lightTheme={lightTheme}
+						onAppearanceChange={updateAppearance}
 						onCanvasFrameChange={updateCanvasFrame}
+						onDarkThemeChange={updateDarkTheme}
 						onFormatOnSaveChange={updateFormatOnSave}
+						onLightThemeChange={updateLightTheme}
 						onResetLayout={resetLayout}
 					/>
 				);
@@ -189,69 +306,75 @@ export function App({
 
 	return (
 		<main className="app-shell">
-			<header className="application-chrome">
-				<Menubar aria-label="Application menu" className="application-menubar">
-					<Menu.Root>
-						<Menu.Trigger className="application-menu-trigger">
-							File
-						</Menu.Trigger>
-						<Menu.Portal>
-							<Menu.Positioner className="application-menu-positioner">
-								<Menu.Popup
-									aria-label="File"
-									className="application-menu-popup"
-								>
-									<Menu.Item
-										className="application-menu-item"
-										onClick={() => openFile.current?.click()}
+			{desktop === undefined && (
+				<header className="application-chrome">
+					<Menubar
+						aria-label="Application menu"
+						className="application-menubar"
+					>
+						<Menu.Root>
+							<Menu.Trigger className="application-menu-trigger">
+								File
+							</Menu.Trigger>
+							<Menu.Portal>
+								<Menu.Positioner className="application-menu-positioner">
+									<Menu.Popup
+										aria-label="File"
+										className="application-menu-popup"
 									>
-										Open
-									</Menu.Item>
-									<Menu.Item
-										className="application-menu-item"
-										disabled={!documents.documentState.canSave}
-										onClick={documents.requestSave}
-									>
-										Save
-									</Menu.Item>
-									<Menu.Item
-										className="application-menu-item"
-										onClick={documents.openSaveAs}
-									>
-										Save As
-									</Menu.Item>
-								</Menu.Popup>
-							</Menu.Positioner>
-						</Menu.Portal>
-					</Menu.Root>
-				</Menubar>
-				{appUpdate.isWaiting && (
-					<AppUpdate
-						isPostponed={appUpdate.isPostponed}
-						onApply={appUpdate.applyUpdate}
-						onPostpone={appUpdate.postponeUpdate}
+										<Menu.Item
+											className="application-menu-item"
+											onClick={() => openFile.current?.click()}
+										>
+											Open
+										</Menu.Item>
+										<Menu.Item
+											className="application-menu-item"
+											disabled={!documents.documentState.canSave}
+											onClick={documents.requestSave}
+										>
+											Save
+										</Menu.Item>
+										<Menu.Item
+											className="application-menu-item"
+											onClick={documents.openSaveAs}
+										>
+											Save As
+										</Menu.Item>
+									</Menu.Popup>
+								</Menu.Positioner>
+							</Menu.Portal>
+						</Menu.Root>
+					</Menubar>
+					{appUpdate.isWaiting && (
+						<AppUpdate
+							isPostponed={appUpdate.isPostponed}
+							onApply={appUpdate.applyUpdate}
+							onPostpone={appUpdate.postponeUpdate}
+						/>
+					)}
+					<input
+						accept=".gic"
+						hidden
+						id="open-file"
+						ref={openFile}
+						type="file"
+						onChange={(event) => {
+							const file = event.currentTarget.files?.item(0);
+							if (file !== null && file !== undefined) {
+								documents.requestOpen(file);
+							}
+							event.currentTarget.value = "";
+						}}
 					/>
-				)}
-				<input
-					accept=".gic"
-					hidden
-					id="open-file"
-					ref={openFile}
-					type="file"
-					onChange={(event) => {
-						const file = event.currentTarget.files?.item(0);
-						if (file !== null && file !== undefined) {
-							documents.requestOpen(file);
-						}
-						event.currentTarget.value = "";
-					}}
-				/>
-			</header>
+				</header>
+			)}
 			<div className="application-layout">
 				<Layout
 					factory={panelFactory}
 					model={model}
 					onModelChange={layoutChanged}
+					onRenderDragRect={renderDragBadge}
 					onRenderTab={renderTab}
 				/>
 			</div>

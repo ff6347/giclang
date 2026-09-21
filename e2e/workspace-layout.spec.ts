@@ -94,6 +94,21 @@ test("stacks Preview, Output, and Problems beside the editor", async ({
 	);
 });
 
+test("uses compact application and panel tab rows", async ({ page }) => {
+	await page.goto("/");
+	const applicationTab = await page
+		.getByRole("tab", { name: "Gestalten" })
+		.boundingBox();
+	const panelTab = await page
+		.getByRole("tab", { name: "Preview" })
+		.boundingBox();
+
+	expect(applicationTab).not.toBeNull();
+	expect(panelTab).not.toBeNull();
+	expect(applicationTab!.height).toBeLessThanOrEqual(26);
+	expect(panelTab!.height).toBeLessThanOrEqual(26);
+});
+
 test("places application preferences in Settings", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Settings" }).click();
@@ -112,6 +127,64 @@ test("places application preferences in Settings", async ({ page }) => {
 	await expect(
 		page.getByRole("region", { name: "Settings" }),
 	).not.toContainText("Agent provider");
+});
+
+test("defaults to system appearance and persists an explicit theme", async ({
+	page,
+}) => {
+	await page.emulateMedia({ colorScheme: "dark" });
+	await page.goto("/");
+
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "vs-dark");
+	await expect(page.locator(".monaco-editor")).toHaveCSS(
+		"background-color",
+		"rgb(30, 30, 30)",
+	);
+	await page.getByRole("tab", { name: "Settings" }).click();
+	const appearance = page.getByRole("combobox", { name: "Appearance" });
+	const lightTheme = page.getByRole("combobox", { name: "Light theme" });
+	const darkTheme = page.getByRole("combobox", { name: "Dark theme" });
+	await expect(appearance).toHaveValue("system");
+	await expect(lightTheme).toHaveValue("vs-light");
+	await expect(darkTheme).toHaveValue("vs-dark");
+
+	await darkTheme.selectOption("catppuccin-mocha");
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-theme",
+		"catppuccin-mocha",
+	);
+	await page.getByRole("tab", { name: "Gestalten" }).click();
+	await expect(page.locator(".monaco-editor")).toHaveCSS(
+		"background-color",
+		"rgb(30, 30, 46)",
+	);
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await appearance.selectOption("light");
+	await lightTheme.selectOption("macos-classic");
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-theme",
+		"macos-classic",
+	);
+	await page.getByRole("tab", { name: "Gestalten" }).click();
+	await expect(page.locator(".monaco-editor")).toHaveCSS(
+		"background-color",
+		"rgb(255, 255, 255)",
+	);
+	await page.reload();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-theme",
+		"macos-classic",
+	);
+	await page.getByRole("tab", { name: "Settings" }).click();
+	await expect(page.getByRole("combobox", { name: "Appearance" })).toHaveValue(
+		"light",
+	);
+	await expect(page.getByRole("combobox", { name: "Light theme" })).toHaveValue(
+		"macos-classic",
+	);
+	await expect(page.getByRole("combobox", { name: "Dark theme" })).toHaveValue(
+		"catppuccin-mocha",
+	);
 });
 
 test("persists the Canvas frame setting across reloads", async ({ page }) => {
@@ -300,6 +373,41 @@ test("persists keyboard resizing", async ({ page }) => {
 	await page.reload();
 
 	expect((await editor.boundingBox())?.width).toBeCloseTo(resizedWidth!, 0);
+});
+
+test("shows the panel drag cursor while moving a tab", async ({ page }) => {
+	await page.goto("/");
+	const outputTab = page.getByRole("tab", { name: "Output" });
+	const previewTab = page.getByRole("tab", { name: "Preview" });
+	const outputBox = await outputTab.boundingBox();
+	const previewBox = await previewTab.boundingBox();
+	expect(outputBox).not.toBeNull();
+	expect(previewBox).not.toBeNull();
+
+	await outputTab.hover();
+	await expect(outputTab).toHaveCSS("cursor", "grab");
+
+	await page.mouse.move(
+		outputBox!.x + outputBox!.width / 2,
+		outputBox!.y + outputBox!.height / 2,
+	);
+	await page.mouse.down();
+	await expect(outputTab).toHaveCSS("cursor", "grabbing");
+	await page.mouse.move(
+		previewBox!.x + previewBox!.width / 2,
+		previewBox!.y + previewBox!.height / 2,
+		{ steps: 10 },
+	);
+	const dropPreview = page.locator(".flexlayout__outline_rect");
+	await expect(dropPreview).toBeVisible();
+	await expect(dropPreview).toHaveCSS("border-top-style", "solid");
+	await expect(dropPreview).toHaveCSS("border-radius", "0px");
+	expect(
+		await dropPreview.evaluate(
+			(element) => getComputedStyle(element).backgroundColor,
+		),
+	).not.toBe("rgba(0, 0, 0, 0)");
+	await page.mouse.up();
 });
 
 test("moves tabs between Code tabsets and Reset Layout restores defaults", async ({

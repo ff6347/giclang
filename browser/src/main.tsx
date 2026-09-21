@@ -13,5 +13,9 @@ if (!(root instanceof HTMLElement)) {
 
 const host = await createApplicationHost();
 createRoot(root).render(
-	<App settings={host.settings} supportsAppUpdates={host.supportsAppUpdates} />,
+	<App
+		desktop={host.desktop}
+		settings={host.settings}
+		supportsAppUpdates={host.supportsAppUpdates}
+	/>,
 );

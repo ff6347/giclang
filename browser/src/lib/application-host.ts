@@ -4,9 +4,11 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ApplicationSettings } from "./application-settings.ts";
+import { DesktopHost } from "./desktop-host.ts";
 import { DesktopSettings } from "./desktop-settings.ts";
 
 export interface ApplicationHost {
+	readonly desktop: DesktopHost | undefined;
 	readonly settings: ApplicationSettings;
 	readonly supportsAppUpdates: boolean;
 }
@@ -14,6 +16,7 @@ export interface ApplicationHost {
 export async function createApplicationHost(): Promise<ApplicationHost> {
 	if (!isTauri()) {
 		return {
+			desktop: undefined,
 			settings: localStorage,
 			supportsAppUpdates: true,
 		};
@@ -35,6 +38,7 @@ export async function createApplicationHost(): Promise<ApplicationHost> {
 		}
 	});
 	return {
+		desktop: new DesktopHost(),
 		settings: desktopSettings,
 		supportsAppUpdates: false,
 	};

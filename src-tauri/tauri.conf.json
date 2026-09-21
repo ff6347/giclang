@@ -1,6 +1,6 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "GIC — Gestalten in Code",
+	"productName": "GiC",
 	"version": "0.1.0",
 	"identifier": "cc.incode.gestalten",
 	"build": {
@@ -13,7 +13,10 @@
 		"windows": [
 			{
 				"label": "main",
-				"title": "GIC — Gestalten in Code",
+				"title": "GiC",
+				"dragDropEnabled": false,
+				"hiddenTitle": true,
+				"titleBarStyle": "Transparent",
 				"width": 1280,
 				"height": 800,
 				"minWidth": 720,
