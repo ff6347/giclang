@@ -1,0 +1,49 @@
+// ABOUTME: Layers cycling red squares with blue and green circle stacks at three corners.
+// ABOUTME: Adapts a primary-color geometric study to the 100 by 100 GIC Canvas.
+// Adapted from Colored Shapes by Daniele Maselli:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/color/p5js/colored-shapes
+
+background("#ffffff");
+noStroke();
+
+repeat(i, 0, 30) {
+	let side = 30 - i;
+	if (i % 4 == 0) {
+		fill("#c80000");
+	} else if (i % 4 == 1) {
+		fill("#640000");
+	} else if (i % 4 == 2) {
+		fill("#320000");
+	} else {
+		fill("#140000");
+	}
+	rect(0, 0, side * 6, side * 6);
+}
+
+repeat(i, 0, 14) {
+	let radius = 14 - i;
+	if (i % 4 == 0) {
+		fill("#0000c8");
+	} else if (i % 4 == 1) {
+		fill("#000064");
+	} else if (i % 4 == 2) {
+		fill("#000032");
+	} else {
+		fill("#000014");
+	}
+	ellipse(100, 100, radius * 10, radius * 10);
+}
+
+repeat(i, 0, 14) {
+	let radius = 14 - i;
+	if (i % 4 == 0) {
+		fill("#00c800");
+	} else if (i % 4 == 1) {
+		fill("#006400");
+	} else if (i % 4 == 2) {
+		fill("#003200");
+	} else {
+		fill("#001400");
+	}
+	ellipse(0, 100, radius * 10, radius * 10);
+}

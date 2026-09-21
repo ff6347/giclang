@@ -1,0 +1,29 @@
+# ABOUTME: Limits container builds to files needed to compile the browser PWA.
+# ABOUTME: Excludes local state, tests, documentation, and experimental applications.
+.git
+.github
+.agents
+.delta
+.zed
+node_modules
+**/node_modules
+**/dist
+browser/.pwa-test
+coverage
+docs
+e2e
+pwa-e2e
+spikes
+test-results
+tests-files
+src/tests
+browser/src/tests
+.env
+.env.*
+*.log
+.DS_Store
+AGENTS.md
+HANDOFF.md
+README.md
+playwright.config.ts
+playwright.pwa.config.ts

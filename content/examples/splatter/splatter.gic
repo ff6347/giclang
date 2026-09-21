@@ -1,0 +1,19 @@
+// ABOUTME: Scatters many small circles around one randomly chosen center.
+// ABOUTME: Demonstrates bounded variation and deterministic chance through repeated drawing.
+// Inspired by Fabian Morón Zirfas's Splatter:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/repeat/p5js/splatter
+// randomSeed(1326) keeps the static composition reproducible.
+
+randomSeed(1326);
+background("#000000");
+fill("#ffffff");
+stroke("#000000");
+strokeWidth(0.2);
+
+let x = random(0, 100);
+let y = random(0, 100);
+let num = 100;
+repeat(i, 0, num) {
+	let diameter = random(0, 1.2);
+	ellipse(x + random(-8, 8), y + random(-8, 8), diameter, diameter);
+}

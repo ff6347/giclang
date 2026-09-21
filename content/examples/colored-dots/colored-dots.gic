@@ -1,0 +1,16 @@
+// ABOUTME: Places four matching blue-green dots around one contrasting coral center dot.
+// ABOUTME: Adapts a five-dot similarity study to the 100 by 100 GIC Canvas.
+// Adapted from Colored Dots by Daniele Maselli:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/color/p5js/colored-dots
+
+background("#000000");
+noStroke();
+
+fill("#415f62");
+ellipse(25, 25, 20, 20);
+ellipse(75, 25, 20, 20);
+ellipse(25, 75, 20, 20);
+ellipse(75, 75, 20, 20);
+
+fill("#ff625f");
+ellipse(50, 50, 20, 20);

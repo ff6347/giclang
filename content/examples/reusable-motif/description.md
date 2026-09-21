@@ -1,6 +1,7 @@
 ---
 title: Reusable motif
 order: 30
+enabled: false
 categories: [form, repeat]
 tags: [functions, parameters, lines, circles]
 ---

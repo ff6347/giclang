@@ -1,0 +1,13 @@
+// ABOUTME: Draws a regular grid whose crossed lines grow progressively heavier.
+// ABOUTME: Demonstrates contrast and vertigo through changing line weight.
+// Inspired by Edmundo Mejía Galindo's Fishing Net:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/fishing-net
+
+background("#ffffff");
+stroke("#010101");
+
+repeat(i, 2, 100, 1.8) {
+	strokeWidth(i / 50);
+	line(i, 0, i, 100);
+	line(100, i, 0, i);
+}

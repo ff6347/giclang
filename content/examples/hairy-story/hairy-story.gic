@@ -1,0 +1,17 @@
+// ABOUTME: Builds a dense field of intersecting arcs from oversized ellipses.
+// ABOUTME: Uses seeded random placement to balance chaotic lines with ordered corners.
+// Inspired by “Hairy Story” by Edmundo Mejía Galindo: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/hairy-story
+
+randomSeed(420);
+background("#ffffff");
+noFill();
+stroke("#111111");
+strokeWidth(0.25);
+
+repeat(i, 0, 180) {
+	let x = 50 + random(0, 200);
+	let y = 50 + random(0, 200);
+	let width = random(60, 130);
+	let height = random(60, 130);
+	ellipse(x, y, width, height);
+}

@@ -224,10 +224,9 @@ test("persists the Canvas frame setting across reloads", async ({ page }) => {
 	).not.toBeChecked();
 });
 
-test("shows bundled Examples, Docs, and About content", async ({ page }) => {
+test("shows bundled Docs and About content", async ({ page }) => {
 	await page.goto("/");
 	const content = [
-		{ name: "Examples", text: "Repeated grid" },
 		{ name: "Docs", text: "Language reference and help" },
 		{ name: "About", text: "Pixel Art Icons" },
 	];

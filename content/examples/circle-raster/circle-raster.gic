@@ -1,0 +1,24 @@
+// ABOUTME: Covers the canvas with a regular raster of small white circles.
+// ABOUTME: Enlarges one seeded selection so a single mark becomes salient through scale.
+// Adapted from “Circle Raster” by Fabian Morón Zirfas:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/repeat/p5js/circle-raster
+
+randomSeed(340);
+background("#ffffff");
+fill("#ffffff");
+stroke("#000000");
+strokeWidth(0.2);
+
+let step = 4;
+let salientColumn = floor(random(0, 25));
+let salientRow = floor(random(0, 25));
+let salientX = salientColumn * step;
+let salientY = salientRow * step;
+
+repeat(x, 0, 100, step) {
+	repeat(y, 0, 100, step) {
+		circle(x, y, step / 2);
+	}
+}
+
+circle(salientY, salientX, step);

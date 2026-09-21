@@ -3,12 +3,25 @@
 
 import matter from "gray-matter";
 import MarkdownIt from "markdown-it";
-import type { MarkdownContent } from "./content-model.ts";
+import type { ExampleDescription, MarkdownContent } from "./content-model.ts";
 
 const markdown = new MarkdownIt({
 	html: true,
 	linkify: true,
 });
+const defaultLinkOpen = markdown.renderer.rules.link_open;
+
+markdown.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+	const token = tokens[idx];
+
+	if (!token) return self.renderToken(tokens, idx, options);
+	token.attrSet("target", "_blank");
+	token.attrJoin("rel", "noopener noreferrer"); // Secure new-tab links.
+
+	return defaultLinkOpen
+		? defaultLinkOpen(tokens, idx, options, env, self)
+		: self.renderToken(tokens, idx, options);
+};
 
 function metadataList(
 	metadata: Record<string, unknown>,
@@ -34,7 +47,10 @@ function metadataList(
 	return value.map((entry: string) => entry.trim());
 }
 
-export function compileMarkdown(path: string, source: string): MarkdownContent {
+export function compileMarkdown(
+	path: string,
+	source: string,
+): ExampleDescription | MarkdownContent {
 	const parsed = matter(source);
 	const metadata: unknown = parsed.data;
 	if (
@@ -57,7 +73,7 @@ export function compileMarkdown(path: string, source: string): MarkdownContent {
 	const isExampleDescription =
 		/(?:^|\/)content\/examples\/[^/]+\/description\.md$/.test(normalizedPath);
 
-	return {
+	const content: MarkdownContent = {
 		categories: metadataList(
 			metadata,
 			"categories",
@@ -68,5 +84,15 @@ export function compileMarkdown(path: string, source: string): MarkdownContent {
 		order: metadata.order,
 		tags: metadataList(metadata, "tags", path, isExampleDescription),
 		title: metadata.title.trim(),
+	};
+	if (!isExampleDescription) {
+		return content;
+	}
+	if (!("enabled" in metadata) || typeof metadata.enabled !== "boolean") {
+		throw new Error(`Content '${path}' requires 'enabled' to be a boolean.`);
+	}
+	return {
+		...content,
+		enabled: metadata.enabled,
 	};
 }

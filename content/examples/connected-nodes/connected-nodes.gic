@@ -1,34 +1,28 @@
-// ABOUTME: Draws nearby random points as connected visual groups.
-// ABOUTME: Demonstrates distance calculation, conditionals, and repeated drawing.
 // based on https://gestalten-in-code.qawsed.site/chance/connect/
 // by Fabian Morón Zirfas
 // Tags: Basil.js, chance, repeat, Law of Proximity, Law of Connected Elements
-
-func dist(x1, y1, x2, y2){
+func dist(x1, y1, x2, y2) {
 	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
-
-let num = 100;
+randomSeed(42);
+let num = 10;
 let diam = 5;
-let maxDistance = diam * 3;
-let x = random(0, 100);
-let y = random(0, 100);
-background(0, 0, 0);
-fill(100, 0, 0);
-stroke(60, 0, 0);
-strokeWidth(1);
-repeat(i, 0, num){
+let maxDistance = diam * 8;
+let x = random(diam, WIDTH - diam);
+let y = random(diam, HEIGHT - diam);
+fill("#18ff80");
+stroke("#da10b8");
+strokeWidth(3);
+repeat(i, 0, num) {
 	let px = x;
 	let py = y;
-	x = random(0, 100);
-	y = random(0, 100);
-
-	if(dist(px, py, x, y) < maxDistance){
+	x = random(diam, WIDTH - diam);
+	y = random(diam, HEIGHT - diam);
+	if (dist(px, py, x, y) < maxDistance) {
 		line(px, py, x, y);
-		circle(x, y, diam / 2);
-		circle(px, py, diam / 2);
+		circle(x, y, diam);
+		circle(px, py, diam);
 	} else {
 		circle(px, py, diam);
-
 	}
 }

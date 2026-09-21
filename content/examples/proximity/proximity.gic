@@ -1,0 +1,17 @@
+// ABOUTME: Groups outlined circles through regular gaps in a repeated grid.
+// ABOUTME: Demonstrates proximity with nested repetition and coordinate conditions.
+// Inspired by Fabian Morón Zirfas's Proximity:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/processing/proximity
+
+background("#ffffff");
+fill("#ffffff");
+stroke("#000000");
+strokeWidth(0.2);
+
+repeat(x, 10, 100, 10) {
+	repeat(y, 10, 100, 10) {
+		if (x != 20 && x != 40 && x != 70 && y != 40 && y != 90) {
+			circle(x, y, 2.5);
+		}
+	}
+}

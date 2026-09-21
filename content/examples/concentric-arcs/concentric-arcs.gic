@@ -1,0 +1,14 @@
+// ABOUTME: Builds nested open arcs around a shared center.
+// ABOUTME: Tapers the stroke as the arc radius grows toward the Canvas edge.
+// Adapted from Arcs by Fabian Morón Zirfas: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/arcs
+
+background("#ffffff");
+noFill();
+stroke("#000000");
+
+repeat(i, 0, 31) {
+	let diameter = i * 3.25;
+	let angle = i * 180 / PI;
+	strokeWidth(2 - diameter * 0.01875);
+	arc(50, 50, diameter / 2, angle, -angle);
+}

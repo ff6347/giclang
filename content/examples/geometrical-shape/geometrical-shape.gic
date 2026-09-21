@@ -1,0 +1,12 @@
+// ABOUTME: Draws an ambiguous square assembled from continuous line segments.
+// ABOUTME: Demonstrates continuity with a rectangle and intersecting diagonals.
+// Inspired by Julia Hilt's Geometrical Shape:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/geometrical_shape
+
+background("#fafafa");
+noFill();
+stroke("#262626");
+strokeWidth(0.4);
+rect(33.33, 33.33, 33.34, 33.34);
+line(33.33, 66.67, 66.67, 33.33);
+line(33.33, 33.33, 50, 50);

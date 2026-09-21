@@ -1,0 +1,22 @@
+// ABOUTME: Exchanges horizontal and vertical textures across an implied diagonal square.
+// ABOUTME: Demonstrates contrast, symmetry, and figure-ground reversal with line grids.
+// Inspired by Edmundo Mejía Galindo's Law of Symetry and Figured-Ground:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/p5js/grid-contrast
+
+background("#dcdcdc");
+stroke("#646464");
+strokeWidth(0.2);
+
+repeat(i, 0, 100, 0.4) {
+	line(i, i, 100, i);
+}
+
+noStroke();
+fill("#dcdcdc");
+rect(40, 40, 20, 20);
+
+stroke("#646464");
+strokeWidth(0.2);
+repeat(y, 40, 60, 0.4) {
+	line(y, y, y, 60);
+}

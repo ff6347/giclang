@@ -1,0 +1,18 @@
+// ABOUTME: Draws three loose rows of dark dots across a light field.
+// ABOUTME: Uses seeded spacing and vertical jitter to guide the eye horizontally.
+// Inspired by “dots” by Julia Hilt: https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/dots
+
+randomSeed(410);
+background("#f8f8f8");
+fill("#262626");
+noStroke();
+
+let x = 0;
+repeat(i, 0, 18) {
+	if (x <= 100) {
+		circle(x, random(21, 29), 5);
+		circle(x, random(46, 54), 5);
+		circle(x, random(71, 79), 5);
+	}
+	x = x + random(4, 10);
+}

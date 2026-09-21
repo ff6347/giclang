@@ -1,0 +1,15 @@
+// ABOUTME: Forms a white cross by covering the center of four black corners.
+// ABOUTME: Demonstrates symmetry, contrast, and layered rectangles.
+// Inspired by Paulina Mrksic's Criss Cross:
+// https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/p5js/crisscross
+
+background("#ffffff");
+noStroke();
+fill("#000000");
+rect(0, 0, 30, 30);
+rect(70, 0, 30, 30);
+rect(0, 70, 30, 30);
+rect(70, 70, 30, 30);
+
+fill("#ffffff");
+rect(20, 20, 60, 60);
