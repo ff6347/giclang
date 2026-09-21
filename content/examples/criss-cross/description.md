@@ -1,6 +1,7 @@
 ---
 title: Criss Cross
 order: 120
+enabled: false
 categories: [form]
 tags: [symmetry, closure, contrast]
 ---

@@ -1,6 +1,7 @@
 ---
 title: Colored Shapes
 order: 530
+enabled: false
 categories: [color, form, repeat]
 tags: [primary colors, squares, circles, color cycling]
 ---

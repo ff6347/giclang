@@ -1,6 +1,7 @@
 ---
 title: Radial Arcs
 order: 190
+enabled: false
 categories: [form, repeat]
 tags: [arcs, closure, circles]
 ---

@@ -1,6 +1,7 @@
 ---
 title: Diagonal Grid
 order: 280
+enabled: false
 categories: [grid, repeat]
 tags: [lines, circles, lattice]
 ---

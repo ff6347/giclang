@@ -1,6 +1,7 @@
 ---
 title: Proximity
 order: 150
+enabled: false
 categories: [form, grid, repeat]
 tags: [proximity, circles, grouping]
 ---

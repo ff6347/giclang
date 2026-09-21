@@ -1,6 +1,7 @@
 ---
 title: Close the Triangle
 order: 110
+enabled: false
 categories: [form]
 tags: [closure, triangles, contrast]
 ---

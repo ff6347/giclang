@@ -1,6 +1,7 @@
 ---
 title: lines
 order: 260
+enabled: false
 categories: [grid, repeat]
 tags: [circles, interference, prägnanz]
 ---

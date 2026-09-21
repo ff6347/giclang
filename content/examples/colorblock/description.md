@@ -1,6 +1,7 @@
 ---
 title: Colorblock
 order: 510
+enabled: false
 categories: [color, form]
 tags: [monochrome, proximity, rectangles, interpolation]
 ---

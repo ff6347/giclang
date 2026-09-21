@@ -1,6 +1,7 @@
 ---
 title: Similarity by Hue and Size
 order: 480
+enabled: false
 categories: [chance, color, repeat]
 tags: [similarity, hue, size, circles, grouping]
 ---

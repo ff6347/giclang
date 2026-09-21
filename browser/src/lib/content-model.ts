@@ -9,11 +9,15 @@ export interface MarkdownContent {
 	readonly title: string;
 }
 
+export interface ExampleDescription extends MarkdownContent {
+	readonly enabled: boolean;
+}
+
 export interface DocumentationContent extends MarkdownContent {
 	readonly id: string;
 }
 
-export interface ExampleContent extends MarkdownContent {
+export interface ExampleContent extends ExampleDescription {
 	readonly fileName: string;
 	readonly id: string;
 	readonly source: string;
@@ -29,7 +33,7 @@ export interface ProductContent {
 interface ProductContentInput {
 	readonly about: Record<string, MarkdownContent>;
 	readonly docs: Record<string, MarkdownContent>;
-	readonly exampleDescriptions: Record<string, MarkdownContent>;
+	readonly exampleDescriptions: Record<string, ExampleDescription>;
 	readonly exampleSources: Record<string, string>;
 	readonly exampleThumbnails: Record<string, string>;
 }
@@ -130,6 +134,9 @@ export function createProductContent(
 			throw new Error(
 				`Example '${id}' requires '${id}.gic', 'description.md', and 'thumbnail.png'.`,
 			);
+		}
+		if (!description.enabled) {
+			continue;
 		}
 		examples.push({
 			...description,

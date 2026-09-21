@@ -1,6 +1,7 @@
 ---
 title: Circle bubbles
 order: 400
+enabled: false
 categories: [chance, form]
 tags: [circles, similarity, connected elements, contrast]
 ---

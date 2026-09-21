@@ -1,6 +1,7 @@
 ---
 title: Hairy Story
 order: 420
+enabled: false
 categories: [chance, form]
 tags: [ellipses, causality, connected elements, irregular grid]
 ---

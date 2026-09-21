@@ -1,6 +1,7 @@
 ---
 title: Pyramid
 order: 140
+enabled: false
 categories: [form]
 tags: [space, triangles, contrast]
 ---

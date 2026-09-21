@@ -1,6 +1,7 @@
 ---
 title: Law of Clousure and Multistable Perception in a grid
 order: 220
+enabled: false
 categories: [grid, chance]
 tags: [proximity, multistable-perception, nonlinear-spacing]
 ---

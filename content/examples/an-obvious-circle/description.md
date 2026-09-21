@@ -1,6 +1,7 @@
 ---
 title: An Obvious Circle
 order: 100
+enabled: false
 categories: [form]
 tags: [closure, circles, negative space]
 ---
