@@ -1,7 +1,7 @@
 ---
 title: Mice Nip
 order: 430
-enabled: false
+enabled: true
 categories: [chance, form, repeat]
 tags: [randomness, circles, simplicity]
 ---

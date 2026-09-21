@@ -36,5 +36,7 @@
 - [inventory] The exhaustive pinned-source audit classified 107 remaining executable sketch directories: 92 excluded from v0.9, 5 duplicates, and 10 compatible lower-priority candidates. The complete per-directory table is recorded on git-bug issue `4986a39`.
 - [decision] The ten deferred compatible adaptations move to follow-up issue `2b97835`; this lets the completed migration inventory close without conflating workshop-ready examples with lower-priority deliberate rewrites.
 - [decision] Example descriptions require an explicit boolean `enabled` field. Product-content assembly validates every complete bundle, then excludes disabled examples before they reach the application.
-- [content] All 44 current examples are disabled pending review. The in-progress HSB replacement is included as the renamed OKLCH Triadic bundle.
+- [content] All bundles began disabled pending review. Corridor, Dots, Geometrical Shape, Lines, Mice Nip, OKLCH Triadic, and Pyramid are enabled for review.
 - [verification] Metadata and discovery tests, core and compact suites, both TypeScript projects, lint, formatting, browser build, and all 73 applicable Playwright tests passed. Direct browser inspection confirmed an empty Examples list.
+- [decision] Example cards reserve an 18rem collapsed slot; their content expands in place on hover or keyboard focus, above neighboring cards rather than reflowing the catalog.
+- [verification] The hover acceptance test confirms an overflowing card exposes its full content above the lower row without moving it. Core and compact suites, both TypeScript projects, lint, formatting, browser build, and all 74 Playwright tests passed.
