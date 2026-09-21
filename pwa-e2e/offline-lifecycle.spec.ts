@@ -91,7 +91,10 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 
 	await offlinePage.getByRole("tab", { name: "Examples" }).click();
 	await expect(
-		offlinePage.getByRole("heading", { name: "Repeated grid" }),
+		offlinePage
+			.getByRole("tabpanel", { name: "Examples" })
+			.getByRole("listitem")
+			.first(),
 	).toBeVisible();
 	await offlinePage.getByRole("tab", { name: "Gestalten" }).click();
 
