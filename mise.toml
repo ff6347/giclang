@@ -1,5 +1,4 @@
 [tools]
 direnv = "2.37.1"
 node = "26.5.1"
-nub = { version = "latest", allow_builds = ["@nubjs/nub"] }
-pnpm = "12"
+pnpm = "12.5.1"
