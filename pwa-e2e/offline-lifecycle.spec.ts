@@ -105,6 +105,9 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	await setEditorSource(offlinePage, source);
 	await expect(offlinePage.locator("#problems")).toHaveText("");
 
+	await expect(
+		offlinePage.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
 	const pngDownload = offlinePage.waitForEvent("download");
 	await offlinePage.getByRole("button", { name: "Download PNG" }).click();
 	expect((await pngDownload).suggestedFilename()).toBe("gic-sketch.png");
