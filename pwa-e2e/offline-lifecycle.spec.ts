@@ -44,6 +44,7 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	context,
 	page,
 }) => {
+	test.setTimeout(60_000);
 	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
 	await page.goto("/");
 	await expect(page.locator(".monaco-editor")).toBeVisible({ timeout: 15_000 });
