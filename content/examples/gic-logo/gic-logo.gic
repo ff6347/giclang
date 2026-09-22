@@ -1,0 +1,23 @@
+// ABOUTME: Graphic that builds the GiC logo
+let margin = 10;
+let bar = 10;
+fill("black");
+noStroke();
+// top bar
+rect(margin, margin, WIDTH - margin * 2, bar);
+// left bar
+rect(margin, margin, bar, HEIGHT - margin * 2);
+// bottom bar
+rect(margin, HEIGHT - margin * 2, WIDTH - margin * 2, bar);
+// right bar
+rect(WIDTH - margin * 2, HEIGHT / 2, bar, HEIGHT / 2 - margin * 2);
+// inner bar
+rect((WIDTH / 2) + margin, HEIGHT / 2, WIDTH / 2 - margin * 2, bar);
+// dot
+circle(WIDTH - margin - bar / 2, HEIGHT / 2 - margin, bar / 2);
+//c top bar
+rect((WIDTH / 2) - margin, (HEIGHT / 2) - margin * 2, bar * 2, bar);
+// C left bar
+rect((WIDTH / 2) - margin * 2, (HEIGHT / 2) - margin * 2, bar, bar * 4);
+// c bottom bar
+rect((WIDTH / 2) - margin, (HEIGHT / 2) + margin, bar * 2, bar);
