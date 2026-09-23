@@ -3,12 +3,17 @@
 
 mod desktop_menu;
 mod documents;
+mod external_tools;
+mod managed_files;
+mod workspace;
 
 use documents::{DocumentStore, OpenedDocument};
+use external_tools::AssistantStatus;
 use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use tempfile::NamedTempFile;
+use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
 const ALLOWED_SETTING_KEYS: [&str; 6] = [
     "gic.appearance",
@@ -144,6 +149,45 @@ async fn save_gic_as(
         .transpose()
 }
 
+#[tauri::command]
+fn workspace_status(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.status(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn repair_workspace(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.reconcile(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn uninstall_workspace(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.uninstall(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn resolve_workspace_file(
+    path: &str,
+    resolution: &str,
+    manager: State<'_, WorkspaceManager>,
+) -> Result<WorkspaceStatus, String> {
+    let resolution = match resolution {
+        "keep" => Resolution::Keep,
+        "replace" => Resolution::Replace,
+        _ => return Err("Unsupported resolution.".to_owned()),
+    };
+    manager.resolve(path, resolution, managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn assistant_status() -> Vec<AssistantStatus> {
+    external_tools::assistant_status()
+}
+
+#[tauri::command]
+fn launch_assistant(name: &str, manager: State<'_, WorkspaceManager>) -> Result<(), String> {
+    external_tools::launch(name, manager.workspace_root())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -156,14 +200,37 @@ pub fn run() {
                 .join("settings.json");
             app.manage(SettingsStore::new(settings_path));
             app.manage(DocumentStore::default());
+            let workspace_root = app
+                .path()
+                .document_dir()
+                .map_err(std::io::Error::other)?
+                .join("gestalten-in-code");
+            let manifest_path = app
+                .path()
+                .app_config_dir()
+                .map_err(std::io::Error::other)?
+                .join("managed-workspace.json");
+            app.manage(WorkspaceManager::new(workspace_root, manifest_path));
             desktop_menu::install(app)?;
+            if let Err(error) = app
+                .state::<WorkspaceManager>()
+                .reconcile(managed_files::MANAGED_FILES)
+            {
+                eprintln!("workspace reconcile failed: {error}");
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            assistant_status,
+            launch_assistant,
             open_gic,
             read_settings,
+            repair_workspace,
+            resolve_workspace_file,
             save_gic,
             save_gic_as,
+            uninstall_workspace,
+            workspace_status,
             write_setting
         ])
         .run(tauri::generate_context!())
