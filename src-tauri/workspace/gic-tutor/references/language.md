@@ -1,8 +1,6 @@
 # GIC language reference
 
-GIC (Gestalten in Code) is a small C-style language for two-dimensional
-generative graphics. Source files use the `.gic` extension. Sketches run top to
-bottom once; animation is outside the core static language.
+GIC (Gestalten in Code) is a small C-style language for two-dimensional generative graphics. Source files use the `.gic` extension. Sketches run top to bottom once; animation is outside the core static language.
 
 ## Values
 
@@ -52,8 +50,7 @@ repeat(i, 10, 0, -1) {
 ```
 
 - `if` braces are always required; no ternary, no `switch`.
-- `repeat(variable, start, end)` and `repeat(variable, start, end, step)`
-  iterate from start to end, exclusive. Step defaults to `1` and must not be `0`.
+- `repeat(variable, start, end)` and `repeat(variable, start, end, step)` iterate from start to end, exclusive. Step defaults to `1` and must not be `0`.
 - The repeat variable is scoped to the body and cannot be reassigned.
 - There is no `while`, `for`, or `break`/`continue`.
 
@@ -118,6 +115,4 @@ arc(x, y, radius, startAngle, endAngle);
 
 ## Keywords and reserved names
 
-`let if else repeat func return loop true false null` plus every built-in and
-constant name. These cannot be used as variable, function, parameter, or repeat
-variable names.
+`let if else repeat func return loop true false null` plus every built-in and constant name. These cannot be used as variable, function, parameter, or repeat variable names.
