@@ -1,5 +1,11 @@
 import { Button, Checkbox } from "@base-ui/react";
 import type { Appearance, DarkTheme, LightTheme } from "../lib/theme.ts";
+import {
+	assistantPresentation,
+	supportFileLabel,
+	supportFileTitle,
+} from "../lib/workspace-support.ts";
+import type { WorkspaceController } from "../hooks/use-workspace.ts";
 
 export function SettingsPanel({
 	appearance,
@@ -13,6 +19,7 @@ export function SettingsPanel({
 	onFormatOnSaveChange,
 	onLightThemeChange,
 	onResetLayout,
+	workspace,
 }: {
 	appearance: Appearance;
 	canvasFrame: boolean;
@@ -25,6 +32,7 @@ export function SettingsPanel({
 	onFormatOnSaveChange: (checked: boolean) => void;
 	onLightThemeChange: (theme: LightTheme) => void;
 	onResetLayout: () => void;
+	workspace: WorkspaceController | undefined;
 }) {
 	return (
 		<section aria-label="Settings" className="workspace-panel padded-panel">
@@ -103,6 +111,89 @@ export function SettingsPanel({
 			>
 				Reset Layout
 			</Button>
+			{workspace !== undefined && (
+				<>
+					<h2>Support files</h2>
+					<div className="workspace-support-actions">
+						<Button
+							className="application-button"
+							type="button"
+							onClick={workspace.repair}
+						>
+							{workspace.status?.installed === true
+								? "Repair and update support files"
+								: "Install support files"}
+						</Button>
+						<Button
+							className="application-button"
+							type="button"
+							onClick={workspace.uninstall}
+							disabled={workspace.status?.installed !== true}
+						>
+							Uninstall support files
+						</Button>
+					</div>
+					{workspace.status !== null && (
+						<ul className="support-files">
+							{workspace.status.files.map((file) => (
+								<li key={file.path} className="support-file-row">
+									<span className="support-file-name">
+										{supportFileTitle(file.path)}
+									</span>
+									<span
+										className={`support-file-state support-file-state-${file.state}`}
+									>
+										{supportFileLabel(file.state)}
+									</span>
+									{file.state === "modified" && (
+										<span className="support-file-actions">
+											<Button
+												className="application-button"
+												type="button"
+												onClick={() => workspace.resolve(file.path, "keep")}
+											>
+												Keep my version
+											</Button>
+											<Button
+												className="application-button"
+												type="button"
+												onClick={() => workspace.resolve(file.path, "replace")}
+											>
+												Replace with GIC version
+											</Button>
+										</span>
+									)}
+								</li>
+							))}
+						</ul>
+					)}
+					<h2>External assistants</h2>
+					{workspace.assistants.map((assistant) => {
+						const presentation = assistantPresentation(
+							assistant.name,
+							assistant.available,
+						);
+						return (
+							<div key={assistant.name} className="assistant-row">
+								<span className="assistant-name">{presentation.title}</span>
+								{presentation.canLaunch ? (
+									<Button
+										className="application-button"
+										type="button"
+										onClick={() => workspace.launch(assistant.name)}
+									>
+										{presentation.label}
+									</Button>
+								) : (
+									<span className="assistant-guidance">
+										{presentation.guidance}
+									</span>
+								)}
+							</div>
+						);
+					})}
+				</>
+			)}
 		</section>
 	);
 }

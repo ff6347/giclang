@@ -571,6 +571,41 @@ canvas {
 	width: 0.25rem;
 }
 
+.workspace-support-actions,
+.support-file-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s2);
+}
+
+.support-files {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s2);
+	list-style: none;
+	margin: var(--s0);
+	padding: var(--s0);
+}
+
+.support-file-row,
+.assistant-row {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s2);
+	justify-content: space-between;
+	width: 100%;
+}
+
+.support-file-name,
+.assistant-name {
+	font-weight: 600;
+}
+
+.assistant-guidance {
+	font-size: smaller;
+}
+
 .colorpicker-header .codicon-color-mode {
 	display: none;
 }
