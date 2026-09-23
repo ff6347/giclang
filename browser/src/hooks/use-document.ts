@@ -21,6 +21,10 @@ function normalizeFileName(name: string): string {
 	return trimmedName.endsWith(".gic") ? trimmedName : `${trimmedName}.gic`;
 }
 
+function sketchBaseName(name: string): string {
+	return name.endsWith(".gic") ? name.slice(0, -".gic".length) : name;
+}
+
 export function useDocument(
 	formatOnSave: boolean,
 	onExampleOpened: () => void,
@@ -98,7 +102,10 @@ export function useDocument(
 		const saved = await desktop.saveDocumentAs(source, suggestedName);
 		if (saved === null) return;
 		discardRecovery();
-		replaceDocument(openDocument(saved.name, saved.source), saved.documentId);
+		replaceDocument(
+			openDocument(sketchBaseName(saved.name), saved.source),
+			saved.documentId,
+		);
 	};
 
 	const saveDesktopDocument = async () => {
@@ -191,7 +198,10 @@ export function useDocument(
 				const open = () => {
 					discardRecovery();
 					replaceDocument(
-						openDocument(openedDocument.name, openedDocument.source),
+						openDocument(
+							sketchBaseName(openedDocument.name),
+							openedDocument.source,
+						),
 						openedDocument.documentId,
 					);
 				};
