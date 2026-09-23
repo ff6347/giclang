@@ -59,8 +59,16 @@ export class DesktopHost {
 		return invoke<WorkspaceStatus>("workspace_status");
 	}
 
-	workspaceNotice(): Promise<string | null> {
-		return invoke<string | null>("workspace_notice");
+	projectsDirectory(): Promise<string> {
+		return invoke<string>("projects_directory");
+	}
+
+	chooseProjectsDirectory(): Promise<string | null> {
+		return invoke<string | null>("choose_projects_directory");
+	}
+
+	showWorkspaceNotice(): Promise<void> {
+		return invoke<void>("show_workspace_notice");
 	}
 
 	repairWorkspace(): Promise<WorkspaceStatus> {

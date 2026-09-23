@@ -10,7 +10,9 @@ import type {
 
 export interface WorkspaceController {
 	readonly assistants: AssistantStatus[];
+	readonly projectsDirectory: string | null;
 	readonly status: WorkspaceStatus | null;
+	chooseProjectsDirectory(): void;
 	launch(assistant: string): void;
 	repair(): void;
 	resolve(path: string, resolution: "keep" | "replace"): void;
@@ -32,6 +34,9 @@ export function useWorkspace(
 ): WorkspaceController {
 	const [status, setStatus] = useState<WorkspaceStatus | null>(null);
 	const [assistants, setAssistants] = useState<AssistantStatus[]>([]);
+	const [projectsDirectory, setProjectsDirectory] = useState<string | null>(
+		null,
+	);
 
 	const refresh = useCallback(() => {
 		if (desktop === undefined) {
@@ -49,6 +54,12 @@ export function useWorkspace(
 			.catch((reason: unknown) => {
 				window.alert(errorMessage(reason));
 			});
+		void desktop
+			.projectsDirectory()
+			.then(setProjectsDirectory)
+			.catch((reason: unknown) => {
+				window.alert(errorMessage(reason));
+			});
 	}, [desktop]);
 
 	useEffect(() => {
@@ -57,12 +68,8 @@ export function useWorkspace(
 		}
 		refresh();
 		void desktop
-			.workspaceNotice()
-			.then((path) => {
-				if (path !== null) {
-					window.alert(`Your GIC projects folder was created at:\n\n${path}`);
-				}
-			})
+			.showWorkspaceNotice()
+			.then(() => refresh())
 			.catch(() => {});
 	}, [desktop, refresh]);
 
@@ -98,5 +105,30 @@ export function useWorkspace(
 		}
 	};
 
-	return { assistants, status, launch, repair, resolve, uninstall };
+	const chooseProjectsDirectory = (): void => {
+		if (desktop === undefined) {
+			return;
+		}
+		void desktop
+			.chooseProjectsDirectory()
+			.then((path) => {
+				if (path !== null) {
+					refresh();
+				}
+			})
+			.catch((reason: unknown) => {
+				window.alert(errorMessage(reason));
+			});
+	};
+
+	return {
+		assistants,
+		projectsDirectory,
+		status,
+		chooseProjectsDirectory,
+		launch,
+		repair,
+		resolve,
+		uninstall,
+	};
 }

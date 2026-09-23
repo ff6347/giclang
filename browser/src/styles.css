@@ -606,6 +606,19 @@ canvas {
 	font-size: smaller;
 }
 
+.projects-folder-row {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s2);
+	justify-content: space-between;
+	width: 100%;
+}
+
+.projects-folder-path {
+	word-break: break-all;
+}
+
 .colorpicker-header .codicon-color-mode {
 	display: none;
 }

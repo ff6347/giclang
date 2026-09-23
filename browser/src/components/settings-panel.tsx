@@ -113,6 +113,19 @@ export function SettingsPanel({
 			</Button>
 			{workspace !== undefined && (
 				<>
+					<h2>Projects folder</h2>
+					<div className="projects-folder-row">
+						<span className="projects-folder-path">
+							{workspace.projectsDirectory ?? "Loading…"}
+						</span>
+						<Button
+							className="application-button"
+							type="button"
+							onClick={workspace.chooseProjectsDirectory}
+						>
+							Choose folder…
+						</Button>
+					</div>
 					<h2>Support files</h2>
 					<div className="workspace-support-actions">
 						<Button

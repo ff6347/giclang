@@ -98,7 +98,7 @@ impl Manifest {
 pub(crate) struct WorkspaceManager {
     access: Mutex<()>,
     created_notice: Mutex<Option<String>>,
-    workspace_root: PathBuf,
+    workspace_root: Mutex<PathBuf>,
     manifest_path: PathBuf,
 }
 
@@ -107,13 +107,34 @@ impl WorkspaceManager {
         Self {
             access: Mutex::new(()),
             created_notice: Mutex::new(None),
-            workspace_root,
+            workspace_root: Mutex::new(workspace_root),
             manifest_path,
         }
     }
 
-    pub(crate) fn workspace_root(&self) -> &Path {
-        &self.workspace_root
+    pub(crate) fn workspace_root(&self) -> PathBuf {
+        self.workspace_root
+            .lock()
+            .map(|root| root.clone())
+            .unwrap_or_else(|poisoned| poisoned.into_inner().clone())
+    }
+
+    pub(crate) fn set_root(&self, root: PathBuf) -> Result<(), String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Workspace support is unavailable.".to_owned())?;
+        *self
+            .workspace_root
+            .lock()
+            .map_err(|_| "Workspace support is unavailable.".to_owned())? = root;
+        Ok(())
+    }
+
+    pub(crate) fn record_creation_notice(&self, path: PathBuf) {
+        if let Ok(mut notice) = self.created_notice.lock() {
+            *notice = Some(path.display().to_string());
+        }
     }
 
     pub(crate) fn take_creation_notice(&self) -> Option<String> {
@@ -128,7 +149,8 @@ impl WorkspaceManager {
             .access
             .lock()
             .map_err(|_| "Workspace support is unavailable.".to_owned())?;
-        self.status_locked(managed)
+        let workspace_root = self.root_locked()?;
+        self.status_locked(&workspace_root, managed)
     }
 
     pub(crate) fn reconcile(&self, managed: &[ManagedFile]) -> Result<WorkspaceStatus, String> {
@@ -136,12 +158,12 @@ impl WorkspaceManager {
             .access
             .lock()
             .map_err(|_| "Workspace support is unavailable.".to_owned())?;
-        let creating_workspace = !self.workspace_root.exists();
+        let workspace_root = self.root_locked()?;
         let mut manifest = self.read_manifest();
         manifest.enabled = true;
-        self.ensure_structure()?;
+        self.ensure_structure(&workspace_root)?;
         for file in managed {
-            let target = self.workspace_root.join(file.relative_path);
+            let target = workspace_root.join(file.relative_path);
             let bundled = digest(file.contents);
             if !target.exists() {
                 install(&target, file.contents)?;
@@ -171,15 +193,7 @@ impl WorkspaceManager {
             }
         }
         self.write_manifest(&manifest)?;
-        let status = self.status_locked(managed)?;
-        if creating_workspace {
-            let notice = self.workspace_root.display().to_string();
-            *self
-                .created_notice
-                .lock()
-                .map_err(|_| "Workspace support is unavailable.".to_owned())? = Some(notice);
-        }
-        Ok(status)
+        self.status_locked(&workspace_root, managed)
     }
 
     pub(crate) fn resolve(
@@ -192,11 +206,12 @@ impl WorkspaceManager {
             .access
             .lock()
             .map_err(|_| "Workspace support is unavailable.".to_owned())?;
+        let workspace_root = self.root_locked()?;
         let file = managed
             .iter()
             .find(|file| file.relative_path == relative_path)
             .ok_or_else(|| "Unknown managed file.".to_owned())?;
-        let target = self.workspace_root.join(relative_path);
+        let target = workspace_root.join(relative_path);
         if !target.exists() {
             return Err("Managed file is missing.".to_owned());
         }
@@ -221,7 +236,7 @@ impl WorkspaceManager {
             }
         }
         self.write_manifest(&manifest)?;
-        self.status_locked(managed)
+        self.status_locked(&workspace_root, managed)
     }
 
     pub(crate) fn uninstall(&self, managed: &[ManagedFile]) -> Result<WorkspaceStatus, String> {
@@ -229,10 +244,11 @@ impl WorkspaceManager {
             .access
             .lock()
             .map_err(|_| "Workspace support is unavailable.".to_owned())?;
+        let workspace_root = self.root_locked()?;
         let mut manifest = self.read_manifest();
         manifest.enabled = false;
         for file in managed {
-            let target = self.workspace_root.join(file.relative_path);
+            let target = workspace_root.join(file.relative_path);
             if !target.exists() {
                 manifest.files.remove(file.relative_path);
                 continue;
@@ -249,17 +265,28 @@ impl WorkspaceManager {
                 manifest.files.remove(file.relative_path);
             }
         }
-        self.prune_managed_dirs(managed);
+        self.prune_managed_dirs(&workspace_root, managed);
         self.write_manifest(&manifest)?;
-        self.status_locked(managed)
+        self.status_locked(&workspace_root, managed)
     }
 
-    fn status_locked(&self, managed: &[ManagedFile]) -> Result<WorkspaceStatus, String> {
+    fn root_locked(&self) -> Result<PathBuf, String> {
+        self.workspace_root
+            .lock()
+            .map(|root| root.clone())
+            .map_err(|_| "Workspace support is unavailable.".to_owned())
+    }
+
+    fn status_locked(
+        &self,
+        workspace_root: &Path,
+        managed: &[ManagedFile],
+    ) -> Result<WorkspaceStatus, String> {
         let manifest = self.read_manifest();
         let installed = self.manifest_path.exists() && manifest.enabled;
         let mut files = Vec::with_capacity(managed.len());
         for file in managed {
-            let target = self.workspace_root.join(file.relative_path);
+            let target = workspace_root.join(file.relative_path);
             let state = if !target.exists() {
                 FileState::Missing
             } else if manifest
@@ -281,22 +308,22 @@ impl WorkspaceManager {
         Ok(WorkspaceStatus { installed, files })
     }
 
-    fn ensure_structure(&self) -> Result<(), String> {
-        fs::create_dir_all(&self.workspace_root)
+    fn ensure_structure(&self, workspace_root: &Path) -> Result<(), String> {
+        fs::create_dir_all(workspace_root)
             .map_err(|_| "Unable to create the workspace.".to_owned())?;
-        fs::create_dir_all(self.workspace_root.join(SKETCHES_DIR))
+        fs::create_dir_all(workspace_root.join(SKETCHES_DIR))
             .map_err(|_| "Unable to create the sketches folder.".to_owned())?;
-        fs::create_dir_all(self.workspace_root.join(SESSIONS_DIR))
+        fs::create_dir_all(workspace_root.join(SESSIONS_DIR))
             .map_err(|_| "Unable to create the sessions folder.".to_owned())?;
         Ok(())
     }
 
-    fn prune_managed_dirs(&self, managed: &[ManagedFile]) {
+    fn prune_managed_dirs(&self, workspace_root: &Path, managed: &[ManagedFile]) {
         let mut dirs: Vec<PathBuf> = Vec::new();
         for file in managed {
-            let mut current = self.workspace_root.join(file.relative_path);
+            let mut current = workspace_root.join(file.relative_path);
             current.pop();
-            while current.starts_with(&self.workspace_root) && current != self.workspace_root {
+            while current.starts_with(workspace_root) && current.as_path() != workspace_root {
                 dirs.push(current.clone());
                 current.pop();
             }
@@ -699,17 +726,14 @@ mod tests {
     }
 
     #[test]
-    fn records_a_creation_notice_only_when_the_folder_is_created() {
+    fn records_a_creation_notice_until_consumed() {
         let (workspace, directory) = manager("creation-notice");
-        workspace.reconcile(&v1()).expect("first run");
+        workspace.record_creation_notice(workspace.workspace_root());
 
         assert_eq!(
             workspace.take_creation_notice(),
             Some(workspace.workspace_root().display().to_string()),
         );
-        assert_eq!(workspace.take_creation_notice(), None);
-
-        workspace.reconcile(&v1()).expect("second run");
         assert_eq!(workspace.take_creation_notice(), None);
         remove_test_directory(&directory);
     }
