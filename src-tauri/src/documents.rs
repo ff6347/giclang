@@ -93,10 +93,26 @@ fn with_gic_extension(mut path: PathBuf) -> PathBuf {
     path
 }
 
+pub(crate) fn sketch_path(sketchbook: &Path, chosen: PathBuf) -> PathBuf {
+    if chosen.parent() != Some(sketchbook) {
+        return chosen;
+    }
+    let Some(name) = chosen
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .filter(|stem| !stem.is_empty())
+        .map(str::to_owned)
+    else {
+        return chosen;
+    };
+    sketchbook.join(&name).join(format!("{name}.gic"))
+}
+
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
         .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+    fs::create_dir_all(parent).map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
     let mut temporary_file = NamedTempFile::new_in(parent)
         .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
     temporary_file
@@ -111,7 +127,7 @@ fn write_source(path: &Path, source: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::DocumentStore;
+    use super::{sketch_path, DocumentStore};
     use std::path::{Path, PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -208,6 +224,47 @@ mod tests {
         store
             .save(&second.document_id, "background(\"blue\");")
             .expect("save active fixture");
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn sketch_path_builds_a_sketch_folder_inside_the_sketchbook() {
+        let sketchbook = Path::new("/tmp/gic-sketches");
+
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("orbit")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("orbit.gic")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, PathBuf::from("/tmp/elsewhere/orbit.gic")),
+            PathBuf::from("/tmp/elsewhere/orbit.gic"),
+        );
+    }
+
+    #[test]
+    fn save_path_creates_the_sketch_folder() {
+        let directory = test_directory("sketch-folder");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let sketches = directory.join("sketches");
+        let store = DocumentStore::default();
+
+        let saved = store
+            .save_path(
+                sketch_path(&sketches, sketches.join("orbit")),
+                "circle(1, 2, 3);",
+            )
+            .expect("save sketch fixture");
+
+        assert_eq!(saved.name, "orbit.gic");
+        assert_eq!(
+            std::fs::read_to_string(sketches.join("orbit/orbit.gic")).expect("read saved sketch"),
+            "circle(1, 2, 3);",
+        );
         remove_test_directory(&directory);
     }
 }

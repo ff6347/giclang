@@ -7,7 +7,7 @@ mod external_tools;
 mod managed_files;
 mod workspace;
 
-use documents::{DocumentStore, OpenedDocument};
+use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
 use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex};
 use tauri::{AppHandle, Manager, State};
@@ -162,17 +162,22 @@ async fn save_gic_as(
     source: &str,
     suggested_name: &str,
     store: State<'_, DocumentStore>,
+    manager: State<'_, WorkspaceManager>,
 ) -> Result<Option<OpenedDocument>, String> {
+    let sketchbook = manager.workspace_root().join("sketches");
+    fs::create_dir_all(&sketchbook).map_err(|_| "Unable to prepare the sketchbook.".to_owned())?;
     let selected = app
         .dialog()
         .file()
         .add_filter("GIC sketch", &["gic"])
+        .set_directory(&sketchbook)
         .set_file_name(suggested_name)
         .blocking_save_file();
     selected
         .map(|path| {
             path.into_path()
                 .map_err(|_| "Unable to use the selected sketch location.".to_owned())
+                .map(|path| sketch_path(&sketchbook, path))
                 .and_then(|path| store.save_path(path, source))
         })
         .transpose()
