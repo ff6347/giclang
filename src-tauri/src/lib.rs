@@ -9,7 +9,16 @@ mod workspace;
 
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
-use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex};
+use std::{
+    collections::BTreeMap,
+    fs,
+    io::Write,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
@@ -212,13 +221,8 @@ async fn choose_projects_directory(
     Ok(Some(path.display().to_string()))
 }
 
-#[tauri::command]
-async fn show_workspace_notice(
-    app: AppHandle,
-    settings: State<'_, SettingsStore>,
-    manager: State<'_, WorkspaceManager>,
-) -> Result<(), String> {
-    let Some(suggested) = manager.take_creation_notice() else {
+async fn run_projects_dialog(app: AppHandle) -> Result<(), String> {
+    let Some(suggested) = app.state::<WorkspaceManager>().take_creation_notice() else {
         return Ok(());
     };
     let suggested = PathBuf::from(suggested);
@@ -235,7 +239,11 @@ async fn show_workspace_notice(
         ))
         .blocking_show();
     if use_suggested {
-        apply_projects_directory(&settings, &manager, suggested)?;
+        apply_projects_directory(
+            &app.state::<SettingsStore>(),
+            &app.state::<WorkspaceManager>(),
+            suggested,
+        )?;
         return Ok(());
     }
     let mut picker = app.dialog().file();
@@ -243,13 +251,21 @@ async fn show_workspace_notice(
         picker = picker.set_directory(parent);
     }
     let Some(selected) = picker.blocking_pick_folder() else {
-        apply_projects_directory(&settings, &manager, suggested)?;
+        apply_projects_directory(
+            &app.state::<SettingsStore>(),
+            &app.state::<WorkspaceManager>(),
+            suggested,
+        )?;
         return Ok(());
     };
     let selected = selected
         .into_path()
         .map_err(|_| "Unable to use the selected folder.".to_owned())?;
-    apply_projects_directory(&settings, &manager, selected.clone())?;
+    apply_projects_directory(
+        &app.state::<SettingsStore>(),
+        &app.state::<WorkspaceManager>(),
+        selected.clone(),
+    )?;
     let _ = app
         .dialog()
         .message(format!(
@@ -259,6 +275,11 @@ async fn show_workspace_notice(
         .title("Projects folder")
         .blocking_show();
     Ok(())
+}
+
+#[tauri::command]
+async fn show_workspace_notice(app: AppHandle) -> Result<(), String> {
+    run_projects_dialog(app).await
 }
 
 #[tauri::command]
@@ -321,6 +342,23 @@ pub fn run() {
             if first_run {
                 app.state::<WorkspaceManager>()
                     .record_creation_notice(workspace_root);
+                if let Some(window) = app.get_webview_window("main") {
+                    let app_handle = app.handle().clone();
+                    let prompted = Arc::new(AtomicBool::new(false));
+                    window.on_window_event(move |event| {
+                        if let tauri::WindowEvent::Focused(true) = event {
+                            if prompted.swap(true, Ordering::SeqCst) {
+                                return;
+                            }
+                            let app_handle = app_handle.clone();
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(error) = run_projects_dialog(app_handle).await {
+                                    eprintln!("projects dialog failed: {error}");
+                                }
+                            });
+                        }
+                    });
+                }
             } else if let Err(error) = app
                 .state::<WorkspaceManager>()
                 .reconcile(managed_files::MANAGED_FILES)
