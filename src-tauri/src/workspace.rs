@@ -97,6 +97,7 @@ impl Manifest {
 
 pub(crate) struct WorkspaceManager {
     access: Mutex<()>,
+    created_notice: Mutex<Option<String>>,
     workspace_root: PathBuf,
     manifest_path: PathBuf,
 }
@@ -105,6 +106,7 @@ impl WorkspaceManager {
     pub(crate) fn new(workspace_root: PathBuf, manifest_path: PathBuf) -> Self {
         Self {
             access: Mutex::new(()),
+            created_notice: Mutex::new(None),
             workspace_root,
             manifest_path,
         }
@@ -112,6 +114,13 @@ impl WorkspaceManager {
 
     pub(crate) fn workspace_root(&self) -> &Path {
         &self.workspace_root
+    }
+
+    pub(crate) fn take_creation_notice(&self) -> Option<String> {
+        self.created_notice
+            .lock()
+            .ok()
+            .and_then(|mut notice| notice.take())
     }
 
     pub(crate) fn status(&self, managed: &[ManagedFile]) -> Result<WorkspaceStatus, String> {
@@ -127,6 +136,7 @@ impl WorkspaceManager {
             .access
             .lock()
             .map_err(|_| "Workspace support is unavailable.".to_owned())?;
+        let creating_workspace = !self.workspace_root.exists();
         let mut manifest = self.read_manifest();
         manifest.enabled = true;
         self.ensure_structure()?;
@@ -161,7 +171,15 @@ impl WorkspaceManager {
             }
         }
         self.write_manifest(&manifest)?;
-        self.status_locked(managed)
+        let status = self.status_locked(managed)?;
+        if creating_workspace {
+            let notice = self.workspace_root.display().to_string();
+            *self
+                .created_notice
+                .lock()
+                .map_err(|_| "Workspace support is unavailable.".to_owned())? = Some(notice);
+        }
+        Ok(status)
     }
 
     pub(crate) fn resolve(
@@ -677,6 +695,22 @@ mod tests {
         let status = workspace.status(&v1()).expect("status");
 
         assert_eq!(state_for(&status, REFERENCE), FileState::Missing);
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn records_a_creation_notice_only_when_the_folder_is_created() {
+        let (workspace, directory) = manager("creation-notice");
+        workspace.reconcile(&v1()).expect("first run");
+
+        assert_eq!(
+            workspace.take_creation_notice(),
+            Some(workspace.workspace_root().display().to_string()),
+        );
+        assert_eq!(workspace.take_creation_notice(), None);
+
+        workspace.reconcile(&v1()).expect("second run");
+        assert_eq!(workspace.take_creation_notice(), None);
         remove_test_directory(&directory);
     }
 }

@@ -59,6 +59,10 @@ export class DesktopHost {
 		return invoke<WorkspaceStatus>("workspace_status");
 	}
 
+	workspaceNotice(): Promise<string | null> {
+		return invoke<string | null>("workspace_notice");
+	}
+
 	repairWorkspace(): Promise<WorkspaceStatus> {
 		return invoke<WorkspaceStatus>("repair_workspace");
 	}

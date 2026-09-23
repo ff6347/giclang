@@ -56,6 +56,14 @@ export function useWorkspace(
 			return;
 		}
 		refresh();
+		void desktop
+			.workspaceNotice()
+			.then((path) => {
+				if (path !== null) {
+					window.alert(`Your GIC projects folder was created at:\n\n${path}`);
+				}
+			})
+			.catch(() => {});
 	}, [desktop, refresh]);
 
 	const applyStatus = (request: Promise<WorkspaceStatus>): void => {

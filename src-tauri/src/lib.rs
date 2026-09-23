@@ -155,6 +155,11 @@ fn workspace_status(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceSta
 }
 
 #[tauri::command]
+fn workspace_notice(manager: State<'_, WorkspaceManager>) -> Option<String> {
+    manager.take_creation_notice()
+}
+
+#[tauri::command]
 fn repair_workspace(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
     manager.reconcile(managed_files::MANAGED_FILES)
 }
@@ -230,6 +235,7 @@ pub fn run() {
             save_gic,
             save_gic_as,
             uninstall_workspace,
+            workspace_notice,
             workspace_status,
             write_setting
         ])
