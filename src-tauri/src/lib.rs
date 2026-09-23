@@ -308,7 +308,7 @@ pub fn run() {
                 .join("settings.json");
             let settings = SettingsStore::new(settings_path);
             let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
-            let first_run = !settings.read()?.contains_key("gic.projectsDirectory");
+            let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(DocumentStore::default());
             let manifest_path = app
