@@ -201,3 +201,8 @@
 ## Issue Tracking
 
 - [technique] `git-bug push` fails when the SSH agent has no identities (go-git only tries the agent). Confirmed fallback: system Git pushes fine via key files — `git push origin 'refs/bugs/*:refs/bugs/*' 'refs/identities/*:refs/identities/*'`. The SourceHut remote has no git-bug bridge.
+
+## Desktop Workspace
+
+- [lesson] A managed workspace file that the student keeps needs a persistent `kept` flag in the digest manifest, not only its recorded digest. Recording the student's digest alone makes the next reconcile see on-disk equal to recorded and silently replace it with the bundled version.
+- [decision] The desktop workspace is rooted at `~/Documents/gestalten-in-code/`. Only `AGENTS.md`, `.agents/skills/gic-tutor/SKILL.md`, and `.agents/skills/gic-tutor/references/**` are managed; `sketches/` and `sessions/` are scaffolding that the manager never scans or modifies.
