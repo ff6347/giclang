@@ -106,7 +106,7 @@ Windowing, packaged callbacks, filesystem permissions, credentials, and provider
 - Provider models must come from a maintained curated catalog. The public OpenAI Codex model page lagged the tester's working Pi subscription catalog during the spike; a model name must not be inferred from the general ChatGPT model list.
 - The spike stored the OpenCode key only in memory and used a minimal ChatGPT token file. Production credential persistence must still satisfy the atomic replacement and owner-only access contract below.
 - Session records and source files remain user-readable even though credentials do not cross into those directories.
-- First-run updates need a visible conflict flow for modified managed files; the exact diff or reveal interaction remains open.
+- First-run updates need a visible conflict flow for modified managed files; comparison and presentation are resolved by [Workspace Managed Files](workspace-managed-files.md).
 - Manual packaged native-dialog interaction, Windows package execution, recovery expiry, multiple-instance coordination, moved-file handling, Windows ACL implementation, installer formats, architectures, and signing identities remain explicit production or release checks.
 
 ## Evidence and Sources
