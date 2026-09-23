@@ -108,7 +108,7 @@ fn resolve_projects_directory(
     Ok(documents.join(DEFAULT_WORKSPACE_DIR))
 }
 
-fn relocate_workspace(
+fn apply_projects_directory(
     settings: &SettingsStore,
     manager: &WorkspaceManager,
     path: PathBuf,
@@ -203,7 +203,7 @@ async fn choose_projects_directory(
     let path = selected
         .into_path()
         .map_err(|_| "Unable to use the selected folder.".to_owned())?;
-    relocate_workspace(&settings, &manager, path.clone())?;
+    apply_projects_directory(&settings, &manager, path.clone())?;
     Ok(Some(path.display().to_string()))
 }
 
@@ -213,34 +213,38 @@ async fn show_workspace_notice(
     settings: State<'_, SettingsStore>,
     manager: State<'_, WorkspaceManager>,
 ) -> Result<(), String> {
-    let Some(created_path) = manager.take_creation_notice() else {
+    let Some(suggested) = manager.take_creation_notice() else {
         return Ok(());
     };
-    let default_path = PathBuf::from(created_path.clone());
-    let keep = app
+    let suggested = PathBuf::from(suggested);
+    let use_suggested = app
         .dialog()
         .message(format!(
-            "GIC created its projects folder at:\n\n{created_path}"
+            "Where should GIC keep your projects?\n\nSuggested folder:\n{}",
+            suggested.display()
         ))
         .title("Projects folder")
         .buttons(MessageDialogButtons::OkCancelCustom(
-            "Keep this folder".to_owned(),
-            "Choose another folder".to_owned(),
+            "Use suggested folder".to_owned(),
+            "Choose another folder…".to_owned(),
         ))
         .blocking_show();
-    if keep {
+    if use_suggested {
+        apply_projects_directory(&settings, &manager, suggested)?;
         return Ok(());
     }
-    let Some(selected) = app.dialog().file().blocking_pick_folder() else {
+    let mut picker = app.dialog().file();
+    if let Some(parent) = suggested.parent() {
+        picker = picker.set_directory(parent);
+    }
+    let Some(selected) = picker.blocking_pick_folder() else {
+        apply_projects_directory(&settings, &manager, suggested)?;
         return Ok(());
     };
     let selected = selected
         .into_path()
         .map_err(|_| "Unable to use the selected folder.".to_owned())?;
-    relocate_workspace(&settings, &manager, selected.clone())?;
-    if selected != default_path {
-        let _ = fs::remove_dir_all(&default_path);
-    }
+    apply_projects_directory(&settings, &manager, selected.clone())?;
     let _ = app
         .dialog()
         .message(format!(
@@ -299,7 +303,7 @@ pub fn run() {
                 .join("settings.json");
             let settings = SettingsStore::new(settings_path);
             let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
-            let creating_workspace = !workspace_root.exists();
+            let first_run = !settings.read()?.contains_key("gic.projectsDirectory");
             app.manage(settings);
             app.manage(DocumentStore::default());
             let manifest_path = app
@@ -309,16 +313,14 @@ pub fn run() {
                 .join("managed-workspace.json");
             app.manage(WorkspaceManager::new(workspace_root.clone(), manifest_path));
             desktop_menu::install(app)?;
-            match app
+            if first_run {
+                app.state::<WorkspaceManager>()
+                    .record_creation_notice(workspace_root);
+            } else if let Err(error) = app
                 .state::<WorkspaceManager>()
                 .reconcile(managed_files::MANAGED_FILES)
             {
-                Ok(_) if creating_workspace => {
-                    app.state::<WorkspaceManager>()
-                        .record_creation_notice(workspace_root);
-                }
-                Ok(_) => {}
-                Err(error) => eprintln!("workspace reconcile failed: {error}"),
+                eprintln!("workspace reconcile failed: {error}");
             }
             Ok(())
         })
