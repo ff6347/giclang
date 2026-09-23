@@ -11,7 +11,6 @@ import {
 	createExampleDocument,
 	createNewSketchDocument,
 	createRecoveredDocument,
-	createUntitledDocument,
 	openDocument,
 	updateDocumentSource,
 	type DocumentState,
@@ -35,7 +34,11 @@ export function useDocument(
 	const pendingReplacement = useRef<(() => Promise<void> | void) | undefined>(
 		undefined,
 	);
-	const [documentState, setDocumentState] = useState(createUntitledDocument);
+	const [documentState, setDocumentState] = useState(() => {
+		const name = nextSketchName(newSketchNames, new Date());
+		newSketchNames.add(name);
+		return createNewSketchDocument(name);
+	});
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [discardOpen, setDiscardOpen] = useState(false);
 	const [recoveryOpen, setRecoveryOpen] = useState(
@@ -90,8 +93,8 @@ export function useDocument(
 		if (desktop === undefined) return;
 		const source = sourceForSave();
 		const suggestedName = documentState.displayName.endsWith(".gic")
-			? documentState.displayName
-			: `${documentState.displayName}.gic`;
+			? documentState.displayName.slice(0, -".gic".length)
+			: documentState.displayName;
 		const saved = await desktop.saveDocumentAs(source, suggestedName);
 		if (saved === null) return;
 		discardRecovery();
