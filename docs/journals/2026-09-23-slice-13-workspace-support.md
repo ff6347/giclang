@@ -10,6 +10,7 @@
 - [decision] Only `AGENTS.md`, the tutor `SKILL.md`, and `references/**` are managed. `sketches/` and `sessions/` are scaffolding and are never scanned or modified; bundled examples stay in the application.
 - [decision] Reconcile runs at startup and on demand: it installs missing files, updates unmodified files, and preserves modified files. Uninstall removes only unmodified managed files, prunes emptied managed directories, and records the workspace as uninstalled.
 - [decision] Settings shows a desktop-only Support files section with Install/Repair, Uninstall, Keep my version, and Replace with GIC version, plus explicit Codex/OpenCode terminal launch with install fallbacks.
+- [decision] First run asks where the projects folder should live before creating it, suggests the Documents folder, and persists the chosen location as `gic.projectsDirectory`; Settings offers relocation.
 
 ## Evidence
 

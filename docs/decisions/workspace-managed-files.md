@@ -33,6 +33,12 @@ How does the desktop application tell unmodified managed support files apart fro
 - Uninstall removes only unmodified managed files, prunes emptied managed directories, and leaves user sketches, sessions, and modified files in place; it records the workspace as uninstalled so the next launch does not reinstall.
 - Installing again re-runs reconcile, which restores missing files and still preserves any user modifications.
 
+### Projects folder location
+
+- On first run the application asks, before creating anything, where the projects folder lives and suggests the user's Documents folder.
+- The chosen location is persisted as `gic.projectsDirectory` in the app-owned settings file and reused on later launches.
+- Settings shows the current location with a Choose folder action; relocating re-points managed support files without migrating existing sketches.
+
 ### External assistants
 
 - The host detects `codex` and `opencode` on `PATH`.
