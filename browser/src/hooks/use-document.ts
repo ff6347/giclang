@@ -5,9 +5,11 @@ import { useRef, useState } from "react";
 import { applySaveFormatting } from "../../../src/language-service.ts";
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
+import { nextSketchName } from "../lib/sketch-naming.ts";
 import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
 	createExampleDocument,
+	createNewSketchDocument,
 	createRecoveredDocument,
 	createUntitledDocument,
 	openDocument,
@@ -27,6 +29,7 @@ export function useDocument(
 ) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
 	const desktopDocumentId = useRef<string | undefined>(undefined);
+	const newSketchNames = useRef(new Set<string>()).current;
 	const initialRecovery = useRef(adapter.readRecovery()).current;
 	const knownRecoveryUpdatedAt = useRef(initialRecovery?.updatedAt ?? 0);
 	const pendingReplacement = useRef<(() => Promise<void> | void) | undefined>(
@@ -88,7 +91,7 @@ export function useDocument(
 		const source = sourceForSave();
 		const suggestedName = documentState.displayName.endsWith(".gic")
 			? documentState.displayName
-			: "sketch.gic";
+			: `${documentState.displayName}.gic`;
 		const saved = await desktop.saveDocumentAs(source, suggestedName);
 		if (saved === null) return;
 		discardRecovery();
@@ -124,6 +127,20 @@ export function useDocument(
 			const nextDocument = updateDocumentSource(documentState, source);
 			replace(nextDocument);
 			persistRecovery(nextDocument);
+		},
+		requestNew() {
+			const name = nextSketchName(newSketchNames, new Date());
+			newSketchNames.add(name);
+			const open = () => {
+				discardRecovery();
+				replaceDocument(createNewSketchDocument(name));
+			};
+			if (documentState.isDirty) {
+				pendingReplacement.current = open;
+				setDiscardOpen(true);
+				return;
+			}
+			open();
 		},
 		requestSave() {
 			if (desktop !== undefined) {
