@@ -56,6 +56,14 @@ impl DocumentStore {
         write_source(&document.path, source)
     }
 
+    pub(crate) fn active_path(&self) -> Option<PathBuf> {
+        self.active
+            .lock()
+            .ok()?
+            .as_ref()
+            .map(|document| document.path.clone())
+    }
+
     fn remember(&self, path: PathBuf, source: String) -> Result<OpenedDocument, String> {
         let document_id = Uuid::new_v4().to_string();
         let name = path

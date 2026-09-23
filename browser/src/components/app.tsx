@@ -138,6 +138,16 @@ export function App({
 		let disposed = false;
 		let unlisten: (() => void) | undefined;
 		const handleMenuAction = (action: DesktopMenuAction) => {
+			if (action === "new") {
+				documentsRef.current.requestNew();
+				return;
+			}
+			if (action === "reveal") {
+				void desktop.revealSketchFolder().catch(() => {
+					window.alert("GIC could not reveal the sketch folder.");
+				});
+				return;
+			}
 			if (action === "open") {
 				documentsRef.current.requestDesktopOpen();
 				return;

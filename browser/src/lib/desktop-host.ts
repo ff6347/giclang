@@ -17,8 +17,10 @@ export interface DesktopDocument {
 
 export type DesktopMenuAction =
 	| "format"
+	| "new"
 	| "open"
 	| "redo"
+	| "reveal"
 	| "save"
 	| "saveAs"
 	| "settings"
@@ -26,12 +28,14 @@ export type DesktopMenuAction =
 
 function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 	return (
+		value === "format" ||
+		value === "new" ||
 		value === "open" ||
 		value === "redo" ||
+		value === "reveal" ||
 		value === "save" ||
 		value === "saveAs" ||
 		value === "settings" ||
-		value === "format" ||
 		value === "undo"
 	);
 }
@@ -39,6 +43,10 @@ function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 export class DesktopHost {
 	openDocument(): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("open_gic");
+	}
+
+	revealSketchFolder(): Promise<void> {
+		return invoke<void>("reveal_sketch_folder");
 	}
 
 	saveDocument(documentId: string, source: string): Promise<void> {

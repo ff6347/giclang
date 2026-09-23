@@ -13,7 +13,8 @@ use std::{
     collections::BTreeMap,
     fs,
     io::Write,
-    path::PathBuf,
+    path::{Path, PathBuf},
+    process::Command,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
@@ -312,6 +313,31 @@ fn assistant_status() -> Vec<AssistantStatus> {
 }
 
 #[tauri::command]
+fn reveal_sketch_folder(
+    store: State<'_, DocumentStore>,
+    manager: State<'_, WorkspaceManager>,
+) -> Result<(), String> {
+    let target = store
+        .active_path()
+        .and_then(|path| path.parent().map(Path::to_path_buf))
+        .unwrap_or_else(|| manager.workspace_root());
+    reveal_folder(&target)
+}
+
+fn reveal_folder(path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    let result = Command::new("open").arg(path).spawn();
+    #[cfg(target_os = "windows")]
+    let result = Command::new("explorer").arg(path).spawn();
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let result = Command::new("xdg-open").arg(path).spawn();
+
+    result
+        .map(|_| ())
+        .map_err(|_| "Unable to open the folder.".to_owned())
+}
+
+#[tauri::command]
 fn launch_assistant(name: &str, manager: State<'_, WorkspaceManager>) -> Result<(), String> {
     let workspace_root = manager.workspace_root();
     external_tools::launch(name, &workspace_root)
@@ -376,6 +402,7 @@ pub fn run() {
             read_settings,
             repair_workspace,
             resolve_workspace_file,
+            reveal_sketch_folder,
             save_gic,
             save_gic_as,
             show_workspace_notice,
