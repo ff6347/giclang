@@ -108,12 +108,30 @@ pub(crate) fn sketch_path(sketchbook: &Path, chosen: PathBuf) -> PathBuf {
     let Some(name) = chosen
         .file_stem()
         .and_then(|stem| stem.to_str())
-        .filter(|stem| !stem.is_empty())
-        .map(str::to_owned)
+        .map(normalize_sketch_name)
+        .filter(|name| !name.is_empty())
     else {
         return chosen;
     };
     sketchbook.join(&name).join(format!("{name}.gic"))
+}
+
+fn normalize_sketch_name(name: &str) -> String {
+    let trimmed = name.trim();
+    let mut normalized = String::with_capacity(trimmed.len());
+    let mut previous_was_separator = false;
+    for ch in trimmed.chars() {
+        if ch.is_whitespace() {
+            previous_was_separator = true;
+        } else {
+            if previous_was_separator {
+                normalized.push('_');
+            }
+            previous_was_separator = false;
+            normalized.push(ch.to_ascii_lowercase());
+        }
+    }
+    normalized
 }
 
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
@@ -245,6 +263,14 @@ mod tests {
         );
         assert_eq!(
             sketch_path(sketchbook, sketchbook.join("orbit.gic")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("My Cool Sketch")),
+            PathBuf::from("/tmp/gic-sketches/my_cool_sketch/my_cool_sketch.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("Orbit.gic")),
             PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
         );
         assert_eq!(
