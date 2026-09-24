@@ -70,9 +70,11 @@ test("asks the deterministic agent only after explicit submission", async ({
 			};
 		});
 	expect(codeShadowSpace.right).toBeGreaterThanOrEqual(3);
+	await tutor.getByRole("button", { name: "New session" }).click();
 	await expect(
 		tutor.getByRole("button", { name: "Send message" }),
 	).toBeVisible();
+	await expect(tutor).not.toContainText("First line");
 });
 
 test("restores an agent session for the same sketch", async ({ page }) => {
