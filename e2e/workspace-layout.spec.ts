@@ -122,6 +122,12 @@ test("places application preferences in Settings", async ({ page }) => {
 	await expect(
 		page.getByRole("checkbox", { name: "Canvas frame" }),
 	).toBeChecked();
+	const allowAgentCopying = page.getByRole("checkbox", {
+		name: "Allow copying agent responses",
+	});
+	await expect(allowAgentCopying).not.toBeChecked();
+	await allowAgentCopying.click();
+	await expect(allowAgentCopying).toBeChecked();
 	await expect(
 		page.getByRole("button", { name: "Reset Layout" }),
 	).toBeVisible();

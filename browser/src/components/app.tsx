@@ -60,11 +60,16 @@ import { useWorkspace } from "../hooks/use-workspace.ts";
 import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 
+const AGENT_RESPONSE_COPYING_STORAGE_KEY = "gic.agentResponseCopying";
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const DARK_THEME_STORAGE_KEY = "gic.darkTheme";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
 const LIGHT_THEME_STORAGE_KEY = "gic.lightTheme";
+
+function initialAgentResponseCopying(settings: ApplicationSettings): boolean {
+	return settings.getItem(AGENT_RESPONSE_COPYING_STORAGE_KEY) === "true";
+}
 
 function initialCanvasFrame(settings: ApplicationSettings): boolean {
 	return settings.getItem(CANVAS_FRAME_STORAGE_KEY) !== "false";
@@ -95,6 +100,9 @@ export function App({
 	settings = localStorage,
 	supportsAppUpdates = true,
 }: AppProps) {
+	const [agentResponseCopying, setAgentResponseCopying] = useState(() =>
+		initialAgentResponseCopying(settings),
+	);
 	const [canvasFrame, setCanvasFrame] = useState(() =>
 		initialCanvasFrame(settings),
 	);
@@ -225,6 +233,11 @@ export function App({
 		setModel(defaultModel);
 	};
 
+	const updateAgentResponseCopying = (checked: boolean) => {
+		setAgentResponseCopying(checked);
+		settings.setItem(AGENT_RESPONSE_COPYING_STORAGE_KEY, String(checked));
+	};
+
 	const updateCanvasFrame = (checked: boolean) => {
 		setCanvasFrame(checked);
 		settings.setItem(CANVAS_FRAME_STORAGE_KEY, String(checked));
@@ -313,11 +326,7 @@ export function App({
 				return (
 					<AgentPanel
 						actions={agent}
-						context={buildAgentContext(
-							documents.documentState.source,
-							preview.state.problems,
-							preview.state.output,
-						)}
+						allowCopying={agentResponseCopying}
 						messages={agent.messages}
 						status={agent.status}
 					/>
@@ -325,11 +334,13 @@ export function App({
 			case SETTINGS_ID:
 				return (
 					<SettingsPanel
+						agentResponseCopying={agentResponseCopying}
 						appearance={appearance}
 						canvasFrame={canvasFrame}
 						darkTheme={darkTheme}
 						formatOnSave={formatOnSave}
 						lightTheme={lightTheme}
+						onAgentResponseCopyingChange={updateAgentResponseCopying}
 						onAppearanceChange={updateAppearance}
 						onCanvasFrameChange={updateCanvasFrame}
 						onDarkThemeChange={updateDarkTheme}

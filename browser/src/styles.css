@@ -572,31 +572,15 @@ canvas {
 }
 
 .agent-panel {
-	display: flex;
-	flex-direction: column;
 	gap: var(--s2);
-	height: 100%;
-}
-
-.agent-header,
-.agent-copy-setting,
-.agent-form .workspace-support-actions {
-	align-items: center;
-	display: flex;
-	gap: var(--s2);
-	justify-content: space-between;
-}
-
-.agent-guidance,
-.agent-context-note {
-	font-size: smaller;
-	margin: 0;
+	overflow: hidden;
 }
 
 .agent-messages {
 	flex: 1;
-	min-height: 6rem;
+	min-height: 0;
 	overflow: auto;
+	width: 100%;
 }
 
 .agent-message {
@@ -610,6 +594,70 @@ canvas {
 
 .agent-response::selection {
 	background: transparent;
+}
+
+.agent-composer {
+	align-items: flex-end;
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	display: flex;
+	gap: var(--s2);
+	padding: var(--s2);
+	position: relative;
+	width: 100%;
+}
+
+.agent-input {
+	background: transparent;
+	border: 0;
+	color: inherit;
+	flex: 1;
+	font: inherit;
+	max-height: 12rem;
+	min-height: 1.5rem;
+	outline: 0;
+	overflow-y: auto;
+	padding: var(--s1);
+	resize: none;
+}
+
+.agent-send {
+	align-items: center;
+	background-color: var(--color-text);
+	border: 2px solid var(--color-text);
+	color: var(--color-background);
+	display: flex;
+	height: var(--s5);
+	justify-content: center;
+	padding: var(--s0);
+	width: var(--s5);
+}
+
+.agent-send:hover {
+	background-color: var(--color-control);
+	color: var(--color-text);
+}
+
+.agent-send svg {
+	height: var(--s4);
+	width: var(--s4);
+}
+
+.agent-progress-icon {
+	animation: agent-progress 800ms steps(2, end) infinite;
+}
+
+@keyframes agent-progress {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.agent-progress-icon {
+		animation: none;
+	}
 }
 
 .workspace-support-actions,

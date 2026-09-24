@@ -8,11 +8,13 @@ import {
 import type { WorkspaceController } from "../hooks/use-workspace.ts";
 
 export function SettingsPanel({
+	agentResponseCopying,
 	appearance,
 	canvasFrame,
 	darkTheme,
 	formatOnSave,
 	lightTheme,
+	onAgentResponseCopyingChange,
 	onAppearanceChange,
 	onCanvasFrameChange,
 	onDarkThemeChange,
@@ -21,11 +23,13 @@ export function SettingsPanel({
 	onResetLayout,
 	workspace,
 }: {
+	agentResponseCopying: boolean;
 	appearance: Appearance;
 	canvasFrame: boolean;
 	darkTheme: DarkTheme;
 	formatOnSave: boolean;
 	lightTheme: LightTheme;
+	onAgentResponseCopyingChange: (checked: boolean) => void;
 	onAppearanceChange: (appearance: Appearance) => void;
 	onCanvasFrameChange: (checked: boolean) => void;
 	onDarkThemeChange: (theme: DarkTheme) => void;
@@ -83,6 +87,16 @@ export function SettingsPanel({
 					<option value="catppuccin-macchiato">Catppuccin Macchiato</option>
 					<option value="catppuccin-mocha">Catppuccin Mocha</option>
 				</select>
+			</label>
+			<label className="settings-option">
+				<Checkbox.Root
+					checked={agentResponseCopying}
+					className="settings-checkbox"
+					onCheckedChange={onAgentResponseCopyingChange}
+				>
+					<Checkbox.Indicator className="settings-checkbox-indicator" />
+				</Checkbox.Root>
+				Allow copying agent responses
 			</label>
 			<label className="settings-option">
 				<Checkbox.Root

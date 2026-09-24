@@ -87,7 +87,7 @@ export function createDeterministicAgent(): AgentProvider {
 			for (const character of answer) {
 				if (signal.aborted) return;
 				yield character;
-				await Promise.resolve();
+				await new Promise((resolve) => setTimeout(resolve, 12));
 			}
 		},
 	};
