@@ -47,6 +47,14 @@ test("asks the deterministic agent only after explicit submission", async ({
 		"border-bottom-width",
 		"0px",
 	);
+	await expect(tutor.locator(".agent-message").nth(1)).toHaveCSS(
+		"padding-top",
+		"16px",
+	);
+	await expect(tutor.locator(".agent-message").last()).toHaveCSS(
+		"padding-top",
+		"16px",
+	);
 	const codeBlock = tutor.locator("pre code");
 	await expect(codeBlock).toHaveText("rect(10, 10, 20, 20);");
 	const codeShadowSpace = await tutor

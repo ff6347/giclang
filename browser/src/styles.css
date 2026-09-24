@@ -588,6 +588,10 @@ canvas {
 	padding: var(--s1) 0;
 }
 
+.agent-message + .agent-message {
+	padding-top: var(--s3);
+}
+
 .agent-message:last-child {
 	border-bottom: 0;
 }
