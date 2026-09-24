@@ -265,6 +265,8 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 **Gate:** Fix the session entry schema, partial-write recovery, and durable file relationship identifier.
 
+**Verification boundary:** Review frontend behavior in the PWA against the deterministic provider. Verify provider bridges, credentials, native session persistence, sketch relationships, and other backend behavior in a built Tauri application; deterministic browser acceptance is not backend evidence.
+
 ### Slice 15: OpenCode provider
 
 **Student-visible outcome:** A student can enter an OpenCode API key, choose a supported model, stream tutor responses, restart, and sign out.
