@@ -3,6 +3,7 @@
 
 import {
 	Actions,
+	DockLocation,
 	Model,
 	TabNode,
 	TabSetNode,
@@ -26,9 +27,9 @@ const EDITOR_TABSET_ID = "editor-tabset";
 const PREVIEW_TABSET_ID = "preview-tabset";
 const PROBLEMS_TABSET_ID = "problems-tabset";
 const OUTPUT_TABSET_ID = "output-tabset";
-const TUTOR_ID = "tutor";
+export const TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 6;
+const STORAGE_VERSION = 7;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -88,6 +89,12 @@ function defaultLayout(): IJsonModel {
 											id: OUTPUT_ID,
 											name: "Output",
 											component: OUTPUT_ID,
+										},
+										{
+											type: "tab",
+											id: TUTOR_ID,
+											name: "Tutor",
+											component: TUTOR_ID,
 										},
 									],
 								},
@@ -173,7 +180,8 @@ export function loadWorkspace(
 			typeof parsed !== "object" ||
 			parsed === null ||
 			!("version" in parsed) ||
-			parsed.version !== STORAGE_VERSION ||
+			(parsed.version !== STORAGE_VERSION &&
+				parsed.version !== STORAGE_VERSION - 1) ||
 			!("layout" in parsed)
 		) {
 			return createDefaultWorkspace();
@@ -184,9 +192,9 @@ export function loadWorkspace(
 			tabSetEnableClose: true,
 		};
 		const model = Model.fromJson(layout);
-		const removedTutor = removeTutor(model);
+		ensureTutor(model);
 		validateWorkspace(model);
-		if (removedTutor) saveWorkspace(model, settings);
+		saveWorkspace(model, settings);
 		return model;
 	} catch {
 		return createDefaultWorkspace();
@@ -224,10 +232,23 @@ function validatePanel(model: Model, panelId: string, tabsetId: string): void {
 	}
 }
 
-function removeTutor(model: Model): boolean {
-	if (!(model.getNodeById(TUTOR_ID) instanceof TabNode)) return false;
-	model.doAction(Actions.deleteTab(TUTOR_ID));
-	return true;
+function ensureTutor(model: Model): void {
+	const existing = model.getNodeById(TUTOR_ID);
+	if (
+		existing instanceof TabNode &&
+		existing.getParent()?.getId() === OUTPUT_TABSET_ID
+	) {
+		return;
+	}
+	if (existing instanceof TabNode) model.doAction(Actions.deleteTab(TUTOR_ID));
+	model.doAction(
+		Actions.addTab(
+			{ id: TUTOR_ID, name: "Tutor", component: TUTOR_ID },
+			OUTPUT_TABSET_ID,
+			DockLocation.CENTER,
+			-1,
+		),
+	);
 }
 
 function validateWorkspace(model: Model): void {

@@ -27,6 +27,7 @@ import {
 	OUTPUT_ID,
 	PREVIEW_ID,
 	PROBLEMS_ID,
+	TUTOR_ID,
 	saveWorkspace,
 	SETTINGS_ID,
 } from "../lib/workspace-model.ts";
@@ -38,6 +39,7 @@ import { ProblemsPanel } from "./problems-panel.tsx";
 import { OutputPanel } from "./output-panel.tsx";
 import { PreviewPanel } from "./preview-panel.tsx";
 import { EditorPanel } from "./editor-panel.tsx";
+import { TutorPanel } from "./tutor-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
 import { useDocument } from "../hooks/use-document.ts";
@@ -55,6 +57,8 @@ import {
 } from "../lib/theme.ts";
 import { useTheme } from "../hooks/use-theme.ts";
 import { useWorkspace } from "../hooks/use-workspace.ts";
+import { useTutor } from "../hooks/use-tutor.ts";
+import { buildTutorContext } from "../lib/tutor.ts";
 
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
@@ -125,6 +129,14 @@ export function App({
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
+	const tutor = useTutor(
+		buildTutorContext(
+			documents.documentState.source,
+			preview.state.problems,
+			preview.state.output,
+		),
+		documents.documentState.displayName,
+	);
 
 	useEffect(() => {
 		if (desktop === undefined) return;
@@ -252,6 +264,10 @@ export function App({
 			const label = countLabel("Output", preview.state.output.length);
 			values.content = label;
 		}
+		if (node.getId() === TUTOR_ID) {
+			values.content =
+				tutor.status === "streaming" ? "Tutor (responding)" : "Tutor";
+		}
 	};
 
 	const panelFactory = (node: TabNode) => {
@@ -293,6 +309,19 @@ export function App({
 				return <ProblemsPanel entries={preview.state.problems} />;
 			case OUTPUT_ID:
 				return <OutputPanel entries={preview.state.output} />;
+			case TUTOR_ID:
+				return (
+					<TutorPanel
+						actions={tutor}
+						context={buildTutorContext(
+							documents.documentState.source,
+							preview.state.problems,
+							preview.state.output,
+						)}
+						messages={tutor.messages}
+						status={tutor.status}
+					/>
+				);
 			case SETTINGS_ID:
 				return (
 					<SettingsPanel

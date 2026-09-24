@@ -571,6 +571,47 @@ canvas {
 	width: 0.25rem;
 }
 
+.tutor-panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s2);
+	height: 100%;
+}
+
+.tutor-header,
+.tutor-copy-setting,
+.tutor-form .workspace-support-actions {
+	align-items: center;
+	display: flex;
+	gap: var(--s2);
+	justify-content: space-between;
+}
+
+.tutor-guidance,
+.tutor-context-note {
+	font-size: smaller;
+	margin: 0;
+}
+
+.tutor-messages {
+	flex: 1;
+	min-height: 6rem;
+	overflow: auto;
+}
+
+.tutor-message {
+	border-bottom: 1px solid currentColor;
+	padding: var(--s1) 0;
+}
+
+.tutor-response {
+	user-select: none;
+}
+
+.tutor-response::selection {
+	background: transparent;
+}
+
 .workspace-support-actions,
 .support-file-actions {
 	display: flex;
