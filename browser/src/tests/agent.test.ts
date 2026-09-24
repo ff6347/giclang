@@ -1,17 +1,17 @@
-// ABOUTME: Verifies deterministic tutor context, streaming, and session serialization.
+// ABOUTME: Verifies deterministic agent context, streaming, and session serialization.
 // ABOUTME: Pins the provider boundary without introducing a browser or provider dependency.
 
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-	buildTutorContext,
-	createDeterministicTutor,
-	parseTutorSession,
-	serializeTutorSession,
-} from "../lib/tutor.ts";
+	buildAgentContext,
+	createDeterministicAgent,
+	parseAgentSession,
+	serializeAgentSession,
+} from "../lib/agent.ts";
 
-test("tutor context contains current sketch state without drawing commands", () => {
-	const context = buildTutorContext(
+test("agent context contains current sketch state without drawing commands", () => {
+	const context = buildAgentContext(
 		"rect(1, 2, 3, 4);",
 		["bad call"],
 		["Line 1: hello"],
@@ -27,14 +27,14 @@ test("tutor context contains current sketch state without drawing commands", () 
 	assert.equal("commands" in context, false);
 });
 
-test("deterministic tutor streams a Socratic response and honors cancellation", async () => {
-	const provider = createDeterministicTutor();
+test("deterministic agent streams a Socratic response and honors cancellation", async () => {
+	const provider = createDeterministicAgent();
 	const controller = new AbortController();
 	let response = "";
 	for await (const chunk of provider.stream(
 		{
 			question: "How do I debug this?",
-			context: buildTutorContext("rect(1);", [], []),
+			context: buildAgentContext("rect(1);", [], []),
 		},
 		controller.signal,
 	)) {
@@ -45,7 +45,7 @@ test("deterministic tutor streams a Socratic response and honors cancellation", 
 	controller.abort();
 	let cancelled = "";
 	for await (const chunk of provider.stream(
-		{ question: "Again", context: buildTutorContext("rect(1);", [], []) },
+		{ question: "Again", context: buildAgentContext("rect(1);", [], []) },
 		controller.signal,
 	)) {
 		cancelled += chunk;
@@ -70,7 +70,7 @@ test("session records round-trip through JSONL and ignore a partial final line",
 			at: "2026-09-24T10:00:01Z",
 		},
 	];
-	const serialized = `${serializeTutorSession(records)}{"type":"message"`;
+	const serialized = `${serializeAgentSession(records)}{"type":"message"`;
 
-	assert.deepEqual(parseTutorSession(serialized), records);
+	assert.deepEqual(parseAgentSession(serialized), records);
 });

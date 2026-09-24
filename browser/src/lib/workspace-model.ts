@@ -27,7 +27,8 @@ const EDITOR_TABSET_ID = "editor-tabset";
 const PREVIEW_TABSET_ID = "preview-tabset";
 const PROBLEMS_TABSET_ID = "problems-tabset";
 const OUTPUT_TABSET_ID = "output-tabset";
-export const TUTOR_ID = "tutor";
+export const AGENT_ID = "agent";
+const LEGACY_TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
 const STORAGE_VERSION = 7;
 
@@ -92,9 +93,9 @@ function defaultLayout(): IJsonModel {
 										},
 										{
 											type: "tab",
-											id: TUTOR_ID,
-											name: "Tutor",
-											component: TUTOR_ID,
+											id: AGENT_ID,
+											name: "Agent",
+											component: AGENT_ID,
 										},
 									],
 								},
@@ -192,7 +193,7 @@ export function loadWorkspace(
 			tabSetEnableClose: true,
 		};
 		const model = Model.fromJson(layout);
-		ensureTutor(model);
+		ensureAgent(model);
 		validateWorkspace(model);
 		saveWorkspace(model, settings);
 		return model;
@@ -232,18 +233,27 @@ function validatePanel(model: Model, panelId: string, tabsetId: string): void {
 	}
 }
 
-function ensureTutor(model: Model): void {
-	const existing = model.getNodeById(TUTOR_ID);
+function ensureAgent(model: Model): void {
+	const legacyTabs: TabNode[] = [];
+	model.visitNodes((node) => {
+		if (node instanceof TabNode && node.getComponent() === LEGACY_TUTOR_ID) {
+			legacyTabs.push(node);
+		}
+	});
+	for (const legacyTab of legacyTabs) {
+		model.doAction(Actions.deleteTab(legacyTab.getId()));
+	}
+	const existing = model.getNodeById(AGENT_ID);
 	if (
 		existing instanceof TabNode &&
 		existing.getParent()?.getId() === OUTPUT_TABSET_ID
 	) {
 		return;
 	}
-	if (existing instanceof TabNode) model.doAction(Actions.deleteTab(TUTOR_ID));
+	if (existing instanceof TabNode) model.doAction(Actions.deleteTab(AGENT_ID));
 	model.doAction(
 		Actions.addTab(
-			{ id: TUTOR_ID, name: "Tutor", component: TUTOR_ID },
+			{ id: AGENT_ID, name: "Agent", component: AGENT_ID },
 			OUTPUT_TABSET_ID,
 			DockLocation.CENTER,
 			-1,
@@ -268,4 +278,5 @@ function validateWorkspace(model: Model): void {
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);
+	validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
 }

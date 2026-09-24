@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub enum TutorEvent {
+pub enum AgentEvent {
     Status { message: String },
     Diagnostic { message: String },
     Text { text: String },
@@ -19,37 +19,37 @@ pub enum TutorEvent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TutorQuestion(pub String);
+pub struct AgentQuestion(pub String);
 
 /// A provider is never exposed to the renderer.
 #[async_trait]
-pub trait TutorProvider: Send + Sync {
+pub trait AgentProvider: Send + Sync {
     async fn stream(
         &self,
-        question: TutorQuestion,
+        question: AgentQuestion,
         cancel: CancellationToken,
-        emit: &mut (dyn FnMut(TutorEvent) + Send),
+        emit: &mut (dyn FnMut(AgentEvent) + Send),
     );
 }
 
 pub async fn submit(
-    provider: &dyn TutorProvider,
+    provider: &dyn AgentProvider,
     question: String,
     cancel: CancellationToken,
-    emit: &mut (dyn FnMut(TutorEvent) + Send),
+    emit: &mut (dyn FnMut(AgentEvent) + Send),
 ) {
     if question.trim().is_empty() {
-        emit(TutorEvent::Error {
-            message: "Enter a tutor prompt before sending.".into(),
+        emit(AgentEvent::Error {
+            message: "Enter an agent prompt before sending.".into(),
         });
         return;
     }
-    provider.stream(TutorQuestion(question), cancel, emit).await;
+    provider.stream(AgentQuestion(question), cancel, emit).await;
 }
 
 /// Safe user-facing errors must never include a provider response or secret.
-pub fn safe_error(context: &str) -> TutorEvent {
-    TutorEvent::Error {
+pub fn safe_error(context: &str) -> AgentEvent {
+    AgentEvent::Error {
         message: format!("{context}. Check your connection or sign in again."),
     }
 }
@@ -126,21 +126,21 @@ impl RequestGate {
 pub struct DeterministicProvider;
 
 #[async_trait]
-impl TutorProvider for DeterministicProvider {
+impl AgentProvider for DeterministicProvider {
     async fn stream(
         &self,
-        _question: TutorQuestion,
+        _question: AgentQuestion,
         cancel: CancellationToken,
-        emit: &mut (dyn FnMut(TutorEvent) + Send),
+        emit: &mut (dyn FnMut(AgentEvent) + Send),
     ) {
         for text in ["What ", "have ", "you ", "tried?"] {
             if cancel.is_cancelled() {
-                emit(TutorEvent::Cancelled);
+                emit(AgentEvent::Cancelled);
                 return;
             }
-            emit(TutorEvent::Text { text: text.into() });
+            emit(AgentEvent::Text { text: text.into() });
         }
-        emit(TutorEvent::Complete);
+        emit(AgentEvent::Complete);
     }
 }
 
@@ -159,11 +159,11 @@ mod tests {
             &mut |e| events.push(e),
         )
         .await;
-        assert!(matches!(events.last(), Some(TutorEvent::Complete)));
+        assert!(matches!(events.last(), Some(AgentEvent::Complete)));
         assert_eq!(
             events
                 .iter()
-                .filter(|e| matches!(e, TutorEvent::Text { .. }))
+                .filter(|e| matches!(e, AgentEvent::Text { .. }))
                 .count(),
             4
         );
@@ -178,17 +178,17 @@ mod tests {
             events.push(e)
         })
         .await;
-        assert_eq!(events, vec![TutorEvent::Cancelled]);
+        assert_eq!(events, vec![AgentEvent::Cancelled]);
     }
 
     struct CountingProvider(AtomicUsize);
     #[async_trait]
-    impl TutorProvider for CountingProvider {
+    impl AgentProvider for CountingProvider {
         async fn stream(
             &self,
-            _: TutorQuestion,
+            _: AgentQuestion,
             _: CancellationToken,
-            _: &mut (dyn FnMut(TutorEvent) + Send),
+            _: &mut (dyn FnMut(AgentEvent) + Send),
         ) {
             self.0.fetch_add(1, Ordering::SeqCst);
         }
@@ -211,7 +211,7 @@ mod tests {
     fn provider_errors_are_redacted() {
         assert_eq!(
             safe_error("OpenCode request failed"),
-            TutorEvent::Error {
+            AgentEvent::Error {
                 message: "OpenCode request failed. Check your connection or sign in again.".into()
             }
         );

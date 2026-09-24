@@ -1,7 +1,7 @@
 {
 	"$schema": "../gen/schemas/desktop-schema.json",
-	"identifier": "tutor-events",
-	"description": "Allows the main tutor window to receive events from the Rust host.",
+	"identifier": "agent-events",
+	"description": "Allows the main agent window to receive events from the Rust host.",
 	"windows": ["main"],
 	"permissions": ["core:event:allow-listen"]
 }

@@ -1,5 +1,5 @@
 /* ABOUTME: Sizes the nested FlexLayout application and Code workspace panels. */
-/* ABOUTME: Keeps editor, preview, status, and tutor content usable across window sizes. */
+/* ABOUTME: Keeps editor, preview, status, and agent content usable across window sizes. */
 
 :root {
 	--s0: 0px;
@@ -571,44 +571,44 @@ canvas {
 	width: 0.25rem;
 }
 
-.tutor-panel {
+.agent-panel {
 	display: flex;
 	flex-direction: column;
 	gap: var(--s2);
 	height: 100%;
 }
 
-.tutor-header,
-.tutor-copy-setting,
-.tutor-form .workspace-support-actions {
+.agent-header,
+.agent-copy-setting,
+.agent-form .workspace-support-actions {
 	align-items: center;
 	display: flex;
 	gap: var(--s2);
 	justify-content: space-between;
 }
 
-.tutor-guidance,
-.tutor-context-note {
+.agent-guidance,
+.agent-context-note {
 	font-size: smaller;
 	margin: 0;
 }
 
-.tutor-messages {
+.agent-messages {
 	flex: 1;
 	min-height: 6rem;
 	overflow: auto;
 }
 
-.tutor-message {
+.agent-message {
 	border-bottom: 1px solid currentColor;
 	padding: var(--s1) 0;
 }
 
-.tutor-response {
+.agent-response {
 	user-select: none;
 }
 
-.tutor-response::selection {
+.agent-response::selection {
 	background: transparent;
 }
 

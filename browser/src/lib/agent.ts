@@ -1,28 +1,28 @@
-// ABOUTME: Defines the browser-neutral deterministic tutor contract and session records.
+// ABOUTME: Defines the browser-neutral deterministic agent contract and session records.
 // ABOUTME: Keeps context assembly and local JSONL persistence independent from the React UI.
 
-export interface TutorContext {
+export interface AgentContext {
 	readonly source: string;
 	readonly diagnostics: readonly string[];
 	readonly runtimeError: string | null;
 	readonly output: readonly string[];
 }
 
-export interface TutorRequest {
+export interface AgentRequest {
 	readonly question: string;
-	readonly context: TutorContext;
+	readonly context: AgentContext;
 }
 
-export interface TutorProvider {
-	stream(request: TutorRequest, signal: AbortSignal): AsyncIterable<string>;
+export interface AgentProvider {
+	stream(request: AgentRequest, signal: AbortSignal): AsyncIterable<string>;
 }
 
-export interface TutorMessage {
-	readonly role: "student" | "tutor";
+export interface AgentMessage {
+	readonly role: "student" | "agent";
 	readonly text: string;
 }
 
-export type TutorSessionRecord =
+export type AgentSessionRecord =
 	| {
 			readonly type: "session";
 			readonly id: string;
@@ -33,7 +33,7 @@ export type TutorSessionRecord =
 	| {
 			readonly type: "message";
 			readonly sessionId: string;
-			readonly role: TutorMessage["role"];
+			readonly role: AgentMessage["role"];
 			readonly text: string;
 			readonly at: string;
 	  }
@@ -44,12 +44,12 @@ export type TutorSessionRecord =
 			readonly messageCount: number;
 	  };
 
-export function buildTutorContext(
+export function buildAgentContext(
 	source: string,
 	diagnostics: readonly string[],
 	output: readonly string[],
 	runtimeError: string | null = null,
-): TutorContext {
+): AgentContext {
 	return {
 		source,
 		diagnostics: [...diagnostics],
@@ -58,20 +58,20 @@ export function buildTutorContext(
 	};
 }
 
-export function serializeTutorSession(
-	records: readonly TutorSessionRecord[],
+export function serializeAgentSession(
+	records: readonly AgentSessionRecord[],
 ): string {
 	return `${records.map((record) => JSON.stringify(record)).join("\n")}\n`;
 }
 
-export function parseTutorSession(serialized: string): TutorSessionRecord[] {
-	const records: TutorSessionRecord[] = [];
+export function parseAgentSession(serialized: string): AgentSessionRecord[] {
+	const records: AgentSessionRecord[] = [];
 	for (const line of serialized.split("\n")) {
 		if (line.length === 0) continue;
 		try {
 			const value: unknown = JSON.parse(line);
 			if (typeof value === "object" && value !== null && "type" in value) {
-				records.push(value as TutorSessionRecord);
+				records.push(value as AgentSessionRecord);
 			}
 		} catch {
 			// A partial final line is ignored so a session can be recovered.
@@ -80,7 +80,7 @@ export function parseTutorSession(serialized: string): TutorSessionRecord[] {
 	return records;
 }
 
-export function createDeterministicTutor(): TutorProvider {
+export function createDeterministicAgent(): AgentProvider {
 	return {
 		async *stream(request, signal) {
 			const answer = deterministicAnswer(request);
@@ -93,7 +93,7 @@ export function createDeterministicTutor(): TutorProvider {
 	};
 }
 
-function deterministicAnswer(request: TutorRequest): string {
+function deterministicAnswer(request: AgentRequest): string {
 	const context = request.context;
 	if (context.runtimeError !== null) {
 		return `The preview reported: ${context.runtimeError}. What do you expect each drawing command to do?`;

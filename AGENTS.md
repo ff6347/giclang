@@ -16,9 +16,9 @@ The v0.9 target is a workshop-ready static graphics environment:
 - a browser-neutral TypeScript language core;
 - `gic check` and headless `gic run` CLI commands;
 - a shared Monaco and Canvas IDE;
-- an installable tutor-less offline PWA;
+- an installable agent-less offline PWA;
 - a dedicated-window desktop application; and
-- an optional Socratic tutor that does not gate core authoring.
+- an optional Socratic agent/tutor that does not gate core authoring.
 
 Static authoring is the release gate. Animation is a stretch goal and must not block v0.9.
 

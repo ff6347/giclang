@@ -27,7 +27,7 @@ import {
 	OUTPUT_ID,
 	PREVIEW_ID,
 	PROBLEMS_ID,
-	TUTOR_ID,
+	AGENT_ID,
 	saveWorkspace,
 	SETTINGS_ID,
 } from "../lib/workspace-model.ts";
@@ -39,7 +39,7 @@ import { ProblemsPanel } from "./problems-panel.tsx";
 import { OutputPanel } from "./output-panel.tsx";
 import { PreviewPanel } from "./preview-panel.tsx";
 import { EditorPanel } from "./editor-panel.tsx";
-import { TutorPanel } from "./tutor-panel.tsx";
+import { AgentPanel } from "./agent-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
 import { useDocument } from "../hooks/use-document.ts";
@@ -57,8 +57,8 @@ import {
 } from "../lib/theme.ts";
 import { useTheme } from "../hooks/use-theme.ts";
 import { useWorkspace } from "../hooks/use-workspace.ts";
-import { useTutor } from "../hooks/use-tutor.ts";
-import { buildTutorContext } from "../lib/tutor.ts";
+import { useAgent } from "../hooks/use-agent.ts";
+import { buildAgentContext } from "../lib/agent.ts";
 
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
@@ -129,8 +129,8 @@ export function App({
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
-	const tutor = useTutor(
-		buildTutorContext(
+	const agent = useAgent(
+		buildAgentContext(
 			documents.documentState.source,
 			preview.state.problems,
 			preview.state.output,
@@ -264,9 +264,9 @@ export function App({
 			const label = countLabel("Output", preview.state.output.length);
 			values.content = label;
 		}
-		if (node.getId() === TUTOR_ID) {
+		if (node.getId() === AGENT_ID) {
 			values.content =
-				tutor.status === "streaming" ? "Tutor (responding)" : "Tutor";
+				agent.status === "streaming" ? "Agent (responding)" : "Agent";
 		}
 	};
 
@@ -309,17 +309,17 @@ export function App({
 				return <ProblemsPanel entries={preview.state.problems} />;
 			case OUTPUT_ID:
 				return <OutputPanel entries={preview.state.output} />;
-			case TUTOR_ID:
+			case AGENT_ID:
 				return (
-					<TutorPanel
-						actions={tutor}
-						context={buildTutorContext(
+					<AgentPanel
+						actions={agent}
+						context={buildAgentContext(
 							documents.documentState.source,
 							preview.state.problems,
 							preview.state.output,
 						)}
-						messages={tutor.messages}
-						status={tutor.status}
+						messages={agent.messages}
+						status={agent.status}
 					/>
 				);
 			case SETTINGS_ID:

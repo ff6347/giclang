@@ -1,4 +1,4 @@
-import { tutorBridge, type TutorEvent } from "./bridge";
+import { agentBridge, type AgentEvent } from "./bridge";
 
 const byId = <T extends HTMLElement>(id: string) =>
 	document.querySelector<T>(`#${id}`)!;
@@ -21,7 +21,7 @@ function appendDiagnostic(message: string) {
 	diagnostics.scrollTop = diagnostics.scrollHeight;
 }
 
-function describe(event: TutorEvent): string {
+function describe(event: AgentEvent): string {
 	switch (event.kind) {
 		case "status":
 			return `status: ${event.message ?? ""}`;
@@ -64,7 +64,7 @@ function error(error: unknown) {
 	appendDiagnostic(`command error: ${message}`);
 	requestState(false);
 }
-function present(event: TutorEvent) {
+function present(event: AgentEvent) {
 	appendDiagnostic(describe(event));
 	if (event.kind === "text") reply.value += event.text ?? "";
 	if (event.kind === "status" || event.kind === "error")
@@ -117,7 +117,7 @@ function send(action: (text: string) => Promise<void>) {
 
 connect.addEventListener("click", async () => {
 	try {
-		await tutorBridge.connectOpenCode(key.value);
+		await agentBridge.connectOpenCode(key.value);
 		status.textContent = "OpenCode Zen connected for this app session.";
 		appendDiagnostic("OpenCode API key accepted into Rust session memory");
 	} catch (cause) {
@@ -130,29 +130,29 @@ byId<HTMLButtonElement>("sign-in").addEventListener("click", () => {
 	withEvents(() => {
 		requestState(true);
 		appendDiagnostic("requesting ChatGPT device authorization");
-		void tutorBridge.beginChatGptSignIn().catch(error);
+		void agentBridge.beginChatGptSignIn().catch(error);
 	});
 });
 byId<HTMLButtonElement>("open-auth").addEventListener(
 	"click",
-	() => void tutorBridge.openChatGptAuthorization().catch(error),
+	() => void agentBridge.openChatGptAuthorization().catch(error),
 );
 byId<HTMLButtonElement>("sign-out").addEventListener("click", () =>
 	withEvents(() => {
-		void tutorBridge.signOutChatGpt().catch(error);
+		void agentBridge.signOutChatGpt().catch(error);
 	}),
 );
-cancel.addEventListener("click", () => void tutorBridge.cancel());
+cancel.addEventListener("click", () => void agentBridge.cancel());
 byId<HTMLButtonElement>("send-zen").addEventListener("click", () =>
 	send((text) => {
 		appendDiagnostic(`submitting OpenCode prompt (${text.length} characters)`);
-		return tutorBridge.sendOpenCode(text);
+		return agentBridge.sendOpenCode(text);
 	}),
 );
 byId<HTMLButtonElement>("send-chatgpt").addEventListener("click", () =>
 	send((text) => {
 		appendDiagnostic(`submitting ChatGPT prompt (${text.length} characters)`);
-		return tutorBridge.sendChatGpt(text);
+		return agentBridge.sendChatGpt(text);
 	}),
 );
 byId<HTMLButtonElement>("clear-diagnostics").addEventListener("click", () => {
@@ -168,7 +168,7 @@ const eventSetupTimeout = window.setTimeout(() => {
 		appendDiagnostic("Tauri event listener timed out");
 	}
 }, 5_000);
-void tutorBridge
+void agentBridge
 	.onEvent(present)
 	.then(() => {
 		eventsReady = true;

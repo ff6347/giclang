@@ -4,7 +4,7 @@ mod chatgpt_auth;
 
 use chatgpt_auth::ChatGptAuth;
 use futures_util::StreamExt;
-use gic_tutor_spike_core::{RequestGate, TutorEvent, provider_diagnostic, safe_error};
+use gic_tutor_spike_core::{AgentEvent, RequestGate, provider_diagnostic, safe_error};
 use rig_core::{
     client::CompletionClient,
     completion::{CompletionError, CompletionModel},
@@ -48,8 +48,8 @@ impl Default for Session {
     }
 }
 
-fn emit(app: &AppHandle, event: TutorEvent) {
-    let _ = app.emit("gic:tutor-event", event);
+fn emit(app: &AppHandle, event: AgentEvent) {
+    let _ = app.emit("gic:agent-event", event);
 }
 
 fn auth_file(app: &AppHandle) -> Result<PathBuf, String> {
@@ -62,9 +62,9 @@ fn auth_file(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 fn begin_request(state: &Mutex<Session>) -> Result<CancellationToken, String> {
-    let mut session = state.lock().map_err(|_| "Tutor state is unavailable.")?;
+    let mut session = state.lock().map_err(|_| "Agent state is unavailable.")?;
     if !session.gate.begin() {
-        return Err("A tutor request is already in progress.".into());
+        return Err("An agent request is already in progress.".into());
     }
     let cancel = CancellationToken::new();
     session.active = Some(cancel.clone());
@@ -89,7 +89,7 @@ fn connect_opencode(
     }
     state
         .lock()
-        .map_err(|_| "Tutor state is unavailable.")?
+        .map_err(|_| "Agent state is unavailable.")?
         .opencode_key = Some(api_key);
     Ok(())
 }
@@ -106,7 +106,7 @@ fn begin_chatgpt_sign_in(
     tauri::async_runtime::spawn(async move {
         emit(
             &app_for_task,
-            TutorEvent::Status {
+            AgentEvent::Status {
                 message: "Starting ChatGPT device authorization.".into(),
             },
         );
@@ -119,7 +119,7 @@ fn begin_chatgpt_sign_in(
                 }
                 emit(
                     &callback_app,
-                    TutorEvent::DeviceAuthorization {
+                    AgentEvent::DeviceAuthorization {
                         url: prompt.verification_url,
                         user_code: prompt.user_code,
                     },
@@ -127,10 +127,10 @@ fn begin_chatgpt_sign_in(
             })
             .await;
         match result {
-            Ok(()) => emit(&app_for_task, TutorEvent::SignedIn),
+            Ok(()) => emit(&app_for_task, AgentEvent::SignedIn),
             Err(error) => emit(
                 &app_for_task,
-                TutorEvent::Error {
+                AgentEvent::Error {
                     message: error.message().into(),
                 },
             ),
@@ -146,7 +146,7 @@ fn open_chatgpt_authorization_url(
 ) -> Result<(), String> {
     let url = state
         .lock()
-        .map_err(|_| "Tutor state is unavailable.")?
+        .map_err(|_| "Agent state is unavailable.")?
         .authorization_url
         .clone()
         .ok_or("Start ChatGPT sign-in first.")?;
@@ -161,14 +161,14 @@ fn sign_out_chatgpt(
     ChatGptAuth::new(auth_file(&app)?)
         .sign_out()
         .map_err(|_| "Could not sign out of ChatGPT.")?;
-    let mut session = state.lock().map_err(|_| "Tutor state is unavailable.")?;
+    let mut session = state.lock().map_err(|_| "Agent state is unavailable.")?;
     session.authorization_url = None;
-    emit(&app, TutorEvent::SignedOut);
+    emit(&app, AgentEvent::SignedOut);
     Ok(())
 }
 
 #[tauri::command]
-fn cancel_tutor_request(state: tauri::State<'_, Arc<Mutex<Session>>>) {
+fn cancel_agent_request(state: tauri::State<'_, Arc<Mutex<Session>>>) {
     if let Ok(session) = state.lock() {
         if let Some(cancel) = &session.active {
             cancel.cancel();
@@ -226,7 +226,7 @@ where
             _ = cancel.cancelled() => return Err(StreamFailure::Cancelled),
             chunk = response.next() => match chunk {
                 Some(Ok(StreamedAssistantContent::Text(text))) => {
-                    emit(app, TutorEvent::Text { text: text.text });
+                    emit(app, AgentEvent::Text { text: text.text });
                 }
                 Some(Ok(_)) => {}
                 Some(Err(error)) => return Err(completion_failure(provider, error)),
@@ -244,17 +244,17 @@ async fn send_opencode_prompt(
     prompt: String,
 ) -> Result<(), String> {
     if prompt.trim().is_empty() {
-        return Err("Enter a tutor prompt before sending.".into());
+        return Err("Enter an agent prompt before sending.".into());
     }
     let key = state
         .lock()
-        .map_err(|_| "Tutor state is unavailable.")?
+        .map_err(|_| "Agent state is unavailable.")?
         .opencode_key
         .clone()
         .ok_or("Connect OpenCode Zen before sending a prompt.")?;
     let opencode_session = state
         .lock()
-        .map_err(|_| "Tutor state is unavailable.")?
+        .map_err(|_| "Agent state is unavailable.")?
         .opencode_session
         .clone();
     let cancel = begin_request(&state)?;
@@ -263,7 +263,7 @@ async fn send_opencode_prompt(
     tauri::async_runtime::spawn(async move {
         emit(
             &app_for_task,
-            TutorEvent::Status {
+            AgentEvent::Status {
                 message: format!("Streaming from OpenCode Zen ({ZEN_FREE_MODEL})."),
             },
         );
@@ -285,7 +285,7 @@ async fn send_opencode_prompt(
         headers.insert("x-opencode-session", session_header);
         headers.insert(
             http::header::USER_AGENT,
-            http::HeaderValue::from_static("gic-tutor-spike/0.0.0"),
+            http::HeaderValue::from_static("gic-agent-spike/0.0.0"),
         );
         let outcome = match openai::Client::builder()
             .api_key(key)
@@ -320,7 +320,7 @@ async fn send_chatgpt_prompt(
     prompt: String,
 ) -> Result<(), String> {
     if prompt.trim().is_empty() {
-        return Err("Enter a tutor prompt before sending.".into());
+        return Err("Enter an agent prompt before sending.".into());
     }
     let auth_file = auth_file(&app)?;
     let cancel = begin_request(&state)?;
@@ -329,7 +329,7 @@ async fn send_chatgpt_prompt(
     tauri::async_runtime::spawn(async move {
         emit(
             &app_for_task,
-            TutorEvent::Status {
+            AgentEvent::Status {
                 message: format!("Streaming from ChatGPT/Codex ({CODEX_MODEL})."),
             },
         );
@@ -339,7 +339,7 @@ async fn send_chatgpt_prompt(
             Ok(auth) => {
                 emit(
                     &app_for_task,
-                    TutorEvent::Diagnostic {
+                    AgentEvent::Diagnostic {
                         message: format!(
                             "ChatGPT: preparing Rig request; model={CODEX_MODEL}; endpoint=/backend-api/codex/responses; account ID present={}",
                             auth.account_id.is_some()
@@ -380,12 +380,12 @@ async fn send_chatgpt_prompt(
 
 fn emit_stream_outcome(app: &AppHandle, outcome: Result<(), StreamFailure>, context: &str) {
     match outcome {
-        Ok(()) => emit(app, TutorEvent::Complete),
-        Err(StreamFailure::Cancelled) => emit(app, TutorEvent::Cancelled),
+        Ok(()) => emit(app, AgentEvent::Complete),
+        Err(StreamFailure::Cancelled) => emit(app, AgentEvent::Cancelled),
         Err(StreamFailure::Provider(diagnostic)) => {
             emit(
                 app,
-                TutorEvent::Diagnostic {
+                AgentEvent::Diagnostic {
                     message: diagnostic,
                 },
             );
@@ -402,7 +402,7 @@ fn main() {
             begin_chatgpt_sign_in,
             open_chatgpt_authorization_url,
             sign_out_chatgpt,
-            cancel_tutor_request,
+            cancel_agent_request,
             send_opencode_prompt,
             send_chatgpt_prompt
         ])

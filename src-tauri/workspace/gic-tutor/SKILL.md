@@ -1,5 +1,5 @@
 ---
-name: gic-tutor
+name: gic-agent
 description: Teach Gestalten in Code through Socratic explanation, guidance, and feedback without solving problems for the student.
 ---
 

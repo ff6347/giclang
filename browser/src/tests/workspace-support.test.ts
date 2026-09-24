@@ -13,7 +13,7 @@ test("supportFileTitle maps known managed files to friendly names", () => {
 	assert.equal(supportFileTitle("AGENTS.md"), "AGENTS.md");
 	assert.equal(
 		supportFileTitle(".agents/skills/gic-tutor/SKILL.md"),
-		"Tutor policy",
+		"Agent policy",
 	);
 	assert.equal(
 		supportFileTitle(".agents/skills/gic-tutor/references/language.md"),

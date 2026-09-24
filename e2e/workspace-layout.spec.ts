@@ -315,7 +315,7 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 	);
 });
 
-test("removes Agent from a persisted workspace", async ({ page }) => {
+test("migrates a legacy Tutor tab into Agent", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
@@ -349,6 +349,7 @@ test("removes Agent from a persisted workspace", async ({ page }) => {
 	await page.reload();
 
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
+	await expect(page.getByRole("tab", { name: "Agent" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",

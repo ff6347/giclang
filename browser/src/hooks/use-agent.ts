@@ -1,26 +1,26 @@
-// ABOUTME: Owns deterministic tutor state, cancellation, and local session persistence.
+// ABOUTME: Owns deterministic agent state, cancellation, and local session persistence.
 // ABOUTME: Sends sketch context only when the student explicitly submits a question.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	createDeterministicTutor,
-	parseTutorSession,
-	serializeTutorSession,
-	type TutorContext,
-	type TutorMessage,
-	type TutorSessionRecord,
-} from "../lib/tutor.ts";
+	createDeterministicAgent,
+	parseAgentSession,
+	serializeAgentSession,
+	type AgentContext,
+	type AgentMessage,
+	type AgentSessionRecord,
+} from "../lib/agent.ts";
 
-const SESSION_KEY_PREFIX = "gic.tutorSession:";
+const SESSION_KEY_PREFIX = "gic.agentSession:";
 
 function sessionKey(sketchId: string): string {
 	return `${SESSION_KEY_PREFIX}${encodeURIComponent(sketchId)}`;
 }
 
-export type TutorStatus = "ready" | "streaming" | "cancelled" | "error";
+export type AgentStatus = "ready" | "streaming" | "cancelled" | "error";
 
-function loadMessages(sketchId: string): TutorMessage[] {
-	const records = parseTutorSession(
+function loadMessages(sketchId: string): AgentMessage[] {
+	const records = parseAgentSession(
 		localStorage.getItem(sessionKey(sketchId)) ?? "",
 	);
 	return records.flatMap((record) =>
@@ -28,13 +28,13 @@ function loadMessages(sketchId: string): TutorMessage[] {
 	);
 }
 
-export function useTutor(context: TutorContext, sketchId: string) {
-	const provider = useRef(createDeterministicTutor()).current;
+export function useAgent(context: AgentContext, sketchId: string) {
+	const provider = useRef(createDeterministicAgent()).current;
 	const abortController = useRef<AbortController | null>(null);
-	const [messages, setMessages] = useState<TutorMessage[]>(() =>
+	const [messages, setMessages] = useState<AgentMessage[]>(() =>
 		loadMessages(sketchId),
 	);
-	const [status, setStatus] = useState<TutorStatus>("ready");
+	const [status, setStatus] = useState<AgentStatus>("ready");
 
 	useEffect(() => {
 		abortController.current?.abort();
@@ -44,10 +44,10 @@ export function useTutor(context: TutorContext, sketchId: string) {
 	}, [sketchId]);
 	const lastQuestion = useRef("");
 
-	const persist = (nextMessages: readonly TutorMessage[]) => {
+	const persist = (nextMessages: readonly AgentMessage[]) => {
 		const sessionId = "local";
 		const now = new Date().toISOString();
-		const records: TutorSessionRecord[] = [
+		const records: AgentSessionRecord[] = [
 			{
 				type: "session",
 				id: sessionId,
@@ -63,7 +63,7 @@ export function useTutor(context: TutorContext, sketchId: string) {
 				at: now,
 			})),
 		];
-		localStorage.setItem(sessionKey(sketchId), serializeTutorSession(records));
+		localStorage.setItem(sessionKey(sketchId), serializeAgentSession(records));
 	};
 
 	const cancel = useCallback(() => {
@@ -80,7 +80,7 @@ export function useTutor(context: TutorContext, sketchId: string) {
 			abortController.current?.abort();
 			const controller = new AbortController();
 			abortController.current = controller;
-			const studentMessage: TutorMessage = { role: "student", text: trimmed };
+			const studentMessage: AgentMessage = { role: "student", text: trimmed };
 			const nextMessages = [...messages, studentMessage];
 			setMessages(nextMessages);
 			persist(nextMessages);
@@ -97,7 +97,7 @@ export function useTutor(context: TutorContext, sketchId: string) {
 					if (controller.signal.aborted) return;
 					const completed = [
 						...nextMessages,
-						{ role: "tutor" as const, text: answer },
+						{ role: "agent" as const, text: answer },
 					];
 					setMessages(completed);
 					persist(completed);

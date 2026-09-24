@@ -1,28 +1,28 @@
-// ABOUTME: Presents the optional Socratic tutor with explicit question submission.
+// ABOUTME: Presents the optional Socratic agent with explicit question submission.
 // ABOUTME: Keeps response selection and copying disabled unless a student opts in.
 
 import { useState } from "react";
 import { Button } from "@base-ui/react/button";
 import { Field } from "@base-ui/react/field";
-import type { TutorContext, TutorMessage } from "../lib/tutor.ts";
-import type { TutorStatus } from "../hooks/use-tutor.ts";
+import type { AgentContext, AgentMessage } from "../lib/agent.ts";
+import type { AgentStatus } from "../hooks/use-agent.ts";
 
-export interface TutorActions {
+export interface AgentActions {
 	readonly cancel: () => void;
 	readonly retry: () => void;
 	readonly submit: (question: string) => void;
 }
 
-export function TutorPanel({
+export function AgentPanel({
 	actions,
 	context,
 	messages,
 	status,
 }: {
-	readonly actions: TutorActions;
-	readonly context: TutorContext;
-	readonly messages: readonly TutorMessage[];
-	readonly status: TutorStatus;
+	readonly actions: AgentActions;
+	readonly context: AgentContext;
+	readonly messages: readonly AgentMessage[];
+	readonly status: AgentStatus;
 }) {
 	const [question, setQuestion] = useState("");
 	const [allowCopying, setAllowCopying] = useState(false);
@@ -31,10 +31,10 @@ export function TutorPanel({
 		setQuestion("");
 	};
 	return (
-		<section aria-label="Tutor" className="workspace-panel tutor-panel">
-			<div className="tutor-header">
-				<h2>Tutor</h2>
-				<label className="tutor-copy-setting">
+		<section aria-label="Agent" className="workspace-panel agent-panel">
+			<div className="agent-header">
+				<h2>agent</h2>
+				<label className="agent-copy-setting">
 					<input
 						type="checkbox"
 						checked={allowCopying}
@@ -43,29 +43,29 @@ export function TutorPanel({
 					Allow copying
 				</label>
 			</div>
-			<p className="tutor-guidance">
+			<p className="agent-guidance">
 				Ask a question about the current sketch. Nothing is sent until you
 				submit.
 			</p>
-			<div className="tutor-messages" aria-live="polite">
+			<div className="agent-messages" aria-live="polite">
 				{messages.map((message, index) => (
 					<p
-						className={`tutor-message tutor-message-${message.role}`}
+						className={`agent-message agent-message-${message.role}`}
 						key={`${index}:${message.text}`}
 					>
-						<strong>{message.role === "student" ? "You" : "Tutor"}: </strong>
-						<span className={allowCopying ? undefined : "tutor-response"}>
+						<strong>{message.role === "student" ? "You" : "agent"}: </strong>
+						<span className={allowCopying ? undefined : "agent-response"}>
 							{message.text}
 						</span>
 					</p>
 				))}
 				{status === "error" && (
-					<p role="alert">The tutor could not answer. Try again.</p>
+					<p role="alert">The agent could not answer. Try again.</p>
 				)}
 				{status === "cancelled" && <p>The question was cancelled.</p>}
 			</div>
 			<form
-				className="tutor-form"
+				className="agent-form"
 				onSubmit={(event) => {
 					event.preventDefault();
 					submit();
@@ -86,7 +86,7 @@ export function TutorPanel({
 						type="submit"
 						disabled={status === "streaming"}
 					>
-						Ask tutor
+						Ask agent
 					</Button>
 					<Button
 						className="application-button"
@@ -107,7 +107,7 @@ export function TutorPanel({
 					)}
 				</div>
 			</form>
-			<p className="tutor-context-note">
+			<p className="agent-context-note">
 				Context: {context.diagnostics.length} diagnostics,{" "}
 				{context.output.length} output entries.
 			</p>

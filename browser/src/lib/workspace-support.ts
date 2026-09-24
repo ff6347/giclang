@@ -22,7 +22,7 @@ export interface AssistantStatus {
 
 const FILE_TITLES: Record<string, string> = {
 	"AGENTS.md": "AGENTS.md",
-	".agents/skills/gic-tutor/SKILL.md": "Tutor policy",
+	".agents/skills/gic-tutor/SKILL.md": "Agent policy",
 	".agents/skills/gic-tutor/references/language.md": "Language reference",
 };
 
