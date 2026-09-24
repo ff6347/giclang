@@ -12,6 +12,7 @@ import type { ResolvedTheme } from "../lib/theme.ts";
 export interface EditorPanelProps {
 	onEditorReady: (editor: GicEditor | null) => void;
 	onSave: () => void;
+	onRevealSketchFolder: (() => void) | undefined;
 	onSourceChange: (source: string) => void;
 	source: string;
 	theme: ResolvedTheme;
@@ -20,6 +21,7 @@ export interface EditorPanelProps {
 export function EditorPanel({
 	onEditorReady,
 	onSave,
+	onRevealSketchFolder,
 	onSourceChange,
 	source,
 	theme,
@@ -28,9 +30,11 @@ export function EditorPanel({
 	const editorRef = useRef<GicEditor | null>(null);
 	const onEditorReadyRef = useRef(onEditorReady);
 	const onSaveRef = useRef(onSave);
+	const onRevealSketchFolderRef = useRef(onRevealSketchFolder);
 	const onSourceChangeRef = useRef(onSourceChange);
 	onEditorReadyRef.current = onEditorReady;
 	onSaveRef.current = onSave;
+	onRevealSketchFolderRef.current = onRevealSketchFolder;
 	onSourceChangeRef.current = onSourceChange;
 
 	useEffect(() => {
@@ -39,6 +43,7 @@ export function EditorPanel({
 			container.current,
 			(source) => onSourceChangeRef.current(source),
 			() => onSaveRef.current(),
+			() => onRevealSketchFolderRef.current(),
 			theme,
 			source,
 		);

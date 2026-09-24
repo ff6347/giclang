@@ -170,6 +170,7 @@ export function createGicEditor(
 	container: HTMLElement,
 	onSourceChange: (source: string) => void,
 	onSave: () => void,
+	onRevealSketchFolder: (() => void) | undefined,
 	theme: ResolvedTheme,
 	initialSource = "",
 ): GicEditor {
@@ -207,6 +208,11 @@ export function createGicEditor(
 	editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
 		onSave();
 	});
+	if (onRevealSketchFolder !== undefined) {
+		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+			onRevealSketchFolder();
+		});
+	}
 	editor.focus();
 	return editor;
 }

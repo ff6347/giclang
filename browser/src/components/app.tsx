@@ -264,6 +264,15 @@ export function App({
 							preview.setEditor(editor);
 						}}
 						onSave={documents.requestSave}
+						onRevealSketchFolder={
+							desktop === undefined
+								? undefined
+								: () => {
+										void desktop.revealSketchFolder().catch(() => {
+											window.alert("GIC could not reveal the sketch folder.");
+										});
+									}
+						}
 						onSourceChange={updateSource}
 						source={documents.documentState.source}
 						theme={theme}
