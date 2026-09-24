@@ -198,6 +198,8 @@
 - [preference] Delegate implementation to configured worker models such as Terra while the primary agent defines acceptance, reviews, verifies, commits, and pushes. Keep delegated tasks bounded and request milestone check-ins; if isolated workers repeatedly stall, report the limitation before taking implementation back.
 - [preference] Fabian's personal learning comments are intentional working notes; agents preserve them unless he requests comment review or removal.
 
+- [preference] Finish the macOS workflow before platform-specific Windows/Linux validation; keep the tutor-less PWA available as an interim fallback.
+
 ## Issue Tracking
 
 - [technique] `git-bug push` fails when the SSH agent has no identities (go-git only tries the agent). Confirmed fallback: system Git pushes fine via key files — `git push origin 'refs/bugs/*:refs/bugs/*' 'refs/identities/*:refs/identities/*'`. The SourceHut remote has no git-bug bridge.
@@ -206,3 +208,5 @@
 
 - [lesson] A managed workspace file that the student keeps needs a persistent `kept` flag in the digest manifest, not only its recorded digest. Recording the student's digest alone makes the next reconcile see on-disk equal to recorded and silently replace it with the bundled version.
 - [decision] The desktop workspace is rooted at `~/Documents/gestalten-in-code/`. Only `AGENTS.md`, `.agents/skills/gic-tutor/SKILL.md`, and `.agents/skills/gic-tutor/references/**` are managed; `sketches/` and `sessions/` are scaffolding that the manager never scans or modifies.
+- [technique] Processing-style sketch names must account for normalized existing folder names and direct `.gic` basenames as well as names reserved in the current session; suffixes continue `a` through `z`, then `aa` and onward.
+- [lesson] Register a Monaco `Cmd+K` command only when its desktop action exists. A no-op PWA binding can shadow Monaco's `Ctrl+K` hover chord.
