@@ -2,6 +2,7 @@
 // ABOUTME: Reads and writes only files selected through desktop document workflows.
 
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeSet,
     fs,
@@ -16,6 +17,7 @@ use uuid::Uuid;
 #[serde(rename_all = "camelCase")]
 pub(crate) struct OpenedDocument {
     pub(crate) document_id: String,
+    pub(crate) sketch_id: String,
     pub(crate) name: String,
     pub(crate) source: String,
 }
@@ -67,6 +69,7 @@ impl DocumentStore {
 
     fn remember(&self, path: PathBuf, source: String) -> Result<OpenedDocument, String> {
         let document_id = Uuid::new_v4().to_string();
+        let sketch_id = sketch_id_for_path(&path);
         let name = path
             .file_name()
             .and_then(|name| name.to_str())
@@ -82,10 +85,17 @@ impl DocumentStore {
         });
         Ok(OpenedDocument {
             document_id,
+            sketch_id,
             name,
             source,
         })
     }
+}
+
+fn sketch_id_for_path(path: &Path) -> String {
+    let mut digest = Sha256::new();
+    digest.update(path.to_string_lossy().as_bytes());
+    format!("{:x}", digest.finalize())
 }
 
 fn validate_gic_path(path: &Path) -> Result<(), String> {
@@ -219,6 +229,7 @@ mod tests {
         let opened = store.open_path(path.clone()).expect("open GIC fixture");
 
         assert_eq!(opened.name, "round-trip.gic");
+        assert_eq!(opened.sketch_id.len(), 64);
         assert_eq!(opened.source, "circle(1, 2, 3);");
         assert!(!opened.document_id.contains(path.to_string_lossy().as_ref()));
 

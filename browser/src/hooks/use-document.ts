@@ -43,6 +43,7 @@ export function useDocument(
 		newSketchNames.add(name);
 		return createNewSketchDocument(name);
 	});
+	const [sketchId, setSketchId] = useState(() => documentState.displayName);
 	const initialSketchName = useRef(documentState.displayName).current;
 	const documentStateRef = useRef(documentState);
 	documentStateRef.current = documentState;
@@ -73,8 +74,10 @@ export function useDocument(
 	const replaceDocument = (
 		nextDocument: DocumentState,
 		documentId?: string,
+		nextSketchId?: string,
 	) => {
 		desktopDocumentId.current = documentId;
+		setSketchId(nextSketchId ?? nextDocument.displayName);
 		replace(nextDocument);
 	};
 
@@ -104,7 +107,7 @@ export function useDocument(
 		adapter.download(savedName, source);
 		adapter.recordRecent(savedName);
 		discardRecovery();
-		replaceDocument(openDocument(savedName, source));
+		replaceDocument(openDocument(savedName, source), undefined, savedName);
 		setSaveAsOpen(false);
 	};
 
@@ -133,6 +136,7 @@ export function useDocument(
 		replaceDocument(
 			openDocument(sketchBaseName(saved.name), saved.source),
 			saved.documentId,
+			saved.sketchId,
 		);
 	};
 
@@ -187,6 +191,7 @@ export function useDocument(
 
 	return {
 		documentState,
+		sketchId,
 		discardOpen,
 		recoveryOpen,
 		recentFiles: adapter.listRecent(),
@@ -268,6 +273,7 @@ export function useDocument(
 							openedDocument.source,
 						),
 						openedDocument.documentId,
+						openedDocument.sketchId,
 					);
 				};
 				if (documentState.isDirty) {

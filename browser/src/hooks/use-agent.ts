@@ -2,6 +2,7 @@
 // ABOUTME: Sends sketch context only when the student explicitly submits a question.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
 	createDeterministicAgent,
 	parseAgentSession,
@@ -28,36 +29,87 @@ function loadMessages(sketchId: string): AgentMessage[] {
 	);
 }
 
-export function useAgent(context: AgentContext, sketchId: string) {
+export function useAgent(
+	context: AgentContext,
+	sketchId: string,
+	desktop?: DesktopHost,
+) {
 	const provider = useRef(createDeterministicAgent()).current;
 	const abortController = useRef<AbortController | null>(null);
 	const [messages, setMessages] = useState<AgentMessage[]>(() =>
 		loadMessages(sketchId),
 	);
 	const [status, setStatus] = useState<AgentStatus>("ready");
+	const sessionId = useRef<string | null>(null);
+	const lastQuestion = useRef("");
 
 	useEffect(() => {
 		abortController.current?.abort();
 		abortController.current = null;
-		setMessages(loadMessages(sketchId));
+		sessionId.current = null;
 		setStatus("ready");
-	}, [sketchId]);
-	const lastQuestion = useRef("");
+		if (desktop === undefined) {
+			setMessages(loadMessages(sketchId));
+			return;
+		}
+		let disposed = false;
+		void desktop
+			.findAgentSession(sketchId)
+			.then(async (summary) => {
+				if (disposed) return;
+				if (summary === null) {
+					setMessages([]);
+					return;
+				}
+				sessionId.current = summary.sessionId;
+				const records = await desktop.readAgentSession(summary.sessionId);
+				if (disposed) return;
+				setMessages(
+					records.flatMap((record) =>
+						record.type === "message"
+							? [{ role: record.role, text: record.text }]
+							: [],
+					),
+				);
+			})
+			.catch(() => {
+				if (!disposed) setStatus("error");
+			});
+		return () => {
+			disposed = true;
+		};
+	}, [desktop, sketchId]);
+
+	const ensureSession = async (): Promise<string> => {
+		if (desktop === undefined) return "local";
+		if (sessionId.current !== null) return sessionId.current;
+		const existing = await desktop.findAgentSession(sketchId);
+		if (existing !== null) {
+			sessionId.current = existing.sessionId;
+			return existing.sessionId;
+		}
+		const created = await desktop.createAgentSession(
+			"Current sketch",
+			sketchId,
+		);
+		sessionId.current = created;
+		return created;
+	};
 
 	const persist = (nextMessages: readonly AgentMessage[]) => {
-		const sessionId = "local";
+		if (desktop !== undefined) return;
 		const now = new Date().toISOString();
 		const records: AgentSessionRecord[] = [
 			{
 				type: "session",
-				id: sessionId,
+				id: "local",
 				name: "Current sketch",
 				startedAt: now,
 				sketchId,
 			},
 			...nextMessages.map((message) => ({
 				type: "message" as const,
-				sessionId,
+				sessionId: "local",
 				role: message.role,
 				text: message.text,
 				at: now,
@@ -88,6 +140,14 @@ export function useAgent(context: AgentContext, sketchId: string) {
 			void (async () => {
 				let answer = "";
 				try {
+					const activeSessionId = await ensureSession();
+					if (desktop !== undefined) {
+						await desktop.appendAgentMessage(
+							activeSessionId,
+							"student",
+							trimmed,
+						);
+					}
 					for await (const chunk of provider.stream(
 						{ question: trimmed, context },
 						controller.signal,
@@ -105,6 +165,9 @@ export function useAgent(context: AgentContext, sketchId: string) {
 					];
 					setMessages(completed);
 					persist(completed);
+					if (desktop !== undefined) {
+						await desktop.appendAgentMessage(activeSessionId, "agent", answer);
+					}
 					setStatus("ready");
 				} catch {
 					if (!controller.signal.aborted) setStatus("error");
@@ -114,7 +177,7 @@ export function useAgent(context: AgentContext, sketchId: string) {
 				}
 			})();
 		},
-		[context, messages, provider, sketchId],
+		[context, desktop, messages, provider, sketchId],
 	);
 
 	return {

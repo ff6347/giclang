@@ -143,7 +143,8 @@ export function App({
 			preview.state.problems,
 			preview.state.output,
 		),
-		documents.documentState.displayName,
+		documents.sketchId,
+		desktop,
 	);
 
 	useEffect(() => {

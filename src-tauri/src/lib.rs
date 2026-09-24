@@ -5,10 +5,12 @@ mod desktop_menu;
 mod documents;
 mod external_tools;
 mod managed_files;
+mod sessions;
 mod workspace;
 
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
+use sessions::{SessionRecord, SessionStore, SessionSummary};
 use std::{
     collections::BTreeMap,
     fs,
@@ -121,10 +123,12 @@ fn resolve_projects_directory(
 fn apply_projects_directory(
     settings: &SettingsStore,
     manager: &WorkspaceManager,
+    sessions: &SessionStore,
     path: PathBuf,
 ) -> Result<(), String> {
     settings.write("gic.projectsDirectory", &path.display().to_string())?;
     manager.set_root(path)?;
+    sessions.set_sessions_dir(manager.workspace_root().join("sessions"))?;
     manager.reconcile(managed_files::MANAGED_FILES).map(|_| ())
 }
 
@@ -213,10 +217,74 @@ fn existing_sketch_names(manager: State<'_, WorkspaceManager>) -> Result<Vec<Str
 }
 
 #[tauri::command]
+fn create_agent_session(
+    name: &str,
+    sketch_id: &str,
+    store: State<'_, SessionStore>,
+) -> Result<String, String> {
+    store.create(name, sketch_id)
+}
+
+#[tauri::command]
+fn clone_agent_session(
+    session_id: &str,
+    name: &str,
+    sketch_id: &str,
+    store: State<'_, SessionStore>,
+) -> Result<String, String> {
+    store.clone_session(session_id, name, sketch_id)
+}
+
+#[tauri::command]
+fn append_agent_message(
+    session_id: &str,
+    role: &str,
+    text: &str,
+    store: State<'_, SessionStore>,
+) -> Result<(), String> {
+    store.append_message(session_id, role, text)
+}
+
+#[tauri::command]
+fn compact_agent_session(
+    session_id: &str,
+    store: State<'_, SessionStore>,
+) -> Result<usize, String> {
+    store.compact(session_id)
+}
+
+#[tauri::command]
+fn update_agent_relationship(
+    session_id: &str,
+    sketch_id: &str,
+    sketch_name: &str,
+    store: State<'_, SessionStore>,
+) -> Result<(), String> {
+    store.update_relationship(session_id, sketch_id, sketch_name)
+}
+
+#[tauri::command]
+fn read_agent_session(
+    session_id: &str,
+    store: State<'_, SessionStore>,
+) -> Result<Vec<SessionRecord>, String> {
+    store.read_records(session_id)
+}
+
+#[tauri::command]
+fn find_agent_session(
+    sketch_id: &str,
+    store: State<'_, SessionStore>,
+) -> Result<Option<SessionSummary>, String> {
+    store.find_for_sketch(sketch_id)
+}
+
+#[tauri::command]
 async fn choose_projects_directory(
     app: AppHandle,
     settings: State<'_, SettingsStore>,
     manager: State<'_, WorkspaceManager>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<Option<String>, String> {
     let Some(selected) = app.dialog().file().blocking_pick_folder() else {
         return Ok(None);
@@ -224,7 +292,7 @@ async fn choose_projects_directory(
     let path = selected
         .into_path()
         .map_err(|_| "Unable to use the selected folder.".to_owned())?;
-    apply_projects_directory(&settings, &manager, path.clone())?;
+    apply_projects_directory(&settings, &manager, &sessions, path.clone())?;
     Ok(Some(path.display().to_string()))
 }
 
@@ -249,6 +317,7 @@ async fn run_projects_dialog(app: AppHandle) -> Result<(), String> {
         apply_projects_directory(
             &app.state::<SettingsStore>(),
             &app.state::<WorkspaceManager>(),
+            &app.state::<SessionStore>(),
             suggested,
         )?;
         return Ok(());
@@ -261,6 +330,7 @@ async fn run_projects_dialog(app: AppHandle) -> Result<(), String> {
         apply_projects_directory(
             &app.state::<SettingsStore>(),
             &app.state::<WorkspaceManager>(),
+            &app.state::<SessionStore>(),
             suggested,
         )?;
         return Ok(());
@@ -271,6 +341,7 @@ async fn run_projects_dialog(app: AppHandle) -> Result<(), String> {
     apply_projects_directory(
         &app.state::<SettingsStore>(),
         &app.state::<WorkspaceManager>(),
+        &app.state::<SessionStore>(),
         selected.clone(),
     )?;
     let _ = app
@@ -364,6 +435,9 @@ pub fn run() {
             let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(DocumentStore::default());
+            let sessions = SessionStore::default();
+            sessions.set_sessions_dir(workspace_root.join("sessions"))?;
+            app.manage(sessions);
             let manifest_path = app
                 .path()
                 .app_config_dir()
@@ -406,6 +480,13 @@ pub fn run() {
             open_gic,
             projects_directory,
             existing_sketch_names,
+            create_agent_session,
+            clone_agent_session,
+            append_agent_message,
+            compact_agent_session,
+            update_agent_relationship,
+            read_agent_session,
+            find_agent_session,
             read_settings,
             repair_workspace,
             resolve_workspace_file,

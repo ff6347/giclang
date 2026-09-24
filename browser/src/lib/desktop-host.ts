@@ -12,7 +12,43 @@ const MENU_ACTION_EVENT = "desktop-menu-action";
 export interface DesktopDocument {
 	readonly documentId: string;
 	readonly name: string;
+	readonly sketchId: string;
 	readonly source: string;
+}
+
+export type AgentSessionRecord =
+	| {
+			readonly type: "session";
+			readonly id: string;
+			readonly name: string;
+			readonly startedAt: string;
+			readonly sketchId: string;
+	  }
+	| {
+			readonly type: "message";
+			readonly sessionId: string;
+			readonly role: "student" | "agent";
+			readonly text: string;
+			readonly at: string;
+	  }
+	| {
+			readonly type: "compaction";
+			readonly sessionId: string;
+			readonly at: string;
+			readonly messageCount: number;
+	  }
+	| {
+			readonly type: "relationship";
+			readonly sessionId: string;
+			readonly at: string;
+			readonly sketchId: string;
+			readonly sketchName: string;
+	  };
+
+export interface AgentSessionSummary {
+	readonly sessionId: string;
+	readonly name: string;
+	readonly sketchId: string;
 }
 
 export type DesktopMenuAction =
@@ -43,6 +79,52 @@ function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 export class DesktopHost {
 	openDocument(): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("open_gic");
+	}
+
+	createAgentSession(name: string, sketchId: string): Promise<string> {
+		return invoke<string>("create_agent_session", { name, sketchId });
+	}
+
+	cloneAgentSession(
+		sessionId: string,
+		name: string,
+		sketchId: string,
+	): Promise<string> {
+		return invoke<string>("clone_agent_session", { sessionId, name, sketchId });
+	}
+
+	appendAgentMessage(
+		sessionId: string,
+		role: "student" | "agent",
+		text: string,
+	): Promise<void> {
+		return invoke<void>("append_agent_message", { sessionId, role, text });
+	}
+
+	compactAgentSession(sessionId: string): Promise<number> {
+		return invoke<number>("compact_agent_session", { sessionId });
+	}
+
+	updateAgentRelationship(
+		sessionId: string,
+		sketchId: string,
+		sketchName: string,
+	): Promise<void> {
+		return invoke<void>("update_agent_relationship", {
+			sessionId,
+			sketchId,
+			sketchName,
+		});
+	}
+
+	readAgentSession(sessionId: string): Promise<AgentSessionRecord[]> {
+		return invoke<AgentSessionRecord[]>("read_agent_session", { sessionId });
+	}
+
+	findAgentSession(sketchId: string): Promise<AgentSessionSummary | null> {
+		return invoke<AgentSessionSummary | null>("find_agent_session", {
+			sketchId,
+		});
 	}
 
 	revealSketchFolder(): Promise<void> {
