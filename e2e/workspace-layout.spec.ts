@@ -23,9 +23,10 @@ test("shows the top-level application tabs and Gestalten workspace", async ({
 	await expect(page.getByRole("tabpanel", { name: "Gestalten" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
-	for (const name of ["Untitled sketch", "Preview"]) {
-		await expect(page.getByRole("tab", { name })).toBeVisible();
-	}
+	await expect(
+		page.getByRole("tab", { name: /^sketch_\d{8}[a-z]+$/ }),
+	).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);

@@ -163,5 +163,7 @@ test("discards a recovery snapshot older than seven days", async ({ page }) => {
 	await expect(
 		page.getByRole("alertdialog", { name: "Recover unsaved sketch?" }),
 	).not.toBeVisible();
-	await expect(documentTab(page, "Untitled sketch")).toBeVisible();
+	await expect(
+		page.getByRole("tab", { name: /^sketch_\d{8}[a-z]+$/ }),
+	).toBeVisible();
 });
