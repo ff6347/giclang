@@ -43,7 +43,9 @@ export function EditorPanel({
 			container.current,
 			(source) => onSourceChangeRef.current(source),
 			() => onSaveRef.current(),
-			() => onRevealSketchFolderRef.current?.(),
+			onRevealSketchFolderRef.current === undefined
+				? undefined
+				: () => onRevealSketchFolderRef.current?.(),
 			theme,
 			source,
 		);
