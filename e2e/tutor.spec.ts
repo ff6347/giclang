@@ -43,7 +43,21 @@ test("asks the deterministic agent only after explicit submission", async ({
 	await expect(tutor).toContainText("You: First line");
 	await expect(tutor).toContainText("Second line");
 	await expect(tutor).toContainText("smallest change");
-	await expect(tutor.locator("pre code")).toHaveText("rect(10, 10, 20, 20);");
+	const codeBlock = tutor.locator("pre code");
+	await expect(codeBlock).toHaveText("rect(10, 10, 20, 20);");
+	const codeShadowSpace = await tutor
+		.locator(".agent-messages")
+		.evaluate((messages) => {
+			const code = messages.querySelector("pre code");
+			if (code === null) throw new Error("Agent code block not found.");
+			const messagesBox = messages.getBoundingClientRect();
+			const codeBox = code.getBoundingClientRect();
+			return {
+				left: codeBox.left - messagesBox.left,
+				right: messagesBox.right - codeBox.right,
+			};
+		});
+	expect(codeShadowSpace.right).toBeGreaterThanOrEqual(3);
 	await expect(
 		tutor.getByRole("button", { name: "Send message" }),
 	).toBeVisible();

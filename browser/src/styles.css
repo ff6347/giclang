@@ -628,10 +628,12 @@ canvas {
 
 .agent-markdown pre,
 .agent-code-block {
-	background: var(--color-background);
-	border: 2px solid var(--color-text);
+	background: var(--color-chrome);
+	border-right: 2px solid var(--color-text);
+	border-bottom: 2px solid var(--color-text);
+
 	box-shadow: 3px 3px 0 var(--color-text);
-	margin: var(--s2) 0;
+	margin: var(--s2) 3px var(--s2) var(--s0);
 	overflow: auto;
 	padding: var(--s2);
 	white-space: pre;
