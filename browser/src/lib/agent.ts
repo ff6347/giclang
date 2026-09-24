@@ -104,5 +104,5 @@ function deterministicAnswer(request: AgentRequest): string {
 	if (context.output.length > 0) {
 		return "The sketch runs and produced structured output. What pattern would you like to change?";
 	}
-	return `You asked: ${request.question.trim()}. What is the smallest change you want to try?`;
+	return `You asked: ${request.question.trim()}. What is the smallest change you want to try?\n\n\`\`\`gic\nrect(10, 10, 20, 20);\n\`\`\``;
 }

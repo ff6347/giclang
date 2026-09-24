@@ -41,6 +41,7 @@ test("deterministic agent streams a Socratic response and honors cancellation", 
 		response += chunk;
 	}
 	assert.match(response, /smallest change/);
+	assert.match(response, /```gic\nrect\(10, 10, 20, 20\);\n```/);
 
 	controller.abort();
 	let cancelled = "";

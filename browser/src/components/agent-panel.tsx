@@ -4,8 +4,28 @@
 import { useState, type KeyboardEvent } from "react";
 import { Button } from "@base-ui/react/button";
 import { Loading, Send, Stop } from "pixelarticons/react";
+import { Streamdown, type Components } from "streamdown";
+import "streamdown/styles.css";
 import type { AgentMessage } from "../lib/agent.ts";
 import type { AgentStatus } from "../hooks/use-agent.ts";
+
+const markdownComponents: Components = {
+	a: ({ children, node: _node, ...props }) => (
+		<a {...props} rel="noreferrer" target="_blank">
+			{children}
+		</a>
+	),
+	code: ({ children, className, node: _node, ...props }) => (
+		<code {...props} className={className}>
+			{children}
+		</code>
+	),
+	pre: ({ children, node: _node, ...props }) => (
+		<pre {...props} className="agent-code-block">
+			{children}
+		</pre>
+	),
+};
 
 export interface AgentActions {
 	readonly cancel: () => void;
@@ -46,15 +66,38 @@ export function AgentPanel({
 		>
 			<div className="agent-messages" aria-live="polite">
 				{messages.map((message, index) => (
-					<p
+					<div
 						className={`agent-message agent-message-${message.role}`}
 						key={`${index}:${message.text}`}
 					>
 						<strong>{message.role === "student" ? "You" : "agent"}: </strong>
-						<span className={allowCopying ? undefined : "agent-response"}>
-							{message.text}
-						</span>
-					</p>
+						<div
+							className={
+								allowCopying
+									? "agent-response"
+									: "agent-response agent-response-locked"
+							}
+						>
+							{message.role === "agent" ? (
+								<Streamdown
+									animated={false}
+									className="agent-markdown"
+									components={markdownComponents}
+									controls={false}
+									isAnimating={
+										status === "streaming" && index === messages.length - 1
+									}
+									lineNumbers={false}
+									mode="streaming"
+									parseIncompleteMarkdown
+								>
+									{message.text}
+								</Streamdown>
+							) : (
+								message.text
+							)}
+						</div>
+					</div>
 				))}
 				{status === "error" && (
 					<p role="alert">The agent could not answer. Try again.</p>

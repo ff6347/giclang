@@ -246,20 +246,22 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 **Gate:** Decide how modified managed files are compared and presented.
 
-### Slice 14: Deterministic Socratic tutor and local sessions
+### Slice 14: Deterministic Socratic agent and local sessions
 
-**Student-visible outcome:** The desktop tutor can conduct and resume a constrained local teaching conversation against a deterministic test provider.
+**Student-visible outcome:** The desktop agent can conduct and resume a constrained local teaching conversation against a deterministic test provider.
 
 **Acceptance:**
 
-- The tutor is a soft dependency with visible offline, unauthenticated, retry, and hidden states.
+- The agent is a soft dependency with visible offline, unauthenticated, retry, and hidden states.
 - No provider call occurs before explicit submission.
 - Each submission receives current source, diagnostics, runtime error, and structured output, but no Canvas image.
 - The integrated agent loads canonical Socratic policy and references and has no write, shell, browser, or web tools.
 - Sessions are transparent JSONL with names, start dates, related sketches, provider/model changes, messages, and append-only compaction checkpoints.
 - Context snapshots are not copied into message history.
 - Rename updates relationships; continuing with another sketch clones the session.
-- Tutor response selection/copying is blocked by default and restored by an accessibility setting.
+- Agent response selection/copying is blocked by default and restored by an accessibility setting.
+- Streamed agent responses render safe Markdown, including incomplete and complete fenced code blocks; raw HTML is never executed and code follows the shared IDE style.
+- The PWA precaches the Markdown renderer and Agent conversations remain available offline.
 
 **Gate:** Fix the session entry schema, partial-write recovery, and durable file relationship identifier.
 

@@ -588,12 +588,59 @@ canvas {
 	padding: var(--s1) 0;
 }
 
+.agent-message > strong {
+	display: block;
+}
+
 .agent-response {
+	min-width: 0;
+}
+
+.agent-response-locked,
+.agent-response-locked * {
 	user-select: none;
 }
 
-.agent-response::selection {
+.agent-response-locked ::selection {
 	background: transparent;
+}
+
+.agent-markdown {
+	overflow-wrap: anywhere;
+}
+
+.agent-markdown > :first-child {
+	margin-top: var(--s0);
+}
+
+.agent-markdown > :last-child {
+	margin-bottom: var(--s0);
+}
+
+.agent-markdown p {
+	line-height: 1.5;
+}
+
+.agent-markdown code {
+	background: var(--color-control);
+	padding: 0 var(--s1);
+}
+
+.agent-markdown pre,
+.agent-code-block {
+	background: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	margin: var(--s2) 0;
+	overflow: auto;
+	padding: var(--s2);
+	white-space: pre;
+}
+
+.agent-markdown pre code,
+.agent-code-block code {
+	background: transparent;
+	padding: var(--s0);
 }
 
 .agent-composer {

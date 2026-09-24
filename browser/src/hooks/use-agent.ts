@@ -93,6 +93,10 @@ export function useAgent(context: AgentContext, sketchId: string) {
 						controller.signal,
 					)) {
 						answer += chunk;
+						setMessages([
+							...nextMessages,
+							{ role: "agent" as const, text: answer },
+						]);
 					}
 					if (controller.signal.aborted) return;
 					const completed = [
