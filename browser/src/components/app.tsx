@@ -215,6 +215,11 @@ export function App({
 	}, [desktop]);
 
 	useEffect(() => {
+		if (desktop === undefined) return;
+		void agent.updateRelationship(documents.documentState.displayName);
+	}, [agent.updateRelationship, desktop, documents.documentState.displayName]);
+
+	useEffect(() => {
 		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));
 	}, [model]);
 

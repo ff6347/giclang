@@ -118,6 +118,15 @@ export function useAgent(
 		localStorage.setItem(sessionKey(sketchId), serializeAgentSession(records));
 	};
 
+	const updateRelationship = useCallback(
+		async (name: string) => {
+			if (desktop === undefined) return;
+			const activeSessionId = await ensureSession();
+			await desktop.updateAgentRelationship(activeSessionId, sketchId, name);
+		},
+		[desktop, sketchId],
+	);
+
 	const cancel = useCallback(() => {
 		abortController.current?.abort();
 		abortController.current = null;
@@ -183,6 +192,7 @@ export function useAgent(
 	return {
 		cancel,
 		messages,
+		updateRelationship,
 		status,
 		submit,
 		retry: () => submit(lastQuestion.current),
