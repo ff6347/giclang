@@ -11,6 +11,16 @@ test("asks the deterministic agent only after explicit submission", async ({
 	const tutor = page.getByRole("region", { name: "Agent" });
 	await expect(tutor).not.toContainText("Nothing is sent until you submit");
 	await expect(tutor.getByRole("heading", { name: "Agent" })).toHaveCount(0);
+	await expect(tutor.getByRole("button", { name: "Agent help" })).toBeVisible();
+	await tutor.getByRole("button", { name: "Agent help" }).click();
+	await expect(tutor.getByRole("note", { name: "Agent help" })).toContainText(
+		"/new",
+	);
+	await expect(tutor.getByRole("note", { name: "Agent help" })).toContainText(
+		"Shift+Enter",
+	);
+	await tutor.getByRole("button", { name: "Agent help" }).click();
+	await expect(tutor.getByRole("note", { name: "Agent help" })).toHaveCount(0);
 	await expect(tutor.getByText("Question", { exact: true })).toHaveCount(0);
 	await expect(tutor.getByPlaceholder(/./)).toHaveCount(0);
 	const insets = await tutor.locator(".agent-composer").evaluate((element) => {

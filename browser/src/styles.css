@@ -576,6 +576,61 @@ canvas {
 	overflow: hidden;
 }
 
+.agent-panel {
+	position: relative;
+}
+
+.agent-help-button {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	display: flex;
+	height: var(--s4);
+	justify-content: center;
+	padding: 0;
+	position: absolute;
+	right: var(--s3);
+	top: var(--s3);
+	width: var(--s4);
+	z-index: 1;
+}
+
+.agent-help-button:hover {
+	background: var(--color-control);
+}
+
+.agent-help-button svg {
+	height: var(--s4);
+	width: var(--s4);
+}
+
+.agent-help {
+	background: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	padding: var(--s2);
+	position: absolute;
+	right: var(--s3);
+	top: var(--s6);
+	width: min(22rem, calc(100% - var(--s6)));
+	z-index: 1;
+}
+
+.agent-help p {
+	line-height: 1.4;
+	margin: 0 0 var(--s2);
+}
+
+.agent-help p:last-child {
+	margin-bottom: 0;
+}
+
+.agent-help code,
+.agent-help kbd {
+	background: var(--color-control);
+	padding: 0 var(--s1);
+}
+
 .agent-disabled-note {
 	font-size: smaller;
 	margin: 0;

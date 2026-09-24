@@ -3,7 +3,7 @@
 
 import { useState, type KeyboardEvent } from "react";
 import { Button } from "@base-ui/react/button";
-import { Loading, Send, Stop } from "pixelarticons/react";
+import { CircleQuestion, Loading, Send, Stop } from "pixelarticons/react";
 import { Streamdown, type Components } from "streamdown";
 import "streamdown/styles.css";
 import type { AgentMessage } from "../lib/agent.ts";
@@ -48,6 +48,7 @@ export function AgentPanel({
 	readonly status: AgentStatus;
 }) {
 	const [question, setQuestion] = useState("");
+	const [helpOpen, setHelpOpen] = useState(false);
 	const submit = () => {
 		const trimmed = question.trim();
 		if (trimmed === "/new") {
@@ -73,6 +74,25 @@ export function AgentPanel({
 			aria-label="Agent"
 			className="workspace-panel padded-panel agent-panel"
 		>
+			<Button
+				aria-expanded={helpOpen}
+				aria-label="Agent help"
+				className="agent-help-button"
+				type="button"
+				onClick={() => setHelpOpen((open) => !open)}
+			>
+				<CircleQuestion aria-hidden="true" />
+			</Button>
+			{helpOpen && (
+				<aside aria-label="Agent help" className="agent-help" role="note">
+					<p>
+						<code>/new</code> starts a fresh Agent session.
+					</p>
+					<p>
+						<kbd>Enter</kbd> sends. <kbd>Shift+Enter</kbd> adds a line.
+					</p>
+				</aside>
+			)}
 			{disabled && (
 				<p className="agent-disabled-note">
 					Save this sketch before using the Agent.
