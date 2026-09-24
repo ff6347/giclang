@@ -44,6 +44,7 @@ export function useDocument(
 		return createNewSketchDocument(name);
 	});
 	const [sketchId, setSketchId] = useState(() => documentState.displayName);
+	const [documentId, setDocumentId] = useState<string | undefined>(undefined);
 	const initialSketchName = useRef(documentState.displayName).current;
 	const documentStateRef = useRef(documentState);
 	documentStateRef.current = documentState;
@@ -77,6 +78,7 @@ export function useDocument(
 		nextSketchId?: string,
 	) => {
 		desktopDocumentId.current = documentId;
+		setDocumentId(documentId);
 		setSketchId(nextSketchId ?? nextDocument.displayName);
 		replace(nextDocument);
 	};
@@ -191,6 +193,7 @@ export function useDocument(
 
 	return {
 		documentState,
+		documentId,
 		sketchId,
 		discardOpen,
 		recoveryOpen,

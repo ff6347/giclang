@@ -123,12 +123,11 @@ fn resolve_projects_directory(
 fn apply_projects_directory(
     settings: &SettingsStore,
     manager: &WorkspaceManager,
-    sessions: &SessionStore,
+    _sessions: &SessionStore,
     path: PathBuf,
 ) -> Result<(), String> {
     settings.write("gic.projectsDirectory", &path.display().to_string())?;
     manager.set_root(path)?;
-    sessions.set_sessions_dir(manager.workspace_root().join("sessions"))?;
     manager.reconcile(managed_files::MANAGED_FILES).map(|_| ())
 }
 
@@ -177,7 +176,11 @@ async fn save_gic_as(
     suggested_name: &str,
     store: State<'_, DocumentStore>,
     manager: State<'_, WorkspaceManager>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<Option<OpenedDocument>, String> {
+    let source_sketch_dir = store
+        .active_path()
+        .and_then(|path| path.parent().map(Path::to_path_buf));
     let sketchbook = manager.workspace_root().join("sketches");
     fs::create_dir_all(&sketchbook).map_err(|_| "Unable to prepare the sketchbook.".to_owned())?;
     let selected = app
@@ -192,7 +195,13 @@ async fn save_gic_as(
             path.into_path()
                 .map_err(|_| "Unable to use the selected sketch location.".to_owned())
                 .map(|path| sketch_path(&sketchbook, path))
-                .and_then(|path| store.save_path(path, source))
+                .and_then(|path| {
+                    if let Some(source_dir) = source_sketch_dir.clone() {
+                        let target_dir = path.parent().unwrap_or(&source_dir);
+                        sessions.clone_latest_between(&source_dir, target_dir)?;
+                    }
+                    store.save_path(path, source)
+                })
         })
         .transpose()
 }
@@ -217,66 +226,70 @@ fn existing_sketch_names(manager: State<'_, WorkspaceManager>) -> Result<Vec<Str
 }
 
 #[tauri::command]
+fn active_sketch_dir(document_store: &DocumentStore, document_id: &str) -> Result<PathBuf, String> {
+    let path = document_store
+        .active_path()
+        .filter(|_| !document_id.is_empty())
+        .ok_or_else(|| "Save the sketch before starting an Agent session.".to_owned())?;
+    path.parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| "The sketch has no session folder.".to_owned())
+}
+
+#[tauri::command]
 fn create_agent_session(
     name: &str,
-    sketch_id: &str,
-    store: State<'_, SessionStore>,
+    document_id: &str,
+    documents: State<'_, DocumentStore>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<String, String> {
-    store.create(name, sketch_id)
+    sessions.create_in(&active_sketch_dir(&documents, document_id)?, name)
 }
 
 #[tauri::command]
 fn clone_agent_session(
-    session_id: &str,
-    name: &str,
-    sketch_id: &str,
-    store: State<'_, SessionStore>,
-) -> Result<String, String> {
-    store.clone_session(session_id, name, sketch_id)
+    document_id: &str,
+    sessions: State<'_, SessionStore>,
+    documents: State<'_, DocumentStore>,
+) -> Result<Option<String>, String> {
+    let sketch_dir = active_sketch_dir(&documents, document_id)?;
+    sessions.clone_latest_between(&sketch_dir, &sketch_dir)
 }
 
 #[tauri::command]
 fn append_agent_message(
+    document_id: &str,
     session_id: &str,
     role: &str,
     text: &str,
-    store: State<'_, SessionStore>,
+    documents: State<'_, DocumentStore>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<(), String> {
-    store.append_message(session_id, role, text)
-}
-
-#[tauri::command]
-fn compact_agent_session(
-    session_id: &str,
-    store: State<'_, SessionStore>,
-) -> Result<usize, String> {
-    store.compact(session_id)
-}
-
-#[tauri::command]
-fn update_agent_relationship(
-    session_id: &str,
-    sketch_id: &str,
-    sketch_name: &str,
-    store: State<'_, SessionStore>,
-) -> Result<(), String> {
-    store.update_relationship(session_id, sketch_id, sketch_name)
+    sessions.append_in(
+        &active_sketch_dir(&documents, document_id)?,
+        session_id,
+        role,
+        text,
+    )
 }
 
 #[tauri::command]
 fn read_agent_session(
+    document_id: &str,
     session_id: &str,
-    store: State<'_, SessionStore>,
+    documents: State<'_, DocumentStore>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<Vec<SessionRecord>, String> {
-    store.read_records(session_id)
+    sessions.read_in(&active_sketch_dir(&documents, document_id)?, session_id)
 }
 
 #[tauri::command]
 fn find_agent_session(
-    sketch_id: &str,
-    store: State<'_, SessionStore>,
+    document_id: &str,
+    documents: State<'_, DocumentStore>,
+    sessions: State<'_, SessionStore>,
 ) -> Result<Option<SessionSummary>, String> {
-    store.find_for_sketch(sketch_id)
+    sessions.latest_summary(&active_sketch_dir(&documents, document_id)?)
 }
 
 #[tauri::command]
@@ -435,9 +448,7 @@ pub fn run() {
             let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(DocumentStore::default());
-            let sessions = SessionStore::default();
-            sessions.set_sessions_dir(workspace_root.join("sessions"))?;
-            app.manage(sessions);
+            app.manage(SessionStore);
             let manifest_path = app
                 .path()
                 .app_config_dir()
@@ -483,8 +494,6 @@ pub fn run() {
             create_agent_session,
             clone_agent_session,
             append_agent_message,
-            compact_agent_session,
-            update_agent_relationship,
             read_agent_session,
             find_agent_session,
             read_settings,

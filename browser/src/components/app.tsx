@@ -145,6 +145,7 @@ export function App({
 		),
 		documents.sketchId,
 		desktop,
+		documents.documentId,
 	);
 
 	useEffect(() => {
@@ -213,11 +214,6 @@ export function App({
 			unlisten?.();
 		};
 	}, [desktop]);
-
-	useEffect(() => {
-		if (desktop === undefined) return;
-		void agent.updateRelationship(documents.documentState.displayName);
-	}, [agent.updateRelationship, desktop, documents.documentState.displayName]);
 
 	useEffect(() => {
 		model.doAction(Actions.renameTab(CODE_ID, "Gestalten"));

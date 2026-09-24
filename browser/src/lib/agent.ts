@@ -36,12 +36,6 @@ export type AgentSessionRecord =
 			readonly role: AgentMessage["role"];
 			readonly text: string;
 			readonly at: string;
-	  }
-	| {
-			readonly type: "compaction";
-			readonly sessionId: string;
-			readonly at: string;
-			readonly messageCount: number;
 	  };
 
 export function buildAgentContext(

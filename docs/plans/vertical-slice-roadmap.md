@@ -256,14 +256,14 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 - No provider call occurs before explicit submission.
 - Each submission receives current source, diagnostics, runtime error, and structured output, but no Canvas image.
 - The integrated agent loads canonical Socratic policy and references and has no write, shell, browser, or web tools.
-- Sessions are transparent JSONL with names, start dates, related sketches, provider/model changes, messages, and append-only compaction checkpoints.
+- Sessions are transparent JSONL with names, start dates, related sketches, messages, and explicit new-session boundaries.
 - Context snapshots are not copied into message history.
 - Rename updates relationships; continuing with another sketch clones the session.
 - Agent response selection/copying is blocked by default and restored by an accessibility setting.
 - Streamed agent responses render safe Markdown, including incomplete and complete fenced code blocks; raw HTML is never executed and code follows the shared IDE style.
 - The PWA precaches the Markdown renderer and Agent conversations remain available offline.
 
-**Gate:** Fix the session entry schema, partial-write recovery, and durable file relationship identifier.
+**Gate:** Fix the session entry schema, partial-write recovery, and local sketch-folder ownership. Compaction is out of scope.
 
 **Verification boundary:** Review frontend behavior in the PWA against the deterministic provider. Verify provider bridges, credentials, native session persistence, sketch relationships, and other backend behavior in a built Tauri application; deterministic browser acceptance is not backend evidence.
 

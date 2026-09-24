@@ -33,6 +33,7 @@ export function useAgent(
 	context: AgentContext,
 	sketchId: string,
 	desktop?: DesktopHost,
+	documentId?: string,
 ) {
 	const provider = useRef(createDeterministicAgent()).current;
 	const abortController = useRef<AbortController | null>(null);
@@ -54,7 +55,7 @@ export function useAgent(
 		}
 		let disposed = false;
 		void desktop
-			.findAgentSession(sketchId)
+			.findAgentSession(documentId ?? "")
 			.then(async (summary) => {
 				if (disposed) return;
 				if (summary === null) {
@@ -62,7 +63,10 @@ export function useAgent(
 					return;
 				}
 				sessionId.current = summary.sessionId;
-				const records = await desktop.readAgentSession(summary.sessionId);
+				const records = await desktop.readAgentSession(
+					documentId ?? "",
+					summary.sessionId,
+				);
 				if (disposed) return;
 				setMessages(
 					records.flatMap((record) =>
@@ -80,17 +84,35 @@ export function useAgent(
 		};
 	}, [desktop, sketchId]);
 
+	const startNewSession = useCallback(async () => {
+		abortController.current?.abort();
+		abortController.current = null;
+		if (desktop === undefined) {
+			localStorage.removeItem(sessionKey(sketchId));
+			setMessages([]);
+			setStatus("ready");
+			return;
+		}
+		const created = await desktop.createAgentSession(
+			"New session",
+			documentId ?? "",
+		);
+		sessionId.current = created;
+		setMessages([]);
+		setStatus("ready");
+	}, [desktop, documentId, sketchId]);
+
 	const ensureSession = async (): Promise<string> => {
 		if (desktop === undefined) return "local";
 		if (sessionId.current !== null) return sessionId.current;
-		const existing = await desktop.findAgentSession(sketchId);
+		const existing = await desktop.findAgentSession(documentId ?? "");
 		if (existing !== null) {
 			sessionId.current = existing.sessionId;
 			return existing.sessionId;
 		}
 		const created = await desktop.createAgentSession(
 			"Current sketch",
-			sketchId,
+			documentId ?? "",
 		);
 		sessionId.current = created;
 		return created;
@@ -118,15 +140,6 @@ export function useAgent(
 		localStorage.setItem(sessionKey(sketchId), serializeAgentSession(records));
 	};
 
-	const updateRelationship = useCallback(
-		async (name: string) => {
-			if (desktop === undefined) return;
-			const activeSessionId = await ensureSession();
-			await desktop.updateAgentRelationship(activeSessionId, sketchId, name);
-		},
-		[desktop, sketchId],
-	);
-
 	const cancel = useCallback(() => {
 		abortController.current?.abort();
 		abortController.current = null;
@@ -152,6 +165,7 @@ export function useAgent(
 					const activeSessionId = await ensureSession();
 					if (desktop !== undefined) {
 						await desktop.appendAgentMessage(
+							documentId ?? "",
 							activeSessionId,
 							"student",
 							trimmed,
@@ -175,7 +189,12 @@ export function useAgent(
 					setMessages(completed);
 					persist(completed);
 					if (desktop !== undefined) {
-						await desktop.appendAgentMessage(activeSessionId, "agent", answer);
+						await desktop.appendAgentMessage(
+							documentId ?? "",
+							activeSessionId,
+							"agent",
+							answer,
+						);
 					}
 					setStatus("ready");
 				} catch {
@@ -186,13 +205,13 @@ export function useAgent(
 				}
 			})();
 		},
-		[context, desktop, messages, provider, sketchId],
+		[context, desktop, documentId, messages, provider, sketchId],
 	);
 
 	return {
 		cancel,
 		messages,
-		updateRelationship,
+		startNewSession,
 		status,
 		submit,
 		retry: () => submit(lastQuestion.current),

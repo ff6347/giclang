@@ -31,6 +31,7 @@ export interface AgentActions {
 	readonly cancel: () => void;
 	readonly retry: () => void;
 	readonly submit: (question: string) => void;
+	readonly startNewSession: () => Promise<void>;
 }
 
 export function AgentPanel({
@@ -103,6 +104,15 @@ export function AgentPanel({
 					<p role="alert">The agent could not answer. Try again.</p>
 				)}
 				{status === "cancelled" && <p>The question was cancelled.</p>}
+			</div>
+			<div className="agent-session-actions">
+				<Button
+					className="application-button"
+					type="button"
+					onClick={() => void actions.startNewSession()}
+				>
+					New session
+				</Button>
 			</div>
 			<form
 				className="agent-composer"

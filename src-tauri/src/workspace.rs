@@ -15,7 +15,6 @@ use tempfile::NamedTempFile;
 
 const MANIFEST_VERSION: u32 = 1;
 const SKETCHES_DIR: &str = "sketches";
-const SESSIONS_DIR: &str = "sessions";
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct ManagedFile {
@@ -313,8 +312,6 @@ impl WorkspaceManager {
             .map_err(|_| "Unable to create the workspace.".to_owned())?;
         fs::create_dir_all(workspace_root.join(SKETCHES_DIR))
             .map_err(|_| "Unable to create the sketches folder.".to_owned())?;
-        fs::create_dir_all(workspace_root.join(SESSIONS_DIR))
-            .map_err(|_| "Unable to create the sessions folder.".to_owned())?;
         Ok(())
     }
 
@@ -485,7 +482,7 @@ mod tests {
         let status = workspace.reconcile(&v1()).expect("reconcile");
 
         assert!(workspace.workspace_root().join("sketches").is_dir());
-        assert!(workspace.workspace_root().join("sessions").is_dir());
+        assert!(workspace.workspace_root().join("sketches").is_dir());
         assert!(workspace.workspace_root().join(AGENTS).is_file());
         assert!(workspace.workspace_root().join(SKILL).is_file());
         assert!(workspace.workspace_root().join(REFERENCE).is_file());
@@ -636,7 +633,7 @@ mod tests {
             "my tutor rules\n",
         );
         assert!(workspace.workspace_root().join("sketches").is_dir());
-        assert!(workspace.workspace_root().join("sessions").is_dir());
+        assert!(!workspace.workspace_root().join("sessions").exists());
         assert!(!status.installed);
         remove_test_directory(&directory);
     }

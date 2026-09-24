@@ -576,6 +576,11 @@ canvas {
 	overflow: hidden;
 }
 
+.agent-session-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
 .agent-messages {
 	flex: 1;
 	min-height: 0;

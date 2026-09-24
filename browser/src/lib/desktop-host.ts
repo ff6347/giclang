@@ -22,7 +22,6 @@ export type AgentSessionRecord =
 			readonly id: string;
 			readonly name: string;
 			readonly startedAt: string;
-			readonly sketchId: string;
 	  }
 	| {
 			readonly type: "message";
@@ -30,25 +29,11 @@ export type AgentSessionRecord =
 			readonly role: "student" | "agent";
 			readonly text: string;
 			readonly at: string;
-	  }
-	| {
-			readonly type: "compaction";
-			readonly sessionId: string;
-			readonly at: string;
-			readonly messageCount: number;
-	  }
-	| {
-			readonly type: "relationship";
-			readonly sessionId: string;
-			readonly at: string;
-			readonly sketchId: string;
-			readonly sketchName: string;
 	  };
 
 export interface AgentSessionSummary {
 	readonly sessionId: string;
 	readonly name: string;
-	readonly sketchId: string;
 }
 
 export type DesktopMenuAction =
@@ -81,49 +66,45 @@ export class DesktopHost {
 		return invoke<DesktopDocument | null>("open_gic");
 	}
 
-	createAgentSession(name: string, sketchId: string): Promise<string> {
-		return invoke<string>("create_agent_session", { name, sketchId });
+	createAgentSession(name: string, documentId: string): Promise<string> {
+		return invoke<string>("create_agent_session", { name, documentId });
 	}
 
-	cloneAgentSession(
-		sessionId: string,
-		name: string,
-		sketchId: string,
-	): Promise<string> {
-		return invoke<string>("clone_agent_session", { sessionId, name, sketchId });
+	newAgentSession(documentId: string, name: string): Promise<string> {
+		return this.createAgentSession(name, documentId);
+	}
+
+	cloneAgentSession(documentId: string): Promise<string | null> {
+		return invoke<string | null>("clone_agent_session", { documentId });
 	}
 
 	appendAgentMessage(
+		documentId: string,
 		sessionId: string,
 		role: "student" | "agent",
 		text: string,
 	): Promise<void> {
-		return invoke<void>("append_agent_message", { sessionId, role, text });
-	}
-
-	compactAgentSession(sessionId: string): Promise<number> {
-		return invoke<number>("compact_agent_session", { sessionId });
-	}
-
-	updateAgentRelationship(
-		sessionId: string,
-		sketchId: string,
-		sketchName: string,
-	): Promise<void> {
-		return invoke<void>("update_agent_relationship", {
+		return invoke<void>("append_agent_message", {
+			documentId,
 			sessionId,
-			sketchId,
-			sketchName,
+			role,
+			text,
 		});
 	}
 
-	readAgentSession(sessionId: string): Promise<AgentSessionRecord[]> {
-		return invoke<AgentSessionRecord[]>("read_agent_session", { sessionId });
+	readAgentSession(
+		documentId: string,
+		sessionId: string,
+	): Promise<AgentSessionRecord[]> {
+		return invoke<AgentSessionRecord[]>("read_agent_session", {
+			documentId,
+			sessionId,
+		});
 	}
 
-	findAgentSession(sketchId: string): Promise<AgentSessionSummary | null> {
+	findAgentSession(documentId: string): Promise<AgentSessionSummary | null> {
 		return invoke<AgentSessionSummary | null>("find_agent_session", {
-			sketchId,
+			documentId,
 		});
 	}
 
