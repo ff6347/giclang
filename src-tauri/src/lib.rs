@@ -179,7 +179,7 @@ async fn save_gic_as(
     let selected = app
         .dialog()
         .file()
-        .set_title("Save Sketch Folder")
+        .set_title("Save Sketch Folder As…")
         .set_directory(&sketchbook)
         .set_file_name(suggested_name)
         .blocking_save_file();
