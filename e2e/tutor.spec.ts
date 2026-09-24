@@ -13,6 +13,17 @@ test("asks the deterministic agent only after explicit submission", async ({
 	await expect(tutor.getByRole("heading", { name: "Agent" })).toHaveCount(0);
 	await expect(tutor.getByText("Question", { exact: true })).toHaveCount(0);
 	await expect(tutor.getByPlaceholder(/./)).toHaveCount(0);
+	const insets = await tutor.locator(".agent-composer").evaluate((element) => {
+		const panel = element.closest<HTMLElement>("[aria-label='Agent']");
+		if (panel === null) throw new Error("Agent panel not found.");
+		const panelBox = panel.getBoundingClientRect();
+		const composerBox = element.getBoundingClientRect();
+		return {
+			left: composerBox.left - panelBox.left,
+			right: panelBox.right - composerBox.right,
+		};
+	});
+	expect(insets.left).toBe(insets.right);
 	await expect(tutor.getByText("You:", { exact: false })).toHaveCount(0);
 
 	const input = tutor.getByRole("textbox", { name: "Message agent" });

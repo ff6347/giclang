@@ -598,6 +598,7 @@ canvas {
 
 .agent-composer {
 	align-items: flex-end;
+	box-sizing: border-box;
 	background-color: var(--color-background);
 	border: 2px solid var(--color-text);
 	box-shadow: 3px 3px 0 var(--color-text);
