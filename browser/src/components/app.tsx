@@ -54,6 +54,7 @@ import {
 	resolveWindowTheme,
 } from "../lib/theme.ts";
 import { useTheme } from "../hooks/use-theme.ts";
+import { useWorkspace } from "../hooks/use-workspace.ts";
 
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
 const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
@@ -123,6 +124,7 @@ export function App({
 	const documents = useDocument(formatOnSave, selectGestalten, desktop);
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
+	const workspace = useWorkspace(desktop);
 
 	useEffect(() => {
 		if (desktop === undefined) return;
@@ -136,6 +138,16 @@ export function App({
 		let disposed = false;
 		let unlisten: (() => void) | undefined;
 		const handleMenuAction = (action: DesktopMenuAction) => {
+			if (action === "new") {
+				documentsRef.current.requestNew();
+				return;
+			}
+			if (action === "reveal") {
+				void desktop.revealSketchFolder().catch(() => {
+					window.alert("GIC could not reveal the sketch folder.");
+				});
+				return;
+			}
 			if (action === "open") {
 				documentsRef.current.requestDesktopOpen();
 				return;
@@ -252,6 +264,15 @@ export function App({
 							preview.setEditor(editor);
 						}}
 						onSave={documents.requestSave}
+						onRevealSketchFolder={
+							desktop === undefined
+								? undefined
+								: () => {
+										void desktop.revealSketchFolder().catch(() => {
+											window.alert("GIC could not reveal the sketch folder.");
+										});
+									}
+						}
 						onSourceChange={updateSource}
 						source={documents.documentState.source}
 						theme={theme}
@@ -286,6 +307,7 @@ export function App({
 						onFormatOnSaveChange={updateFormatOnSave}
 						onLightThemeChange={updateLightTheme}
 						onResetLayout={resetLayout}
+						workspace={desktop === undefined ? undefined : workspace}
 					/>
 				);
 			case EXAMPLES_ID:

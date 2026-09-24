@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { WindowTheme } from "./theme.ts";
+import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
 const MENU_ACTION_EVENT = "desktop-menu-action";
 
@@ -16,8 +17,10 @@ export interface DesktopDocument {
 
 export type DesktopMenuAction =
 	| "format"
+	| "new"
 	| "open"
 	| "redo"
+	| "reveal"
 	| "save"
 	| "saveAs"
 	| "settings"
@@ -25,12 +28,14 @@ export type DesktopMenuAction =
 
 function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 	return (
+		value === "format" ||
+		value === "new" ||
 		value === "open" ||
 		value === "redo" ||
+		value === "reveal" ||
 		value === "save" ||
 		value === "saveAs" ||
 		value === "settings" ||
-		value === "format" ||
 		value === "undo"
 	);
 }
@@ -38,6 +43,10 @@ function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 export class DesktopHost {
 	openDocument(): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("open_gic");
+	}
+
+	revealSketchFolder(): Promise<void> {
+		return invoke<void>("reveal_sketch_folder");
 	}
 
 	saveDocument(documentId: string, source: string): Promise<void> {
@@ -52,6 +61,52 @@ export class DesktopHost {
 			source,
 			suggestedName,
 		});
+	}
+
+	workspaceStatus(): Promise<WorkspaceStatus> {
+		return invoke<WorkspaceStatus>("workspace_status");
+	}
+
+	projectsDirectory(): Promise<string> {
+		return invoke<string>("projects_directory");
+	}
+
+	existingSketchNames(): Promise<string[]> {
+		return invoke<string[]>("existing_sketch_names");
+	}
+
+	chooseProjectsDirectory(): Promise<string | null> {
+		return invoke<string | null>("choose_projects_directory");
+	}
+
+	showWorkspaceNotice(): Promise<void> {
+		return invoke<void>("show_workspace_notice");
+	}
+
+	repairWorkspace(): Promise<WorkspaceStatus> {
+		return invoke<WorkspaceStatus>("repair_workspace");
+	}
+
+	uninstallWorkspace(): Promise<WorkspaceStatus> {
+		return invoke<WorkspaceStatus>("uninstall_workspace");
+	}
+
+	resolveWorkspaceFile(
+		path: string,
+		resolution: "keep" | "replace",
+	): Promise<WorkspaceStatus> {
+		return invoke<WorkspaceStatus>("resolve_workspace_file", {
+			path,
+			resolution,
+		});
+	}
+
+	assistantStatus(): Promise<AssistantStatus[]> {
+		return invoke<AssistantStatus[]>("assistant_status");
+	}
+
+	launchAssistant(name: string): Promise<void> {
+		return invoke<void>("launch_assistant", { name });
 	}
 
 	setWindowTheme(theme: WindowTheme | null): Promise<void> {

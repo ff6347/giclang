@@ -41,6 +41,10 @@ export function createUntitledDocument(source = ""): DocumentState {
 	return createDocument("untitled", "Untitled sketch", source, false, true);
 }
 
+export function createNewSketchDocument(name: string): DocumentState {
+	return createDocument("untitled", name, "", false, true);
+}
+
 export function openDocument(name: string, source: string): DocumentState {
 	return createDocument("file", name, source, true, false);
 }

@@ -3,6 +3,7 @@
 
 use serde::Serialize;
 use std::{
+    collections::BTreeSet,
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -56,6 +57,14 @@ impl DocumentStore {
         write_source(&document.path, source)
     }
 
+    pub(crate) fn active_path(&self) -> Option<PathBuf> {
+        self.active
+            .lock()
+            .ok()?
+            .as_ref()
+            .map(|document| document.path.clone())
+    }
+
     fn remember(&self, path: PathBuf, source: String) -> Result<OpenedDocument, String> {
         let document_id = Uuid::new_v4().to_string();
         let name = path
@@ -93,10 +102,81 @@ fn with_gic_extension(mut path: PathBuf) -> PathBuf {
     path
 }
 
+pub(crate) fn sketch_path(sketchbook: &Path, chosen: PathBuf) -> PathBuf {
+    if chosen.parent() != Some(sketchbook) {
+        return chosen;
+    }
+    let Some(name) = chosen
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .map(normalize_sketch_name)
+        .filter(|name| !name.is_empty())
+    else {
+        return chosen;
+    };
+    sketchbook.join(&name).join(format!("{name}.gic"))
+}
+
+fn normalize_sketch_name(name: &str) -> String {
+    let trimmed = name.trim();
+    let mut normalized = String::with_capacity(trimmed.len());
+    let mut previous_was_separator = false;
+    for ch in trimmed.chars() {
+        if ch.is_whitespace() {
+            previous_was_separator = true;
+        } else {
+            if previous_was_separator {
+                normalized.push('_');
+            }
+            previous_was_separator = false;
+            normalized.push(ch.to_ascii_lowercase());
+        }
+    }
+    normalized
+}
+
+pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, String> {
+    let entries = match fs::read_dir(sketchbook) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(_) => return Err("Unable to read the sketchbook.".to_owned()),
+    };
+    let mut names = BTreeSet::new();
+    for entry in entries {
+        let entry = entry.map_err(|_| "Unable to read the sketchbook.".to_owned())?;
+        let file_type = entry
+            .file_type()
+            .map_err(|_| "Unable to read the sketchbook.".to_owned())?;
+        let path = entry.path();
+        let name = if file_type.is_dir() {
+            entry.file_name().into_string().ok()
+        } else if file_type.is_file()
+            && path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("gic"))
+        {
+            path.file_stem()
+                .and_then(|stem| stem.to_str())
+                .map(str::to_owned)
+        } else {
+            None
+        };
+        if let Some(name) = name {
+            let normalized = normalize_sketch_name(&name);
+            if !normalized.is_empty() {
+                names.insert(normalized);
+            }
+        }
+    }
+    Ok(names.into_iter().collect())
+}
+
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
         .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+    fs::create_dir_all(parent).map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
     let mut temporary_file = NamedTempFile::new_in(parent)
         .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
     temporary_file
@@ -111,7 +191,7 @@ fn write_source(path: &Path, source: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::DocumentStore;
+    use super::{existing_sketch_names, sketch_path, DocumentStore};
     use std::path::{Path, PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -208,6 +288,83 @@ mod tests {
         store
             .save(&second.document_id, "background(\"blue\");")
             .expect("save active fixture");
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn sketch_path_builds_a_sketch_folder_inside_the_sketchbook() {
+        let sketchbook = Path::new("/tmp/gic-sketches");
+
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("orbit")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("orbit.gic")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("My Cool Sketch")),
+            PathBuf::from("/tmp/gic-sketches/my_cool_sketch/my_cool_sketch.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, sketchbook.join("Orbit.gic")),
+            PathBuf::from("/tmp/gic-sketches/orbit/orbit.gic"),
+        );
+        assert_eq!(
+            sketch_path(sketchbook, PathBuf::from("/tmp/elsewhere/orbit.gic")),
+            PathBuf::from("/tmp/elsewhere/orbit.gic"),
+        );
+    }
+
+    #[test]
+    fn save_path_creates_the_sketch_folder() {
+        let directory = test_directory("sketch-folder");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let sketches = directory.join("sketches");
+        let store = DocumentStore::default();
+
+        let saved = store
+            .save_path(
+                sketch_path(&sketches, sketches.join("orbit")),
+                "circle(1, 2, 3);",
+            )
+            .expect("save sketch fixture");
+
+        assert_eq!(saved.name, "orbit.gic");
+        assert_eq!(
+            std::fs::read_to_string(sketches.join("orbit/orbit.gic")).expect("read saved sketch"),
+            "circle(1, 2, 3);",
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn existing_sketch_names_reads_normalized_folder_and_gic_names() {
+        let directory = test_directory("existing-sketch-names");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        std::fs::create_dir_all(sketchbook.join("Sketch_20260924 A"))
+            .expect("create existing sketch folder");
+        std::fs::create_dir_all(&sketchbook).expect("create sketchbook");
+        std::fs::write(sketchbook.join("Sketch_20260924b.gic"), "")
+            .expect("create existing GIC file");
+        std::fs::write(sketchbook.join(".DS_Store"), "").expect("create Finder metadata");
+
+        let names = existing_sketch_names(&sketchbook).expect("list existing sketches");
+
+        assert_eq!(names, vec!["sketch_20260924_a", "sketch_20260924b"]);
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn existing_sketch_names_returns_empty_for_a_missing_sketchbook() {
+        let directory = test_directory("missing-sketchbook");
+        remove_test_directory(&directory);
+
+        assert_eq!(existing_sketch_names(&directory), Ok(Vec::new()));
+
         remove_test_directory(&directory);
     }
 }

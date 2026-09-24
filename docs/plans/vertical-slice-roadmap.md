@@ -348,7 +348,7 @@ These questions are recorded in PRD issue `60b2077` and must be resolved by the 
 4. Which single-file worker strategy passes the three-engine `file://` matrix?
 5. Which installer formats, architectures, signing identities, and CI runners form the release matrix?
 6. How are Windows owner-only credential ACLs created, replaced, and repaired?
-7. How are modified managed support files compared and presented?
+7. Resolved by [Workspace Managed Files](decisions/workspace-managed-files.md): files are compared by content digest and modified files are presented and resolved in Settings.
 8. What JSONL session schema and partial-write recovery policy are used?
 9. How are renamed, moved, deleted, Save As, and PWA-only documents related to sessions?
 10. What is the recovery snapshot creation, expiry, dismissal, and multiple-instance policy?

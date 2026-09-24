@@ -3,21 +3,39 @@
 
 mod desktop_menu;
 mod documents;
+mod external_tools;
+mod managed_files;
+mod workspace;
 
-use documents::{DocumentStore, OpenedDocument};
-use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex};
+use documents::{sketch_path, DocumentStore, OpenedDocument};
+use external_tools::AssistantStatus;
+use std::{
+    collections::BTreeMap,
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+};
 use tauri::{AppHandle, Manager, State};
-use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
+use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
-const ALLOWED_SETTING_KEYS: [&str; 6] = [
+const ALLOWED_SETTING_KEYS: [&str; 7] = [
     "gic.appearance",
     "gic.canvasFrame",
     "gic.darkTheme",
     "gic.formatOnSave",
     "gic.lightTheme",
+    "gic.projectsDirectory",
     "gic.workspaceLayout",
 ];
+
+const DEFAULT_WORKSPACE_DIR: &str = "gestalten-in-code";
 
 struct SettingsStore {
     access: Mutex<()>,
@@ -84,6 +102,32 @@ impl SettingsStore {
     }
 }
 
+fn resolve_projects_directory(
+    app: &AppHandle,
+    settings: &SettingsStore,
+) -> Result<PathBuf, String> {
+    if let Some(configured) = settings.read()?.get("gic.projectsDirectory") {
+        if !configured.trim().is_empty() {
+            return Ok(PathBuf::from(configured));
+        }
+    }
+    let documents = app
+        .path()
+        .document_dir()
+        .map_err(|_| "Unable to locate the Documents folder.".to_owned())?;
+    Ok(documents.join(DEFAULT_WORKSPACE_DIR))
+}
+
+fn apply_projects_directory(
+    settings: &SettingsStore,
+    manager: &WorkspaceManager,
+    path: PathBuf,
+) -> Result<(), String> {
+    settings.write("gic.projectsDirectory", &path.display().to_string())?;
+    manager.set_root(path)?;
+    manager.reconcile(managed_files::MANAGED_FILES).map(|_| ())
+}
+
 #[tauri::command]
 fn read_settings(store: State<'_, SettingsStore>) -> Result<BTreeMap<String, String>, String> {
     store.read()
@@ -128,20 +172,181 @@ async fn save_gic_as(
     source: &str,
     suggested_name: &str,
     store: State<'_, DocumentStore>,
+    manager: State<'_, WorkspaceManager>,
 ) -> Result<Option<OpenedDocument>, String> {
+    let sketchbook = manager.workspace_root().join("sketches");
+    fs::create_dir_all(&sketchbook).map_err(|_| "Unable to prepare the sketchbook.".to_owned())?;
     let selected = app
         .dialog()
         .file()
-        .add_filter("GIC sketch", &["gic"])
+        .set_title("Save Sketch Folder As…")
+        .set_directory(&sketchbook)
         .set_file_name(suggested_name)
         .blocking_save_file();
     selected
         .map(|path| {
             path.into_path()
                 .map_err(|_| "Unable to use the selected sketch location.".to_owned())
+                .map(|path| sketch_path(&sketchbook, path))
                 .and_then(|path| store.save_path(path, source))
         })
         .transpose()
+}
+
+#[tauri::command]
+fn workspace_status(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.status(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn projects_directory(
+    app: AppHandle,
+    settings: State<'_, SettingsStore>,
+) -> Result<String, String> {
+    resolve_projects_directory(&app, &settings).map(|path| path.display().to_string())
+}
+
+#[tauri::command]
+fn existing_sketch_names(manager: State<'_, WorkspaceManager>) -> Result<Vec<String>, String> {
+    let sketchbook = manager.workspace_root().join("sketches");
+    documents::existing_sketch_names(&sketchbook)
+}
+
+#[tauri::command]
+async fn choose_projects_directory(
+    app: AppHandle,
+    settings: State<'_, SettingsStore>,
+    manager: State<'_, WorkspaceManager>,
+) -> Result<Option<String>, String> {
+    let Some(selected) = app.dialog().file().blocking_pick_folder() else {
+        return Ok(None);
+    };
+    let path = selected
+        .into_path()
+        .map_err(|_| "Unable to use the selected folder.".to_owned())?;
+    apply_projects_directory(&settings, &manager, path.clone())?;
+    Ok(Some(path.display().to_string()))
+}
+
+async fn run_projects_dialog(app: AppHandle) -> Result<(), String> {
+    let Some(suggested) = app.state::<WorkspaceManager>().take_creation_notice() else {
+        return Ok(());
+    };
+    let suggested = PathBuf::from(suggested);
+    let use_suggested = app
+        .dialog()
+        .message(format!(
+            "Where should GIC keep your projects?\n\nSuggested folder:\n{}",
+            suggested.display()
+        ))
+        .title("Projects folder")
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Use suggested folder".to_owned(),
+            "Choose another folder…".to_owned(),
+        ))
+        .blocking_show();
+    if use_suggested {
+        apply_projects_directory(
+            &app.state::<SettingsStore>(),
+            &app.state::<WorkspaceManager>(),
+            suggested,
+        )?;
+        return Ok(());
+    }
+    let mut picker = app.dialog().file();
+    if let Some(parent) = suggested.parent() {
+        picker = picker.set_directory(parent);
+    }
+    let Some(selected) = picker.blocking_pick_folder() else {
+        apply_projects_directory(
+            &app.state::<SettingsStore>(),
+            &app.state::<WorkspaceManager>(),
+            suggested,
+        )?;
+        return Ok(());
+    };
+    let selected = selected
+        .into_path()
+        .map_err(|_| "Unable to use the selected folder.".to_owned())?;
+    apply_projects_directory(
+        &app.state::<SettingsStore>(),
+        &app.state::<WorkspaceManager>(),
+        selected.clone(),
+    )?;
+    let _ = app
+        .dialog()
+        .message(format!(
+            "GIC's projects folder is now set to:\n\n{}",
+            selected.display()
+        ))
+        .title("Projects folder")
+        .blocking_show();
+    Ok(())
+}
+
+#[tauri::command]
+async fn show_workspace_notice(app: AppHandle) -> Result<(), String> {
+    run_projects_dialog(app).await
+}
+
+#[tauri::command]
+fn repair_workspace(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.reconcile(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn uninstall_workspace(manager: State<'_, WorkspaceManager>) -> Result<WorkspaceStatus, String> {
+    manager.uninstall(managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn resolve_workspace_file(
+    path: &str,
+    resolution: &str,
+    manager: State<'_, WorkspaceManager>,
+) -> Result<WorkspaceStatus, String> {
+    let resolution = match resolution {
+        "keep" => Resolution::Keep,
+        "replace" => Resolution::Replace,
+        _ => return Err("Unsupported resolution.".to_owned()),
+    };
+    manager.resolve(path, resolution, managed_files::MANAGED_FILES)
+}
+
+#[tauri::command]
+fn assistant_status() -> Vec<AssistantStatus> {
+    external_tools::assistant_status()
+}
+
+#[tauri::command]
+fn reveal_sketch_folder(
+    store: State<'_, DocumentStore>,
+    manager: State<'_, WorkspaceManager>,
+) -> Result<(), String> {
+    let target = store
+        .active_path()
+        .and_then(|path| path.parent().map(Path::to_path_buf))
+        .unwrap_or_else(|| manager.workspace_root());
+    reveal_folder(&target)
+}
+
+fn reveal_folder(path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    let result = Command::new("open").arg(path).spawn();
+    #[cfg(target_os = "windows")]
+    let result = Command::new("explorer").arg(path).spawn();
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let result = Command::new("xdg-open").arg(path).spawn();
+
+    result
+        .map(|_| ())
+        .map_err(|_| "Unable to open the folder.".to_owned())
+}
+
+#[tauri::command]
+fn launch_assistant(name: &str, manager: State<'_, WorkspaceManager>) -> Result<(), String> {
+    let workspace_root = manager.workspace_root();
+    external_tools::launch(name, &workspace_root)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -154,16 +359,62 @@ pub fn run() {
                 .app_config_dir()
                 .map_err(std::io::Error::other)?
                 .join("settings.json");
-            app.manage(SettingsStore::new(settings_path));
+            let settings = SettingsStore::new(settings_path);
+            let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
+            let first_run = !workspace_root.exists();
+            app.manage(settings);
             app.manage(DocumentStore::default());
+            let manifest_path = app
+                .path()
+                .app_config_dir()
+                .map_err(std::io::Error::other)?
+                .join("managed-workspace.json");
+            app.manage(WorkspaceManager::new(workspace_root.clone(), manifest_path));
             desktop_menu::install(app)?;
+            if first_run {
+                app.state::<WorkspaceManager>()
+                    .record_creation_notice(workspace_root);
+                if let Some(window) = app.get_webview_window("main") {
+                    let app_handle = app.handle().clone();
+                    let prompted = Arc::new(AtomicBool::new(false));
+                    window.on_window_event(move |event| {
+                        if let tauri::WindowEvent::Focused(true) = event {
+                            if prompted.swap(true, Ordering::SeqCst) {
+                                return;
+                            }
+                            let app_handle = app_handle.clone();
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(error) = run_projects_dialog(app_handle).await {
+                                    eprintln!("projects dialog failed: {error}");
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if let Err(error) = app
+                .state::<WorkspaceManager>()
+                .reconcile(managed_files::MANAGED_FILES)
+            {
+                eprintln!("workspace reconcile failed: {error}");
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            assistant_status,
+            choose_projects_directory,
+            launch_assistant,
             open_gic,
+            projects_directory,
+            existing_sketch_names,
             read_settings,
+            repair_workspace,
+            resolve_workspace_file,
+            reveal_sketch_folder,
             save_gic,
             save_gic_as,
+            show_workspace_notice,
+            uninstall_workspace,
+            workspace_status,
             write_setting
         ])
         .run(tauri::generate_context!())
