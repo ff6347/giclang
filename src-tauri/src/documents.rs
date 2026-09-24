@@ -3,6 +3,7 @@
 
 use serde::Serialize;
 use std::{
+    collections::BTreeSet,
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -134,6 +135,43 @@ fn normalize_sketch_name(name: &str) -> String {
     normalized
 }
 
+pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, String> {
+    let entries = match fs::read_dir(sketchbook) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(_) => return Err("Unable to read the sketchbook.".to_owned()),
+    };
+    let mut names = BTreeSet::new();
+    for entry in entries {
+        let entry = entry.map_err(|_| "Unable to read the sketchbook.".to_owned())?;
+        let file_type = entry
+            .file_type()
+            .map_err(|_| "Unable to read the sketchbook.".to_owned())?;
+        let path = entry.path();
+        let name = if file_type.is_dir() {
+            entry.file_name().into_string().ok()
+        } else if file_type.is_file()
+            && path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("gic"))
+        {
+            path.file_stem()
+                .and_then(|stem| stem.to_str())
+                .map(str::to_owned)
+        } else {
+            None
+        };
+        if let Some(name) = name {
+            let normalized = normalize_sketch_name(&name);
+            if !normalized.is_empty() {
+                names.insert(normalized);
+            }
+        }
+    }
+    Ok(names.into_iter().collect())
+}
+
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -153,7 +191,7 @@ fn write_source(path: &Path, source: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{sketch_path, DocumentStore};
+    use super::{existing_sketch_names, sketch_path, DocumentStore};
     use std::path::{Path, PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -299,6 +337,34 @@ mod tests {
             std::fs::read_to_string(sketches.join("orbit/orbit.gic")).expect("read saved sketch"),
             "circle(1, 2, 3);",
         );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn existing_sketch_names_reads_normalized_folder_and_gic_names() {
+        let directory = test_directory("existing-sketch-names");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        std::fs::create_dir_all(sketchbook.join("Sketch_20260924 A"))
+            .expect("create existing sketch folder");
+        std::fs::create_dir_all(&sketchbook).expect("create sketchbook");
+        std::fs::write(sketchbook.join("Sketch_20260924b.gic"), "")
+            .expect("create existing GIC file");
+        std::fs::write(sketchbook.join(".DS_Store"), "").expect("create Finder metadata");
+
+        let names = existing_sketch_names(&sketchbook).expect("list existing sketches");
+
+        assert_eq!(names, vec!["sketch_20260924_a", "sketch_20260924b"]);
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn existing_sketch_names_returns_empty_for_a_missing_sketchbook() {
+        let directory = test_directory("missing-sketchbook");
+        remove_test_directory(&directory);
+
+        assert_eq!(existing_sketch_names(&directory), Ok(Vec::new()));
+
         remove_test_directory(&directory);
     }
 }

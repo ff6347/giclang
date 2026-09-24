@@ -1,7 +1,7 @@
 // ABOUTME: Coordinates one active browser document, save actions, and recovery state.
 // ABOUTME: Keeps React panels independent from portable file and storage operations.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { applySaveFormatting } from "../../../src/language-service.ts";
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
@@ -43,6 +43,9 @@ export function useDocument(
 		newSketchNames.add(name);
 		return createNewSketchDocument(name);
 	});
+	const initialSketchName = useRef(documentState.displayName).current;
+	const documentStateRef = useRef(documentState);
+	documentStateRef.current = documentState;
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [discardOpen, setDiscardOpen] = useState(false);
 	const [recoveryOpen, setRecoveryOpen] = useState(
@@ -83,6 +86,18 @@ export function useDocument(
 	const sourceForSave = () =>
 		applySaveFormatting(documentState.source, { formatOnSave });
 
+	const nextAvailableSketchName = async (): Promise<string> => {
+		const takenNames = new Set(newSketchNames);
+		if (desktop !== undefined) {
+			for (const name of await desktop.existingSketchNames()) {
+				takenNames.add(name);
+			}
+		}
+		const name = nextSketchName(takenNames, new Date());
+		newSketchNames.add(name);
+		return name;
+	};
+
 	const saveBrowserDocument = (name: string) => {
 		const source = sourceForSave();
 		const savedName = normalizeFileName(name);
@@ -96,9 +111,22 @@ export function useDocument(
 	const saveDesktopDocumentAs = async () => {
 		if (desktop === undefined) return;
 		const source = sourceForSave();
-		const suggestedName = documentState.displayName.endsWith(".gic")
+		let suggestedName = documentState.displayName.endsWith(".gic")
 			? documentState.displayName.slice(0, -".gic".length)
 			: documentState.displayName;
+		if (documentState.kind === "untitled") {
+			const existingNames = await desktop.existingSketchNames();
+			if (existingNames.includes(suggestedName)) {
+				const takenNames = new Set(existingNames);
+				for (const name of newSketchNames) {
+					if (name !== suggestedName) takenNames.add(name);
+				}
+				suggestedName = nextSketchName(takenNames, new Date());
+				newSketchNames.delete(documentState.displayName);
+				newSketchNames.add(suggestedName);
+				setDocumentState({ ...documentState, displayName: suggestedName });
+			}
+		}
 		const saved = await desktop.saveDocumentAs(source, suggestedName);
 		if (saved === null) return;
 		discardRecovery();
@@ -107,6 +135,36 @@ export function useDocument(
 			saved.documentId,
 		);
 	};
+
+	useEffect(() => {
+		if (desktop === undefined) return;
+		let disposed = false;
+		void desktop
+			.existingSketchNames()
+			.then((existingNames) => {
+				if (disposed) return;
+				const current = documentStateRef.current;
+				if (
+					current.kind !== "untitled" ||
+					current.displayName !== initialSketchName
+				) {
+					return;
+				}
+				const takenNames = new Set(existingNames);
+				for (const name of newSketchNames) {
+					if (name !== initialSketchName) takenNames.add(name);
+				}
+				const name = nextSketchName(takenNames, new Date());
+				if (name === initialSketchName) return;
+				newSketchNames.delete(initialSketchName);
+				newSketchNames.add(name);
+				setDocumentState({ ...current, displayName: name });
+			})
+			.catch(() => {});
+		return () => {
+			disposed = true;
+		};
+	}, [desktop, initialSketchName, newSketchNames]);
 
 	const saveDesktopDocument = async () => {
 		if (desktop === undefined) return;
@@ -139,9 +197,14 @@ export function useDocument(
 			persistRecovery(nextDocument);
 		},
 		requestNew() {
-			const name = nextSketchName(newSketchNames, new Date());
-			newSketchNames.add(name);
-			const open = () => {
+			const open = async () => {
+				let name: string;
+				try {
+					name = await nextAvailableSketchName();
+				} catch {
+					window.alert("GIC could not choose a unique sketch name.");
+					return;
+				}
 				discardRecovery();
 				replaceDocument(createNewSketchDocument(name));
 			};
@@ -150,7 +213,9 @@ export function useDocument(
 				setDiscardOpen(true);
 				return;
 			}
-			open();
+			void open().catch(() => {
+				window.alert("GIC could not choose a unique sketch name.");
+			});
 		},
 		requestSave() {
 			if (desktop !== undefined) {

@@ -207,6 +207,12 @@ fn projects_directory(
 }
 
 #[tauri::command]
+fn existing_sketch_names(manager: State<'_, WorkspaceManager>) -> Result<Vec<String>, String> {
+    let sketchbook = manager.workspace_root().join("sketches");
+    documents::existing_sketch_names(&sketchbook)
+}
+
+#[tauri::command]
 async fn choose_projects_directory(
     app: AppHandle,
     settings: State<'_, SettingsStore>,
@@ -399,6 +405,7 @@ pub fn run() {
             launch_assistant,
             open_gic,
             projects_directory,
+            existing_sketch_names,
             read_settings,
             repair_workspace,
             resolve_workspace_file,

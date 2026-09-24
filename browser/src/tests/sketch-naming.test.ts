@@ -24,3 +24,17 @@ test("nextSketchName pads single-digit month and day", () => {
 
 	assert.equal(name, "sketch_20260105a");
 });
+
+test("nextSketchName continues after the single-letter suffixes", () => {
+	const taken = new Set(
+		Array.from(
+			{ length: 26 },
+			(_, index) => `sketch_20260923${String.fromCharCode(97 + index)}`,
+		),
+	);
+
+	assert.equal(
+		nextSketchName(taken, new Date(2026, 8, 23)),
+		"sketch_20260923aa",
+	);
+});

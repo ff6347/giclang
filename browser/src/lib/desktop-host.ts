@@ -71,6 +71,10 @@ export class DesktopHost {
 		return invoke<string>("projects_directory");
 	}
 
+	existingSketchNames(): Promise<string[]> {
+		return invoke<string[]>("existing_sketch_names");
+	}
+
 	chooseProjectsDirectory(): Promise<string | null> {
 		return invoke<string | null>("choose_projects_directory");
 	}
