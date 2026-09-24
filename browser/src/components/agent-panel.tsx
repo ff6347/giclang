@@ -47,7 +47,13 @@ export function AgentPanel({
 }) {
 	const [question, setQuestion] = useState("");
 	const submit = () => {
-		actions.submit(question);
+		const trimmed = question.trim();
+		if (trimmed === "/new") {
+			setQuestion("");
+			void actions.startNewSession();
+			return;
+		}
+		actions.submit(trimmed);
 		setQuestion("");
 	};
 	const resizeInput = (input: HTMLTextAreaElement) => {
@@ -104,15 +110,6 @@ export function AgentPanel({
 					<p role="alert">The agent could not answer. Try again.</p>
 				)}
 				{status === "cancelled" && <p>The question was cancelled.</p>}
-			</div>
-			<div className="agent-session-actions">
-				<Button
-					className="application-button"
-					type="button"
-					onClick={() => void actions.startNewSession()}
-				>
-					New session
-				</Button>
 			</div>
 			<form
 				className="agent-composer"

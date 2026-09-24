@@ -70,7 +70,8 @@ test("asks the deterministic agent only after explicit submission", async ({
 			};
 		});
 	expect(codeShadowSpace.right).toBeGreaterThanOrEqual(3);
-	await tutor.getByRole("button", { name: "New session" }).click();
+	await input.fill("/new");
+	await input.press("Enter");
 	await expect(
 		tutor.getByRole("button", { name: "Send message" }),
 	).toBeVisible();
