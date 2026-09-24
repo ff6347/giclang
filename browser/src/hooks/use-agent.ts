@@ -53,6 +53,11 @@ export function useAgent(
 			setMessages(loadMessages(sketchId));
 			return;
 		}
+		if (documentId === undefined) {
+			setMessages([]);
+			setStatus("ready");
+			return;
+		}
 		let disposed = false;
 		void desktop
 			.findAgentSession(documentId ?? "")
@@ -82,7 +87,7 @@ export function useAgent(
 		return () => {
 			disposed = true;
 		};
-	}, [desktop, sketchId]);
+	}, [desktop, documentId, sketchId]);
 
 	const startNewSession = useCallback(async () => {
 		abortController.current?.abort();

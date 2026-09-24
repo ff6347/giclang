@@ -576,6 +576,11 @@ canvas {
 	overflow: hidden;
 }
 
+.agent-disabled-note {
+	font-size: smaller;
+	margin: 0;
+}
+
 .agent-messages {
 	flex: 1;
 	min-height: 0;

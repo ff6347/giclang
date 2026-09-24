@@ -329,6 +329,10 @@ export function App({
 					<AgentPanel
 						actions={agent}
 						allowCopying={agentResponseCopying}
+						disabled={
+							desktop !== undefined &&
+							documents.documentState.kind === "untitled"
+						}
 						messages={agent.messages}
 						status={agent.status}
 					/>

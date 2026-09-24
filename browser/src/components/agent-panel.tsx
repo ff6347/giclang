@@ -37,11 +37,13 @@ export interface AgentActions {
 export function AgentPanel({
 	actions,
 	allowCopying,
+	disabled = false,
 	messages,
 	status,
 }: {
 	readonly actions: AgentActions;
 	readonly allowCopying: boolean;
+	readonly disabled?: boolean;
 	readonly messages: readonly AgentMessage[];
 	readonly status: AgentStatus;
 }) {
@@ -71,6 +73,11 @@ export function AgentPanel({
 			aria-label="Agent"
 			className="workspace-panel padded-panel agent-panel"
 		>
+			{disabled && (
+				<p className="agent-disabled-note">
+					Save this sketch before using the Agent.
+				</p>
+			)}
 			<div className="agent-messages" aria-live="polite">
 				{messages.map((message, index) => (
 					<div
@@ -120,6 +127,7 @@ export function AgentPanel({
 			>
 				<textarea
 					aria-label="Message agent"
+					disabled={disabled}
 					className="agent-input"
 					rows={1}
 					value={question}
@@ -132,6 +140,7 @@ export function AgentPanel({
 				<Button
 					aria-label={status === "streaming" ? "Stop agent" : "Send message"}
 					className="agent-send"
+					disabled={disabled}
 					type={status === "streaming" ? "button" : "submit"}
 					onClick={status === "streaming" ? actions.cancel : undefined}
 				>
@@ -150,6 +159,7 @@ export function AgentPanel({
 					className="application-button"
 					type="button"
 					onClick={actions.retry}
+					disabled={disabled}
 				>
 					Retry
 				</Button>
