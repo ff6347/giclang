@@ -64,6 +64,7 @@ import { useTheme } from "../hooks/use-theme.ts";
 import { useWorkspace } from "../hooks/use-workspace.ts";
 import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
+import { modelDiscoveryError } from "../lib/model-discovery.ts";
 
 const AGENT_RESPONSE_COPYING_STORAGE_KEY = "gic.agentResponseCopying";
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
@@ -111,6 +112,10 @@ export function App({
 		readonly OpencodeModel[]
 	>([]);
 	const [opencodeModel, setOpencodeModel] = useState("");
+	const [opencodeModelError, setOpencodeModelError] = useState<string | null>(
+		null,
+	);
+	const opencodeModelsRequest = useRef(0);
 	const [agentResponseCopying, setAgentResponseCopying] = useState(() =>
 		initialAgentResponseCopying(settings),
 	);
@@ -149,21 +154,34 @@ export function App({
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
 	const loadOpencodeModels = (status: ProviderCredentialStatus | null) => {
+		const request = ++opencodeModelsRequest.current;
 		if (desktop === undefined || status?.opencodeAuthenticated !== true) {
 			setOpencodeModels([]);
+			setOpencodeModel("");
+			setOpencodeModelError(null);
 			return;
 		}
 		void desktop
 			.opencodeModels()
 			.then((models) => {
+				if (request !== opencodeModelsRequest.current) return;
 				setOpencodeModels(models);
+				setOpencodeModelError(null);
 				setOpencodeModel((current) =>
 					models.some((model) => model.id === current)
 						? current
-						: (models[0]?.id ?? ""),
+						: (models.find((model) => model.id === "opencode-zen/big-pickle")
+								?.id ??
+							models[0]?.id ??
+							""),
 				);
 			})
-			.catch(() => setOpencodeModels([]));
+			.catch((error: unknown) => {
+				if (request !== opencodeModelsRequest.current) return;
+				setOpencodeModels([]);
+				setOpencodeModel("");
+				setOpencodeModelError(modelDiscoveryError(error));
+			});
 	};
 	useEffect(() => {
 		if (desktop === undefined) return;
@@ -399,8 +417,9 @@ export function App({
 						providerStatus={providerStatus}
 						models={opencodeModels}
 						selectedModel={opencodeModel}
+						modelError={opencodeModelError}
+						onRetryModels={() => loadOpencodeModels(providerStatus)}
 						onModelChange={setOpencodeModel}
-						onModelsChange={setOpencodeModels}
 						onProviderAuthenticated={(status) => {
 							setProviderStatus(status);
 							loadOpencodeModels(status);

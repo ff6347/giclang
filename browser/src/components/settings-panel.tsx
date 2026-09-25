@@ -32,8 +32,9 @@ export function SettingsPanel({
 	providerStatus,
 	models,
 	selectedModel,
+	modelError,
+	onRetryModels,
 	onModelChange,
-	onModelsChange,
 	onProviderAuthenticated,
 }: {
 	agentResponseCopying: boolean;
@@ -54,12 +55,12 @@ export function SettingsPanel({
 	readonly providerStatus: ProviderCredentialStatus | null;
 	readonly models: readonly OpencodeModel[];
 	readonly selectedModel: string;
+	readonly modelError: string | null;
+	readonly onRetryModels: () => void;
 	readonly onModelChange: (model: string) => void;
-	readonly onModelsChange: (models: readonly OpencodeModel[]) => void;
 	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
 	const [apiKey, setApiKey] = useState("");
-	const [advanced, setAdvanced] = useState(false);
 	const authenticate = async () => {
 		if (desktop === undefined || apiKey.trim().length === 0) return;
 		const status = await desktop.authenticateOpencode(apiKey);
@@ -79,13 +80,19 @@ export function SettingsPanel({
 						Connect OpenCode Zen with an API key to use the desktop tutor.
 					</p>
 					{providerStatus?.opencodeAuthenticated === true ? (
-						<Button
-							className="application-button"
-							type="button"
-							onClick={signOut}
-						>
-							Sign out
-						</Button>
+						<>
+							<p role="status">
+								API key saved; it has not been verified. It will be checked when
+								you send a question.
+							</p>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={signOut}
+							>
+								Sign out
+							</Button>
+						</>
 					) : (
 						<>
 							<label className="settings-option">
@@ -108,36 +115,41 @@ export function SettingsPanel({
 							</Button>
 						</>
 					)}
-					<label className="settings-option">
-						<input
-							type="checkbox"
-							checked={advanced}
-							onChange={(event) => {
-								const enabled = event.currentTarget.checked;
-								setAdvanced(enabled);
-								if (desktop !== undefined) {
-									void desktop.opencodeModels().then(onModelsChange);
-								}
-							}}
-						/>
-						Show advanced models
-					</label>
-					<label className="settings-option">
-						Model
-						<select
-							aria-label="OpenCode model"
-							className="application-input"
-							value={selectedModel}
-							onChange={(event) => onModelChange(event.currentTarget.value)}
-						>
-							{models.map((model) => (
-								<option key={model.id} value={model.id}>
-									{model.name}
-									{model.curated ? "" : " (advanced)"}
-								</option>
-							))}
-						</select>
-					</label>
+					{providerStatus?.opencodeAuthenticated === true && (
+						<>
+							<label className="settings-option">
+								Model
+								<select
+									aria-label="OpenCode model"
+									className="application-input"
+									value={selectedModel}
+									onChange={(event) => onModelChange(event.currentTarget.value)}
+								>
+									{models.map((model) => (
+										<option key={model.id} value={model.id}>
+											{model.name}
+										</option>
+									))}
+								</select>
+							</label>
+							{modelError !== null ? (
+								<p role="alert">{modelError}</p>
+							) : models.length === 0 ? (
+								<p role="status">
+									No eligible OpenCode Zen models are available.
+								</p>
+							) : null}
+							{(modelError !== null || models.length === 0) && (
+								<Button
+									className="application-button"
+									type="button"
+									onClick={onRetryModels}
+								>
+									Retry models
+								</Button>
+							)}
+						</>
+					)}
 				</>
 			)}
 			<h2>Workspace</h2>

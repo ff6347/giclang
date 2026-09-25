@@ -10,10 +10,7 @@ mod managed_files;
 mod sessions;
 mod workspace;
 
-use agent::{
-    cancel_opencode_request, opencode_models, send_opencode_request, validate_opencode_key,
-    TutorState,
-};
+use agent::{cancel_opencode_request, opencode_models, send_opencode_request, TutorState};
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
@@ -485,11 +482,10 @@ fn provider_credential_status(
 }
 
 #[tauri::command]
-async fn authenticate_opencode(
+fn authenticate_opencode(
     api_key: String,
     store: State<'_, CredentialStore>,
 ) -> Result<CredentialStatus, String> {
-    validate_opencode_key(&api_key).await?;
     store.authenticate_opencode(&api_key)?;
     store.status()
 }

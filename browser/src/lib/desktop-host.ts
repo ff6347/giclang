@@ -14,14 +14,17 @@ export interface ProviderCredentialStatus {
 export interface OpencodeModel {
 	readonly id: string;
 	readonly name: string;
-	readonly curated: boolean;
 }
 
 export type OpencodeAgentEvent =
-	| { readonly kind: "text"; readonly text: string }
-	| { readonly kind: "complete" }
-	| { readonly kind: "cancelled" }
-	| { readonly kind: "error"; readonly message: string };
+	| { readonly requestId: string; readonly kind: "text"; readonly text: string }
+	| { readonly requestId: string; readonly kind: "complete" }
+	| { readonly requestId: string; readonly kind: "cancelled" }
+	| {
+			readonly requestId: string;
+			readonly kind: "error";
+			readonly message: string;
+	  };
 
 const MENU_ACTION_EVENT = "desktop-menu-action";
 
@@ -199,6 +202,7 @@ export class DesktopHost {
 	}
 
 	sendOpencodeRequest(request: {
+		readonly requestId: string;
 		readonly question: string;
 		readonly context: string;
 		readonly model: string;
@@ -206,8 +210,8 @@ export class DesktopHost {
 		return invoke<void>("send_opencode_request", request);
 	}
 
-	cancelOpencodeRequest(): Promise<void> {
-		return invoke<void>("cancel_opencode_request");
+	cancelOpencodeRequest(requestId: string): Promise<void> {
+		return invoke<void>("cancel_opencode_request", { requestId });
 	}
 
 	onOpencodeAgentEvent(

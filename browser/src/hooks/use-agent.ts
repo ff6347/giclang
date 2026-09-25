@@ -6,6 +6,7 @@ import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
 	createDesktopAgent,
 	createDeterministicAgent,
+	createUnavailableAgent,
 	parseAgentSession,
 	serializeAgentSession,
 	type AgentContext,
@@ -40,9 +41,13 @@ export function useAgent(
 ) {
 	const provider = useMemo(
 		() =>
-			desktop === undefined || !providerEnabled
+			desktop === undefined
 				? createDeterministicAgent()
-				: createDesktopAgent(desktop, { model }),
+				: providerEnabled
+					? createDesktopAgent(desktop, { model })
+					: createUnavailableAgent(
+							"Connect an OpenCode account in Settings to use the desktop tutor.",
+						),
 		[desktop, model, providerEnabled],
 	);
 	const abortController = useRef<AbortController | null>(null);
@@ -190,7 +195,11 @@ export function useAgent(
 						);
 					}
 					for await (const chunk of provider.stream(
-						{ question: trimmed, context },
+						{
+							question: trimmed,
+							context,
+							messages: messages.map(({ role, text }) => ({ role, text })),
+						},
 						controller.signal,
 					)) {
 						answer += chunk;
