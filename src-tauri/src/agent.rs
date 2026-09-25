@@ -11,8 +11,8 @@ use std::sync::{
 use tauri::{AppHandle, Emitter, State};
 
 const EVENT_NAME: &str = "opencode-agent-event";
-const ZEN_URL: &str = "https://opencode.ai/zen/v1/responses";
-const ZEN_MODELS_URL: &str = "https://opencode.ai/zen/v1/models";
+const OPENCODE_GO_BASE_URL: &str = "https://opencode.ai/zen/go/v1";
+const OPENCODE_GO_MODELS_URL: &str = "https://opencode.ai/zen/go/v1/models";
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -43,13 +43,23 @@ impl Default for TutorState {
 }
 
 #[derive(Deserialize)]
-struct ResponsesChunk {
+struct ChatChunk {
     #[serde(default)]
-    r#type: String,
-    #[serde(default)]
-    delta: Option<String>,
+    choices: Vec<ChatChoice>,
     #[serde(default)]
     error: Option<ResponsesError>,
+}
+
+#[derive(Deserialize)]
+struct ChatChoice {
+    #[serde(default)]
+    delta: ChatDelta,
+}
+
+#[derive(Default, Deserialize)]
+struct ChatDelta {
+    #[serde(default)]
+    content: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -99,7 +109,7 @@ pub(crate) async fn validate_opencode_key(api_key: &str) -> Result<(), String> {
         .build()
         .map_err(|_| "OpenCode client could not start.".to_owned())?;
     let response = client
-        .get(ZEN_MODELS_URL)
+        .get(OPENCODE_GO_MODELS_URL)
         .bearer_auth(api_key)
         .send()
         .await
@@ -121,7 +131,7 @@ pub(crate) async fn opencode_models(
         .build()
         .map_err(|_| "OpenCode client could not start.".to_owned())?;
     let response = client
-        .get(ZEN_MODELS_URL)
+        .get(OPENCODE_GO_MODELS_URL)
         .bearer_auth(api_key)
         .send()
         .await
@@ -212,18 +222,12 @@ async fn stream_request(
         .build()
         .map_err(|_| "OpenCode client could not start.".to_owned())?;
     let response = client
-        .post(ZEN_URL)
+        .post(format!("{OPENCODE_GO_BASE_URL}/chat/completions"))
         .bearer_auth(api_key)
         .header("x-opencode-session", "gic-tutor")
         .json(&serde_json::json!({
             "model": model,
-            "input": [{
-                "role": "user",
-                "content": [{
-                    "type": "input_text",
-                    "text": input
-                }]
-            }],
+            "messages": [{"role": "user", "content": input}],
             "stream": true
         }))
         .send()
@@ -263,7 +267,7 @@ async fn stream_request(
                 let _ = app.emit(EVENT_NAME, AgentEvent::Complete);
                 return Ok(());
             }
-            let Ok(chunk) = serde_json::from_str::<ResponsesChunk>(data) else {
+            let Ok(chunk) = serde_json::from_str::<ChatChunk>(data) else {
                 continue;
             };
             if chunk.error.is_some() {
@@ -276,8 +280,8 @@ async fn stream_request(
                 );
                 return Err(message);
             }
-            if chunk.r#type.contains("output_text.delta") {
-                if let Some(text) = chunk.delta {
+            for choice in chunk.choices {
+                if let Some(text) = choice.delta.content {
                     let _ = app.emit(EVENT_NAME, AgentEvent::Text { text });
                 }
             }
