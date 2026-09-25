@@ -50,6 +50,7 @@ export function useAgent(
 		loadMessages(sketchId),
 	);
 	const [status, setStatus] = useState<AgentStatus>("ready");
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const sessionId = useRef<string | null>(null);
 	const lastQuestion = useRef("");
 
@@ -58,6 +59,7 @@ export function useAgent(
 		abortController.current = null;
 		sessionId.current = null;
 		setStatus("ready");
+		setErrorMessage(null);
 		if (desktop === undefined) {
 			setMessages(loadMessages(sketchId));
 			return;
@@ -158,6 +160,7 @@ export function useAgent(
 		abortController.current?.abort();
 		abortController.current = null;
 		setStatus("cancelled");
+		setErrorMessage(null);
 	}, []);
 
 	const submit = useCallback(
@@ -173,6 +176,7 @@ export function useAgent(
 			setMessages(nextMessages);
 			persist(nextMessages);
 			setStatus("streaming");
+			setErrorMessage(null);
 			void (async () => {
 				let answer = "";
 				try {
@@ -211,8 +215,15 @@ export function useAgent(
 						);
 					}
 					setStatus("ready");
-				} catch {
-					if (!controller.signal.aborted) setStatus("error");
+				} catch (error) {
+					if (!controller.signal.aborted) {
+						setStatus("error");
+						setErrorMessage(
+							error instanceof Error
+								? error.message
+								: "The agent could not answer.",
+						);
+					}
 				} finally {
 					if (abortController.current === controller)
 						abortController.current = null;
@@ -227,6 +238,7 @@ export function useAgent(
 		messages,
 		startNewSession,
 		status,
+		errorMessage,
 		submit,
 		retry: () => submit(lastQuestion.current),
 	};

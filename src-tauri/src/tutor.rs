@@ -12,7 +12,7 @@ use tauri::{AppHandle, Emitter, State};
 
 const EVENT_NAME: &str = "opencode-agent-event";
 const ZEN_URL: &str = "https://opencode.ai/zen/v1/responses";
-const CURATED_MODELS: [&str; 3] = ["gpt-5.5", "claude-sonnet-5", "gemini-3.1-pro"];
+const ZEN_MODELS_URL: &str = "https://opencode.ai/zen/v1/models";
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -55,21 +55,20 @@ struct ResponsesChunk {
 #[derive(Deserialize)]
 struct ResponsesError;
 
-fn models() -> Vec<TutorModel> {
-    CURATED_MODELS
-        .iter()
-        .map(|id| TutorModel {
-            id: (*id).to_owned(),
-            name: (*id).to_owned(),
-            curated: true,
-        })
-        .collect()
+#[derive(Deserialize)]
+struct ModelList {
+    #[serde(default)]
+    data: Vec<ModelInfo>,
 }
 
-fn validate_model(model: &str, advanced: bool) -> Result<(), String> {
-    if !advanced && !CURATED_MODELS.contains(&model) {
-        return Err("Choose one of the curated OpenCode models.".to_owned());
-    }
+#[derive(Deserialize)]
+struct ModelInfo {
+    id: String,
+    #[serde(default)]
+    name: Option<String>,
+}
+
+fn validate_model(model: &str) -> Result<(), String> {
     if model.trim().is_empty() {
         return Err("Choose an OpenCode model.".to_owned());
     }
@@ -79,29 +78,56 @@ fn validate_model(model: &str, advanced: bool) -> Result<(), String> {
 fn safe_error(status: reqwest::StatusCode) -> String {
     match status {
         reqwest::StatusCode::UNAUTHORIZED => {
-            "OpenCode rejected the API key. Sign in again.".to_owned()
+            "OpenCode request failed (HTTP 401): the API key was rejected. Sign in again.".to_owned()
         }
         reqwest::StatusCode::TOO_MANY_REQUESTS => {
-            "OpenCode is rate-limiting this request. Try again later.".to_owned()
+            "OpenCode request failed (HTTP 429): the request was rate-limited. Try again later.".to_owned()
         }
         reqwest::StatusCode::NOT_FOUND => {
-            "That OpenCode model is unavailable. Choose another model.".to_owned()
+            "OpenCode request failed (HTTP 404): the selected model is unavailable. Choose another model.".to_owned()
         }
-        _ => "OpenCode could not answer right now. Try again later.".to_owned(),
+        status => format!(
+            "OpenCode request failed (HTTP {}). Choose another model or try again later.",
+            status.as_u16()
+        ),
     }
 }
 
 #[tauri::command]
-pub(crate) fn opencode_models(advanced: bool) -> Vec<TutorModel> {
-    let mut result = models();
-    if advanced {
-        result.push(TutorModel {
-            id: "gpt-5.4".to_owned(),
-            name: "GPT-5.4".to_owned(),
-            curated: false,
-        });
+pub(crate) async fn opencode_models(
+    credentials: State<'_, CredentialStore>,
+) -> Result<Vec<TutorModel>, String> {
+    let api_key = credentials.with_opencode_key(|key| key.to_owned())?;
+    let client = reqwest::Client::builder()
+        .user_agent("gic/0.1")
+        .build()
+        .map_err(|_| "OpenCode client could not start.".to_owned())?;
+    let response = client
+        .get(ZEN_MODELS_URL)
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .map_err(|error| {
+            format!(
+                "OpenCode models request could not reach the provider: {error}. Check the network and try again."
+            )
+        })?;
+    if !response.status().is_success() {
+        return Err(safe_error(response.status()));
     }
-    result
+    let list = response
+        .json::<ModelList>()
+        .await
+        .map_err(|_| "OpenCode returned an invalid model list.".to_owned())?;
+    Ok(list
+        .data
+        .into_iter()
+        .map(|model| TutorModel {
+            name: model.name.unwrap_or_else(|| model.id.clone()),
+            id: model.id,
+            curated: true,
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -125,9 +151,8 @@ pub(crate) async fn send_opencode_request(
     question: String,
     context: String,
     model: String,
-    advanced: bool,
 ) -> Result<(), String> {
-    validate_model(&model, advanced)?;
+    validate_model(&model)?;
     let cancellation = Arc::new(AtomicBool::new(false));
     {
         let mut request = state
@@ -164,14 +189,32 @@ async fn stream_request(
 ) -> Result<(), String> {
     let api_key = credentials.with_opencode_key(|key| key.to_owned())?;
     let input = format!("{}\n\nStudent question: {}", context, question);
-    let response = reqwest::Client::new()
+    let client = reqwest::Client::builder()
+        .user_agent("gic/0.1")
+        .build()
+        .map_err(|_| "OpenCode client could not start.".to_owned())?;
+    let response = client
         .post(ZEN_URL)
         .bearer_auth(api_key)
         .header("x-opencode-session", "gic-tutor")
-        .json(&serde_json::json!({ "model": model, "input": input, "stream": true }))
+        .json(&serde_json::json!({
+            "model": model,
+            "input": [{
+                "role": "user",
+                "content": [{
+                    "type": "input_text",
+                    "text": input
+                }]
+            }],
+            "stream": true
+        }))
         .send()
         .await
-        .map_err(|_| "OpenCode is unavailable or you are offline.".to_owned())?;
+        .map_err(|error| {
+            format!(
+                "OpenCode request could not reach the provider: {error}. Check the network and try again."
+            )
+        })?;
     let status = response.status();
     if !status.is_success() {
         let _ = app.emit(
@@ -189,7 +232,7 @@ async fn stream_request(
             let _ = app.emit(EVENT_NAME, AgentEvent::Cancelled);
             return Ok(());
         }
-        let chunk = chunk.map_err(|_| "OpenCode response was interrupted.".to_owned())?;
+        let chunk = chunk.map_err(|error| format!("OpenCode response stream failed: {error}."))?;
         buffer.push_str(&String::from_utf8_lossy(&chunk));
         while let Some(index) = buffer.find('\n') {
             let line = buffer[..index].trim().to_owned();
@@ -206,7 +249,7 @@ async fn stream_request(
                 continue;
             };
             if chunk.error.is_some() {
-                let message = "OpenCode returned an invalid response.".to_owned();
+                let message = "OpenCode returned an invalid response event.".to_owned();
                 let _ = app.emit(
                     EVENT_NAME,
                     AgentEvent::Error {

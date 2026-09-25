@@ -194,15 +194,14 @@ export class DesktopHost {
 		return invoke<ProviderCredentialStatus>("sign_out_opencode");
 	}
 
-	opencodeModels(advanced: boolean): Promise<OpencodeModel[]> {
-		return invoke<OpencodeModel[]>("opencode_models", { advanced });
+	opencodeModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("opencode_models");
 	}
 
 	sendOpencodeRequest(request: {
 		readonly question: string;
 		readonly context: string;
 		readonly model: string;
-		readonly advanced: boolean;
 	}): Promise<void> {
 		return invoke<void>("send_opencode_request", request);
 	}

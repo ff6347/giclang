@@ -110,7 +110,7 @@ export function App({
 	const [opencodeModels, setOpencodeModels] = useState<
 		readonly OpencodeModel[]
 	>([]);
-	const [opencodeModel, setOpencodeModel] = useState("gpt-5.5");
+	const [opencodeModel, setOpencodeModel] = useState("");
 	const [agentResponseCopying, setAgentResponseCopying] = useState(() =>
 		initialAgentResponseCopying(settings),
 	);
@@ -148,15 +148,31 @@ export function App({
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
+	const loadOpencodeModels = (status: ProviderCredentialStatus | null) => {
+		if (desktop === undefined || status?.opencodeAuthenticated !== true) {
+			setOpencodeModels([]);
+			return;
+		}
+		void desktop
+			.opencodeModels()
+			.then((models) => {
+				setOpencodeModels(models);
+				setOpencodeModel((current) =>
+					models.some((model) => model.id === current)
+						? current
+						: (models[0]?.id ?? ""),
+				);
+			})
+			.catch(() => setOpencodeModels([]));
+	};
 	useEffect(() => {
 		if (desktop === undefined) return;
 		void desktop
 			.providerCredentialStatus()
-			.then(setProviderStatus)
-			.catch(() => undefined);
-		void desktop
-			.opencodeModels(false)
-			.then(setOpencodeModels)
+			.then((status) => {
+				setProviderStatus(status);
+				loadOpencodeModels(status);
+			})
 			.catch(() => undefined);
 	}, [desktop]);
 	const agent = useAgent(
@@ -359,6 +375,7 @@ export function App({
 						}
 						messages={agent.messages}
 						status={agent.status}
+						errorMessage={agent.errorMessage}
 					/>
 				);
 			case SETTINGS_ID:
@@ -384,7 +401,10 @@ export function App({
 						selectedModel={opencodeModel}
 						onModelChange={setOpencodeModel}
 						onModelsChange={setOpencodeModels}
-						onProviderAuthenticated={setProviderStatus}
+						onProviderAuthenticated={(status) => {
+							setProviderStatus(status);
+							loadOpencodeModels(status);
+						}}
 					/>
 				);
 			case EXAMPLES_ID:

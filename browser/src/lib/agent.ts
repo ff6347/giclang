@@ -78,7 +78,6 @@ export function parseAgentSession(serialized: string): AgentSessionRecord[] {
 
 export interface DesktopAgentOptions {
 	readonly model: string;
-	readonly advanced?: boolean;
 }
 
 export function createDesktopAgent(
@@ -119,7 +118,6 @@ export function createDesktopAgent(
 					question: request.question,
 					context: JSON.stringify(request.context),
 					model: options.model,
-					advanced: options.advanced ?? false,
 				});
 				while (terminal === undefined && !signal.aborted) {
 					if (events.length > 0) {

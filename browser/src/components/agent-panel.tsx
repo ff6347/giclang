@@ -40,12 +40,14 @@ export function AgentPanel({
 	disabled = false,
 	messages,
 	status,
+	errorMessage = null,
 }: {
 	readonly actions: AgentActions;
 	readonly allowCopying: boolean;
 	readonly disabled?: boolean;
 	readonly messages: readonly AgentMessage[];
 	readonly status: AgentStatus;
+	readonly errorMessage?: string | null;
 }) {
 	const [question, setQuestion] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
@@ -134,7 +136,9 @@ export function AgentPanel({
 					</div>
 				))}
 				{status === "error" && (
-					<p role="alert">The agent could not answer. Try again.</p>
+					<p role="alert">
+						{errorMessage ?? "The agent could not answer. Try again."}
+					</p>
 				)}
 				{status === "cancelled" && <p>The question was cancelled.</p>}
 			</div>
