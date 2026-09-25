@@ -103,7 +103,7 @@ Windowing, packaged callbacks, filesystem permissions, credentials, and provider
 
 - The spike code is retained as evidence and a production reference, not imported as production application code.
 - Production must preserve the opaque document-ID and typed tutor-event boundaries while integrating the shared IDE rather than copying the spike UI.
-- Provider models must come from a maintained curated catalog. The public OpenAI Codex model page lagged the tester's working Pi subscription catalog during the spike; a model name must not be inferred from the general ChatGPT model list.
+- The selector lists only models supported by a bundled provider adapter and offered by its current catalog; catalog presence does not guarantee account access. It identifies them as `opencode-zen/<model>`, `openrouter/<model>`, `opencode-go/<model>`, or `openai-codex/<model>` as each provider becomes callable; a model name must not be inferred from the general ChatGPT model list.
 - The spike stored the OpenCode key only in memory and used a minimal ChatGPT token file. Production credential persistence must still satisfy the atomic replacement and owner-only access contract below.
 - Session records and source files remain user-readable even though credentials do not cross into those directories.
 - First-run updates need a visible conflict flow for modified managed files; comparison and presentation are resolved by [Workspace Managed Files](workspace-managed-files.md).

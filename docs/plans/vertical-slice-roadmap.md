@@ -276,7 +276,7 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 - Credentials cross only the privileged provider boundary.
 - Protected `auth.json` updates atomically and uses owner-only platform access.
 - Credentials never appear in webview storage, logs, exports, prompts, or sessions.
-- Curated models are the default; an advanced setting reveals broader models.
+- The selector shows only supported OpenCode Zen models present in the live catalog: Big Pickle and Space Bunny, identified as `opencode-zen/<model>`.
 - Invalid, revoked, offline, and unavailable-model states are actionable and do not disable the IDE.
 - Deterministic coverage and an explicit real-key smoke check both pass.
 
@@ -290,7 +290,7 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 - Login callback, refresh, restart, account switch, and sign-out behavior pass against the selected packaged runtime boundary.
 - Credential storage and redaction satisfy Slice 15's contract.
-- Curated and advanced model behavior matches the shared provider UI.
+- The selector shows only supported models available to the connected account, identified as `openai-codex/<model>` when Codex becomes callable.
 - Cancelled, expired, revoked, offline, and unavailable-model states are actionable and do not disable the IDE.
 - Deterministic coverage and an explicit real-subscription smoke check both pass.
 
@@ -348,7 +348,7 @@ These questions are recorded in PRD issue `60b2077` and must be resolved by the 
 
 1. Which desktop runtime/version survives the dedicated-window and Pi spikes?
 2. Which exact OpenCode endpoint and model catalog form the supported contract?
-3. Which Codex and OpenCode models comprise the curated defaults?
+3. Which models are currently callable through each provider as it is introduced?
 4. Which single-file worker strategy passes the three-engine `file://` matrix?
 5. Which installer formats, architectures, signing identities, and CI runners form the release matrix?
 6. How are Windows owner-only credential ACLs created, replaced, and repaired?
