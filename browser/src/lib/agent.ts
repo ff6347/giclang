@@ -17,6 +17,8 @@ export interface AgentProvider {
 	stream(request: AgentRequest, signal: AbortSignal): AsyncIterable<string>;
 }
 
+import type { DesktopHost, OpencodeAgentEvent } from "./desktop-host.ts";
+
 export interface AgentMessage {
 	readonly role: "student" | "agent";
 	readonly text: string;
@@ -72,6 +74,68 @@ export function parseAgentSession(serialized: string): AgentSessionRecord[] {
 		}
 	}
 	return records;
+}
+
+export interface DesktopAgentOptions {
+	readonly model: string;
+	readonly advanced?: boolean;
+}
+
+export function createDesktopAgent(
+	desktop: DesktopHost,
+	options: DesktopAgentOptions,
+): AgentProvider {
+	return {
+		async *stream(request, signal) {
+			const events: Extract<OpencodeAgentEvent, { kind: "text" }>[] = [];
+			let wake: (() => void) | undefined;
+			let unlisten: (() => void) | undefined;
+			let terminal: "complete" | "cancelled" | "error" | undefined;
+			let terminalError: Error | undefined;
+			let finished = Promise.resolve();
+			const onEvent = (event: OpencodeAgentEvent) => {
+				if (terminal !== undefined) return;
+				if (event.kind === "text") events.push(event);
+				else if (event.kind === "error") {
+					terminal = "error";
+					terminalError = new Error(event.message);
+				} else terminal = event.kind;
+				finished = Promise.resolve();
+				wake?.();
+			};
+			const waitForEvent = () => {
+				finished = new Promise<void>((resolve) => {
+					wake = resolve;
+				});
+				return finished;
+			};
+			unlisten = await desktop.onOpencodeAgentEvent(onEvent);
+			const cancel = () => {
+				void desktop.cancelOpencodeRequest();
+			};
+			signal.addEventListener("abort", cancel, { once: true });
+			try {
+				await desktop.sendOpencodeRequest({
+					question: request.question,
+					context: JSON.stringify(request.context),
+					model: options.model,
+					advanced: options.advanced ?? false,
+				});
+				while (terminal === undefined && !signal.aborted) {
+					if (events.length > 0) {
+						yield events.shift()!.text;
+						continue;
+					}
+					await waitForEvent();
+				}
+				while (events.length > 0) yield events.shift()!.text;
+				if (terminal === "error") throw terminalError;
+			} finally {
+				signal.removeEventListener("abort", cancel);
+				unlisten?.();
+			}
+		},
+	};
 }
 
 export function createDeterministicAgent(): AgentProvider {

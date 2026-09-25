@@ -11,6 +11,18 @@ export interface ProviderCredentialStatus {
 	readonly opencodeAuthenticated: boolean;
 }
 
+export interface OpencodeModel {
+	readonly id: string;
+	readonly name: string;
+	readonly curated: boolean;
+}
+
+export type OpencodeAgentEvent =
+	| { readonly kind: "text"; readonly text: string }
+	| { readonly kind: "complete" }
+	| { readonly kind: "cancelled" }
+	| { readonly kind: "error"; readonly message: string };
+
 const MENU_ACTION_EVENT = "desktop-menu-action";
 
 export interface DesktopDocument {
@@ -180,6 +192,31 @@ export class DesktopHost {
 
 	signOutOpencode(): Promise<ProviderCredentialStatus> {
 		return invoke<ProviderCredentialStatus>("sign_out_opencode");
+	}
+
+	opencodeModels(advanced: boolean): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("opencode_models", { advanced });
+	}
+
+	sendOpencodeRequest(request: {
+		readonly question: string;
+		readonly context: string;
+		readonly model: string;
+		readonly advanced: boolean;
+	}): Promise<void> {
+		return invoke<void>("send_opencode_request", request);
+	}
+
+	cancelOpencodeRequest(): Promise<void> {
+		return invoke<void>("cancel_opencode_request");
+	}
+
+	onOpencodeAgentEvent(
+		handler: (event: OpencodeAgentEvent) => void,
+	): Promise<UnlistenFn> {
+		return listen<OpencodeAgentEvent>("opencode-agent-event", (event) => {
+			handler(event.payload);
+		});
 	}
 
 	assistantStatus(): Promise<AssistantStatus[]> {

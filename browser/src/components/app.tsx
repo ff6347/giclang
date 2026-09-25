@@ -47,7 +47,12 @@ import { useAppUpdate } from "../hooks/use-app-update.ts";
 import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
 import { AppUpdate } from "./app-update.tsx";
 import type { ApplicationSettings } from "../lib/application-settings.ts";
-import type { DesktopHost, DesktopMenuAction } from "../lib/desktop-host.ts";
+import type {
+	DesktopHost,
+	DesktopMenuAction,
+	OpencodeModel,
+	ProviderCredentialStatus,
+} from "../lib/desktop-host.ts";
 import type { GicEditor } from "../lib/gic-editor.ts";
 import {
 	parseAppearance,
@@ -100,6 +105,12 @@ export function App({
 	settings = localStorage,
 	supportsAppUpdates = true,
 }: AppProps) {
+	const [providerStatus, setProviderStatus] =
+		useState<ProviderCredentialStatus | null>(null);
+	const [opencodeModels, setOpencodeModels] = useState<
+		readonly OpencodeModel[]
+	>([]);
+	const [opencodeModel, setOpencodeModel] = useState("gpt-5.5");
 	const [agentResponseCopying, setAgentResponseCopying] = useState(() =>
 		initialAgentResponseCopying(settings),
 	);
@@ -137,6 +148,17 @@ export function App({
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
+	useEffect(() => {
+		if (desktop === undefined) return;
+		void desktop
+			.providerCredentialStatus()
+			.then(setProviderStatus)
+			.catch(() => undefined);
+		void desktop
+			.opencodeModels(false)
+			.then(setOpencodeModels)
+			.catch(() => undefined);
+	}, [desktop]);
 	const agent = useAgent(
 		buildAgentContext(
 			documents.documentState.source,
@@ -146,6 +168,8 @@ export function App({
 		documents.sketchId,
 		desktop,
 		documents.documentId,
+		opencodeModel,
+		providerStatus?.opencodeAuthenticated === true,
 	);
 
 	useEffect(() => {
@@ -354,6 +378,13 @@ export function App({
 						onLightThemeChange={updateLightTheme}
 						onResetLayout={resetLayout}
 						workspace={desktop === undefined ? undefined : workspace}
+						desktop={desktop}
+						providerStatus={providerStatus}
+						models={opencodeModels}
+						selectedModel={opencodeModel}
+						onModelChange={setOpencodeModel}
+						onModelsChange={setOpencodeModels}
+						onProviderAuthenticated={setProviderStatus}
 					/>
 				);
 			case EXAMPLES_ID:

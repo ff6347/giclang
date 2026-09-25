@@ -1,9 +1,10 @@
 // ABOUTME: Owns deterministic agent state, cancellation, and local session persistence.
 // ABOUTME: Sends sketch context only when the student explicitly submits a question.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
+	createDesktopAgent,
 	createDeterministicAgent,
 	parseAgentSession,
 	serializeAgentSession,
@@ -34,8 +35,16 @@ export function useAgent(
 	sketchId: string,
 	desktop?: DesktopHost,
 	documentId?: string,
+	model = "gpt-5.5",
+	providerEnabled = false,
 ) {
-	const provider = useRef(createDeterministicAgent()).current;
+	const provider = useMemo(
+		() =>
+			desktop === undefined || !providerEnabled
+				? createDeterministicAgent()
+				: createDesktopAgent(desktop, { model }),
+		[desktop, model, providerEnabled],
+	);
 	const abortController = useRef<AbortController | null>(null);
 	const [messages, setMessages] = useState<AgentMessage[]>(() =>
 		loadMessages(sketchId),

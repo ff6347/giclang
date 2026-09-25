@@ -29,6 +29,23 @@ impl CredentialStore {
         }
     }
 
+    pub(crate) fn with_opencode_key<T>(
+        &self,
+        operation: impl FnOnce(&str) -> T,
+    ) -> Result<T, String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let auth = self
+            .read_unlocked()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let api_key = auth
+            .opencode_api_key
+            .ok_or_else(|| "OpenCode is not authenticated.".to_owned())?;
+        Ok(operation(&api_key))
+    }
+
     pub(crate) fn status(&self) -> Result<CredentialStatus, String> {
         Ok(CredentialStatus {
             opencode_authenticated: self.read()?.opencode_api_key.is_some(),

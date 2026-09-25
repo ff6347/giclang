@@ -1,4 +1,5 @@
 import { Button, Checkbox } from "@base-ui/react";
+import { useState } from "react";
 import type { Appearance, DarkTheme, LightTheme } from "../lib/theme.ts";
 import {
 	assistantPresentation,
@@ -6,6 +7,11 @@ import {
 	supportFileTitle,
 } from "../lib/workspace-support.ts";
 import type { WorkspaceController } from "../hooks/use-workspace.ts";
+import type {
+	DesktopHost,
+	OpencodeModel,
+	ProviderCredentialStatus,
+} from "../lib/desktop-host.ts";
 
 export function SettingsPanel({
 	agentResponseCopying,
@@ -22,6 +28,13 @@ export function SettingsPanel({
 	onLightThemeChange,
 	onResetLayout,
 	workspace,
+	desktop,
+	providerStatus,
+	models,
+	selectedModel,
+	onModelChange,
+	onModelsChange,
+	onProviderAuthenticated,
 }: {
 	agentResponseCopying: boolean;
 	appearance: Appearance;
@@ -36,10 +49,97 @@ export function SettingsPanel({
 	onFormatOnSaveChange: (checked: boolean) => void;
 	onLightThemeChange: (theme: LightTheme) => void;
 	onResetLayout: () => void;
-	workspace: WorkspaceController | undefined;
+	readonly workspace: WorkspaceController | undefined;
+	readonly desktop: DesktopHost | undefined;
+	readonly providerStatus: ProviderCredentialStatus | null;
+	readonly models: readonly OpencodeModel[];
+	readonly selectedModel: string;
+	readonly onModelChange: (model: string) => void;
+	readonly onModelsChange: (models: readonly OpencodeModel[]) => void;
+	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
+	const [apiKey, setApiKey] = useState("");
+	const [advanced, setAdvanced] = useState(false);
+	const authenticate = async () => {
+		if (desktop === undefined || apiKey.trim().length === 0) return;
+		const status = await desktop.authenticateOpencode(apiKey);
+		setApiKey("");
+		onProviderAuthenticated(status);
+	};
+	const signOut = async () => {
+		if (desktop === undefined) return;
+		onProviderAuthenticated(await desktop.signOutOpencode());
+	};
 	return (
 		<section aria-label="Settings" className="workspace-panel padded-panel">
+			<h2>OpenCode tutor</h2>
+			{desktop !== undefined && (
+				<>
+					<p className="settings-help">
+						Connect OpenCode Zen with an API key to use the desktop tutor.
+					</p>
+					{providerStatus?.opencodeAuthenticated === true ? (
+						<Button
+							className="application-button"
+							type="button"
+							onClick={signOut}
+						>
+							Sign out
+						</Button>
+					) : (
+						<>
+							<label className="settings-option">
+								API key
+								<input
+									aria-label="OpenCode API key"
+									className="application-input"
+									type="password"
+									value={apiKey}
+									onChange={(event) => setApiKey(event.currentTarget.value)}
+								/>
+							</label>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={authenticate}
+								disabled={apiKey.trim().length === 0}
+							>
+								Connect OpenCode
+							</Button>
+						</>
+					)}
+					<label className="settings-option">
+						<input
+							type="checkbox"
+							checked={advanced}
+							onChange={(event) => {
+								const enabled = event.currentTarget.checked;
+								setAdvanced(enabled);
+								if (desktop !== undefined) {
+									void desktop.opencodeModels(enabled).then(onModelsChange);
+								}
+							}}
+						/>
+						Show advanced models
+					</label>
+					<label className="settings-option">
+						Model
+						<select
+							aria-label="OpenCode model"
+							className="application-input"
+							value={selectedModel}
+							onChange={(event) => onModelChange(event.currentTarget.value)}
+						>
+							{models.map((model) => (
+								<option key={model.id} value={model.id}>
+									{model.name}
+									{model.curated ? "" : " (advanced)"}
+								</option>
+							))}
+						</select>
+					</label>
+				</>
+			)}
 			<h2>Workspace</h2>
 			<label className="settings-option">
 				Appearance

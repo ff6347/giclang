@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	buildAgentContext,
+	createDesktopAgent,
 	createDeterministicAgent,
 	parseAgentSession,
 	serializeAgentSession,
@@ -52,6 +53,78 @@ test("deterministic agent streams a Socratic response and honors cancellation", 
 		cancelled += chunk;
 	}
 	assert.equal(cancelled, "");
+});
+
+test("desktop provider forwards ordered native events and cancellation", async () => {
+	let emit:
+		| ((event: import("../lib/desktop-host.ts").OpencodeAgentEvent) => void)
+		| undefined;
+	let cancelled = false;
+	const desktop = {
+		async onOpencodeAgentEvent(
+			handler: (
+				event: import("../lib/desktop-host.ts").OpencodeAgentEvent,
+			) => void,
+		) {
+			emit = handler;
+			return () => undefined;
+		},
+		async sendOpencodeRequest() {
+			emit?.({ kind: "text", text: "first " });
+			emit?.({ kind: "text", text: "second" });
+			emit?.({ kind: "complete" });
+		},
+		async cancelOpencodeRequest() {
+			cancelled = true;
+		},
+	} as never;
+	const provider = createDesktopAgent(desktop, { model: "gpt-5.5" });
+	let response = "";
+	for await (const chunk of provider.stream(
+		{ question: "Why?", context: buildAgentContext("rect(1);", [], []) },
+		new AbortController().signal,
+	))
+		response += chunk;
+	assert.equal(response, "first second");
+	assert.equal(cancelled, false);
+});
+
+test("desktop provider cancellation invokes native cancellation", async () => {
+	let emit:
+		| ((event: import("../lib/desktop-host.ts").OpencodeAgentEvent) => void)
+		| undefined;
+	let cancelled = false;
+	let unlistened = false;
+	const desktop = {
+		async onOpencodeAgentEvent(
+			handler: (
+				event: import("../lib/desktop-host.ts").OpencodeAgentEvent,
+			) => void,
+		) {
+			emit = handler;
+			return () => {
+				unlistened = true;
+			};
+		},
+		async sendOpencodeRequest() {
+			emit?.({ kind: "text", text: "partial" });
+		},
+		async cancelOpencodeRequest() {
+			cancelled = true;
+		},
+	} as never;
+	const controller = new AbortController();
+	const provider = createDesktopAgent(desktop, { model: "gpt-5.5" });
+	const stream = provider.stream(
+		{ question: "Why?", context: buildAgentContext("rect(1);", [], []) },
+		controller.signal,
+	);
+	const iterator = stream[Symbol.asyncIterator]();
+	await iterator.next();
+	controller.abort();
+	await iterator.return?.();
+	assert.equal(cancelled, true);
+	assert.equal(unlistened, true);
 });
 
 test("session records round-trip through JSONL and ignore a partial final line", () => {

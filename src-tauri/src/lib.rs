@@ -7,6 +7,7 @@ mod documents;
 mod external_tools;
 mod managed_files;
 mod sessions;
+mod tutor;
 mod workspace;
 
 use credentials::{CredentialStatus, CredentialStore};
@@ -27,6 +28,7 @@ use std::{
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
+use tutor::{cancel_opencode_request, opencode_models, send_opencode_request, TutorState};
 use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
 const ALLOWED_SETTING_KEYS: [&str; 7] = [
@@ -544,6 +546,7 @@ pub fn run() {
             let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(CredentialStore::new(credential_path));
+            app.manage(TutorState::default());
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
             let manifest_path = configuration_directory.join("managed-workspace.json");
@@ -580,6 +583,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             assistant_status,
             authenticate_opencode,
+            cancel_opencode_request,
+            opencode_models,
+            send_opencode_request,
             provider_credential_status,
             sign_out_opencode,
             choose_projects_directory,
