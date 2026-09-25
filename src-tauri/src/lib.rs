@@ -44,13 +44,16 @@ const DEFAULT_WORKSPACE_DIR: &str = "gestalten-in-code";
 struct SettingsStore {
     access: Mutex<()>,
     path: PathBuf,
+    layout_path: PathBuf,
 }
 
 impl SettingsStore {
     fn new(path: PathBuf) -> Self {
+        let layout_path = path.with_file_name("workspace-layout.json");
         Self {
             access: Mutex::new(()),
             path,
+            layout_path,
         }
     }
 
@@ -63,16 +66,31 @@ impl SettingsStore {
     }
 
     fn read_file(&self) -> Result<BTreeMap<String, String>, String> {
-        if !self.path.exists() {
-            return Ok(BTreeMap::new());
-        }
-        let Ok(contents) = fs::read_to_string(&self.path) else {
-            return Ok(BTreeMap::new());
-        };
-        let Ok(mut settings) = serde_json::from_str::<BTreeMap<String, String>>(&contents) else {
-            return Ok(BTreeMap::new());
+        let mut settings = if self.path.exists() {
+            let Ok(contents) = fs::read_to_string(&self.path) else {
+                return Ok(BTreeMap::new());
+            };
+            let Ok(settings) = serde_json::from_str::<BTreeMap<String, String>>(&contents) else {
+                return Ok(BTreeMap::new());
+            };
+            settings
+        } else {
+            BTreeMap::new()
         };
         settings.retain(|key, _| ALLOWED_SETTING_KEYS.contains(&key.as_str()));
+        if let Some(embedded_layout) = settings.remove("gic.workspaceLayout") {
+            if !self.layout_path.exists() {
+                if let Ok(layout) = serde_json::from_str::<serde_json::Value>(&embedded_layout) {
+                    let _ = self.write_layout(&layout);
+                }
+            }
+            self.persist_settings(&settings)?;
+        }
+        if self.layout_path.exists() {
+            if let Ok(layout) = fs::read_to_string(&self.layout_path) {
+                settings.insert("gic.workspaceLayout".to_owned(), layout);
+            }
+        }
         Ok(settings)
     }
 
@@ -85,13 +103,23 @@ impl SettingsStore {
             .lock()
             .map_err(|_| "Desktop settings are unavailable.".to_owned())?;
         let mut settings = self.read_file()?;
+        if key == "gic.workspaceLayout" {
+            let layout = serde_json::from_str::<serde_json::Value>(value)
+                .map_err(|_| "Unable to save desktop settings.".to_owned())?;
+            self.write_layout(&layout)?;
+            return Ok(());
+        }
         settings.insert(key.to_owned(), value.to_owned());
+        self.persist_settings(&settings)
+    }
+
+    fn persist_settings(&self, settings: &BTreeMap<String, String>) -> Result<(), String> {
         let parent = self
             .path
             .parent()
             .ok_or_else(|| "Desktop settings path has no parent.".to_owned())?;
         fs::create_dir_all(parent).map_err(|_| "Unable to prepare desktop settings.".to_owned())?;
-        let contents = serde_json::to_vec(&settings)
+        let contents = serde_json::to_vec(settings)
             .map_err(|_| "Unable to serialize desktop settings.".to_owned())?;
         let mut temporary_file = NamedTempFile::new_in(parent)
             .map_err(|_| "Unable to prepare desktop settings.".to_owned())?;
@@ -102,6 +130,26 @@ impl SettingsStore {
         temporary_file
             .persist(&self.path)
             .map_err(|_| "Unable to replace desktop settings.".to_owned())?;
+        Ok(())
+    }
+
+    fn write_layout(&self, layout: &serde_json::Value) -> Result<(), String> {
+        let parent = self
+            .layout_path
+            .parent()
+            .ok_or_else(|| "Workspace layout path has no parent.".to_owned())?;
+        fs::create_dir_all(parent).map_err(|_| "Unable to prepare workspace layout.".to_owned())?;
+        let contents = serde_json::to_vec_pretty(layout)
+            .map_err(|_| "Unable to serialize workspace layout.".to_owned())?;
+        let mut temporary_file = NamedTempFile::new_in(parent)
+            .map_err(|_| "Unable to prepare workspace layout.".to_owned())?;
+        temporary_file
+            .write_all(&contents)
+            .and_then(|()| temporary_file.as_file().sync_all())
+            .map_err(|_| "Unable to write workspace layout.".to_owned())?;
+        temporary_file
+            .persist(&self.layout_path)
+            .map_err(|_| "Unable to replace workspace layout.".to_owned())?;
         Ok(())
     }
 }
@@ -659,6 +707,47 @@ mod tests {
             std::fs::read_to_string(path).expect("read rejected fixture"),
             r#"{"opencode_api_key":"synthetic-secret"}"#
         );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn workspace_layout_is_stored_as_readable_json() {
+        let directory = test_directory("settings-readable-layout");
+        remove_test_directory(&directory);
+        let store = SettingsStore::new(directory.join("settings.json"));
+        let layout = r#"{"layout":{"type":"row"},"version":7}"#;
+
+        store
+            .write("gic.workspaceLayout", layout)
+            .expect("write workspace layout");
+
+        let stored = std::fs::read_to_string(directory.join("workspace-layout.json"))
+            .expect("read workspace layout");
+        assert!(stored.contains("\n  \"layout\""));
+        assert!(!directory.join("settings.json").exists());
+        assert!(store
+            .read()
+            .expect("read saved layout")
+            .contains_key("gic.workspaceLayout"));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn embedded_workspace_layout_is_migrated_to_its_own_file() {
+        let directory = test_directory("settings-layout-migration");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(
+            directory.join("settings.json"),
+            r#"{"gic.workspaceLayout":"{\"layout\":{\"type\":\"row\"},\"version\":7}"}"#,
+        )
+        .expect("write embedded layout fixture");
+        let store = SettingsStore::new(directory.join("settings.json"));
+
+        let settings = store.read().expect("read migrated settings");
+
+        assert!(settings.contains_key("gic.workspaceLayout"));
+        assert!(directory.join("workspace-layout.json").is_file());
         remove_test_directory(&directory);
     }
 
