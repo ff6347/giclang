@@ -29,7 +29,7 @@ Technically the language is based on lox-lang from [craftinginterpreters.com](ht
 
 ## AI in this Project
 
-In this project AI was used as a guide/ tutor for the implementation and as a intern to do grunt work like setting up tests. The code was mostly written by hand with some sprinkles of auto completion and context suggestion.
+In this project AI was used as a guide/ tutor for the implementation of the core language and as a intern to do grunt work like setting up tests. The core code was mostly written by hand with some sprinkles of auto completion and context suggestion. The frontend and application code are generated since time before the first workshop kept running out.
 
 If there will be some automated generation of examples is still up to discussion.
 
