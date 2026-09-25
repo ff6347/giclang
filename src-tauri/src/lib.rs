@@ -1,6 +1,7 @@
 // ABOUTME: Implements the narrow native boundary for the GIC desktop application.
 // ABOUTME: Persists approved non-secret settings without exposing filesystem paths.
 
+mod credentials;
 mod desktop_menu;
 mod documents;
 mod external_tools;
@@ -8,6 +9,7 @@ mod managed_files;
 mod sessions;
 mod workspace;
 
+use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
 use sessions::{SessionRecord, SessionStore, SessionSummary};
@@ -398,6 +400,28 @@ fn resolve_workspace_file(
 }
 
 #[tauri::command]
+fn provider_credential_status(
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.status()
+}
+
+#[tauri::command]
+fn authenticate_opencode(
+    api_key: String,
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.authenticate_opencode(&api_key)?;
+    store.status()
+}
+
+#[tauri::command]
+fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out()?;
+    store.status()
+}
+
+#[tauri::command]
 fn assistant_status() -> Vec<AssistantStatus> {
     external_tools::assistant_status()
 }
@@ -444,9 +468,15 @@ pub fn run() {
                 .map_err(std::io::Error::other)?
                 .join("settings.json");
             let settings = SettingsStore::new(settings_path);
+            let credential_path = app
+                .path()
+                .app_config_dir()
+                .map_err(std::io::Error::other)?
+                .join("auth.json");
             let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
             let first_run = !workspace_root.exists();
             app.manage(settings);
+            app.manage(CredentialStore::new(credential_path));
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
             let manifest_path = app
@@ -486,6 +516,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             assistant_status,
+            authenticate_opencode,
+            provider_credential_status,
+            sign_out_opencode,
             choose_projects_directory,
             launch_assistant,
             open_gic,
@@ -513,7 +546,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::SettingsStore;
+    use super::{credentials::CredentialStore, SettingsStore};
     use std::path::{Path, PathBuf};
 
     fn remove_test_directory(path: &Path) {
@@ -527,6 +560,86 @@ mod tests {
             "gic-desktop-settings-{}-{name}",
             std::process::id(),
         ))
+    }
+
+    #[test]
+    fn credentials_round_trip_without_exposing_the_key() {
+        let directory = test_directory("credentials-round-trip");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+
+        store
+            .authenticate_opencode("synthetic-secret")
+            .expect("store key");
+
+        assert!(store.status().expect("read status").opencode_authenticated);
+        assert!(!format!("{:?}", store.status().expect("read status")).contains("synthetic-secret"));
+        assert!(std::fs::read_to_string(directory.join("auth.json"))
+            .expect("read auth file")
+            .contains("synthetic-secret"));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn credentials_are_replaced_atomically_and_sign_out_deletes_them() {
+        let directory = test_directory("credentials-replace");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("first-secret")
+            .expect("store first key");
+        store
+            .authenticate_opencode("second-secret")
+            .expect("replace key");
+
+        assert!(!std::fs::read_to_string(directory.join("auth.json"))
+            .expect("read auth file")
+            .contains("first-secret"));
+        store.sign_out().expect("sign out");
+        assert!(!store.status().expect("read status").opencode_authenticated);
+        assert!(!directory.join("auth.json").exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn credential_file_uses_owner_only_permissions() {
+        let directory = test_directory("credentials-permissions");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("synthetic-secret")
+            .expect("store key");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(directory.join("auth.json"))
+                .expect("auth metadata")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn insecure_credential_files_are_rejected_without_being_repaired_silently() {
+        let directory = test_directory("credentials-insecure");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let path = directory.join("auth.json");
+        std::fs::write(&path, r#"{"opencode_api_key":"synthetic-secret"}"#)
+            .expect("write credential fixture");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
+                .expect("make credential fixture insecure");
+        }
+        let store = CredentialStore::new(path);
+
+        assert!(store.status().is_err());
+        remove_test_directory(&directory);
     }
 
     #[test]

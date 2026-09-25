@@ -23,3 +23,7 @@ uuid = { version = "1.26.1", features = ["v4"] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+
+[target."cfg(windows)".dependencies]
+winapi = { version = "0.3.9", features = ["winbase", "winnt"] }
+windows-acl = "0.3.0"

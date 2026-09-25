@@ -7,6 +7,10 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { WindowTheme } from "./theme.ts";
 import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
+export interface ProviderCredentialStatus {
+	readonly opencodeAuthenticated: boolean;
+}
+
 const MENU_ACTION_EVENT = "desktop-menu-action";
 
 export interface DesktopDocument {
@@ -162,6 +166,20 @@ export class DesktopHost {
 			path,
 			resolution,
 		});
+	}
+
+	providerCredentialStatus(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("provider_credential_status");
+	}
+
+	authenticateOpencode(apiKey: string): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("authenticate_opencode", {
+			apiKey,
+		});
+	}
+
+	signOutOpencode(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_opencode");
 	}
 
 	assistantStatus(): Promise<AssistantStatus[]> {
