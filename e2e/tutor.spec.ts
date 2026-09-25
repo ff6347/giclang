@@ -108,16 +108,21 @@ test("restores an agent session for the same sketch", async ({ page }) => {
 test("renders safe agent markdown without executing raw HTML", async ({
 	page,
 }) => {
-	await page.addInitScript(() => {
+	await page.goto("/");
+	const sketchName = await page
+		.getByRole("tab", { name: /^sketch_/ })
+		.getAttribute("aria-label");
+	if (sketchName === null) throw new Error("Sketch tab not found.");
+	await page.evaluate((name) => {
 		localStorage.setItem(
-			"gic.agentSession:sketch_20260924a",
+			`gic.agentSession:${name}`,
 			[
 				JSON.stringify({
 					type: "session",
 					id: "local",
-					name: "sketch_20260924a",
+					name,
 					startedAt: "2026-09-24T10:00:00Z",
-					sketchId: "sketch_20260924a",
+					sketchId: name,
 				}),
 				JSON.stringify({
 					type: "message",
@@ -128,8 +133,8 @@ test("renders safe agent markdown without executing raw HTML", async ({
 				}),
 			].join("\n"),
 		);
-	});
-	await page.goto("/");
+	}, sketchName);
+	await page.reload();
 	await page.getByRole("tab", { name: "Agent" }).click();
 	const tutor = page.getByRole("region", { name: "Agent" });
 	await expect(tutor.locator("pre code")).toHaveText("rect(10, 10, 20, 20);");
