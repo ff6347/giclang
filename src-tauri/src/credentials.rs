@@ -43,7 +43,11 @@ impl CredentialStore {
             .access
             .lock()
             .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
-        let mut auth = self.read_unlocked().unwrap_or_default();
+        let mut auth = match self.read_unlocked() {
+            Ok(auth) => auth,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => AuthFile::default(),
+            Err(_) => return Err("Provider credentials are unavailable.".to_owned()),
+        };
         auth.opencode_api_key = Some(api_key.to_owned());
         self.write_unlocked(&auth)
     }

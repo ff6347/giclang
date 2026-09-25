@@ -636,9 +636,14 @@ mod tests {
             std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
                 .expect("make credential fixture insecure");
         }
-        let store = CredentialStore::new(path);
+        let store = CredentialStore::new(path.clone());
 
         assert!(store.status().is_err());
+        assert!(store.authenticate_opencode("replacement-secret").is_err());
+        assert_eq!(
+            std::fs::read_to_string(path).expect("read rejected fixture"),
+            r#"{"opencode_api_key":"synthetic-secret"}"#
+        );
         remove_test_directory(&directory);
     }
 
