@@ -106,6 +106,31 @@ impl SettingsStore {
     }
 }
 
+fn app_configuration_directory(app: &AppHandle) -> Result<PathBuf, std::io::Error> {
+    Ok(app
+        .path()
+        .home_dir()
+        .map_err(std::io::Error::other)?
+        .join(".config")
+        .join("gestalten-in-code"))
+}
+
+fn migrate_platform_configuration(
+    app: &AppHandle,
+    destination: &Path,
+) -> Result<(), std::io::Error> {
+    let legacy_directory = app.path().app_config_dir().map_err(std::io::Error::other)?;
+    fs::create_dir_all(destination)?;
+    for name in ["settings.json", "auth.json", "managed-workspace.json"] {
+        let legacy_path = legacy_directory.join(name);
+        let destination_path = destination.join(name);
+        if legacy_path.exists() && !destination_path.exists() {
+            fs::rename(legacy_path, destination_path)?;
+        }
+    }
+    Ok(())
+}
+
 fn resolve_projects_directory(
     app: &AppHandle,
     settings: &SettingsStore,
@@ -462,28 +487,18 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let settings_path = app
-                .path()
-                .app_config_dir()
-                .map_err(std::io::Error::other)?
-                .join("settings.json");
+            let configuration_directory = app_configuration_directory(app.handle())?;
+            migrate_platform_configuration(app.handle(), &configuration_directory)?;
+            let settings_path = configuration_directory.join("settings.json");
             let settings = SettingsStore::new(settings_path);
-            let credential_path = app
-                .path()
-                .app_config_dir()
-                .map_err(std::io::Error::other)?
-                .join("auth.json");
+            let credential_path = configuration_directory.join("auth.json");
             let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
             let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(CredentialStore::new(credential_path));
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
-            let manifest_path = app
-                .path()
-                .app_config_dir()
-                .map_err(std::io::Error::other)?
-                .join("managed-workspace.json");
+            let manifest_path = configuration_directory.join("managed-workspace.json");
             app.manage(WorkspaceManager::new(workspace_root.clone(), manifest_path));
             desktop_menu::install(app)?;
             if first_run {
