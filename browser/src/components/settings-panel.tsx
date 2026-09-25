@@ -116,7 +116,7 @@ export function SettingsPanel({
 								const enabled = event.currentTarget.checked;
 								setAdvanced(enabled);
 								if (desktop !== undefined) {
-									void desktop.opencodeModels(enabled).then(onModelsChange);
+									void desktop.opencodeModels().then(onModelsChange);
 								}
 							}}
 						/>

@@ -1,15 +1,19 @@
 // ABOUTME: Implements the narrow native boundary for the GIC desktop application.
 // ABOUTME: Persists approved non-secret settings without exposing filesystem paths.
 
+mod agent;
 mod credentials;
 mod desktop_menu;
 mod documents;
 mod external_tools;
 mod managed_files;
 mod sessions;
-mod tutor;
 mod workspace;
 
+use agent::{
+    cancel_opencode_request, opencode_models, send_opencode_request, validate_opencode_key,
+    TutorState,
+};
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
@@ -28,7 +32,6 @@ use std::{
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
-use tutor::{cancel_opencode_request, opencode_models, send_opencode_request, TutorState};
 use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
 const ALLOWED_SETTING_KEYS: [&str; 7] = [
@@ -482,10 +485,11 @@ fn provider_credential_status(
 }
 
 #[tauri::command]
-fn authenticate_opencode(
+async fn authenticate_opencode(
     api_key: String,
     store: State<'_, CredentialStore>,
 ) -> Result<CredentialStatus, String> {
+    validate_opencode_key(&api_key).await?;
     store.authenticate_opencode(&api_key)?;
     store.status()
 }
