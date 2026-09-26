@@ -118,7 +118,7 @@ export function App({
 		readonly OpencodeModel[]
 	>([]);
 	const [enabledModelIds, setEnabledModelIds] = useState(() =>
-		loadEnabledModelIds(settings, []),
+		loadEnabledModelIds(settings),
 	);
 	const [opencodeModel, setOpencodeModel] = useState("");
 	const [opencodeModelError, setOpencodeModelError] = useState<string | null>(
@@ -190,7 +190,7 @@ export function App({
 					results[1].status === "fulfilled" ? results[1].value : [];
 				const availableModels = [...zenModels, ...openrouterModels];
 				setOpencodeModels(availableModels);
-				const enabled = loadEnabledModelIds(settings, availableModels);
+				const enabled = loadEnabledModelIds(settings);
 				setEnabledModelIds(enabled);
 				const preferredErrorIndex =
 					opencodeModel.startsWith("openrouter/") ||
@@ -221,6 +221,13 @@ export function App({
 			});
 	};
 	const changeModelVisibility = (id: string, enabled: boolean) => {
+		if (
+			!opencodeModels.some(
+				(model) => model.id === id && model.referenceToolsVerified === true,
+			)
+		) {
+			return;
+		}
 		const next = enabled
 			? [...new Set([...enabledModelIds, id])]
 			: enabledModelIds.filter((modelId) => modelId !== id);

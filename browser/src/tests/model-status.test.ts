@@ -101,6 +101,7 @@ test("OpenRouter models show pricing before the student chooses one", () => {
 			{
 				id: "openrouter/author/model",
 				name: "Model",
+				referenceToolsVerified: true,
 				pricing: "$0.10/1M input tokens, $0.20/1M output tokens",
 				accountLimit: "Account remaining $5 of $10",
 			},
@@ -125,8 +126,16 @@ test("picker only offers enabled models while advanced switches include every mo
 		true,
 		null,
 		[
-			{ id: "opencode-zen/first", name: "First" },
-			{ id: "opencode-zen/second", name: "Second" },
+			{
+				id: "opencode-zen/first",
+				name: "First",
+				referenceToolsVerified: true,
+			},
+			{
+				id: "opencode-zen/second",
+				name: "Second",
+				referenceToolsVerified: true,
+			},
 		],
 		false,
 		["opencode-zen/second"],
@@ -141,11 +150,53 @@ test("picker only offers enabled models while advanced switches include every mo
 	assert.doesNotMatch(html, /<option/);
 });
 
+test("unverified models remain visible but cannot be enabled or selected", () => {
+	const html = renderModels(
+		true,
+		null,
+		[
+			{ id: "opencode-zen/big-pickle", name: "Big Pickle" },
+			{
+				id: "opencode-zen/gpt-6-luna",
+				name: "GPT-6 Luna",
+				referenceToolsVerified: true,
+			},
+		],
+		false,
+		["opencode-zen/big-pickle", "opencode-zen/gpt-6-luna"],
+	);
+	const bigPickle = [...html.matchAll(/<li class="settings-model">.*?<\/li>/g)]
+		.map(([row]) => row)
+		.find((row) => row.includes("Big Pickle"));
+	assert.ok(bigPickle);
+	assert.match(bigPickle, /data-disabled/);
+	assert.match(bigPickle, /Reference tools not verified/);
+	assert.doesNotMatch(html, /value="OpenCode Zen · Big Pickle/);
+});
+
+test("an unverified-only catalog explains why no Agent model can be selected", () => {
+	const html = renderModels(
+		true,
+		null,
+		[{ id: "opencode-zen/big-pickle", name: "Big Pickle" }],
+		false,
+		["opencode-zen/big-pickle"],
+	);
+	assert.match(html, /No models verified for reference tools yet/);
+	assert.doesNotMatch(html, /Search tutor models/);
+});
+
 test("no enabled models has an explicit instruction without calling discovery empty", () => {
 	const html = renderModels(
 		true,
 		null,
-		[{ id: "opencode-zen/first", name: "First" }],
+		[
+			{
+				id: "opencode-zen/first",
+				name: "First",
+				referenceToolsVerified: true,
+			},
+		],
 		false,
 		[],
 	);
@@ -215,6 +266,10 @@ test("OpenRouter disclosure appears before the key is entered in Settings", () =
 	assert.ok(disclosure > routerSection);
 	assert.ok(keyInput > disclosure);
 	assert.match(html, /retention terms/);
+	assert.match(
+		html.slice(routerSection, keyInput),
+		/two additional model requests/,
+	);
 });
 
 test("OpenRouter questions do not require an in-app terms checkbox", () => {

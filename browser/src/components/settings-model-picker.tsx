@@ -3,6 +3,7 @@
 
 import { Combobox, Field } from "@base-ui/react";
 import type { OpencodeModel } from "../lib/desktop-host.ts";
+import { deriveVisibleModels } from "../lib/model-preferences.ts";
 
 function modelLabel(model: OpencodeModel): string {
 	const provider = model.id.startsWith("opencode-zen/")
@@ -25,8 +26,7 @@ export function SettingsModelPicker({
 	selectedModel: string;
 	onModelChange: (id: string) => void;
 }) {
-	const enabled = new Set(enabledModelIds);
-	const choices = models.filter((model) => enabled.has(model.id));
+	const choices = deriveVisibleModels(models, enabledModelIds);
 	const labels = new Map(choices.map((model) => [model.id, modelLabel(model)]));
 	return (
 		<Field.Root className="settings-row">
@@ -34,8 +34,9 @@ export function SettingsModelPicker({
 			<div className="settings-control">
 				{choices.length === 0 ? (
 					<p role="status">
-						No models enabled. Expand a provider’s advanced settings to enable
-						one.
+						{models.some((model) => model.referenceToolsVerified === true)
+							? "No models enabled. Expand a provider’s advanced settings to enable one."
+							: "No models verified for reference tools yet."}
 					</p>
 				) : (
 					<Combobox.Root

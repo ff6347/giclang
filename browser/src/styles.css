@@ -684,6 +684,11 @@ canvas {
 	margin-left: auto;
 }
 
+.settings-switch[data-disabled] {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
 .settings-switch:focus-visible {
 	outline: 2px solid currentColor;
 	outline-offset: 2px;

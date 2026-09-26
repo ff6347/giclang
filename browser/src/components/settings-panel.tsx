@@ -114,12 +114,14 @@ function ModelSettings({
 						<ul className="settings-model-list">
 							{matchingModels.map((model) => {
 								const prices = model.pricing?.split(", ");
+								const verified = model.referenceToolsVerified === true;
 								return (
 									<li key={model.id} className="settings-model">
 										<span className="settings-model-name">{model.name}</span>
 										<Switch.Root
 											aria-label={`Enable ${model.name}`}
-											checked={enabledModelIds.includes(model.id)}
+											checked={verified && enabledModelIds.includes(model.id)}
+											disabled={!verified}
 											onCheckedChange={(checked) =>
 												onModelVisibilityChange(model.id, checked)
 											}
@@ -127,6 +129,11 @@ function ModelSettings({
 										>
 											<Switch.Thumb className="settings-switch-thumb" />
 										</Switch.Root>
+										{!verified && (
+											<span className="settings-model-price">
+												Reference tools not verified
+											</span>
+										)}
 										<span className="settings-model-price">
 											{prices?.[0] && prices[1]
 												? `${model.isFree === true ? "Free — " : ""}Input: ${prices[0]} · Output: ${prices[1]}`
@@ -262,6 +269,9 @@ export function SettingsPanel({
 					<h3>OpenCode Zen</h3>
 					<p className="settings-help">
 						Connect OpenCode Zen with an API key to use the desktop tutor.
+						Reference lookups may use up to two additional model requests per
+						question, which may be billed. Zen does not include token prices in
+						its model catalog.
 					</p>
 					{providerStatus?.opencodeAuthenticated === true ? (
 						<>
@@ -319,7 +329,8 @@ export function SettingsPanel({
 						older. Questions send sketch source, diagnostics, output, and
 						conversation to OpenRouter, which may route them to third-party
 						providers with their own retention terms. Your key stays in native
-						storage; cancellation may not prevent billing.
+						storage; cancellation may not prevent billing. Reference lookups may
+						use up to two additional model requests per question.
 					</p>
 					{providerStatus?.openrouterAuthenticated === true ? (
 						<>

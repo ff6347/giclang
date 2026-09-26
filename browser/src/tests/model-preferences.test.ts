@@ -29,6 +29,11 @@ const zenModel: OpencodeModel = {
 	id: "opencode-zen/big-pickle",
 	name: "Big Pickle",
 };
+const verifiedZenModel: OpencodeModel = {
+	id: "opencode-zen/gpt-6-luna",
+	name: "GPT-6 Luna",
+	referenceToolsVerified: true,
+};
 const openRouterFreeModel: OpencodeModel = {
 	id: "openrouter/provider/free-model",
 	name: "Free Model",
@@ -38,55 +43,65 @@ const openRouterPaidModel: OpencodeModel = {
 	id: "openrouter/provider/paid-model",
 	name: "Paid Model",
 	pricing: "0.01",
+	referenceToolsVerified: true,
 };
 const unknownProviderModel: OpencodeModel = {
 	id: "other/provider/model",
 	name: "Other",
+	referenceToolsVerified: true,
 };
 
-test("defaults only to the handpicked Zen model when it exists", () => {
-	const settings = new MemorySettings();
+test("only models with proven reference tools enter the searchable picker", () => {
 	assert.deepEqual(
-		loadEnabledModelIds(settings, [zenModel, openRouterFreeModel]),
-		[zenModel.id],
+		deriveVisibleModels(
+			[zenModel, verifiedZenModel],
+			[zenModel.id, verifiedZenModel.id],
+		),
+		[verifiedZenModel],
 	);
-	assert.deepEqual(loadEnabledModelIds(settings, [openRouterFreeModel]), []);
+	assert.deepEqual(loadEnabledModelIds(new MemorySettings()), []);
+});
+
+test("fresh settings do not preselect an unverified or paid model", () => {
+	const settings = new MemorySettings();
+	assert.deepEqual(loadEnabledModelIds(settings), []);
+	assert.equal(settings.values.size, 0);
 });
 
 test("OpenRouter catalog models are not enabled by default, including free models", () => {
 	const settings = new MemorySettings();
-	assert.deepEqual(
-		loadEnabledModelIds(settings, [openRouterFreeModel, openRouterPaidModel]),
-		[],
-	);
+	assert.deepEqual(loadEnabledModelIds(settings), []);
 });
 
 test("explicit choices persist across provider catalogs and refreshes", () => {
 	const settings = new MemorySettings();
-	saveEnabledModelIds(settings, [zenModel.id, openRouterPaidModel.id]);
-	assert.deepEqual(loadEnabledModelIds(settings, [openRouterPaidModel]), [
-		zenModel.id,
+	saveEnabledModelIds(settings, [verifiedZenModel.id, openRouterPaidModel.id]);
+	assert.deepEqual(loadEnabledModelIds(settings), [
+		verifiedZenModel.id,
 		openRouterPaidModel.id,
 	]);
 	assert.deepEqual(
 		deriveVisibleModels(
-			[zenModel, openRouterFreeModel, openRouterPaidModel],
-			loadEnabledModelIds(settings, [zenModel]),
+			[verifiedZenModel, openRouterFreeModel, openRouterPaidModel],
+			loadEnabledModelIds(settings),
 		),
-		[zenModel, openRouterPaidModel],
+		[verifiedZenModel, openRouterPaidModel],
 	);
 });
 
 test("unavailable selections are retained but never appear in the picker", () => {
 	const settings = new MemorySettings();
-	saveEnabledModelIds(settings, [zenModel.id, openRouterPaidModel.id]);
-	assert.deepEqual(loadEnabledModelIds(settings, [zenModel]), [
-		zenModel.id,
+	saveEnabledModelIds(settings, [verifiedZenModel.id, openRouterPaidModel.id]);
+	assert.deepEqual(loadEnabledModelIds(settings), [
+		verifiedZenModel.id,
 		openRouterPaidModel.id,
 	]);
 	assert.deepEqual(
-		deriveVisibleModels([zenModel], [zenModel.id, openRouterPaidModel.id]),
-		[zenModel],
+		deriveVisibleModels(
+			[verifiedZenModel],
+			[verifiedZenModel.id, openRouterPaidModel.id],
+		),
+		[verifiedZenModel],
 	);
 });
 
@@ -95,18 +110,20 @@ test("visible models require an enabled ID from a supported provider", () => {
 		deriveVisibleModels(
 			[
 				zenModel,
+				verifiedZenModel,
 				openRouterFreeModel,
 				openRouterPaidModel,
 				unknownProviderModel,
 			],
 			[
 				zenModel.id,
+				verifiedZenModel.id,
 				openRouterPaidModel.id,
 				unknownProviderModel.id,
 				"openrouter/provider/missing",
 			],
 		),
-		[zenModel, openRouterPaidModel],
+		[verifiedZenModel, openRouterPaidModel],
 	);
 });
 
@@ -121,16 +138,22 @@ test("advanced model search matches names and IDs without changing enabled choic
 });
 
 test("disabling or losing a selected model requires a fresh explicit choice", () => {
-	const catalog = [zenModel, openRouterPaidModel];
-	assert.equal(selectedVisibleModelId(zenModel.id, catalog), zenModel.id);
-	assert.equal(selectedVisibleModelId(openRouterPaidModel.id, [zenModel]), "");
+	const catalog = [verifiedZenModel, openRouterPaidModel];
+	assert.equal(
+		selectedVisibleModelId(verifiedZenModel.id, catalog),
+		verifiedZenModel.id,
+	);
+	assert.equal(
+		selectedVisibleModelId(openRouterPaidModel.id, [verifiedZenModel]),
+		"",
+	);
 	assert.equal(selectedVisibleModelId("", catalog), "");
 });
 
 test("malformed saved preferences do not erase or rewrite stored choices", () => {
 	const settings = new MemorySettings();
 	settings.values.set("gic.tutor.enabled-model-ids", "{invalid");
-	assert.deepEqual(loadEnabledModelIds(settings, [zenModel]), []);
+	assert.deepEqual(loadEnabledModelIds(settings), []);
 	assert.equal(settings.getItem("gic.tutor.enabled-model-ids"), "{invalid");
 });
 

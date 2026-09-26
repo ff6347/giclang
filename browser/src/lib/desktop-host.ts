@@ -15,6 +15,7 @@ export interface ProviderCredentialStatus {
 export interface OpencodeModel {
 	readonly id: string;
 	readonly name: string;
+	readonly referenceToolsVerified?: boolean;
 	readonly pricing?: string;
 	readonly isFree?: boolean;
 	readonly otherCharges?: boolean;

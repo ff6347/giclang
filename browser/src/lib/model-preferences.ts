@@ -5,12 +5,8 @@ import type { ApplicationSettings } from "./application-settings.ts";
 import type { OpencodeModel } from "./desktop-host.ts";
 
 const ENABLED_MODEL_IDS_KEY = "gic.tutor.enabled-model-ids";
-const DEFAULT_ZEN_MODEL_ID = "opencode-zen/big-pickle";
 
-export function loadEnabledModelIds(
-	settings: ApplicationSettings,
-	catalog: readonly OpencodeModel[],
-): string[] {
+export function loadEnabledModelIds(settings: ApplicationSettings): string[] {
 	const saved = settings.getItem(ENABLED_MODEL_IDS_KEY);
 	if (saved !== null) {
 		try {
@@ -24,9 +20,7 @@ export function loadEnabledModelIds(
 		return [];
 	}
 
-	return catalog.some((model) => model.id === DEFAULT_ZEN_MODEL_ID)
-		? [DEFAULT_ZEN_MODEL_ID]
-		: [];
+	return [];
 }
 
 export function saveEnabledModelIds(
@@ -47,6 +41,7 @@ export function deriveVisibleModels(
 	return catalog.filter(
 		(model) =>
 			enabled.has(model.id) &&
+			model.referenceToolsVerified === true &&
 			(model.id.startsWith("opencode-zen/") ||
 				model.id.startsWith("openrouter/")),
 	);
