@@ -22,9 +22,13 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(docs.getByRole("button")).toHaveCount(0);
 	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
 		"Language reference",
-		"Conditions",
+		"Conditionals",
+		"Colors",
 		"Drawing",
-		"Repeat",
+		"Named Colors",
+		"Repeat a.k.a. Loops",
+		"User defined Functions",
+		"Math",
 	]);
 	await expect(
 		page.getByText("Language reference and help for writing GIC programs."),
