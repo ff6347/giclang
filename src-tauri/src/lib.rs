@@ -34,13 +34,15 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
 use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
-const ALLOWED_SETTING_KEYS: [&str; 7] = [
+const ALLOWED_SETTING_KEYS: [&str; 9] = [
     "gic.appearance",
     "gic.canvasFrame",
     "gic.darkTheme",
     "gic.formatOnSave",
     "gic.lightTheme",
     "gic.projectsDirectory",
+    "gic.tutor.enabled-model-ids",
+    "gic.tutor.selected-model",
     "gic.workspaceLayout",
 ];
 
@@ -867,6 +869,41 @@ mod tests {
                 .get("gic.canvasFrame")
                 .map(String::as_str),
             Some("false"),
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn tutor_model_preferences_persist_across_settings_store_instances() {
+        let directory = test_directory("tutor-model-preferences");
+        remove_test_directory(&directory);
+        let path = directory.join("settings.json");
+        let store = SettingsStore::new(path.clone());
+
+        store
+            .write("gic.tutor.enabled-model-ids", r#"["zen/alpha","zen/beta"]"#)
+            .expect("write enabled model IDs");
+        store
+            .write("gic.tutor.selected-model", "zen/beta")
+            .expect("write selected model");
+
+        let restored = SettingsStore::new(path)
+            .read()
+            .expect("read saved settings");
+
+        assert_eq!(
+            restored
+                .get("gic.tutor.enabled-model-ids")
+                .map(String::as_str),
+            Some(r#"["zen/alpha","zen/beta"]"#),
+        );
+        assert_eq!(
+            restored.get("gic.tutor.selected-model").map(String::as_str),
+            Some("zen/beta"),
+        );
+        assert_eq!(
+            store.write("credential", "must-not-enter-settings"),
+            Err("Unsupported setting key.".to_owned()),
         );
         remove_test_directory(&directory);
     }
