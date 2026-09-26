@@ -673,6 +673,39 @@ mod tests {
     }
 
     #[test]
+    fn codex_refresh_credentials_survive_restart_without_entering_status() {
+        let directory = test_directory("codex-credentials-restart");
+        remove_test_directory(&directory);
+        let path = directory.join("auth.json");
+        let store = CredentialStore::new(path.clone());
+
+        store
+            .authenticate_codex("synthetic-access", "synthetic-refresh", "synthetic-account")
+            .expect("store Codex credentials");
+
+        let restarted = CredentialStore::new(path.clone());
+        let status = restarted.status().expect("read redacted status");
+        assert!(status.codex_authenticated);
+        assert!(!format!("{status:?}").contains("synthetic-"));
+        assert_eq!(
+            restarted
+                .with_codex_credentials(|access, refresh, account| {
+                    (access.to_owned(), refresh.to_owned(), account.to_owned())
+                })
+                .expect("read native credentials"),
+            (
+                "synthetic-access".to_owned(),
+                "synthetic-refresh".to_owned(),
+                "synthetic-account".to_owned()
+            )
+        );
+        restarted.sign_out_codex().expect("sign out Codex");
+        assert!(!restarted.status().expect("read status").codex_authenticated);
+        assert!(!path.exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn openrouter_credentials_round_trip_and_sign_out_independently() {
         let directory = test_directory("openrouter-credentials");
         remove_test_directory(&directory);

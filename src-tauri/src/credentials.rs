@@ -7,13 +7,22 @@ use tempfile::NamedTempFile;
 
 #[derive(Default, Deserialize, Serialize)]
 struct AuthFile {
+    codex: Option<CodexCredentials>,
     opencode_api_key: Option<String>,
     openrouter_api_key: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+struct CodexCredentials {
+    access_token: String,
+    refresh_token: String,
+    account_id: String,
 }
 
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CredentialStatus {
+    pub codex_authenticated: bool,
     pub opencode_authenticated: bool,
     pub openrouter_authenticated: bool,
 }
@@ -48,6 +57,27 @@ impl CredentialStore {
         Ok(operation(&api_key))
     }
 
+    pub(crate) fn with_codex_credentials<T>(
+        &self,
+        operation: impl FnOnce(&str, &str, &str) -> T,
+    ) -> Result<T, String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let auth = self
+            .read_unlocked()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let credentials = auth
+            .codex
+            .ok_or_else(|| "Codex is not authenticated.".to_owned())?;
+        Ok(operation(
+            &credentials.access_token,
+            &credentials.refresh_token,
+            &credentials.account_id,
+        ))
+    }
+
     pub(crate) fn with_openrouter_key<T>(
         &self,
         operation: impl FnOnce(&str) -> T,
@@ -68,8 +98,30 @@ impl CredentialStore {
     pub(crate) fn status(&self) -> Result<CredentialStatus, String> {
         let auth = self.read()?;
         Ok(CredentialStatus {
+            codex_authenticated: auth.codex.is_some(),
             opencode_authenticated: auth.opencode_api_key.is_some(),
             openrouter_authenticated: auth.openrouter_api_key.is_some(),
+        })
+    }
+
+    pub(crate) fn authenticate_codex(
+        &self,
+        access_token: &str,
+        refresh_token: &str,
+        account_id: &str,
+    ) -> Result<(), String> {
+        if access_token.trim().is_empty()
+            || refresh_token.trim().is_empty()
+            || account_id.trim().is_empty()
+        {
+            return Err("Codex authorization is incomplete. Sign in again.".to_owned());
+        }
+        self.update(|auth| {
+            auth.codex = Some(CodexCredentials {
+                access_token: access_token.to_owned(),
+                refresh_token: refresh_token.to_owned(),
+                account_id: account_id.to_owned(),
+            });
         })
     }
 
@@ -135,6 +187,10 @@ impl CredentialStore {
         self.write_unlocked(&auth)
     }
 
+    pub(crate) fn sign_out_codex(&self) -> Result<(), String> {
+        self.update(|auth| auth.codex = None)
+    }
+
     fn read(&self) -> Result<AuthFile, String> {
         let _access = self
             .access
@@ -142,6 +198,20 @@ impl CredentialStore {
             .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
         self.read_unlocked()
             .map_err(|_| "Provider credentials are unavailable.".to_owned())
+    }
+
+    fn update(&self, change: impl FnOnce(&mut AuthFile)) -> Result<(), String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let mut auth = match self.read_unlocked() {
+            Ok(auth) => auth,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => AuthFile::default(),
+            Err(_) => return Err("Provider credentials are unavailable.".to_owned()),
+        };
+        change(&mut auth);
+        self.write_unlocked(&auth)
     }
 
     fn read_unlocked(&self) -> Result<AuthFile, std::io::Error> {
@@ -158,7 +228,10 @@ impl CredentialStore {
     }
 
     fn write_unlocked(&self, auth: &AuthFile) -> Result<(), String> {
-        if auth.opencode_api_key.is_none() && auth.openrouter_api_key.is_none() {
+        if auth.codex.is_none()
+            && auth.opencode_api_key.is_none()
+            && auth.openrouter_api_key.is_none()
+        {
             return match fs::remove_file(&self.path) {
                 Ok(()) => Ok(()),
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
