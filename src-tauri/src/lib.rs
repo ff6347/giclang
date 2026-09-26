@@ -504,8 +504,11 @@ fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStat
 }
 
 #[tauri::command]
-fn sign_out_codex(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
-    store.sign_out_codex()?;
+fn sign_out_codex(
+    store: State<'_, CredentialStore>,
+    auth: State<'_, CodexAuth>,
+) -> Result<CredentialStatus, String> {
+    auth.sign_out(&store)?;
     store.status()
 }
 
@@ -693,6 +696,7 @@ mod tests {
             serde_json::to_value(authorization).expect("serialize authorization"),
             serde_json::json!({
                 "kind": "deviceAuthorization",
+                "attemptId": 1,
                 "url": "https://auth.example/device",
                 "userCode": "ABCD-EFGH"
             })
