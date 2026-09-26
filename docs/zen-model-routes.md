@@ -7,6 +7,8 @@ Use this page to look up the documented endpoint family for a Zen model ID when 
 
 The Zen catalog at `https://opencode.ai/zen/v1/models` returns model `id`, `object`, `created`, and `owned_by` metadata. It does not report protocol or endpoint compatibility. A catalog listing is not evidence that a model accepts a particular request format.
 
+OpenCode [Go](https://opencode.ai/v2/docs/console/go) is a separate subscription and API under `/zen/go/v1`. Go lists models that Zen may not offer and requires its own access check. Neither a Zen catalog entry nor a Zen probe certifies Go access. OpenRouter is a third provider with separate model IDs, pricing, and account eligibility.
+
 ## Endpoint families
 
 The endpoint paths below are relative to `https://opencode.ai/zen/v1`. A documented route identifies an endpoint family, not a guarantee that GIC can call a model successfully. The live catalog is subject to change.
@@ -64,6 +66,19 @@ Each explicit question allows at most two tool-bearing model turns and two refer
 | `opencode-zen/claude-sonnet-5` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
 | `opencode-zen/big-pickle` | Plain text and tool requests both returned HTTP 403, including with a conversation-specific session header | Unverified; not selectable |
 | OpenRouter models | No account-key reference-tool probe completed | Unverified; not selectable |
+
+Additional Zen Chat Completions probes used the same bounded search → read → answer workflow. These are **direct Zen API results**, not Go or packaged-app verification; GIC's native selectable-model allowlist has not been expanded on the basis of these probes.
+
+| Zen model ID | Direct reference-tool result |
+| --- | --- |
+| `glm-5.3`, `glm-5.3-flash`, `kimi-k3` | Search, read, and final text completed |
+| `deepseek-v4.1-flash`, `deepseek-v4-flash` | Search, read, and final text completed |
+| `space-bunny-free` | Search, read, and final text completed; free-tier access is model-specific |
+| `kimi-k2.7-code`, `deepseek-v4-pro` | HTTP 404 on the initial request; tool capability is unproven |
+| `mimo-v2.6-flash-free` | HTTP 403 on the initial request; tool capability is unproven |
+| `mimo-v2.6-pro` | Not in the Zen catalog or documented Zen routes; not requested |
+
+The Go model `mimo-v2.6-flash` is not the same Zen ID as `mimo-v2.6-flash-free`. OpenRouter's `stealth/space-bunny-alpha` is not Zen's `space-bunny-free`; neither should be substituted silently.
 
 Local native HTTP tests cover tool-result correlation for Chat Completions, Responses, and Messages, including OpenRouter's wire format. A live packaged tutor interaction is still needed; direct API probe success does not by itself prove packaged behavior.
 
