@@ -6,10 +6,11 @@ use futures_util::StreamExt;
 use rig_core::{
     client::CompletionClient,
     completion::{CompletionError, CompletionModel, FinishReason, Message},
-    providers::openai,
+    providers::{anthropic, openai},
     streaming::StreamedAssistantContent,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 use tokio_util::sync::CancellationToken;
@@ -40,7 +41,11 @@ pub(crate) struct TutorModel {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pricing: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "isFree", skip_serializing_if = "Option::is_none")]
+    pub is_free: Option<bool>,
+    #[serde(rename = "otherCharges", skip_serializing_if = "Option::is_none")]
+    pub other_charges: Option<bool>,
+    #[serde(rename = "accountLimit", skip_serializing_if = "Option::is_none")]
     pub account_limit: Option<String>,
 }
 
@@ -155,6 +160,8 @@ struct OpenRouterArchitecture {
 struct OpenRouterPricing {
     prompt: Option<String>,
     completion: Option<String>,
+    #[serde(flatten)]
+    other: HashMap<String, serde_json::Value>,
 }
 
 fn parse_context(context: &str) -> (String, Vec<Message>) {
@@ -210,61 +217,118 @@ impl TutorProvider for RigOpenCodeProvider {
             "x-opencode-session",
             http::HeaderValue::from_static("gic-tutor"),
         );
-        let client = openai::Client::builder()
-            .api_key(request.api_key)
-            .base_url(&self.base_url)
-            .http_headers(headers)
-            .build()
-            .map_err(|_| "OpenCode client could not start.".to_owned())?;
-        let model = client.completions_api().completion_model(request.model);
-        let pending = model.stream(
-            model
-                .completion_request(request.prompt)
-                .preamble(TUTOR_POLICY.to_owned())
-                .messages(request.history)
-                .build(),
-        );
-        let mut response = tokio::select! {
+        match zen_route(&request.model) {
+            Some(ZenRoute::Responses) => {
+                let client = openai::Client::builder()
+                    .api_key(request.api_key.clone())
+                    .base_url(&self.base_url)
+                    .http_headers(headers)
+                    .build()
+                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
+                stream_zen_model(
+                    client.completion_model(request.model.clone()),
+                    request,
+                    emit,
+                )
+                .await
+            }
+            Some(ZenRoute::Messages) => {
+                let client = anthropic::Client::builder()
+                    .api_key(request.api_key.clone())
+                    .base_url(&self.base_url)
+                    .http_headers(headers)
+                    .build()
+                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
+                stream_zen_model(
+                    client.completion_model(request.model.clone()),
+                    request,
+                    emit,
+                )
+                .await
+            }
+            Some(ZenRoute::ChatCompletions) => {
+                let client = openai::Client::builder()
+                    .api_key(request.api_key.clone())
+                    .base_url(&self.base_url)
+                    .http_headers(headers)
+                    .build()
+                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
+                stream_zen_model(
+                    client
+                        .completions_api()
+                        .completion_model(request.model.clone()),
+                    request,
+                    emit,
+                )
+                .await
+            }
+            None => Err("Choose a supported OpenCode model.".to_owned()),
+        }
+    }
+}
+
+async fn stream_zen_model<M: CompletionModel + Clone>(
+    model: M,
+    request: TutorRequest,
+    emit: &mut (dyn FnMut(ProviderEvent) + Send),
+) -> Result<(), String> {
+    let pending = model.stream(
+        model
+            .completion_request(request.prompt)
+            .preamble(TUTOR_POLICY.to_owned())
+            .messages(request.history)
+            .build(),
+    );
+    let mut response = tokio::select! {
+        _ = request.cancellation.cancelled() => {
+            emit(ProviderEvent::Cancelled);
+            return Ok(());
+        }
+        result = pending => result.map_err(|error| {
+            provider_error(error, "OpenCode request failed. Check your connection or sign in again.")
+        })?,
+    };
+    let mut completed = false;
+    loop {
+        let next = tokio::select! {
             _ = request.cancellation.cancelled() => {
                 emit(ProviderEvent::Cancelled);
                 return Ok(());
             }
-            result = pending => result.map_err(|error| {
-                provider_error(error, "OpenCode request failed. Check your connection or sign in again.")
-            })?,
+            chunk = response.next() => chunk,
         };
-        let mut completed = false;
-        loop {
-            let next = tokio::select! {
-                _ = request.cancellation.cancelled() => {
-                    emit(ProviderEvent::Cancelled);
-                    return Ok(());
+        let Some(chunk) = next else {
+            break;
+        };
+        match chunk {
+            Ok(StreamedAssistantContent::Text(text)) => {
+                emit(ProviderEvent::Text(text.text));
+            }
+            Ok(StreamedAssistantContent::Final(final_response)) => match final_response
+                .finish_reason
+            {
+                Some(FinishReason::Stop) => completed = true,
+                Some(FinishReason::Length) => {
+                    return Err(
+                        "OpenCode response reached its token limit before completion.".to_owned(),
+                    );
                 }
-                chunk = response.next() => chunk,
-            };
-            let Some(chunk) = next else {
-                break;
-            };
-            match chunk {
-                Ok(StreamedAssistantContent::Text(text)) => {
-                    emit(ProviderEvent::Text(text.text));
-                }
-                Ok(StreamedAssistantContent::Final(_)) => completed = true,
-                Ok(_) => {}
-                Err(error) => {
-                    return Err(provider_error(
-                        error,
-                        "OpenCode response stream failed. Check your connection or sign in again.",
-                    ));
-                }
+                _ => return Err("OpenCode response did not complete successfully.".to_owned()),
+            },
+            Ok(_) => {}
+            Err(error) => {
+                return Err(provider_error(
+                    error,
+                    "OpenCode response stream failed. Check your connection or sign in again.",
+                ));
             }
         }
-        if !completed {
-            return Err("OpenCode response ended before completion.".to_owned());
-        }
-        emit(ProviderEvent::Complete);
-        Ok(())
     }
+    if !completed {
+        return Err("OpenCode response ended before completion.".to_owned());
+    }
+    emit(ProviderEvent::Complete);
+    Ok(())
 }
 
 struct RigOpenRouterProvider {
@@ -375,13 +439,78 @@ fn validate_model(model: &str) -> Result<&str, String> {
     if model_id.trim().is_empty() {
         return Err("Choose an OpenCode model.".to_owned());
     }
-    if !matches!(model_id, "big-pickle" | "space-bunny-free") {
+    if zen_route(model_id).is_none() {
         return Err(
             "This OpenCode model's streaming protocol has not been verified yet. Choose a supported model."
                 .to_owned(),
         );
     }
     Ok(model_id)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum ZenRoute {
+    ChatCompletions,
+    Responses,
+    Messages,
+}
+
+fn zen_route(model: &str) -> Option<ZenRoute> {
+    match model {
+        "big-pickle"
+        | "space-bunny-free"
+        | "deepseek-v4-flash"
+        | "deepseek-v4-flash-vision-exp"
+        | "deepseek-v4-pro"
+        | "deepseek-v4.1-flash"
+        | "glm-5.2"
+        | "glm-5.3"
+        | "glm-5.3-flash"
+        | "kimi-k2.7-code"
+        | "kimi-k3"
+        | "ling-3.0-flash-fin-free"
+        | "minimax-m2.7"
+        | "minimax-m3"
+        | "mimo-v2.5-free"
+        | "mimo-v2.6-flash-free"
+        | "nemotron-3-ultra-free"
+        | "nemotron-3.5-lightning-free"
+        | "qwen3.8-max" => Some(ZenRoute::ChatCompletions),
+        "gpt-6-astra"
+        | "gpt-6-sol"
+        | "gpt-6-luna"
+        | "gpt-5.6-sol"
+        | "gpt-5.6-terra"
+        | "gpt-5.6-luna"
+        | "gpt-5.5"
+        | "gpt-5.5-pro"
+        | "gpt-5.4"
+        | "gpt-5.4-pro"
+        | "gpt-5.4-mini"
+        | "gpt-5.4-nano"
+        | "gpt-5.3-codex"
+        | "gpt-5.3-codex-spark"
+        | "gpt-5.2"
+        | "gpt-5.2-codex"
+        | "gpt-5.1"
+        | "gpt-5.1-codex"
+        | "gpt-5.1-codex-max"
+        | "gpt-5.1-codex-mini"
+        | "gpt-5"
+        | "gpt-5-codex"
+        | "gpt-5-nano"
+        | "grok-4.5"
+        | "grok-4.6"
+        | "grok-4.7"
+        | "muse-spark-1.2"
+        | "muse-spark-1.3"
+        | "muse-spark-1.3-contributor-free" => Some(ZenRoute::Responses),
+        "claude-fable-5-1" | "claude-fable-5" | "claude-opus-5-5" | "claude-opus-5"
+        | "claude-opus-4-8" | "claude-opus-4-7" | "claude-opus-4-6" | "claude-opus-4-5"
+        | "claude-sonnet-5" | "claude-sonnet-4-6" | "claude-sonnet-4-5" | "claude-haiku-4-5"
+        | "qwen3.6-plus" | "qwen3.8-flash" => Some(ZenRoute::Messages),
+        _ => None,
+    }
 }
 
 fn validate_openrouter_model(model: &str) -> Result<&str, String> {
@@ -445,6 +574,29 @@ fn openrouter_prices(model: &OpenRouterModel) -> Option<(f64, f64)> {
     let output = model.pricing.completion.as_deref()?.parse::<f64>().ok()?;
     (input.is_finite() && output.is_finite() && input >= 0.0 && output >= 0.0)
         .then_some((input, output))
+}
+
+fn format_model_price(per_token: f64) -> String {
+    let per_million = per_token * 1_000_000.0;
+    if per_million > 0.0 && per_million < 0.01 {
+        "<$0.01".to_owned()
+    } else {
+        format!("${per_million:.2}")
+    }
+}
+
+fn has_other_charges(model: &OpenRouterModel) -> bool {
+    model.pricing.other.values().any(|value| match value {
+        serde_json::Value::Null => false,
+        serde_json::Value::String(amount) => amount.parse::<f64>() != Ok(0.0),
+        serde_json::Value::Number(amount) => amount.as_f64() != Some(0.0),
+        serde_json::Value::Array(entries) => !entries.is_empty(),
+        _ => true,
+    })
+}
+
+fn model_is_free(model: &OpenRouterModel, (input, output): (f64, f64)) -> bool {
+    input == 0.0 && output == 0.0 && !has_other_charges(model)
 }
 
 fn safe_error(status: reqwest::StatusCode) -> String {
@@ -535,6 +687,8 @@ async fn fetch_models(
             name: model.name.unwrap_or_else(|| model.id.clone()),
             id: format!("opencode-zen/{}", model.id),
             pricing: None,
+            is_free: None,
+            other_charges: None,
             account_limit: None,
         })
         .filter(|model| validate_model(&model.id).is_ok())
@@ -621,17 +775,22 @@ async fn fetch_openrouter_models(
         .into_iter()
         .filter(|model| openrouter_model_eligible(model, today))
         .map(|model| {
-            let pricing = openrouter_prices(&model).map(|(input, output)| {
+            let prices = openrouter_prices(&model);
+            let other_charges = has_other_charges(&model);
+            let is_free = prices.map(|prices| model_is_free(&model, prices));
+            let pricing = prices.map(|(input, output)| {
                 format!(
-                    "${:.2}/1M input tokens, ${:.2}/1M output tokens",
-                    input * 1_000_000.0,
-                    output * 1_000_000.0
+                    "{}/1M input tokens, {}/1M output tokens",
+                    format_model_price(input),
+                    format_model_price(output)
                 )
             });
             TutorModel {
                 id: format!("openrouter/{}", model.id),
                 name: model.name,
                 pricing,
+                is_free,
+                other_charges: Some(other_charges),
                 account_limit: account_limit.clone(),
             }
         })
@@ -923,6 +1082,12 @@ mod tests {
         assert_eq!(paths[1], "GET /api/v1/models/user HTTP/1.1");
         assert_eq!(models.len(), 1);
         assert_eq!(models[0].id, "openrouter/author/model");
+        assert_eq!(models[0].is_free, Some(false));
+        assert_eq!(serde_json::to_value(&models[0]).unwrap()["isFree"], false);
+        assert_eq!(
+            serde_json::to_value(&models[0]).unwrap()["accountLimit"],
+            "Account remaining $7.5 of $10"
+        );
         assert_eq!(
             models[0].pricing.as_deref(),
             Some("$0.10/1M input tokens, $0.20/1M output tokens")
@@ -931,6 +1096,51 @@ mod tests {
             models[0].account_limit.as_deref(),
             Some("Account remaining $7.5 of $10")
         );
+    }
+
+    #[test]
+    fn small_paid_model_prices_never_appear_free() {
+        let model = serde_json::from_value::<OpenRouterModel>(serde_json::json!({
+            "id": "author/small",
+            "name": "Small",
+            "pricing": {"prompt": "0.000000000001", "completion": "0"}
+        }))
+        .unwrap();
+        let prices = openrouter_prices(&model).unwrap();
+        assert_eq!(format_model_price(prices.0), "<$0.01");
+        assert_eq!(format_model_price(prices.1), "$0.00");
+        assert!(!model_is_free(&model, prices));
+        let free = serde_json::from_value::<OpenRouterModel>(serde_json::json!({
+            "id": "author/free",
+            "name": "Free",
+            "pricing": {"prompt": "0", "completion": "0", "request": "0"}
+        }))
+        .unwrap();
+        assert!(model_is_free(&free, openrouter_prices(&free).unwrap()));
+    }
+
+    #[test]
+    fn non_token_pricing_prevents_a_free_label() {
+        for extra in [
+            serde_json::json!({"request": "0.01"}),
+            serde_json::json!({"internal_reasoning": "0.000001"}),
+            serde_json::json!({"overrides": [{"min_prompt_tokens": 10}]}),
+            serde_json::json!({"undocumented_charge": "0.01"}),
+        ] {
+            let mut pricing = serde_json::json!({"prompt": "0", "completion": "0"});
+            pricing
+                .as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
+            let model = serde_json::from_value::<OpenRouterModel>(serde_json::json!({
+                "id": "author/model:free",
+                "name": "Potential charges",
+                "pricing": pricing
+            }))
+            .unwrap();
+            assert!(has_other_charges(&model));
+            assert!(!model_is_free(&model, openrouter_prices(&model).unwrap()));
+        }
     }
 
     #[tokio::test]
@@ -1193,6 +1403,309 @@ mod tests {
         assert_eq!(sent["messages"][0]["role"], "system");
         assert!(matches!(events.first(), Some(ProviderEvent::Text(text)) if text == "héllo"));
         assert!(matches!(events.last(), Some(ProviderEvent::Complete)));
+    }
+
+    #[tokio::test]
+    async fn zen_gpt_and_claude_use_their_native_streaming_endpoints() {
+        for (model, expected_path, expected_auth, body) in [
+            (
+                "gpt-5.6-terra",
+                "POST /v1/responses HTTP/1.1",
+                "authorization: bearer test-key",
+                concat!(
+                    "event: response.output_text.delta\n",
+                    "data: {\"type\":\"response.output_text.delta\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0,\"sequence_number\":1,\"delta\":\"Hello\"}\n\n",
+                    "event: response.completed\n",
+                    "data: {\"type\":\"response.completed\",\"sequence_number\":2,\"response\":{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":0,\"model\":\"gpt-5.6-terra\",\"status\":\"completed\",\"output\":[],\"tools\":[],\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2}}}\n\n"
+                ),
+            ),
+            (
+                "claude-sonnet-4-6",
+                "POST /v1/messages HTTP/1.1",
+                "x-api-key: test-key",
+                concat!(
+                    "event: message_start\n",
+                    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-4-6\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                    "event: content_block_start\n",
+                    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+                    "event: content_block_delta\n",
+                    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\n\n",
+                    "event: content_block_stop\n",
+                    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                    "event: message_delta\n",
+                    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":1}}\n\n",
+                    "event: message_stop\n",
+                    "data: {\"type\":\"message_stop\"}\n\n"
+                ),
+            ),
+        ] {
+            let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let mut events = Vec::new();
+            provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: model.to_owned(),
+                        prompt: "question".to_owned(),
+                        history: vec![
+                            Message::user("prior question"),
+                            Message::assistant("prior answer"),
+                        ],
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await
+                .unwrap();
+            let (path, headers, sent) = server.await.unwrap();
+            assert_eq!(path, expected_path.to_lowercase());
+            assert!(headers.contains(expected_auth));
+            assert!(headers.contains("x-opencode-session: gic-tutor"));
+            assert_eq!(sent["model"], model);
+            assert_eq!(sent["stream"], true);
+            assert!(sent.to_string().contains("Socratic"));
+            assert!(sent.to_string().contains("prior question"));
+            assert!(sent.to_string().contains("prior answer"));
+            assert!(matches!(events.first(), Some(ProviderEvent::Text(text)) if text == "Hello"));
+            assert!(matches!(events.last(), Some(ProviderEvent::Complete)));
+            if model.starts_with("claude-") {
+                assert!(headers.contains("anthropic-version: 2023-06-01"));
+            }
+        }
+    }
+
+    async fn zen_provider_for(
+        status: u16,
+        body: &[u8],
+    ) -> (
+        RigOpenCodeProvider,
+        JoinHandle<(String, String, serde_json::Value)>,
+    ) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let body = body.to_vec();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut incoming = [0; 4096];
+            loop {
+                let count = socket.read(&mut incoming).await.unwrap();
+                request.extend_from_slice(&incoming[..count]);
+                if let Some(end) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                    let headers = String::from_utf8_lossy(&request[..end]);
+                    let length = headers
+                        .lines()
+                        .find_map(|line| {
+                            let (name, value) = line.split_once(':')?;
+                            name.eq_ignore_ascii_case("content-length")
+                                .then(|| value.trim().parse::<usize>().ok())
+                                .flatten()
+                        })
+                        .unwrap();
+                    if request.len() >= end + 4 + length {
+                        break;
+                    }
+                }
+            }
+            let end = request
+                .windows(4)
+                .position(|window| window == b"\r\n\r\n")
+                .unwrap();
+            let headers = String::from_utf8_lossy(&request[..end]).to_lowercase();
+            let path = headers.lines().next().unwrap().to_owned();
+            let sent = serde_json::from_slice(&request[end + 4..]).unwrap();
+            socket.write_all(format!("HTTP/1.1 {status} Test\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).as_bytes()).await.unwrap();
+            socket.write_all(&body).await.unwrap();
+            (path, headers, sent)
+        });
+        (
+            RigOpenCodeProvider {
+                base_url: format!("http://{address}/v1"),
+            },
+            server,
+        )
+    }
+
+    #[tokio::test]
+    async fn zen_native_routes_redact_http_errors_and_reject_incomplete_streams() {
+        for model in ["gpt-5.6-terra", "claude-sonnet-4-6"] {
+            for status in [401, 429] {
+                let (provider, server) =
+                    zen_provider_for(status, b"{\"error\":\"provider-body-secret\"}").await;
+                let mut events = Vec::new();
+                let result = provider
+                    .stream(
+                        TutorRequest {
+                            api_key: "test-key-secret".to_owned(),
+                            model: model.to_owned(),
+                            prompt: "question".to_owned(),
+                            history: Vec::new(),
+                            cancellation: CancellationToken::new(),
+                        },
+                        &mut |event| events.push(event),
+                    )
+                    .await;
+                let (_, _, _) = server.await.unwrap();
+                let message = result.unwrap_err();
+                assert_eq!(
+                    message,
+                    safe_error(reqwest::StatusCode::from_u16(status).unwrap())
+                );
+                assert!(!message.contains("provider-body-secret"));
+                assert!(!message.contains("test-key-secret"));
+                assert!(events.is_empty());
+            }
+            let (provider, server) =
+                zen_provider_for(200, b"event: ping\ndata: {\"type\":\"ping\"}\n\n").await;
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: model.to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            server.await.unwrap();
+            assert!(result.is_err(), "{model}");
+            assert!(!events
+                .iter()
+                .any(|event| matches!(event, ProviderEvent::Complete)));
+        }
+    }
+
+    #[tokio::test]
+    async fn zen_native_routes_reject_provider_stream_errors() {
+        for (model, body) in [
+            (
+                "gpt-5.6-terra",
+                "event: response.failed\ndata: {\"type\":\"response.failed\",\"error\":{\"message\":\"provider-body-secret\"}}\n\n",
+            ),
+            (
+                "claude-sonnet-4-6",
+                "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"provider-body-secret\"}}\n\n",
+            ),
+        ] {
+            let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key-secret".to_owned(),
+                        model: model.to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            server.await.unwrap();
+            let message = result.unwrap_err();
+            assert!(!message.contains("provider-body-secret"));
+            assert!(!message.contains("test-key-secret"));
+            assert!(
+                !events
+                    .iter()
+                    .any(|event| matches!(event, ProviderEvent::Complete))
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn zen_token_limit_does_not_complete_the_tutor_answer() {
+        for (model, body) in [
+            (
+                "gpt-5.6-terra",
+                concat!(
+                    "event: response.output_text.delta\n",
+                    "data: {\"type\":\"response.output_text.delta\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0,\"sequence_number\":1,\"delta\":\"Partial\"}\n\n",
+                    "event: response.incomplete\n",
+                    "data: {\"type\":\"response.incomplete\",\"sequence_number\":2,\"response\":{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":0,\"model\":\"gpt-5.6-terra\",\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"max_output_tokens\"},\"output\":[],\"tools\":[],\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2}}}\n\n"
+                ),
+            ),
+            (
+                "claude-sonnet-4-6",
+                concat!(
+                    "event: message_start\n",
+                    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-4-6\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                    "event: content_block_start\n",
+                    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+                    "event: content_block_delta\n",
+                    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Partial\"}}\n\n",
+                    "event: content_block_stop\n",
+                    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                    "event: message_delta\n",
+                    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"max_tokens\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":1}}\n\n",
+                    "event: message_stop\n",
+                    "data: {\"type\":\"message_stop\"}\n\n"
+                ),
+            ),
+        ] {
+            let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: model.to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            server.await.unwrap();
+            assert!(result.is_err(), "{model}");
+            assert!(!events.iter().any(|event| matches!(event, ProviderEvent::Complete)));
+        }
+    }
+
+    #[tokio::test]
+    async fn zen_native_routes_cancel_stalled_streams() {
+        for model in ["gpt-5.6-terra", "claude-sonnet-4-6"] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut incoming = [0; 4096];
+                let _ = socket.read(&mut incoming).await.unwrap();
+                socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n").await.unwrap();
+                std::future::pending::<()>().await;
+            });
+            let provider = RigOpenCodeProvider {
+                base_url: format!("http://{address}/v1"),
+            };
+            let cancellation = CancellationToken::new();
+            let cancel = cancellation.clone();
+            let request = tokio::spawn(async move {
+                let mut events = Vec::new();
+                let result = provider
+                    .stream(
+                        TutorRequest {
+                            api_key: "test-key".to_owned(),
+                            model: model.to_owned(),
+                            prompt: "question".to_owned(),
+                            history: Vec::new(),
+                            cancellation,
+                        },
+                        &mut |event| events.push(event),
+                    )
+                    .await;
+                (result, events)
+            });
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            cancel.cancel();
+            let (result, events) = request.await.unwrap();
+            assert!(result.is_ok());
+            assert!(matches!(events.as_slice(), [ProviderEvent::Cancelled]));
+            server.abort();
+        }
     }
 
     #[tokio::test]
@@ -1585,7 +2098,7 @@ mod tests {
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let mut request = [0; 1024];
                 let _ = socket.read(&mut request).await.unwrap();
-                let body = r#"{"data":[{"id":"gpt-6-luna","name":"GPT 6 Luna"},{"id":"big-pickle","name":"Big Pickle"},{"id":"space-bunny-free","name":"Space Bunny Free"}]}"#;
+                let body = r#"{"data":[{"id":"gpt-6-luna","name":"GPT 6 Luna"},{"id":"claude-sonnet-4-6","name":"Claude Sonnet"},{"id":"big-pickle","name":"Big Pickle"},{"id":"space-bunny-free","name":"Space Bunny Free"},{"id":"gemini-3-flash","name":"Gemini"},{"id":"jev-1.13","name":"Jev"},{"id":"unknown-model","name":"Unknown"}]}"#;
                 socket
                     .write_all(
                         format!(
@@ -1617,23 +2130,106 @@ mod tests {
         .await
         .unwrap();
         server.await.unwrap();
-        assert_eq!(models.len(), 2);
-        assert_eq!(models[0].id, "opencode-zen/big-pickle");
-        assert_eq!(models[1].id, "opencode-zen/space-bunny-free");
+        assert_eq!(models.len(), 4);
+        assert_eq!(models[0].id, "opencode-zen/gpt-6-luna");
+        assert_eq!(models[1].id, "opencode-zen/claude-sonnet-4-6");
+        assert_eq!(models[2].id, "opencode-zen/big-pickle");
+        assert_eq!(models[3].id, "opencode-zen/space-bunny-free");
     }
 
     #[test]
-    fn only_the_supported_chat_completion_models_are_enabled() {
+    fn only_documented_zen_models_are_enabled() {
         assert!(validate_model("opencode-zen/big-pickle").is_ok());
         assert_eq!(
             validate_model("opencode-zen/space-bunny-free").unwrap(),
             "space-bunny-free"
         );
+        assert_eq!(
+            validate_model("opencode-zen/gpt-5.6-terra").unwrap(),
+            "gpt-5.6-terra"
+        );
+        assert_eq!(
+            validate_model("opencode-zen/claude-sonnet-4-6").unwrap(),
+            "claude-sonnet-4-6"
+        );
+        assert!(validate_model("opencode-zen/gpt-999").is_err());
+        assert!(validate_model("opencode-zen/claude-unknown").is_err());
+        assert!(validate_model("opencode-zen/gemini-3-flash").is_err());
+        assert!(validate_model("opencode-zen/grok-future").is_err());
         assert!(validate_model("openrouter/big-pickle").is_err());
         assert!(validate_model("opencode-go/big-pickle").is_err());
         assert!(validate_model("openai-codex/big-pickle").is_err());
         assert!(validate_model("big-pickle").is_err());
         assert!(validate_model("gpt-6-luna").is_err());
+    }
+
+    #[test]
+    fn zen_route_requires_exact_documented_model_ids() {
+        for model in [
+            "gpt-6-astra",
+            "gpt-6-sol",
+            "gpt-5.6-luna",
+            "gpt-5.5-pro",
+            "gpt-5.1-codex-max",
+            "gpt-5-nano",
+        ] {
+            assert_eq!(zen_route(model), Some(ZenRoute::Responses), "{model}");
+        }
+        for model in [
+            "claude-fable-5-1",
+            "claude-opus-5-5",
+            "claude-opus-4-8",
+            "claude-sonnet-5",
+            "claude-haiku-4-5",
+        ] {
+            assert_eq!(zen_route(model), Some(ZenRoute::Messages), "{model}");
+        }
+        for model in [
+            "gpt-999",
+            "claude-sonnet-future",
+            "gemini-3-flash",
+            "grok-future",
+            "jev-1.13",
+            "unknown-model",
+            "test-model",
+        ] {
+            assert_eq!(zen_route(model), None, "{model}");
+        }
+    }
+
+    #[test]
+    fn documented_text_families_use_their_zen_routes() {
+        for model in [
+            "big-pickle",
+            "deepseek-v4-flash",
+            "glm-5.3",
+            "kimi-k3",
+            "mimo-v2.5-free",
+            "minimax-m3",
+            "nemotron-3-ultra-free",
+            "qwen3.8-max",
+        ] {
+            assert_eq!(zen_route(model), Some(ZenRoute::ChatCompletions), "{model}");
+        }
+        for model in [
+            "gpt-5.6-terra",
+            "grok-4.7",
+            "muse-spark-1.3",
+            "muse-spark-1.3-contributor-free",
+        ] {
+            assert_eq!(zen_route(model), Some(ZenRoute::Responses), "{model}");
+        }
+        for model in ["claude-sonnet-4-6", "qwen3.6-plus", "qwen3.8-flash"] {
+            assert_eq!(zen_route(model), Some(ZenRoute::Messages), "{model}");
+        }
+        for model in [
+            "jev-1.13",
+            "test",
+            "test-novita-dsf4.1",
+            "muse-spark-1.2-contributor-free",
+        ] {
+            assert_eq!(zen_route(model), None, "{model}");
+        }
     }
 
     #[test]
