@@ -1,0 +1,60 @@
+<!-- ABOUTME: Plans a reader-oriented Diátaxis structure for bundled GIC documentation. -->
+<!-- ABOUTME: Maps existing pages to learning, task, lookup, and conceptual material with verification steps. -->
+
+# Diátaxis documentation plan
+
+## Goal and audience
+
+Help a first-time creative-coding student learn GIC through a short, completable path, and help a returning student find a specific command, syntax rule, or color without reading a lesson. Separate four reader needs: **tutorial** (learn by doing), **how-to** (complete a known task), **reference** (look up facts), and **explanation** (understand a concept or design choice). Do not create four equally large collections for symmetry; add only pages that answer an actual need.
+
+This is a content plan, not a proposal to change language semantics. `docs/Language specification.md`, the shared built-in registry, and observable program behavior are the authorities for claims and examples. `content/about/index.md` remains product introduction/rationale, not a language tutorial.
+
+## Current inventory and intended destination
+
+| Existing page | Current reader experience | Intended treatment |
+| --- | --- | --- |
+| `content/docs/00-language-reference.md` | Short facts about comments, semicolons, printing, values, and variables | Reference overview or small language-basics entries, with concise, consistent syntax and examples; keep stable ID unless a tested migration is chosen. |
+| `content/docs/colors.md` | Three color formats followed by a long named-color table | Separate a short **Color values** reference from a standalone **Named colors** lookup panel. Preserve the `colors` ID for the general page; assign a new ID to the named-color page. Verify the actual supported list before publishing counts or entries. |
+| `content/docs/conditionals.md` | Operator tables plus a progression of explained code examples | Reference for `if`/`else if`/`else`, comparisons, and logical operators; move stepwise learning material to a tutorial only when needed. Verify operator precedence and example output. |
+| `content/docs/drawing.md` | Coordinates, function tables, and repeated entries for individual drawing calls | One scannable drawing reference organized by coordinates, style state, and primitives. Avoid repeating the same signature twice; keep specific behavior/defaults and one minimal example per entry. |
+| `content/docs/repeat.md` | Syntax and worked console-output sequences | A concise repeat reference (bounds, optional step, scope, examples); a visible repeated-pattern exercise belongs in a tutorial/how-to. |
+| `content/docs/functions.md` | One short function example | Expand only enough to cover supported declaration, calls, parameters, return, and scope accurately; leave lesson-style exercises elsewhere. |
+| `content/docs/math.md` | Math function lookup mixed with a polar-coordinate circle sketch | Keep signatures, argument constraints, degrees, and seeded randomness in reference; move the circle-building sketch to a task guide or a later tutorial step. |
+| `content/about/index.md` | Project purpose and intentional limitations | Keep as About/explanation; do not add it to the Docs panel merely to fill the Explanation quadrant. |
+| `content/examples/*/description.md` | Bundled sketches with brief descriptions | Treat as examples, not automatically as tutorials: a runnable sketch alone is not a guided lesson. Link from a guide when it helps and when navigation supports it. |
+
+## Proposed initial information architecture
+
+1. **Tutorial — Draw your first GIC sketch:** one small page with a goal, prerequisites, incremental steps using the actual editor and preview, a visible result after each step, and a finished sketch. Teach the minimum syntax needed for shapes and color; link or direct the learner to reference for complete command lists. Consider a second repeated-pattern lesson only after the first is usable.
+2. **How-to — Draw a repeated grid:** a task-focused page for readers who know basic drawing and need a pattern. Use `repeat` and existing sketch material where appropriate; list prerequisites, steps, variants, and expected final canvas. Add another task page for seeded randomness or a circle of points only if it solves a recurring reader question; do not pad the category.
+3. **Reference — Language and drawing:** retain concise lookup pages for language basics, conditionals, repeat, functions, math, drawing, color values, and named colors. Use consistent entries: name/syntax, parameter meaning and bounds, effect/return/default where relevant, short runnable example, and related topic. Prioritize predictable headings and scanability over prose length alone.
+4. **Explanation — Why/what:** About already explains GIC's deliberately limited scope. If students need deeper understanding, create a focused page such as **How drawing state works** (ordering of fill, stroke, and shapes) or **Understanding coordinates**; avoid copying API tables or procedural steps into it.
+
+A document should primarily serve one purpose. A small example in reference is useful; a long sequence of instructional steps or a conceptual digression is a signal to cross-reference another page. Split for a distinct reader question, not to meet a line-count threshold.
+
+## Navigation and layout dependency
+
+This plan complements `.agents/plans/movable-documentation-panels.md`: each resulting Markdown file should be one movable panel, including Named colors. Preserve existing filenames/IDs where feasible so saved panel positions survive content edits. New pages get stable kebab-case names, titles, and `order` values for their default position. Decide the initial category/ordering presentation when implementing the movable panels; current content metadata has `categories`, but current Docs UI renders one flat ordered list. Do not imply frontmatter categories create visible navigation today.
+
+Before inserting intra-doc links, verify the bundled Markdown renderer's support for stable heading anchors and local navigation. `browser/src/lib/markdown-content.ts` currently opens Markdown links in a new tab and does not explicitly generate heading IDs; a plain `#heading` link should not be assumed to navigate within the panel. Keep cross-references accurate even if the first pass uses page titles rather than clickable links. If navigation is required, coordinate a tested renderer/UI change with the panel plan, not raw links that fail in-app.
+
+## Editorial sequence
+
+1. **Inventory and correctness audit:** compare every syntax claim, default, argument range, named-color entry, and executable snippet with `docs/Language specification.md`, `src/built-ins.ts`, implementation/tests, and a running preview. Flag unverified claims rather than rewriting semantics to match prose. Fix concrete problems while moving content: the OKLCH example in `colors.md` has a period where a separator appears intended; the `#transparent` link lacks a matching heading; `math.md` ends with an empty code fence; the conditional negation example deserves a precedence check. Confirm the printed output format and the supported color count before repeating them.
+2. **Establish reference templates:** define a compact per-entry format and terminology (`GIC`, function versus keyword, degrees, half-open repeat bounds, coordinate units). Edit existing reference pages for fact-finding and eliminate repetition, retaining useful examples. Keep independent paragraphs concise enough to display in a narrow docked panel.
+3. **Separate the color lookup:** leave basic formats in `colors.md`; put the named-color lookup in its own page with a predictable title and alphabetical table/search strategy appropriate to the panel. Check that HTML swatches render safely and readably on both themes and that names work in GIC, rather than assuming the source CSS list is identical to the language's supported set.
+4. **Write one runnable beginner tutorial:** start with a failing/manual walkthrough of the intended novice path; draft steps, use them in the real editor, check visible intermediate and final results, and revise until no unstated background knowledge is needed. Keep reference tables out of the flow.
+5. **Write one task guide and only necessary explanation:** migrate the worked math/repetition material into a specific task as appropriate. Explain concepts separately when a novice needs the why. Keep bundled examples and About content in their existing product roles.
+6. **Review navigation and editorial consistency:** find a syntax fact from the Docs default arrangement quickly, return to a moved Named colors panel during editing, follow each intended cross-reference using actual app behavior, and review the pages with a beginner and a returning user if available.
+
+## Verification and acceptance
+
+- Tutorial: a beginner can follow every step from a blank sketch to the stated visible result without needing another document to fill gaps.
+- How-to: a user familiar with basics can complete the named task and identify the expected outcome; it does not repeat basic lessons.
+- Reference: a user can locate an operator, shape signature, default, or named color in roughly 30 seconds without reading a sequential lesson. Test narrow panel widths and keyboard navigation in the real UI.
+- Explanation: a reader can describe why GIC's constraints or drawing behavior exist without treating the page as a procedure or spec.
+- Validate all copied GIC snippets using the real parser/runtime and preview as applicable; review static facts directly rather than writing tests that assert Markdown text. Run content-related build/lint/format checks and browser acceptance checks when the content or navigation changes. Preserve the current working-tree edits in `colors.md`, `conditionals.md`, and `drawing.md` during implementation unless Fabian decides otherwise.
+
+## Done when
+
+The first learning path, one task guide, and concise lookup pages answer distinct reader questions; Named colors is an independent movable reference; all examples and links work in the app; and existing saved documentation positions remain stable or are migrated explicitly. Additional tutorials or explanations are follow-up work driven by observed teaching needs, not a prerequisite for this initial reorganization.
