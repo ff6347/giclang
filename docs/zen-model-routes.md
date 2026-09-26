@@ -52,6 +52,21 @@ These checks do not mean every model in an endpoint family has been tested. Prot
 
 The Gemini endpoint has a successful direct smoke check, but the integrated tutor does not yet have a credential-safe native Gemini adapter. Its models remain outside GIC's callable picker until that adapter is verified.
 
+## Reference-tool capability
+
+A documented text route does not establish that a model can use GIC's bounded `search_reference` and `read_reference` tools. Only models with a completed tool-call → reference-result → text-answer probe are marked verified for the integrated tutor:
+
+Each explicit question allows at most two tool-bearing model turns and two reference calls in total, followed by one no-tools answer turn. That is **up to three provider requests per question**, subject to a single 90-second deadline; BYOK providers may bill for each request.
+
+| Provider-qualified model | Direct reference-tool probe | Integrated tutor |
+| --- | --- | --- |
+| `opencode-zen/gpt-6-luna` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
+| `opencode-zen/claude-sonnet-5` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
+| `opencode-zen/big-pickle` | Plain text and tool requests both returned HTTP 403, including with a conversation-specific session header | Unverified; not selectable |
+| OpenRouter models | No account-key reference-tool probe completed | Unverified; not selectable |
+
+Local native HTTP tests cover tool-result correlation for Chat Completions, Responses, and Messages, including OpenRouter's wire format. A live packaged tutor interaction is still needed; direct API probe success does not by itself prove packaged behavior.
+
 ## Updating this reference
 
 When the catalog changes:
@@ -59,5 +74,6 @@ When the catalog changes:
 1. Compare the live IDs with the Zen endpoint table at [opencode.ai/docs/zen](https://opencode.ai/docs/zen/).
 2. Add or remove IDs in the endpoint-family table only when the documentation supports the mapping. Put undocumented IDs in the unverified section.
 3. Keep smoke-confirmed examples limited to routes actually tested with [`scripts/zen-smoke.ts`](../scripts/zen-smoke.ts); do not imply that all IDs have been smoke-tested.
-4. Check the native route map in [`src-tauri/src/agent.rs`](../src-tauri/src/agent.rs) and its route tests. That map controls which models GIC can call. Updating this document alone does not enable a model.
+4. Check the native route map in [`src-tauri/src/agent.rs`](../src-tauri/src/agent.rs) and its route tests. It selects the protocol, while `reference_tools_verified` controls which models are callable. Updating this document alone does not enable a model.
 5. Preserve GIC's text-only tutor boundary. A provider endpoint's broader capabilities do not imply that GIC supports non-text interactions.
+6. To certify another model, use the bounded [`zen-reference-smoke.ts`](../scripts/zen-reference-smoke.ts) probe only after the key owner authorizes paid inference. Confirm both reference tools and the final answer, then update the verification table, native allowlist, and tests. OpenRouter needs its own provider-specific proof; a Zen result cannot certify an OpenRouter route.
