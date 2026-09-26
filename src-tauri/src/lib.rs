@@ -7,6 +7,7 @@ mod desktop_menu;
 mod documents;
 mod external_tools;
 mod managed_files;
+mod reference;
 mod sessions;
 mod workspace;
 

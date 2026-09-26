@@ -2,16 +2,21 @@
 // ABOUTME: Keeps provider credentials and cancellation state inside the native desktop boundary.
 
 use crate::credentials::CredentialStore;
+use crate::reference::{read_reference, search_reference};
 use futures_util::StreamExt;
 use rig_core::{
     client::CompletionClient,
-    completion::{CompletionError, CompletionModel, FinishReason, Message},
+    completion::{
+        message::{AssistantContent, ToolCall, ToolChoice, ToolResultContent, UserContent},
+        CompletionError, CompletionModel, FinishReason, Message, ToolDefinition,
+    },
     providers::{anthropic, openai},
     streaming::StreamedAssistantContent,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, State};
 use tokio_util::sync::CancellationToken;
 
@@ -21,6 +26,10 @@ const ZEN_MODELS_URL: &str = "https://opencode.ai/zen/v1/models";
 const OPENROUTER_MODELS_URL: &str = "https://openrouter.ai/api/v1/models/user";
 const OPENROUTER_KEY_URL: &str = "https://openrouter.ai/api/v1/key";
 const TUTOR_POLICY: &str = include_str!("../workspace/gic-tutor/SKILL.md");
+const TUTOR_DEADLINE: Duration = Duration::from_secs(90);
+const MAX_REFERENCE_CALLS: usize = 2;
+const MAX_REFERENCE_TOOL_TURNS: usize = 2;
+const TOOL_FAILURE: &str = "Tutor could not complete a safe reference lookup.";
 
 #[derive(Clone, Serialize)]
 #[serde(
@@ -39,6 +48,8 @@ pub(crate) enum AgentEvent {
 pub(crate) struct TutorModel {
     pub id: String,
     pub name: String,
+    #[serde(rename = "referenceToolsVerified")]
+    pub reference_tools_verified: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pricing: Option<String>,
     #[serde(rename = "isFree", skip_serializing_if = "Option::is_none")]
@@ -272,63 +283,19 @@ async fn stream_zen_model<M: CompletionModel + Clone>(
     request: TutorRequest,
     emit: &mut (dyn FnMut(ProviderEvent) + Send),
 ) -> Result<(), String> {
-    let pending = model.stream(
-        model
-            .completion_request(request.prompt)
-            .preamble(TUTOR_POLICY.to_owned())
-            .messages(request.history)
-            .build(),
-    );
-    let mut response = tokio::select! {
-        _ = request.cancellation.cancelled() => {
-            emit(ProviderEvent::Cancelled);
-            return Ok(());
-        }
-        result = pending => result.map_err(|error| {
-            provider_error(error, "OpenCode request failed. Check your connection or sign in again.")
-        })?,
-    };
-    let mut completed = false;
-    loop {
-        let next = tokio::select! {
-            _ = request.cancellation.cancelled() => {
-                emit(ProviderEvent::Cancelled);
-                return Ok(());
-            }
-            chunk = response.next() => chunk,
-        };
-        let Some(chunk) = next else {
-            break;
-        };
-        match chunk {
-            Ok(StreamedAssistantContent::Text(text)) => {
-                emit(ProviderEvent::Text(text.text));
-            }
-            Ok(StreamedAssistantContent::Final(final_response)) => match final_response
-                .finish_reason
-            {
-                Some(FinishReason::Stop) => completed = true,
-                Some(FinishReason::Length) => {
-                    return Err(
-                        "OpenCode response reached its token limit before completion.".to_owned(),
-                    );
-                }
-                _ => return Err("OpenCode response did not complete successfully.".to_owned()),
-            },
-            Ok(_) => {}
-            Err(error) => {
-                return Err(provider_error(
-                    error,
-                    "OpenCode response stream failed. Check your connection or sign in again.",
-                ));
-            }
-        }
-    }
-    if !completed {
-        return Err("OpenCode response ended before completion.".to_owned());
-    }
-    emit(ProviderEvent::Complete);
-    Ok(())
+    stream_reference_model(
+        model,
+        request,
+        emit,
+        tokio::time::Instant::now() + TUTOR_DEADLINE,
+        |error| {
+            provider_error(
+                error,
+                "OpenCode request failed. Check your connection or sign in again.",
+            )
+        },
+    )
+    .await
 }
 
 struct RigOpenRouterProvider {
@@ -341,6 +308,7 @@ impl TutorProvider for RigOpenRouterProvider {
         request: TutorRequest,
         emit: &mut (dyn FnMut(ProviderEvent) + Send),
     ) -> Result<(), String> {
+        let deadline = tokio::time::Instant::now() + TUTOR_DEADLINE;
         let catalog_client = reqwest::Client::builder()
             .user_agent("gic/0.1")
             .build()
@@ -361,74 +329,177 @@ impl TutorProvider for RigOpenRouterProvider {
                 &request.api_key,
                 &selected_model,
             ) => result?,
+            _ = tokio::time::sleep_until(deadline) => {
+                return Err("Tutor request timed out.".to_owned());
+            }
         };
         let client = rig_core::providers::openrouter::Client::builder()
-            .api_key(request.api_key)
+            .api_key(request.api_key.clone())
             .base_url(&self.base_url)
             .build()
             .map_err(|_| "OpenRouter client could not start.".to_owned())?;
         let model = client.completion_model(model);
-        let pending = model.stream(
-            model
-                .completion_request(request.prompt)
+        stream_reference_model(model, request, emit, deadline, |error| {
+            openrouter_provider_error(
+                error,
+                "OpenRouter request failed. Check your connection or account access.",
+            )
+        })
+        .await
+    }
+}
+
+fn reference_tool(name: &str, argument: &str, description: &str) -> ToolDefinition {
+    ToolDefinition {
+        name: name.to_owned(),
+        description: description.to_owned(),
+        parameters: serde_json::json!({
+            "type": "object",
+            "properties": {argument: {"type": "string"}},
+            "required": [argument],
+            "additionalProperties": false
+        }),
+    }
+}
+
+fn lookup_reference(call: &ToolCall) -> Result<String, String> {
+    let (key, value) = match call.function.name.as_str() {
+        "search_reference" => ("query", &call.function.arguments),
+        "read_reference" => ("section", &call.function.arguments),
+        _ => return Err(TOOL_FAILURE.to_owned()),
+    };
+    let args = value.as_object().ok_or_else(|| TOOL_FAILURE.to_owned())?;
+    if args.len() != 1 {
+        return Err(TOOL_FAILURE.to_owned());
+    }
+    let argument = args
+        .get(key)
+        .and_then(serde_json::Value::as_str)
+        .filter(|text| !text.trim().is_empty() && text.chars().count() <= 200)
+        .ok_or_else(|| TOOL_FAILURE.to_owned())?;
+    match call.function.name.as_str() {
+        "search_reference" => {
+            let results = search_reference(argument);
+            if results.is_empty() {
+                Err(TOOL_FAILURE.to_owned())
+            } else {
+                Ok(results.join("\n\n"))
+            }
+        }
+        "read_reference" => read_reference(argument).ok_or_else(|| TOOL_FAILURE.to_owned()),
+        _ => Err(TOOL_FAILURE.to_owned()),
+    }
+}
+
+async fn stream_reference_model<M: CompletionModel + Clone>(
+    model: M,
+    request: TutorRequest,
+    emit: &mut (dyn FnMut(ProviderEvent) + Send),
+    deadline: tokio::time::Instant,
+    redact: impl Fn(CompletionError) -> String,
+) -> Result<(), String> {
+    let work = async {
+        let mut history = request.history;
+        history.push(Message::user(request.prompt.clone()));
+        let mut read_done = false;
+        let mut needs_section = false;
+        let mut calls_used = 0;
+        for round in 0..=MAX_REFERENCE_TOOL_TURNS {
+            let final_round = round == MAX_REFERENCE_TOOL_TURNS || (round == 1 && !needs_section);
+            if final_round && !read_done {
+                return Err(TOOL_FAILURE.to_owned());
+            }
+            if !final_round && calls_used == MAX_REFERENCE_CALLS {
+                return Err(TOOL_FAILURE.to_owned());
+            }
+            let (prompt, previous) = history
+                .split_last()
+                .expect("the current question remains in the conversation");
+            let mut builder = model
+                .completion_request(prompt.clone())
                 .preamble(TUTOR_POLICY.to_owned())
-                .messages(request.history)
-                .build(),
-        );
-        let mut response = tokio::select! {
-            _ = request.cancellation.cancelled() => {
-                emit(ProviderEvent::Cancelled);
+                .messages(previous.iter().cloned())
+                .max_tokens(2048)
+                .tool(reference_tool(
+                    "search_reference",
+                    "query",
+                    "Search the bundled GIC language reference for a short query.",
+                ))
+                .tool(reference_tool(
+                    "read_reference",
+                    "section",
+                    "Read a named section of the bundled GIC language reference.",
+                ));
+            if final_round {
+                builder = builder.tool_choice(ToolChoice::None);
+            } else {
+                builder = builder.tool_choice(ToolChoice::Required);
+            }
+            let mut response = model.stream(builder.build()).await.map_err(&redact)?;
+            let mut calls = Vec::new();
+            let mut finish = None;
+            let mut final_text_nonempty = false;
+            while let Some(chunk) = response.next().await {
+                match chunk.map_err(&redact)? {
+                    StreamedAssistantContent::Text(part) => {
+                        if final_round {
+                            final_text_nonempty |= !part.text.trim().is_empty();
+                            emit(ProviderEvent::Text(part.text));
+                        }
+                    }
+                    StreamedAssistantContent::ToolCall { tool_call, .. } => calls.push(tool_call),
+                    StreamedAssistantContent::Final(value) => finish = value.finish_reason,
+                    _ => {}
+                }
+            }
+            if final_round {
+                if !calls.is_empty() || finish != Some(FinishReason::Stop) || !final_text_nonempty {
+                    return Err(TOOL_FAILURE.to_owned());
+                }
+                emit(ProviderEvent::Complete);
                 return Ok(());
             }
-            result = pending => result.map_err(|error| {
-                openrouter_provider_error(
-                    error,
-                    "OpenRouter request failed. Check your connection or account access.",
-                )
-            })?,
-        };
-        let mut completed = false;
-        loop {
-            let next = tokio::select! {
-                _ = request.cancellation.cancelled() => {
-                    emit(ProviderEvent::Cancelled);
-                    return Ok(());
-                }
-                chunk = response.next() => chunk,
-            };
-            let Some(chunk) = next else {
-                break;
-            };
-            match chunk {
-                Ok(StreamedAssistantContent::Text(text)) => {
-                    emit(ProviderEvent::Text(text.text));
-                }
-                Ok(StreamedAssistantContent::Final(final_response)) => {
-                    if matches!(
-                        final_response.finish_reason,
-                        Some(FinishReason::Other(reason)) if reason == "error"
-                    ) {
-                        return Err(
-                            "OpenRouter reported a streaming error. Check account limits and model access."
-                                .to_owned(),
-                        );
-                    }
-                    completed = true;
-                }
-                Ok(_) => {}
-                Err(error) => {
-                    return Err(openrouter_provider_error(
-                        error,
-                        "OpenRouter response stream failed. Check account limits and model access.",
-                    ));
-                }
+            if finish != Some(FinishReason::ToolCalls)
+                || calls.is_empty()
+                || calls.len() > MAX_REFERENCE_CALLS - calls_used
+            {
+                return Err(TOOL_FAILURE.to_owned());
             }
+            calls_used += calls.len();
+            let mut results = Vec::with_capacity(calls.len());
+            for call in &calls {
+                let content = lookup_reference(call)?;
+                if call.function.name == "read_reference" {
+                    read_done = true;
+                }
+                results.push(UserContent::tool_result_for(
+                    call.id.clone(),
+                    call.provider.clone(),
+                    call.function.name.clone(),
+                    vec![ToolResultContent::text(content)],
+                ));
+            }
+            if round == 0 {
+                needs_section = calls
+                    .iter()
+                    .all(|call| call.function.name == "search_reference");
+            }
+            history.push(Message::Assistant {
+                id: None,
+                content: calls.into_iter().map(AssistantContent::ToolCall).collect(),
+            });
+            history.push(Message::User { content: results });
         }
-        if !completed {
-            return Err("OpenRouter response ended before completion.".to_owned());
+        Err(TOOL_FAILURE.to_owned())
+    };
+    tokio::select! {
+        _ = request.cancellation.cancelled() => {
+            emit(ProviderEvent::Cancelled);
+            Ok(())
         }
-        emit(ProviderEvent::Complete);
-        Ok(())
+        result = tokio::time::timeout_at(deadline, work) => {
+            result.unwrap_or_else(|_| Err("Tutor request timed out.".to_owned()))
+        }
     }
 }
 
@@ -446,6 +517,25 @@ fn validate_model(model: &str) -> Result<&str, String> {
         );
     }
     Ok(model_id)
+}
+
+fn reference_tools_verified(model: &str) -> bool {
+    matches!(
+        model,
+        "opencode-zen/gpt-6-luna" | "opencode-zen/claude-sonnet-5"
+    )
+}
+
+fn validate_tutor_model(model: &str) -> Result<String, String> {
+    let selected = if model.starts_with("openrouter/") {
+        format!("openrouter/{}", validate_openrouter_model(model)?)
+    } else {
+        validate_model(model)?.to_owned()
+    };
+    if !reference_tools_verified(model) {
+        return Err("This model has not passed GIC reference tools verification.".to_owned());
+    }
+    Ok(selected)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -690,13 +780,17 @@ async fn fetch_models(
     Ok(list
         .data
         .into_iter()
-        .map(|model| TutorModel {
-            name: model.name.unwrap_or_else(|| model.id.clone()),
-            id: format!("opencode-zen/{}", model.id),
-            pricing: None,
-            is_free: None,
-            other_charges: None,
-            account_limit: None,
+        .map(|model| {
+            let id = format!("opencode-zen/{}", model.id);
+            TutorModel {
+                name: model.name.unwrap_or_else(|| model.id.clone()),
+                reference_tools_verified: reference_tools_verified(&id),
+                id,
+                pricing: None,
+                is_free: None,
+                other_charges: None,
+                account_limit: None,
+            }
         })
         .filter(|model| validate_model(&model.id).is_ok())
         .collect())
@@ -782,6 +876,7 @@ async fn fetch_openrouter_models(
         .into_iter()
         .filter(|model| openrouter_model_eligible(model, today))
         .map(|model| {
+            let id = format!("openrouter/{}", model.id);
             let prices = openrouter_prices(&model);
             let other_charges = has_other_charges(&model);
             let is_free = prices.map(|prices| model_is_free(&model, prices));
@@ -793,7 +888,8 @@ async fn fetch_openrouter_models(
                 )
             });
             TutorModel {
-                id: format!("openrouter/{}", model.id),
+                reference_tools_verified: reference_tools_verified(&id),
+                id,
                 name: model.name,
                 pricing,
                 is_free,
@@ -822,11 +918,7 @@ pub(crate) async fn send_opencode_request(
     model: String,
     request_id: String,
 ) -> Result<(), String> {
-    let model_id = if model.starts_with("openrouter/") {
-        format!("openrouter/{}", validate_openrouter_model(&model)?)
-    } else {
-        validate_model(&model)?.to_owned()
-    };
+    let model_id = validate_tutor_model(&model)?;
     let cancellation = CancellationToken::new();
     state.activate(request_id.clone(), cancellation.clone())?;
     let result = stream_request(
@@ -1114,6 +1206,11 @@ mod tests {
         assert_eq!(models.len(), 2);
         assert_eq!(models[0].id, "openrouter/author/model");
         assert_eq!(models[1].id, "openrouter/openai/gpt-6-sol");
+        assert!(!models[1].reference_tools_verified);
+        assert_eq!(
+            serde_json::to_value(&models[1]).unwrap()["referenceToolsVerified"],
+            false
+        );
         assert_eq!(models[0].is_free, Some(false));
         assert_eq!(serde_json::to_value(&models[0]).unwrap()["isFree"], false);
         assert_eq!(
@@ -1416,7 +1513,7 @@ mod tests {
         let (provider, server) = provider_for(200, body).await;
         let cancellation = CancellationToken::new();
         let mut events = Vec::new();
-        provider
+        let result = provider
             .stream(
                 TutorRequest {
                     api_key: "test-key".to_owned(),
@@ -1427,14 +1524,14 @@ mod tests {
                 },
                 &mut |event| events.push(event),
             )
-            .await
-            .unwrap();
+            .await;
+        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
         let sent = server.await.unwrap();
         assert_eq!(sent["model"], "big-pickle");
         assert_eq!(sent["stream"], true);
         assert_eq!(sent["messages"][0]["role"], "system");
-        assert!(matches!(events.first(), Some(ProviderEvent::Text(text)) if text == "héllo"));
-        assert!(matches!(events.last(), Some(ProviderEvent::Complete)));
+        assert_eq!(sent["tool_choice"], "required");
+        assert!(events.is_empty());
     }
 
     #[tokio::test]
@@ -1473,7 +1570,7 @@ mod tests {
         ] {
             let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
             let mut events = Vec::new();
-            provider
+            let result = provider
                 .stream(
                     TutorRequest {
                         api_key: "test-key".to_owned(),
@@ -1487,8 +1584,8 @@ mod tests {
                     },
                     &mut |event| events.push(event),
                 )
-                .await
-                .unwrap();
+                .await;
+            assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
             let (path, headers, sent) = server.await.unwrap();
             assert_eq!(path, expected_path.to_lowercase());
             assert!(headers.contains(expected_auth));
@@ -1498,8 +1595,7 @@ mod tests {
             assert!(sent.to_string().contains("Socratic"));
             assert!(sent.to_string().contains("prior question"));
             assert!(sent.to_string().contains("prior answer"));
-            assert!(matches!(events.first(), Some(ProviderEvent::Text(text)) if text == "Hello"));
-            assert!(matches!(events.last(), Some(ProviderEvent::Complete)));
+            assert!(events.is_empty());
             if model.starts_with("claude-") {
                 assert!(headers.contains("anthropic-version: 2023-06-01"));
             }
@@ -1751,7 +1847,7 @@ mod tests {
         );
         let (provider, server) = openrouter_provider_for(200, body.as_bytes()).await;
         let mut events = Vec::new();
-        provider
+        let result = provider
             .stream(
                 TutorRequest {
                     api_key: "test-key".to_owned(),
@@ -1765,22 +1861,22 @@ mod tests {
                 },
                 &mut |event| events.push(event),
             )
-            .await
-            .unwrap();
+            .await;
+        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
         let (path, headers, sent) = server.await.unwrap();
         assert_eq!(path, "POST /api/v1/chat/completions HTTP/1.1");
         assert!(headers.contains("authorization: bearer test-key"));
         assert!(!headers.contains("x-opencode-session"));
         assert_eq!(sent["model"], "author/model:free");
         assert_eq!(sent["stream"], true);
-        assert!(sent.get("tools").is_none());
+        assert_eq!(sent["tool_choice"], "required");
+        assert_eq!(sent["tools"].as_array().unwrap().len(), 2);
         assert_eq!(sent["messages"][0]["role"], "system");
         assert_eq!(sent["messages"][0]["content"][0]["text"], TUTOR_POLICY);
         assert_eq!(sent["messages"][1]["content"], "prior question");
         assert_eq!(sent["messages"][2]["content"][0]["text"], "prior answer");
         assert_eq!(sent["messages"][3]["content"], "question");
-        assert!(matches!(events.first(), Some(ProviderEvent::Text(text)) if text == "hi"));
-        assert!(matches!(events.last(), Some(ProviderEvent::Complete)));
+        assert!(events.is_empty());
     }
 
     #[tokio::test]
@@ -2122,7 +2218,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn catalog_only_offers_callable_models_with_an_unverified_key() {
+    async fn catalog_lists_supported_routes_and_tool_status_with_an_unverified_key() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
@@ -2164,13 +2260,20 @@ mod tests {
         server.await.unwrap();
         assert_eq!(models.len(), 4);
         assert_eq!(models[0].id, "opencode-zen/gpt-6-luna");
+        assert!(models[0].reference_tools_verified);
+        assert_eq!(
+            serde_json::to_value(&models[0]).unwrap()["referenceToolsVerified"],
+            true
+        );
         assert_eq!(models[1].id, "opencode-zen/claude-sonnet-4-6");
+        assert!(!models[1].reference_tools_verified);
         assert_eq!(models[2].id, "opencode-zen/big-pickle");
+        assert!(!models[2].reference_tools_verified);
         assert_eq!(models[3].id, "opencode-zen/space-bunny-free");
     }
 
     #[test]
-    fn only_documented_zen_models_are_enabled() {
+    fn only_documented_zen_routes_are_recognized() {
         assert!(validate_model("opencode-zen/big-pickle").is_ok());
         assert_eq!(
             validate_model("opencode-zen/space-bunny-free").unwrap(),
@@ -2193,6 +2296,31 @@ mod tests {
         assert!(validate_model("openai-codex/big-pickle").is_err());
         assert!(validate_model("big-pickle").is_err());
         assert!(validate_model("gpt-6-luna").is_err());
+    }
+
+    #[test]
+    fn only_reference_tool_verified_models_can_be_submitted() {
+        assert_eq!(
+            validate_tutor_model("opencode-zen/gpt-6-luna").unwrap(),
+            "gpt-6-luna"
+        );
+        assert_eq!(
+            validate_tutor_model("opencode-zen/claude-sonnet-5").unwrap(),
+            "claude-sonnet-5"
+        );
+        for model in [
+            "opencode-zen/big-pickle",
+            "opencode-zen/space-bunny-free",
+            "opencode-zen/gpt-6-sol",
+            "openrouter/openai/gpt-6-sol",
+        ] {
+            assert!(
+                validate_tutor_model(model)
+                    .unwrap_err()
+                    .contains("reference tools"),
+                "{model}"
+            );
+        }
     }
 
     #[test]
@@ -2273,6 +2401,800 @@ mod tests {
         assert_eq!(history.len(), 2);
         assert!(matches!(history[0], Message::User { .. }));
         assert!(matches!(history[1], Message::Assistant { .. }));
+    }
+
+    async fn read_wire_request(socket: &mut tokio::net::TcpStream) -> serde_json::Value {
+        let mut request = Vec::new();
+        let mut buffer = [0; 4096];
+        loop {
+            let count = socket.read(&mut buffer).await.unwrap();
+            request.extend_from_slice(&buffer[..count]);
+            let Some(end) = request.windows(4).position(|part| part == b"\r\n\r\n") else {
+                continue;
+            };
+            let headers = String::from_utf8_lossy(&request[..end]);
+            let size = headers
+                .lines()
+                .find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("content-length")
+                        .then(|| value.trim().parse::<usize>().ok())
+                        .flatten()
+                })
+                .unwrap_or(0);
+            if request.len() >= end + 4 + size {
+                return if size == 0 {
+                    serde_json::Value::Null
+                } else {
+                    serde_json::from_slice(&request[end + 4..end + 4 + size]).unwrap()
+                };
+            }
+        }
+    }
+
+    async fn write_wire_response(socket: &mut tokio::net::TcpStream, body: &str, sse: bool) {
+        let kind = if sse {
+            "text/event-stream"
+        } else {
+            "application/json"
+        };
+        socket
+            .write_all(
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: {kind}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                )
+                .as_bytes(),
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn reference_tools_continue_with_provider_call_ids_on_all_native_wires() {
+        for route in ["chat", "responses", "messages", "openrouter"] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let route_name = route.to_owned();
+            let server = tokio::spawn(async move {
+                if route_name == "openrouter" {
+                    for body in [
+                        r#"{"data":{"limit":10,"limit_remaining":10}}"#,
+                        r#"{"data":[{"id":"author/model:free","name":"Free","architecture":{"modality":"text->text"},"pricing":{"prompt":"0","completion":"0"}}]}"#,
+                    ] {
+                        let (mut socket, _) = listener.accept().await.unwrap();
+                        let _ = read_wire_request(&mut socket).await;
+                        write_wire_response(&mut socket, body, false).await;
+                    }
+                }
+                let first = match route_name.as_str() {
+                    "chat" | "openrouter" => concat!(
+                        "data: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"hidden\",\"tool_calls\":[{\"index\":0,\"id\":\"call_wire\",\"type\":\"function\",\"function\":{\"name\":\"search_reference\",\"arguments\":\"{\\\"query\\\":\\\"circle(x, y, radius);\\\"}\"}}]},\"finish_reason\":null}]}\n\n",
+                        "data: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n",
+                        "data: [DONE]\n\n"
+                    ),
+                    "responses" => concat!(
+                        "event: response.output_item.added\n",
+                        "data: {\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"fc_wire\",\"type\":\"function_call\",\"call_id\":\"call_wire\",\"name\":\"search_reference\",\"arguments\":\"\",\"status\":\"in_progress\"}}\n\n",
+                        "event: response.function_call_arguments.delta\n",
+                        "data: {\"type\":\"response.function_call_arguments.delta\",\"sequence_number\":2,\"output_index\":0,\"item_id\":\"fc_wire\",\"delta\":\"{\\\"query\\\":\\\"circle(x, y, radius);\\\"}\"}\n\n",
+                        "event: response.output_item.done\n",
+                        "data: {\"type\":\"response.output_item.done\",\"sequence_number\":3,\"output_index\":0,\"item\":{\"id\":\"fc_wire\",\"type\":\"function_call\",\"call_id\":\"call_wire\",\"name\":\"search_reference\",\"arguments\":\"{\\\"query\\\":\\\"circle(x, y, radius);\\\"}\",\"status\":\"completed\"}}\n\n",
+                        "event: response.completed\n",
+                        "data: {\"type\":\"response.completed\",\"sequence_number\":4,\"response\":{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":0,\"model\":\"gpt-6-luna\",\"status\":\"completed\",\"output\":[],\"tools\":[],\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2}}}\n\n"
+                    ),
+                    _ => concat!(
+                        "event: message_start\n",
+                        "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                        "event: content_block_start\n",
+                        "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_wire\",\"name\":\"search_reference\",\"input\":{}}}\n\n",
+                        "event: content_block_delta\n",
+                        "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"query\\\":\\\"circle(x, y, radius);\\\"}\"}}\n\n",
+                        "event: content_block_stop\n",
+                        "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                        "event: message_delta\n",
+                        "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":1}}\n\n",
+                        "event: message_stop\n",
+                        "data: {\"type\":\"message_stop\"}\n\n"
+                    ),
+                };
+                let final_answer = match route_name.as_str() {
+                    "chat" | "openrouter" => concat!(
+                        "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"answer\"},\"finish_reason\":null}]}\n\n",
+                        "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
+                        "data: [DONE]\n\n"
+                    ),
+                    "responses" => concat!(
+                        "event: response.output_text.delta\n",
+                        "data: {\"type\":\"response.output_text.delta\",\"item_id\":\"msg_2\",\"output_index\":0,\"content_index\":0,\"sequence_number\":1,\"delta\":\"answer\"}\n\n",
+                        "event: response.completed\n",
+                        "data: {\"type\":\"response.completed\",\"sequence_number\":2,\"response\":{\"id\":\"resp_2\",\"object\":\"response\",\"created_at\":0,\"model\":\"gpt-6-luna\",\"status\":\"completed\",\"output\":[],\"tools\":[],\"usage\":{\"input_tokens\":1,\"output_tokens\":1,\"total_tokens\":2}}}\n\n"
+                    ),
+                    _ => concat!(
+                        "event: message_start\n",
+                        "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_2\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                        "event: content_block_start\n",
+                        "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+                        "event: content_block_delta\n",
+                        "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"answer\"}}\n\n",
+                        "event: content_block_stop\n",
+                        "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                        "event: message_delta\n",
+                        "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":1}}\n\n",
+                        "event: message_stop\n",
+                        "data: {\"type\":\"message_stop\"}\n\n"
+                    ),
+                };
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let request = read_wire_request(&mut socket).await;
+                write_wire_response(&mut socket, first, true).await;
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let second = read_wire_request(&mut socket).await;
+                let second_result = first
+                    .replace("call_wire", "call_second")
+                    .replace("fc_wire", "fc_second")
+                    .replace("search_reference", "read_reference")
+                    .replace(
+                        r#"\"query\":\"circle(x, y, radius);\""#,
+                        r#"\"section\":\"Drawing\""#,
+                    );
+                write_wire_response(&mut socket, &second_result, true).await;
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let continuation = read_wire_request(&mut socket).await;
+                write_wire_response(&mut socket, final_answer, true).await;
+                (request, second, continuation)
+            });
+            let mut events = Vec::new();
+            let request = TutorRequest {
+                api_key: "test-key".to_owned(),
+                model: match route {
+                    "chat" => "big-pickle",
+                    "responses" => "gpt-6-luna",
+                    "messages" => "claude-sonnet-5",
+                    _ => "author/model:free",
+                }
+                .to_owned(),
+                prompt: "current-canvas-question-unique".to_owned(),
+                history: vec![
+                    Message::user("previous question"),
+                    Message::assistant("previous answer"),
+                ],
+                cancellation: CancellationToken::new(),
+            };
+            let result = if route == "openrouter" {
+                RigOpenRouterProvider {
+                    base_url: format!("http://{address}/api/v1"),
+                }
+                .stream(request, &mut |event| events.push(event))
+                .await
+            } else {
+                RigOpenCodeProvider {
+                    base_url: format!("http://{address}/v1"),
+                }
+                .stream(request, &mut |event| events.push(event))
+                .await
+            };
+            assert!(result.is_ok(), "{route}: {result:?}");
+            let (first, second, next) = server.await.unwrap();
+            for (stage, wire) in [("first", &first), ("second", &second)] {
+                let items = if route == "responses" {
+                    &wire["input"]
+                } else {
+                    &wire["messages"]
+                };
+                let items = items.as_array().expect("provider message sequence");
+                let questions = items
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, item)| {
+                        item.to_string()
+                            .contains("current-canvas-question-unique")
+                            .then_some(index)
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(questions.len(), 1, "{route} {stage}");
+                if stage == "first" {
+                    assert_eq!(questions[0], items.len() - 1, "{route} {stage}");
+                } else {
+                    let tool = items
+                        .iter()
+                        .position(|item| item.to_string().contains("call_wire"))
+                        .expect("first tool call in the second request");
+                    assert!(questions[0] < tool, "{route} {stage}");
+                    assert_ne!(questions[0], items.len() - 1, "{route} {stage}");
+                }
+            }
+            assert_eq!(
+                first["tool_choice"],
+                if route == "messages" {
+                    serde_json::json!({"type":"any"})
+                } else {
+                    serde_json::json!("required")
+                },
+                "{route}"
+            );
+            assert_eq!(second["tool_choice"], first["tool_choice"], "{route}");
+            assert_eq!(
+                next["tool_choice"],
+                if route == "messages" {
+                    serde_json::json!({"type":"none"})
+                } else {
+                    serde_json::json!("none")
+                },
+                "{route}"
+            );
+            assert_eq!(first["tools"].as_array().unwrap().len(), 2, "{route}");
+            let parameters = match route {
+                "messages" => &first["tools"][0]["input_schema"],
+                "responses" => &first["tools"][0]["parameters"],
+                _ => &first["tools"][0]["function"]["parameters"],
+            };
+            assert_eq!(
+                parameters["properties"]["query"]["type"], "string",
+                "{route}"
+            );
+            assert_eq!(
+                parameters["required"],
+                serde_json::json!(["query"]),
+                "{route}"
+            );
+            assert!(first.to_string().contains("search_reference"));
+            assert!(first.to_string().contains("read_reference"));
+            let messages = if route == "responses" {
+                &next["input"]
+            } else {
+                &next["messages"]
+            };
+            let messages = messages.as_array().expect("provider message sequence");
+            let question_positions = messages
+                .iter()
+                .enumerate()
+                .filter_map(|(index, message)| {
+                    message
+                        .to_string()
+                        .contains("current-canvas-question-unique")
+                        .then_some(index)
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(question_positions.len(), 1, "{route}");
+            let first_call = messages
+                .iter()
+                .position(|message| message.to_string().contains("call_wire"))
+                .expect("first tool call in continuation");
+            assert!(
+                question_positions[0] < first_call,
+                "{route}: current question must precede the tool call"
+            );
+            assert!(
+                !messages
+                    .last()
+                    .unwrap()
+                    .to_string()
+                    .contains("current-canvas-question-unique"),
+                "{route}: current question must not be repeated after tool results"
+            );
+            let question = question_positions[0];
+            match route {
+                "responses" => {
+                    assert_eq!(next["input"][question + 1]["id"], "fc_wire");
+                    assert_eq!(next["input"][question + 1]["call_id"], "call_wire");
+                    assert_eq!(next["input"][question + 2]["call_id"], "call_wire");
+                    assert_eq!(next["input"][question + 3]["id"], "fc_second");
+                    assert_eq!(next["input"][question + 4]["call_id"], "call_second");
+                }
+                "messages" => {
+                    assert_eq!(
+                        next["messages"][question + 1]["content"][0]["id"],
+                        "call_wire"
+                    );
+                    assert_eq!(
+                        next["messages"][question + 2]["content"][0]["tool_use_id"],
+                        "call_wire"
+                    );
+                    assert_eq!(
+                        next["messages"][question + 4]["content"][0]["tool_use_id"],
+                        "call_second"
+                    );
+                }
+                _ => {
+                    assert_eq!(next["messages"][question + 2]["tool_call_id"], "call_wire");
+                    assert_eq!(
+                        next["messages"][question + 4]["tool_call_id"],
+                        "call_second"
+                    );
+                }
+            }
+            assert!(next.to_string().contains("Drawing"), "{route}: {next}");
+            assert!(
+                next.to_string().contains("circle(x, y, radius);"),
+                "{route}: {next}"
+            );
+            assert!(!events
+                .iter()
+                .any(|event| matches!(event, ProviderEvent::Text(text) if text == "hidden")));
+            assert!(
+                matches!(&events[..], [ProviderEvent::Text(text), ProviderEvent::Complete] if text == "answer"),
+                "{route}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn simultaneous_reference_calls_return_both_results_before_answering() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            read_wire_request(&mut socket).await;
+            let first = concat!(
+                "event: message_start\n",
+                "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                "event: content_block_start\n",
+                "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_search\",\"name\":\"search_reference\",\"input\":{}}}\n\n",
+                "event: content_block_delta\n",
+                "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"query\\\":\\\"circle\\\"}\"}}\n\n",
+                "event: content_block_stop\n",
+                "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                "event: content_block_start\n",
+                "data: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_read\",\"name\":\"read_reference\",\"input\":{}}}\n\n",
+                "event: content_block_delta\n",
+                "data: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"section\\\":\\\"Drawing\\\"}\"}}\n\n",
+                "event: content_block_stop\n",
+                "data: {\"type\":\"content_block_stop\",\"index\":1}\n\n",
+                "event: message_delta\n",
+                "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\n",
+                "event: message_stop\n",
+                "data: {\"type\":\"message_stop\"}\n\n"
+            );
+            write_wire_response(&mut socket, first, true).await;
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let continuation = read_wire_request(&mut socket).await;
+            let last = concat!(
+                "event: message_start\n",
+                "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_2\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-5\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":0}}}\n\n",
+                "event: content_block_start\n",
+                "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+                "event: content_block_delta\n",
+                "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"answer\"}}\n\n",
+                "event: content_block_stop\n",
+                "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                "event: message_delta\n",
+                "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":1}}\n\n",
+                "event: message_stop\n",
+                "data: {\"type\":\"message_stop\"}\n\n"
+            );
+            write_wire_response(&mut socket, last, true).await;
+            continuation
+        });
+        let provider = RigOpenCodeProvider {
+            base_url: format!("http://{address}/v1"),
+        };
+        let mut events = Vec::new();
+        provider
+            .stream(
+                TutorRequest {
+                    api_key: "test-key".to_owned(),
+                    model: "claude-sonnet-5".to_owned(),
+                    prompt: "simultaneous-tool-question".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await
+            .unwrap();
+        let request = server.await.unwrap();
+        assert_eq!(request["tool_choice"], serde_json::json!({"type":"none"}));
+        let messages = request["messages"].as_array().unwrap();
+        let question = messages
+            .iter()
+            .position(|message| message.to_string().contains("simultaneous-tool-question"))
+            .expect("current question in continuation");
+        assert_eq!(
+            request["messages"][question + 1]["content"][0]["id"],
+            "call_search"
+        );
+        assert_eq!(
+            request["messages"][question + 1]["content"][1]["id"],
+            "call_read"
+        );
+        assert_eq!(
+            request["messages"][question + 2]["content"][0]["tool_use_id"],
+            "call_search"
+        );
+        assert_eq!(
+            request["messages"][question + 2]["content"][1]["tool_use_id"],
+            "call_read"
+        );
+        assert!(request.to_string().contains("circle(x, y, radius);"));
+        assert!(
+            matches!(&events[..], [ProviderEvent::Text(text), ProviderEvent::Complete] if text == "answer")
+        );
+    }
+
+    #[test]
+    fn only_valid_bundled_reference_calls_can_be_executed() {
+        use rig_core::completion::message::ToolFunction;
+        let call = |name: &str, args: serde_json::Value| {
+            ToolCall::from_wire("call_wire", ToolFunction::new(name.to_owned(), args))
+        };
+        let section = lookup_reference(&call(
+            "read_reference",
+            serde_json::json!({"section": "Drawing"}),
+        ))
+        .unwrap();
+        assert!(section.contains("circle(x, y, radius);"));
+        assert!(!section.contains("## Output"));
+        assert!(lookup_reference(&call(
+            "search_reference",
+            serde_json::json!({"query": "PI"}),
+        ))
+        .unwrap()
+        .contains("PI"));
+        for (name, args) in [
+            ("shell", serde_json::json!({"command": "cat .env"})),
+            (
+                "read_reference",
+                serde_json::json!({"section": "Unknown heading"}),
+            ),
+            ("read_reference", serde_json::json!({"section": ""})),
+            ("search_reference", serde_json::json!({"query": 42})),
+            (
+                "search_reference",
+                serde_json::json!({"query": "PI", "extra": "x"}),
+            ),
+            (
+                "search_reference",
+                serde_json::json!({"query": "x".repeat(201)}),
+            ),
+            (
+                "search_reference",
+                serde_json::json!({"query": "no-matching-reference-entry-xyz"}),
+            ),
+        ] {
+            assert_eq!(
+                lookup_reference(&call(name, args)),
+                Err(TOOL_FAILURE.to_owned())
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn malformed_or_unknown_wire_calls_fail_without_exposing_interim_text() {
+        for (name, arguments) in [
+            ("shell", r#"{"command":"cat .env"}"#),
+            ("read_reference", r#"{"section":"Unknown heading"}"#),
+            ("search_reference", r#"{"query":42}"#),
+        ] {
+            let body = format!(
+                "data: {{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":\"interim\",\"tool_calls\":[{{\"index\":0,\"id\":\"call_wire\",\"type\":\"function\",\"function\":{{\"name\":\"{name}\",\"arguments\":{}}}}}]}},\"finish_reason\":null}}]}}\n\ndata: {{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{{\"index\":0,\"delta\":{{}},\"finish_reason\":\"tool_calls\"}}]}}\n\ndata: [DONE]\n\n",
+                serde_json::to_string(arguments).unwrap()
+            );
+            let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: "big-pickle".to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            server.await.unwrap();
+            assert_eq!(result, Err(TOOL_FAILURE.to_owned()), "{name}");
+            assert!(events.is_empty(), "{name}");
+        }
+    }
+
+    #[tokio::test]
+    async fn too_many_wire_calls_fail_without_a_continuation() {
+        let calls = (0..3)
+            .map(|index| {
+                serde_json::json!({
+                    "index": index,
+                    "id": format!("call_{index}"),
+                    "type": "function",
+                    "function": {"name": "search_reference", "arguments": "{\"query\":\"PI\"}"}
+                })
+            })
+            .collect::<Vec<_>>();
+        let body = format!(
+            "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+            serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
+            serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+        );
+        let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+        let mut events = Vec::new();
+        let result = provider
+            .stream(
+                TutorRequest {
+                    api_key: "test-key".to_owned(),
+                    model: "big-pickle".to_owned(),
+                    prompt: "question".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await;
+        server.await.unwrap();
+        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
+        assert!(events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn repeated_searches_cannot_finish_without_reading_a_section() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            for call_id in ["call_first", "call_second"] {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                read_wire_request(&mut socket).await;
+                let body = format!(
+                    "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":call_id,"type":"function","function":{"name":"search_reference","arguments":"{\"query\":\"circle\"}"}}]},"finish_reason":null}]}),
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+                );
+                write_wire_response(&mut socket, &body, true).await;
+            }
+        });
+        let provider = RigOpenCodeProvider {
+            base_url: format!("http://{address}/v1"),
+        };
+        let mut events = Vec::new();
+        let result = provider
+            .stream(
+                TutorRequest {
+                    api_key: "test-key".to_owned(),
+                    model: "big-pickle".to_owned(),
+                    prompt: "question".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await;
+        server.await.unwrap();
+        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
+        assert!(events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn reference_calls_are_bounded_across_all_tool_turns() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            for (name, ids) in [
+                ("search_reference", &["call_search_1"][..]),
+                ("read_reference", &["call_read_1", "call_read_2"][..]),
+            ] {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                read_wire_request(&mut socket).await;
+                let arguments = if name == "search_reference" {
+                    r#"{"query":"circle"}"#
+                } else {
+                    r#"{"section":"Drawing"}"#
+                };
+                let calls = ids
+                    .iter()
+                    .enumerate()
+                    .map(|(index, id)| {
+                        serde_json::json!({"index":index,"id":id,"type":"function","function":{"name":name,"arguments":arguments}})
+                    })
+                    .collect::<Vec<_>>();
+                let body = format!(
+                    "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+                );
+                write_wire_response(&mut socket, &body, true).await;
+            }
+        });
+        let provider = RigOpenCodeProvider {
+            base_url: format!("http://{address}/v1"),
+        };
+        let mut events = Vec::new();
+        let result = provider
+            .stream(
+                TutorRequest {
+                    api_key: "test-key".to_owned(),
+                    model: "big-pickle".to_owned(),
+                    prompt: "question".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await;
+        server.await.unwrap();
+        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
+        assert!(events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn cancellation_interrupts_the_reference_continuation() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (reached, ready) = tokio::sync::oneshot::channel();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            read_wire_request(&mut socket).await;
+            let first = format!(
+                "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"content":"discard","tool_calls":[{"index":0,"id":"call_wire","type":"function","function":{"name":"read_reference","arguments":"{\"section\":\"Drawing\"}"}}]},"finish_reason":null}]}),
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+            );
+            write_wire_response(&mut socket, &first, true).await;
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let next = read_wire_request(&mut socket).await;
+            assert_eq!(next["tool_choice"], "none");
+            let _ = reached.send(());
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        });
+        let cancellation = CancellationToken::new();
+        let cancel = cancellation.clone();
+        let provider = RigOpenCodeProvider {
+            base_url: format!("http://{address}/v1"),
+        };
+        let mut events = Vec::new();
+        {
+            let mut emit = |event| events.push(event);
+            let request = provider.stream(
+                TutorRequest {
+                    api_key: "test-key".to_owned(),
+                    model: "big-pickle".to_owned(),
+                    prompt: "question".to_owned(),
+                    history: Vec::new(),
+                    cancellation,
+                },
+                &mut emit,
+            );
+            tokio::pin!(request);
+            tokio::select! {
+                result = &mut request => panic!("Tutor finished before cancellation: {result:?}"),
+                result = ready => { result.unwrap(); cancel.cancel(); },
+            }
+            assert!(request.as_mut().await.is_ok());
+        }
+        assert!(matches!(&events[..], [ProviderEvent::Cancelled]));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn final_answer_requires_text_and_a_successful_terminal() {
+        for (reason, answer) in [
+            ("length", "partial"),
+            ("content_filter", "partial"),
+            ("tool_calls", "partial"),
+            ("stop", ""),
+            ("stop", "   "),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let reason = reason.to_owned();
+            let answer = answer.to_owned();
+            let server = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                read_wire_request(&mut socket).await;
+                let first = format!(
+                    "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_wire","type":"function","function":{"name":"read_reference","arguments":"{\"section\":\"Drawing\"}"}}]},"finish_reason":null}]}),
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+                );
+                write_wire_response(&mut socket, &first, true).await;
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let next = read_wire_request(&mut socket).await;
+                assert_eq!(next["tool_choice"], "none");
+                let last = format!(
+                    "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                    serde_json::json!({"id":"chatcmpl-2","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"content":answer},"finish_reason":null}]}),
+                    serde_json::json!({"id":"chatcmpl-2","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":reason}]})
+                );
+                write_wire_response(&mut socket, &last, true).await;
+            });
+            let provider = RigOpenCodeProvider {
+                base_url: format!("http://{address}/v1"),
+            };
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: "big-pickle".to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
+            assert!(
+                events
+                    .iter()
+                    .all(|event| !matches!(event, ProviderEvent::Complete)),
+                "an incomplete answer must not be reported as complete"
+            );
+            server.await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn final_reference_answer_streams_before_its_terminal_event() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (release, released) = tokio::sync::oneshot::channel::<()>();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            read_wire_request(&mut socket).await;
+            let tool_response = format!(
+                "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"read_reference","arguments":"{\"section\":\"Drawing\"}"}}]},"finish_reason":null}]}),
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+            );
+            write_wire_response(&mut socket, &tool_response, true).await;
+
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let final_request = read_wire_request(&mut socket).await;
+            assert_eq!(final_request["tool_choice"], "none");
+            let first = format!(
+                "data: {}\n\n",
+                serde_json::json!({"id":"chatcmpl-2","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"content":"first"},"finish_reason":null}]})
+            );
+            let terminal = format!(
+                "data: {}\n\ndata: [DONE]\n\n",
+                serde_json::json!({"id":"chatcmpl-2","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]})
+            );
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        first.len() + terminal.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+            socket.write_all(first.as_bytes()).await.unwrap();
+            let _ = released.await;
+            socket.write_all(terminal.as_bytes()).await.unwrap();
+        });
+        let provider = RigOpenCodeProvider {
+            base_url: format!("http://{address}/v1"),
+        };
+        let (events, mut received) = tokio::sync::mpsc::unbounded_channel();
+        let request = tokio::spawn(async move {
+            provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: "big-pickle".to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| {
+                        let _ = events.send(event);
+                    },
+                )
+                .await
+        });
+        let early = tokio::time::timeout(Duration::from_millis(500), received.recv()).await;
+        let _ = release.send(());
+        assert!(request.await.unwrap().is_ok());
+        server.await.unwrap();
+        assert!(
+            matches!(early, Ok(Some(ProviderEvent::Text(ref text))) if text == "first"),
+            "final answer text must arrive while the stream is open"
+        );
+        assert!(matches!(
+            received.recv().await,
+            Some(ProviderEvent::Complete)
+        ));
     }
 }
 
