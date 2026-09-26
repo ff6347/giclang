@@ -83,10 +83,12 @@ The above conditional statements can be combined or negated using logical operat
 | Operator | Description |
 | :------- | :---------- |
 | `&&`     | AND         |
-| `        |             | `   | OR  |
+| `\|\|`   | OR          |
 | `!`      | NOT         |
 
-for example if you wanted to check if `x` is greater than `y` and `z` is less than `y`, you could write:
+#### And Operator
+
+for example, if you wanted to check if `x` is greater than `y` and `z` is less than `y`, you could write:
 
 ```gic
 let x = 1;
@@ -122,5 +124,34 @@ if ((x > y && z < y) && (y == 10)) {
     print("x is greater than y and z is less than y and y is 10");
 } else {
     print("no that did not happen");
+}
+```
+
+#### Or Operator
+
+Sometimes you have to check if one condition is true or another is true.
+
+```gic
+let x = 1;
+let y = 2;
+let z = 3;
+if (x > y || z < y) {
+	print("x is greater than y or z is less than y");
+} else {
+	print("no that did not happen");
+}
+```
+
+#### Not Operator
+
+The `!` operator negates a condition.
+
+```gic
+let x = 1;
+let y = 2;
+if (!x > y) {
+	print("x is not greater than y");
+} else {
+	print("no that did not happen");
 }
 ```

@@ -32,6 +32,22 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(page).toHaveURL("/");
 });
 
+test("loads images authored beside a Markdown document", async ({ page }) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Docs" }).click();
+	const image = page.getByRole("tabpanel", { name: "Docs" }).getByRole("img", {
+		name: "Point",
+	});
+	await expect(image).toBeVisible();
+	await expect
+		.poll(() =>
+			image.evaluate((element) =>
+				element instanceof HTMLImageElement ? element.naturalWidth : 0,
+			),
+		)
+		.toBeGreaterThan(0);
+});
+
 test("hides disabled examples from the application", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Examples" }).click();
