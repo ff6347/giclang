@@ -10,6 +10,25 @@ const markdown = new MarkdownIt({
 	linkify: true,
 });
 const defaultLinkOpen = markdown.renderer.rules.link_open;
+const defaultImage = markdown.renderer.rules.image;
+
+markdown.renderer.rules.image = (tokens, idx, options, env, self) => {
+	const token = tokens[idx];
+	const source = token?.attrGet("src");
+	const resolveImage = (env as { resolveImage?: (path: string) => string })
+		.resolveImage;
+	if (
+		token &&
+		typeof source === "string" &&
+		!/^(?:[a-z][a-z\d+.-]*:|\/|#|\?)/i.test(source) &&
+		resolveImage
+	) {
+		token.attrSet("src", resolveImage(source));
+	}
+	return defaultImage
+		? defaultImage(tokens, idx, options, env, self)
+		: self.renderToken(tokens, idx, options);
+};
 
 markdown.renderer.rules.link_open = (tokens, idx, options, env, self) => {
 	const token = tokens[idx];
@@ -50,6 +69,7 @@ function metadataList(
 export function compileMarkdown(
 	path: string,
 	source: string,
+	resolveImage?: (path: string) => string,
 ): ExampleDescription | MarkdownContent {
 	const parsed = matter(source);
 	const metadata: unknown = parsed.data;
@@ -80,7 +100,7 @@ export function compileMarkdown(
 			path,
 			isExampleDescription,
 		),
-		html: markdown.render(parsed.content).trimEnd(),
+		html: markdown.render(parsed.content, { resolveImage }).trimEnd(),
 		order: metadata.order,
 		tags: metadataList(metadata, "tags", path, isExampleDescription),
 		title: metadata.title.trim(),
