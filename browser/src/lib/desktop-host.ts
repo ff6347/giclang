@@ -8,9 +8,20 @@ import type { WindowTheme } from "./theme.ts";
 import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
 export interface ProviderCredentialStatus {
+	readonly codexAuthenticated: boolean;
 	readonly opencodeAuthenticated: boolean;
 	readonly openrouterAuthenticated: boolean;
 }
+
+export type CodexAuthEvent =
+	| {
+			readonly kind: "deviceAuthorization";
+			readonly url: string;
+			readonly userCode: string;
+	  }
+	| { readonly kind: "complete" }
+	| { readonly kind: "cancelled" }
+	| { readonly kind: "error"; readonly message: string };
 
 export interface OpencodeModel {
 	readonly id: string;
@@ -191,6 +202,26 @@ export class DesktopHost {
 
 	providerCredentialStatus(): Promise<ProviderCredentialStatus> {
 		return invoke<ProviderCredentialStatus>("provider_credential_status");
+	}
+
+	startCodexLogin(): Promise<void> {
+		return invoke<void>("start_codex_login");
+	}
+
+	cancelCodexLogin(): Promise<void> {
+		return invoke<void>("cancel_codex_login");
+	}
+
+	signOutCodex(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_codex");
+	}
+
+	onCodexAuthEvent(
+		handler: (event: CodexAuthEvent) => void,
+	): Promise<UnlistenFn> {
+		return listen<CodexAuthEvent>("codex-auth-event", (event) => {
+			handler(event.payload);
+		});
 	}
 
 	authenticateOpencode(apiKey: string): Promise<ProviderCredentialStatus> {

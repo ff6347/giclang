@@ -2,6 +2,7 @@
 // ABOUTME: Persists approved non-secret settings without exposing filesystem paths.
 
 mod agent;
+mod codex_auth;
 mod credentials;
 mod desktop_menu;
 mod documents;
@@ -14,6 +15,7 @@ mod workspace;
 use agent::{
     cancel_opencode_request, opencode_models, openrouter_models, send_opencode_request, TutorState,
 };
+use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth};
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
@@ -502,6 +504,12 @@ fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStat
 }
 
 #[tauri::command]
+fn sign_out_codex(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out_codex()?;
+    store.status()
+}
+
+#[tauri::command]
 fn authenticate_openrouter(
     api_key: String,
     store: State<'_, CredentialStore>,
@@ -566,6 +574,7 @@ pub fn run() {
             let first_run = !workspace_root.exists();
             app.manage(settings);
             app.manage(CredentialStore::new(credential_path));
+            app.manage(CodexAuth::default());
             app.manage(TutorState::default());
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
@@ -604,13 +613,16 @@ pub fn run() {
             assistant_status,
             authenticate_opencode,
             authenticate_openrouter,
+            cancel_codex_login,
             cancel_opencode_request,
             opencode_models,
             openrouter_models,
             send_opencode_request,
             provider_credential_status,
             sign_out_opencode,
+            sign_out_codex,
             sign_out_openrouter,
+            start_codex_login,
             choose_projects_directory,
             launch_assistant,
             open_gic,
@@ -638,7 +650,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{credentials::CredentialStore, SettingsStore};
+    use super::{codex_auth::CodexAuth, credentials::CredentialStore, SettingsStore};
     use std::path::{Path, PathBuf};
 
     fn remove_test_directory(path: &Path) {
@@ -670,6 +682,21 @@ mod tests {
             .expect("read auth file")
             .contains("synthetic-secret"));
         remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn codex_device_authorization_serializes_only_the_verification_instructions() {
+        let authorization =
+            CodexAuth::device_authorization_for_test("https://auth.example/device", "ABCD-EFGH");
+
+        assert_eq!(
+            serde_json::to_value(authorization).expect("serialize authorization"),
+            serde_json::json!({
+                "kind": "deviceAuthorization",
+                "url": "https://auth.example/device",
+                "userCode": "ABCD-EFGH"
+            })
+        );
     }
 
     #[test]
