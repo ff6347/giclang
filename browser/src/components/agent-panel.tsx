@@ -1,7 +1,7 @@
 // ABOUTME: Presents the optional Socratic agent with explicit question submission.
 // ABOUTME: Keeps response selection and copying disabled unless a student opts in.
 
-import { useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@base-ui/react/button";
 import { CircleQuestion, Loading, Send, Stop } from "pixelarticons/react";
 import { Streamdown, type Components } from "streamdown";
@@ -51,6 +51,11 @@ export function AgentPanel({
 }) {
 	const [question, setQuestion] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
+	const transcriptRef = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		const transcript = transcriptRef.current;
+		if (transcript !== null) transcript.scrollTop = transcript.scrollHeight;
+	}, [messages, status, errorMessage]);
 	const submit = () => {
 		const trimmed = question.trim();
 		if (trimmed === "/new") {
@@ -100,7 +105,7 @@ export function AgentPanel({
 					Save this sketch before using the Agent.
 				</p>
 			)}
-			<div className="agent-messages" aria-live="polite">
+			<div className="agent-messages" aria-live="polite" ref={transcriptRef}>
 				{messages.map((message, index) => (
 					<div
 						className={`agent-message agent-message-${message.role}`}

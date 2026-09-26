@@ -88,6 +88,72 @@ test("asks the deterministic agent only after explicit submission", async ({
 	await expect(tutor).not.toContainText("First line");
 });
 
+test("keeps the latest agent message visible as the conversation grows", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Agent" }).click();
+	const tutor = page.getByRole("region", { name: "Agent" });
+	const transcript = tutor.locator(".agent-messages");
+	const input = tutor.getByRole("textbox", { name: "Message agent" });
+	await input.fill("Why does `circle` draw here? ".repeat(50));
+	await input.press("Enter");
+	await expect(tutor.locator(".agent-message-agent")).toContainText(
+		"You asked",
+	);
+	const size = await transcript.evaluate((element) => ({
+		content: element.scrollHeight,
+		viewport: element.clientHeight,
+	}));
+	expect(size.content).toBeGreaterThan(size.viewport);
+	await expect
+		.poll(() =>
+			transcript.evaluate(
+				(element) =>
+					element.scrollHeight - element.clientHeight - element.scrollTop,
+			),
+		)
+		.toBeLessThan(2);
+	await tutor.getByRole("button", { name: "Stop agent" }).click();
+});
+
+test("uses the surrounding text size for inline and block agent code", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Agent" }).click();
+	const tutor = page.getByRole("region", { name: "Agent" });
+	const input = tutor.getByRole("textbox", { name: "Message agent" });
+	await input.fill("Why does `circle` use three arguments?");
+	await input.press("Enter");
+	const answer = tutor.locator(".agent-message-agent").last();
+	await expect(answer.locator(".agent-markdown p code")).toHaveText("circle");
+	await expect(answer.locator("pre code")).toHaveText("rect(10, 10, 20, 20);");
+	await expect(
+		tutor.getByRole("button", { name: "Send message" }),
+	).toBeVisible();
+	const fontSizes = await answer.evaluate((element) => {
+		const prose = element.querySelector(".agent-markdown p");
+		const inlineCode = prose?.querySelector("code");
+		const blockCode = element.querySelector("pre code");
+		if (!prose || !inlineCode || !blockCode) {
+			throw new Error("Agent markdown was not rendered.");
+		}
+		return {
+			prose: parseFloat(getComputedStyle(prose).fontSize),
+			inline: parseFloat(getComputedStyle(inlineCode).fontSize),
+			block: parseFloat(getComputedStyle(blockCode).fontSize),
+			proseFamily: getComputedStyle(prose).fontFamily,
+			inlineFamily: getComputedStyle(inlineCode).fontFamily,
+			blockFamily: getComputedStyle(blockCode).fontFamily,
+		};
+	});
+	expect(fontSizes.inline).toBeGreaterThanOrEqual(fontSizes.prose);
+	expect(fontSizes.block).toBeGreaterThanOrEqual(fontSizes.prose);
+	expect(fontSizes.inlineFamily).toBe(fontSizes.proseFamily);
+	expect(fontSizes.blockFamily).toBe(fontSizes.proseFamily);
+});
+
 test("restores an agent session for the same sketch", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Agent" }).click();

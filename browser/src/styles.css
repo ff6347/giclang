@@ -865,6 +865,8 @@ canvas {
 
 .agent-markdown code {
 	background: var(--color-control);
+	font-family: inherit;
+	font-size: 1rem;
 	padding: 0 var(--s1);
 }
 
@@ -875,6 +877,8 @@ canvas {
 	border-bottom: 2px solid var(--color-text);
 
 	box-shadow: 3px 3px 0 var(--color-text);
+	font-family: inherit;
+	font-size: 1rem;
 	margin: var(--s2) 3px var(--s2) var(--s0);
 	overflow: auto;
 	padding: var(--s2);
