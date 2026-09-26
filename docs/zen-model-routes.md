@@ -64,10 +64,12 @@ Each explicit question allows at most two tool-bearing model turns and two refer
 | --- | --- | --- |
 | `opencode-zen/gpt-6-luna` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
 | `opencode-zen/claude-sonnet-5` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
+| The ten additional Zen IDs in the successful probe rows below | Search, read, and final text completed | Selectable if present in the live catalog |
+| The eight exact OpenRouter IDs in the successful probe rows below | Search, read, and final text completed | Selectable if the account catalog offers them |
+| `opencode-zen/glm-5.3-flash`, `opencode-zen/kimi-k3` | Search, read, and final text completed in an earlier probe | Not included in the approved native allowlist |
 | `opencode-zen/big-pickle` | Plain text and tool requests both returned HTTP 403, including with a conversation-specific session header | Unverified; not selectable |
-| OpenRouter models | Account-key probes for exact model IDs are listed below | Not yet in the native allowlist |
 
-Additional Zen probes used the same bounded search → read → answer workflow. These are **direct Zen API results**, not Go or packaged-app verification; GIC's native selectable-model allowlist has not been expanded on the basis of these probes.
+Additional Zen probes used the same bounded search → read → answer workflow. These are **direct Zen API results**, not Go or packaged-app verification. Models are off by default on a fresh installation and appear in the picker only when explicitly enabled.
 
 | Zen model ID | Direct reference-tool result |
 | --- | --- |
