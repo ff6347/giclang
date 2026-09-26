@@ -23,6 +23,8 @@ x = x + 10;
 - Names start with a letter or underscore, then letters, digits, or underscores.
 - Declarations must precede use (no hoisting).
 - Reserved names (keywords and built-ins) cannot be declared.
+- `if`, `else`, and `repeat` bodies create block scopes; names declared inside them are unavailable afterward.
+- Declarations cannot shadow names visible in an enclosing scope. Global names are reserved throughout the program, even before their declarations.
 
 ## Operators
 
@@ -30,11 +32,15 @@ x = x + 10;
 - Comparison: `== != < > <= >=`.
 - Logical: `&& || !`.
 - Precedence (high to low): `!`/unary `-`, `* / %`, `+ -`, `< > <= >=`, `== !=`, `&&`, `||`.
+- `+` requires two Numbers or two Strings; there is no implicit conversion. Other arithmetic and ordered comparisons require Numbers; division and modulo by zero fail. Equality compares without coercion.
+- `if` conditions and logical operators use Booleans only; `&&` and `||` short-circuit.
 
 ## Control flow
 
 ```gic
 if (condition) {
+  // statements
+} else if (otherCondition) {
   // statements
 } else {
   // statements
@@ -51,6 +57,7 @@ repeat(i, 10, 0, -1) {
 
 - `if` braces are always required; no ternary, no `switch`.
 - `repeat(variable, start, end)` and `repeat(variable, start, end, step)` iterate from start to end, exclusive. Step defaults to `1` and must not be `0`.
+- `start`, `end`, and `step` must evaluate to Numbers; each is evaluated once before iteration. A positive step runs while the variable is less than `end`; a negative step runs while it is greater. A step pointing away from `end` gives zero iterations.
 - The repeat variable is scoped to the body and cannot be reassigned.
 - There is no `while`, `for`, or `break`/`continue`.
 
@@ -74,9 +81,9 @@ func drawSquare(x, y, size) {
 
 ## Canvas and colors
 
-- The canvas is 100 x 100 pixels; origin `(0, 0)` is top-left; center is `(50, 50)`.
-- Colors use OKLCH: `fill(l, c, h)`, `stroke(l, c, h)`, `background(l, c, h)`.
-- `fill` and `stroke` also accept an alpha argument `(l, c, h, a)`.
+- The canvas viewport is 100 x 100 pixels; origin `(0, 0)` is top-left; center is `(50, 50)`. Drawing coordinates and sizes are not restricted to the viewport.
+- `background`, `fill`, and `stroke` each accept a CSS color String, OKLCH `(lightness, chroma, hue)`, or OKLCH with alpha `(lightness, chroma, hue, alpha)`.
+- Lightness, chroma, and alpha range from 0 to 100 inclusive; hue ranges from 0 to 360 inclusive.
 - Hex (`fill("#ff6347")`) and named CSS colors (`fill("tomato")`) are accepted.
 - Style functions: `fill`, `noFill()`, `stroke`, `noStroke()`, `strokeWidth(weight)`.
 - Style persists until changed.
@@ -111,8 +118,11 @@ arc(x, y, radius, startAngle, endAngle);
 - `floor(n)` `ceil(n)` `round(n)` `abs(n)` `min(a, b)` `max(a, b)`.
 - `sin(degrees)` `cos(degrees)` `sqrt(n)` `pow(base, exp)`.
 - Trigonometric functions use degrees.
+- Math arguments and results must be finite. `sqrt` rejects negative inputs; `pow` rejects non-finite results.
 - Constants: `PI`, `WIDTH` (100), `HEIGHT` (100).
 
 ## Keywords and reserved names
 
 `let if else repeat func return loop true false null` plus every built-in and constant name. These cannot be used as variable, function, parameter, or repeat variable names.
+
+`loop` is reserved, but the static interpreter does not execute a `loop` block; do not rely on it for drawing.
