@@ -162,8 +162,12 @@ export function useAgent(
 	};
 
 	const cancel = useCallback(() => {
-		abortController.current?.abort();
+		if (abortController.current === null) return;
+		abortController.current.abort();
 		abortController.current = null;
+		setMessages((current) =>
+			current.at(-1)?.role === "agent" ? current.slice(0, -1) : current,
+		);
 		setStatus("cancelled");
 		setErrorMessage(null);
 	}, []);
@@ -202,6 +206,7 @@ export function useAgent(
 						},
 						controller.signal,
 					)) {
+						if (controller.signal.aborted) return;
 						answer += chunk;
 						setMessages([
 							...nextMessages,
@@ -226,6 +231,7 @@ export function useAgent(
 					setStatus("ready");
 				} catch (error) {
 					if (!controller.signal.aborted) {
+						setMessages(nextMessages);
 						setStatus("error");
 						setErrorMessage(
 							error instanceof Error

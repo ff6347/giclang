@@ -105,6 +105,29 @@ test("restores an agent session for the same sketch", async ({ page }) => {
 	);
 });
 
+test("stopping a streamed answer removes its unfinished text", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Agent" }).click();
+	const tutor = page.getByRole("region", { name: "Agent" });
+	const question = "How should I begin drawing a row of circles?";
+	const agentMessages = tutor.locator(".agent-message-agent");
+	await tutor.getByRole("textbox", { name: "Message agent" }).fill(question);
+	await tutor.getByRole("textbox", { name: "Message agent" }).press("Enter");
+	await expect(agentMessages).toHaveCount(1);
+	await tutor.getByRole("button", { name: "Stop agent" }).click();
+	await expect(tutor).toContainText("The question was cancelled.");
+	await expect(agentMessages).toHaveCount(0);
+	await expect(tutor.locator(".agent-message-student")).toContainText(question);
+
+	await page.reload();
+	await page.getByRole("tab", { name: "Agent" }).click();
+	await expect(
+		page.getByRole("region", { name: "Agent" }).locator(".agent-message-agent"),
+	).toHaveCount(0);
+});
+
 test("renders safe agent markdown without executing raw HTML", async ({
 	page,
 }) => {
