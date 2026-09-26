@@ -522,7 +522,26 @@ fn validate_model(model: &str) -> Result<&str, String> {
 fn reference_tools_verified(model: &str) -> bool {
     matches!(
         model,
-        "opencode-zen/gpt-6-luna" | "opencode-zen/claude-sonnet-5"
+        "opencode-zen/gpt-6-luna"
+            | "opencode-zen/claude-sonnet-5"
+            | "opencode-zen/deepseek-v4-flash"
+            | "opencode-zen/deepseek-v4.1-flash"
+            | "opencode-zen/glm-5.3"
+            | "opencode-zen/gpt-5.6-luna"
+            | "opencode-zen/gpt-5.6-terra"
+            | "opencode-zen/gpt-5.6-sol"
+            | "opencode-zen/gpt-6-sol"
+            | "opencode-zen/minimax-m3"
+            | "opencode-zen/qwen3.8-max"
+            | "opencode-zen/space-bunny-free"
+            | "openrouter/z-ai/glm-5.3"
+            | "openrouter/z-ai/glm-5.3-flash"
+            | "openrouter/moonshotai/kimi-k3"
+            | "openrouter/moonshotai/kimi-k2.7-code"
+            | "openrouter/xiaomi/mimo-v2.6-flash"
+            | "openrouter/deepseek/deepseek-v4.1-flash"
+            | "openrouter/deepseek/deepseek-v4-pro"
+            | "openrouter/deepseek/deepseek-v4-flash"
     )
 }
 
@@ -2300,18 +2319,46 @@ mod tests {
 
     #[test]
     fn only_reference_tool_verified_models_can_be_submitted() {
-        assert_eq!(
-            validate_tutor_model("opencode-zen/gpt-6-luna").unwrap(),
-            "gpt-6-luna"
-        );
-        assert_eq!(
-            validate_tutor_model("opencode-zen/claude-sonnet-5").unwrap(),
-            "claude-sonnet-5"
-        );
+        for model in [
+            "opencode-zen/gpt-6-luna",
+            "opencode-zen/claude-sonnet-5",
+            "opencode-zen/deepseek-v4-flash",
+            "opencode-zen/deepseek-v4.1-flash",
+            "opencode-zen/glm-5.3",
+            "opencode-zen/gpt-5.6-luna",
+            "opencode-zen/gpt-5.6-terra",
+            "opencode-zen/gpt-5.6-sol",
+            "opencode-zen/gpt-6-sol",
+            "opencode-zen/minimax-m3",
+            "opencode-zen/qwen3.8-max",
+            "opencode-zen/space-bunny-free",
+        ] {
+            assert_eq!(
+                validate_tutor_model(model).unwrap(),
+                model.strip_prefix("opencode-zen/").unwrap(),
+                "{model}"
+            );
+        }
+        for model in [
+            "openrouter/z-ai/glm-5.3",
+            "openrouter/z-ai/glm-5.3-flash",
+            "openrouter/moonshotai/kimi-k3",
+            "openrouter/moonshotai/kimi-k2.7-code",
+            "openrouter/xiaomi/mimo-v2.6-flash",
+            "openrouter/deepseek/deepseek-v4.1-flash",
+            "openrouter/deepseek/deepseek-v4-pro",
+            "openrouter/deepseek/deepseek-v4-flash",
+        ] {
+            assert_eq!(validate_tutor_model(model).unwrap(), model, "{model}");
+        }
         for model in [
             "opencode-zen/big-pickle",
-            "opencode-zen/space-bunny-free",
-            "opencode-zen/gpt-6-sol",
+            "opencode-zen/deepseek-v4-pro",
+            "opencode-zen/glm-5.3-flash",
+            "openrouter/z-ai/glm-5.3:free",
+            "openrouter/deepseek/deepseek-v4.1-flash:free",
+            "openrouter/xiaomi/mimo-v2.6-pro",
+            "openrouter/moonshotai/kimi-k3:free",
             "openrouter/openai/gpt-6-sol",
         ] {
             assert!(
