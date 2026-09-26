@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
 	appendToolResults,
+	chatModels,
 	parseToolEvents,
 	type Model,
 	type ToolName,
@@ -12,6 +13,11 @@ import {
 import { search, sectionOf, validCall } from "./zen-reference-content.ts";
 
 const models: Model[] = ["big-pickle", "gpt-6-luna", "claude-sonnet-5"];
+const availableModels: Model[] = [
+	...chatModels,
+	"gpt-6-luna",
+	"claude-sonnet-5",
+];
 const maxOutput = 256;
 const tools = [
 	{
@@ -55,7 +61,7 @@ export function parseArguments(argv: string[]): {
 	if (
 		argv.length === 2 &&
 		argv[0] === "--model" &&
-		models.includes(argv[1] as Model)
+		availableModels.includes(argv[1] as Model)
 	) {
 		return { model: argv[1] as Model, help: false, error: null };
 	}
@@ -64,21 +70,21 @@ export function parseArguments(argv: string[]): {
 }
 
 function endpoint(model: Model): string {
-	return model === "big-pickle"
+	return model !== "gpt-6-luna" && model !== "claude-sonnet-5"
 		? "https://opencode.ai/zen/v1/chat/completions"
 		: model === "gpt-6-luna"
 			? "https://opencode.ai/zen/v1/responses"
 			: "https://opencode.ai/zen/v1/messages";
 }
 
-function requestBody(
+export function requestBody(
 	model: Model,
 	input: unknown[],
 	toolsEnabled: boolean,
 	requiredTool?: ToolName,
 ): string {
 	const protocolTools =
-		model === "big-pickle"
+		model !== "gpt-6-luna" && model !== "claude-sonnet-5"
 			? tools.map((tool) => ({
 					type: "function",
 					function: {
@@ -94,16 +100,14 @@ function requestBody(
 						input_schema: tool.parameters,
 					}))
 				: tools;
-	if (model === "big-pickle") {
+	if (model !== "gpt-6-luna" && model !== "claude-sonnet-5") {
 		return JSON.stringify({
 			model,
 			messages: input,
 			max_tokens: maxOutput,
 			stream: true,
 			tools: toolsEnabled ? protocolTools : undefined,
-			tool_choice: toolsEnabled
-				? { type: "function", function: { name: requiredTool } }
-				: "none",
+			tool_choice: toolsEnabled ? "required" : "none",
 		});
 	}
 	if (model === "gpt-6-luna") {
@@ -173,6 +177,8 @@ async function runModel(
 		statuses: {},
 		toolNames: [],
 		validArguments: [],
+		searchTerminalReason: null,
+		searchTextLength: 0,
 		terminalReason: null,
 		finalTextLength: 0,
 	};
@@ -204,6 +210,8 @@ async function runModel(
 					];
 		const first = await send(model, key, history, true, "search_reference");
 		statuses.search = first.status;
+		report.searchTerminalReason = first.parsed.terminalReason;
+		report.searchTextLength = first.parsed.textLength;
 		const calls = first.parsed.calls;
 		if (
 			first.status >= 200 &&
@@ -311,7 +319,7 @@ async function runModel(
 		validity.every(Boolean) &&
 		!finalHasTools &&
 		typeof report.terminalReason === "string" &&
-		(model === "big-pickle"
+		(model !== "gpt-6-luna" && model !== "claude-sonnet-5"
 			? report.terminalReason === "stop"
 			: model === "gpt-6-luna"
 				? report.terminalReason === "completed"
@@ -325,7 +333,7 @@ async function main(): Promise<void> {
 	const args = parseArguments(process.argv.slice(2));
 	if (args.help) {
 		console.info(
-			"Usage: node scripts/zen-reference-smoke.ts [--model big-pickle|gpt-6-luna|claude-sonnet-5]",
+			`Usage: node scripts/zen-reference-smoke.ts [--model ${availableModels.join("|")}]`,
 		);
 		return;
 	}

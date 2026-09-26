@@ -10,8 +10,22 @@ import {
 	parseToolEvents,
 	appendToolResults,
 } from "./zen-reference-protocol.ts";
-import { parseArguments } from "./zen-reference-smoke.ts";
+import { parseArguments, requestBody } from "./zen-reference-smoke.ts";
 import { search, validCall } from "./zen-reference-content.ts";
+
+test("chat probes require a reference tool with the native request shape", () => {
+	const body = JSON.parse(
+		requestBody("glm-5.3", [{ role: "user", content: "Question" }], true),
+	);
+	assert.equal(body.model, "glm-5.3");
+	assert.equal(body.tool_choice, "required");
+	assert.deepEqual(
+		body.tools.map(
+			(tool: { function: { name: string } }) => tool.function.name,
+		),
+		["search_reference", "read_reference"],
+	);
+});
 
 test("parses both Claude tools from one complete streamed turn", () => {
 	assert.deepEqual(
@@ -117,6 +131,37 @@ test("parses OpenAI chat tool calls without exposing unrelated response data", (
 	);
 });
 
+test("uses the Chat Completions tool protocol for documented Zen chat models", () => {
+	assert.deepEqual(
+		parseToolEvents(
+			'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"search_reference","arguments":"{\\"query\\":\\"circle\\"}"}}]},"finish_reason":"tool_calls"}]}\n\ndata: [DONE]\n',
+			"glm-5.3",
+		).calls,
+		[
+			{
+				id: "call-1",
+				name: "search_reference",
+				arguments: '{"query":"circle"}',
+			},
+		],
+	);
+	assert.deepEqual(
+		appendToolResults(
+			"deepseek-v4-pro",
+			[],
+			[
+				{
+					id: "call-1",
+					name: "search_reference",
+					arguments: '{"query":"circle"}',
+				},
+			],
+			["matches"],
+		).map((entry) => (entry as { role: string }).role),
+		["assistant", "tool"],
+	);
+});
+
 test("joins streamed OpenAI argument fragments in order", () => {
 	const parsed = parseToolEvents(
 		'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"search_reference","arguments":"{\\"query\\":"}}]}}]}\n\ndata: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"circle\\"}"}}]},"finish_reason":"tool_calls"}]}\n',
@@ -198,8 +243,26 @@ test("rejects arbitrary model selectors and malformed CLI input", () => {
 		help: false,
 		error: null,
 	});
+	for (const id of [
+		"glm-5.3",
+		"glm-5.3-flash",
+		"kimi-k3",
+		"kimi-k2.7-code",
+		"mimo-v2.6-flash-free",
+		"deepseek-v4.1-flash",
+		"deepseek-v4-pro",
+		"deepseek-v4-flash",
+		"space-bunny-free",
+	]) {
+		assert.deepEqual(parseArguments(["--model", id]), {
+			model: id,
+			help: false,
+			error: null,
+		});
+	}
 	for (const argv of [
 		["--model", "unlisted-model"],
+		["--model", "mimo-v2.6-pro"],
 		["--model"],
 		["unexpected"],
 	]) {

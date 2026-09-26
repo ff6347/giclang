@@ -1,7 +1,22 @@
 // ABOUTME: Parses streamed provider events and serializes correlated tool results.
 // ABOUTME: Keeps protocol-specific data handling separate from network orchestration.
 
-export type Model = "big-pickle" | "gpt-6-luna" | "claude-sonnet-5";
+export const chatModels = [
+	"big-pickle",
+	"glm-5.3",
+	"glm-5.3-flash",
+	"kimi-k3",
+	"kimi-k2.7-code",
+	"mimo-v2.6-flash-free",
+	"deepseek-v4.1-flash",
+	"deepseek-v4-pro",
+	"deepseek-v4-flash",
+	"space-bunny-free",
+] as const;
+export type Model =
+	| (typeof chatModels)[number]
+	| "gpt-6-luna"
+	| "claude-sonnet-5";
 export type ToolName = "search_reference" | "read_reference";
 export type Call = { id: string; name: string; arguments: string };
 type Parsed = {
@@ -31,7 +46,7 @@ export function parseToolEvents(raw: string, model: Model): Parsed {
 			continue;
 		}
 		if (!event) continue;
-		if (model === "big-pickle") {
+		if (model !== "gpt-6-luna" && model !== "claude-sonnet-5") {
 			for (const choice of Array.isArray(event.choices) ? event.choices : []) {
 				const item = record(choice);
 				const delta = record(item?.delta);
@@ -126,7 +141,7 @@ export function appendToolResults(
 	results: string[],
 ): unknown[] {
 	if (calls.length !== results.length) throw new Error("invalid tool results");
-	if (model === "big-pickle") {
+	if (model !== "gpt-6-luna" && model !== "claude-sonnet-5") {
 		return [
 			...history,
 			{
