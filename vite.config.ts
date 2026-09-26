@@ -77,8 +77,26 @@ function productContent(): Plugin {
 			) {
 				return;
 			}
+			const images: string[] = [];
+			const content = compileMarkdown(path, source, (imagePath) => {
+				const index = images.push(imagePath) - 1;
+				return `__gic_image_${index}__`;
+			});
+			const imports = images.map(
+				(imagePath, index) =>
+					`import image${index} from ${JSON.stringify(`${imagePath.startsWith(".") ? imagePath : `./${imagePath}`}?url`)};`,
+			);
+			const replacements = images.map(
+				(_, index) =>
+					`content.html = content.html.replaceAll("__gic_image_${index}__", image${index});`,
+			);
 			return {
-				code: `export default ${JSON.stringify(compileMarkdown(path, source))};`,
+				code: [
+					...imports,
+					`const content = ${JSON.stringify(content)};`,
+					...replacements,
+					"export default content;",
+				].join("\n"),
 				map: null,
 			};
 		},

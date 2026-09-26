@@ -56,6 +56,38 @@ Use **repeat** for a pattern.
 		});
 	});
 
+	it("resolves relative Markdown images while preserving external image URLs", () => {
+		const images: string[] = [];
+		const content = compileMarkdown(
+			"content/docs/drawing.md",
+			`---
+title: Drawing
+order: 2
+---
+
+![Point](./images/drawing/point.png)
+
+![Line](images/drawing/line.png)
+
+![External](https://example.com/example.png)
+`,
+			(path) => {
+				images.push(path);
+				return "/assets/point.png";
+			},
+		);
+
+		assert.deepEqual(images, [
+			"./images/drawing/point.png",
+			"images/drawing/line.png",
+		]);
+		assert.match(content.html, /<img src="\/assets\/point.png" alt="Point">/);
+		assert.match(
+			content.html,
+			/<img src="https:\/\/example.com\/example.png" alt="External">/,
+		);
+	});
+
 	it("rejects incomplete presentation metadata", () => {
 		assert.throws(
 			() =>

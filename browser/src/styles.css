@@ -91,18 +91,22 @@ body {
 
 h1 {
 	font-size: 1.953rem;
+	font-weight: 500;
 }
 
 h2 {
 	font-size: 1.563rem;
+	font-weight: 500;
 }
 
 h3 {
 	font-size: 1.25rem;
+	font-weight: 500;
 }
 
 h4 {
 	font-size: 1rem;
+	font-weight: 600;
 }
 
 h5 {
@@ -121,7 +125,6 @@ h3,
 h4,
 h5,
 h6 {
-	font-weight: 500;
 	margin: var(--s0);
 	padding: 1.33em var(--s0) 0.33em;
 }
