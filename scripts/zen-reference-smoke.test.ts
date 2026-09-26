@@ -9,13 +9,47 @@ import { fileURLToPath } from "node:url";
 import {
 	parseToolEvents,
 	appendToolResults,
+	protocolFor,
 } from "./zen-reference-protocol.ts";
-import { parseArguments, requestBody } from "./zen-reference-smoke.ts";
+import { parseArguments } from "./zen-reference-smoke.ts";
+import {
+	requestBody,
+	safeTerminalReason,
+	safeToolName,
+} from "./reference-tool-probe.ts";
 import { search, validCall } from "./zen-reference-content.ts";
+
+test("reports only known tool names and terminal reasons", () => {
+	assert.equal(safeToolName("read_reference"), "read_reference");
+	assert.equal(safeToolName("private response contents"), "unexpected");
+	assert.equal(safeTerminalReason("tool_calls"), "tool_calls");
+	assert.equal(safeTerminalReason("private response contents"), "unexpected");
+});
+
+test("routes documented Zen models to their streaming protocol", () => {
+	assert.equal(protocolFor("minimax-m3"), "chat");
+	assert.equal(protocolFor("qwen3.8-max"), "chat");
+	assert.equal(protocolFor("gpt-5.6-sol"), "responses");
+	assert.equal(protocolFor("muse-spark-1.3-contributor-free"), "responses");
+	assert.equal(protocolFor("claude-opus-5-5"), "messages");
+	assert.equal(protocolFor("qwen3.8-flash"), "messages");
+
+	const responses = JSON.parse(requestBody("gpt-6-sol", "responses", [], true));
+	assert.equal(responses.tool_choice.type, "function");
+	const messages = JSON.parse(
+		requestBody("claude-opus-5-5", "messages", [], true),
+	);
+	assert.equal(messages.tool_choice.type, "tool");
+});
 
 test("chat probes require a reference tool with the native request shape", () => {
 	const body = JSON.parse(
-		requestBody("glm-5.3", [{ role: "user", content: "Question" }], true),
+		requestBody(
+			"glm-5.3",
+			"chat",
+			[{ role: "user", content: "Question" }],
+			true,
+		),
 	);
 	assert.equal(body.model, "glm-5.3");
 	assert.equal(body.tool_choice, "required");
@@ -38,7 +72,7 @@ test("parses both Claude tools from one complete streamed turn", () => {
 				'data: {"type":"message_delta","delta":{"stop_reason":"tool_use"}}',
 				'data: {"type":"message_stop"}',
 			].join("\n\n"),
-			"claude-sonnet-5",
+			"messages",
 		).calls,
 		[
 			{
@@ -68,13 +102,12 @@ test("serializes correlated concurrent tool calls and results per provider", () 
 			arguments: '{"section":"Drawing"}',
 		},
 	];
-	for (const model of [
-		"big-pickle",
-		"gpt-6-luna",
-		"claude-sonnet-5",
-	] as const) {
-		const history = appendToolResults(model, [], calls, ["matches", "drawing"]);
-		if (model === "big-pickle") {
+	for (const protocol of ["chat", "responses", "messages"] as const) {
+		const history = appendToolResults(protocol, [], calls, [
+			"matches",
+			"drawing",
+		]);
+		if (protocol === "chat") {
 			assert.equal(
 				(history[0] as { tool_calls: unknown[] }).tool_calls.length,
 				2,
@@ -85,7 +118,7 @@ test("serializes correlated concurrent tool calls and results per provider", () 
 					.map((entry) => (entry as { tool_call_id: string }).tool_call_id),
 				["call-search", "call-read"],
 			);
-		} else if (model === "gpt-6-luna") {
+		} else if (protocol === "responses") {
 			assert.deepEqual(
 				history.map((entry) => (entry as { type: string }).type),
 				[
@@ -115,7 +148,7 @@ test("parses OpenAI chat tool calls without exposing unrelated response data", (
 	assert.deepEqual(
 		parseToolEvents(
 			'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"search_reference","arguments":"{\\"query\\":\\"circle\\"}"}}]},"finish_reason":"tool_calls"}]}\n\ndata: [DONE]\n',
-			"big-pickle",
+			"chat",
 		),
 		{
 			calls: [
@@ -135,7 +168,7 @@ test("uses the Chat Completions tool protocol for documented Zen chat models", (
 	assert.deepEqual(
 		parseToolEvents(
 			'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"search_reference","arguments":"{\\"query\\":\\"circle\\"}"}}]},"finish_reason":"tool_calls"}]}\n\ndata: [DONE]\n',
-			"glm-5.3",
+			"chat",
 		).calls,
 		[
 			{
@@ -147,7 +180,7 @@ test("uses the Chat Completions tool protocol for documented Zen chat models", (
 	);
 	assert.deepEqual(
 		appendToolResults(
-			"deepseek-v4-pro",
+			"chat",
 			[],
 			[
 				{
@@ -165,7 +198,7 @@ test("uses the Chat Completions tool protocol for documented Zen chat models", (
 test("joins streamed OpenAI argument fragments in order", () => {
 	const parsed = parseToolEvents(
 		'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","function":{"name":"search_reference","arguments":"{\\"query\\":"}}]}}]}\n\ndata: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"circle\\"}"}}]},"finish_reason":"tool_calls"}]}\n',
-		"big-pickle",
+		"chat",
 	);
 	assert.equal(parsed.calls[0]?.arguments, '{"query":"circle"}');
 });
@@ -174,7 +207,7 @@ test("parses Responses function calls and Claude tool-use blocks", () => {
 	assert.deepEqual(
 		parseToolEvents(
 			'data: {"type":"response.output_item.done","item":{"type":"function_call","call_id":"call-2","name":"read_reference","arguments":"{\\"section\\":\\"Drawing\\"}"}}\n\ndata: {"type":"response.completed"}\n',
-			"gpt-6-luna",
+			"responses",
 		).calls,
 		[
 			{
@@ -187,7 +220,7 @@ test("parses Responses function calls and Claude tool-use blocks", () => {
 	assert.deepEqual(
 		parseToolEvents(
 			'data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"call-3","name":"search_reference","input":{}}}\n\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"query\\":\\"circle\\"}"}}\n\ndata: {"type":"message_delta","delta":{"stop_reason":"tool_use"}}\n\ndata: {"type":"message_stop"}\n',
-			"claude-sonnet-5",
+			"messages",
 		).calls,
 		[
 			{
@@ -244,11 +277,21 @@ test("rejects arbitrary model selectors and malformed CLI input", () => {
 		error: null,
 	});
 	for (const id of [
+		"claude-opus-5-5",
+		"gpt-5.6-luna",
+		"gpt-5.6-terra",
+		"gpt-5.6-sol",
+		"gpt-6-sol",
 		"glm-5.3",
 		"glm-5.3-flash",
 		"kimi-k3",
 		"kimi-k2.7-code",
 		"mimo-v2.6-flash-free",
+		"minimax-m3",
+		"muse-spark-1.3-contributor-free",
+		"nemotron-3.5-lightning-free",
+		"qwen3.8-flash",
+		"qwen3.8-max",
 		"deepseek-v4.1-flash",
 		"deepseek-v4-pro",
 		"deepseek-v4-flash",

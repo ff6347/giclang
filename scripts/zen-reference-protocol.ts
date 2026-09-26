@@ -11,12 +11,29 @@ export const chatModels = [
 	"deepseek-v4.1-flash",
 	"deepseek-v4-pro",
 	"deepseek-v4-flash",
+	"minimax-m3",
+	"nemotron-3.5-lightning-free",
+	"qwen3.8-max",
 	"space-bunny-free",
+] as const;
+export const responseModels = [
+	"gpt-6-luna",
+	"gpt-6-sol",
+	"gpt-5.6-luna",
+	"gpt-5.6-terra",
+	"gpt-5.6-sol",
+	"muse-spark-1.3-contributor-free",
+] as const;
+export const messageModels = [
+	"claude-sonnet-5",
+	"claude-opus-5-5",
+	"qwen3.8-flash",
 ] as const;
 export type Model =
 	| (typeof chatModels)[number]
-	| "gpt-6-luna"
-	| "claude-sonnet-5";
+	| (typeof responseModels)[number]
+	| (typeof messageModels)[number];
+export type Protocol = "chat" | "responses" | "messages";
 export type ToolName = "search_reference" | "read_reference";
 export type Call = { id: string; name: string; arguments: string };
 type Parsed = {
@@ -25,13 +42,21 @@ type Parsed = {
 	terminalReason: string | null;
 };
 
+export function protocolFor(model: Model): Protocol {
+	if (responseModels.includes(model as (typeof responseModels)[number]))
+		return "responses";
+	if (messageModels.includes(model as (typeof messageModels)[number]))
+		return "messages";
+	return "chat";
+}
+
 function record(value: unknown): Record<string, unknown> | null {
 	return value !== null && typeof value === "object" && !Array.isArray(value)
 		? (value as Record<string, unknown>)
 		: null;
 }
 
-export function parseToolEvents(raw: string, model: Model): Parsed {
+export function parseToolEvents(raw: string, protocol: Protocol): Parsed {
 	const calls = new Map<number, Call>();
 	let textLength = 0;
 	let terminalReason: string | null = null;
@@ -46,7 +71,7 @@ export function parseToolEvents(raw: string, model: Model): Parsed {
 			continue;
 		}
 		if (!event) continue;
-		if (model !== "gpt-6-luna" && model !== "claude-sonnet-5") {
+		if (protocol === "chat") {
 			for (const choice of Array.isArray(event.choices) ? event.choices : []) {
 				const item = record(choice);
 				const delta = record(item?.delta);
@@ -71,7 +96,7 @@ export function parseToolEvents(raw: string, model: Model): Parsed {
 					});
 				}
 			}
-		} else if (model === "gpt-6-luna") {
+		} else if (protocol === "responses") {
 			if (event.type === "response.output_item.done") {
 				const item = record(event.item);
 				if (item?.type === "function_call") {
@@ -135,13 +160,13 @@ export function parseToolEvents(raw: string, model: Model): Parsed {
 }
 
 export function appendToolResults(
-	model: Model,
+	protocol: Protocol,
 	history: unknown[],
 	calls: Call[],
 	results: string[],
 ): unknown[] {
 	if (calls.length !== results.length) throw new Error("invalid tool results");
-	if (model !== "gpt-6-luna" && model !== "claude-sonnet-5") {
+	if (protocol === "chat") {
 		return [
 			...history,
 			{
@@ -159,7 +184,7 @@ export function appendToolResults(
 			})),
 		];
 	}
-	if (model === "gpt-6-luna") {
+	if (protocol === "responses") {
 		return [
 			...history,
 			...calls.map((call) => ({
