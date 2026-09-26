@@ -5,6 +5,7 @@ import type { ApplicationSettings } from "./application-settings.ts";
 import type { OpencodeModel } from "./desktop-host.ts";
 
 const ENABLED_MODEL_IDS_KEY = "gic.tutor.enabled-model-ids";
+const SELECTED_MODEL_ID_KEY = "gic.tutor.selected-model";
 
 export function loadEnabledModelIds(settings: ApplicationSettings): string[] {
 	const saved = settings.getItem(ENABLED_MODEL_IDS_KEY);
@@ -27,10 +28,22 @@ export function saveEnabledModelIds(
 	settings: ApplicationSettings,
 	enabledModelIds: readonly string[],
 ): void {
-	settings.setItem(
-		ENABLED_MODEL_IDS_KEY,
-		JSON.stringify([...new Set(enabledModelIds.filter(isNonEmptyString))]),
-	);
+	const enabled = [...new Set(enabledModelIds.filter(isNonEmptyString))];
+	settings.setItem(ENABLED_MODEL_IDS_KEY, JSON.stringify(enabled));
+	const selected = loadSelectedModelId(settings);
+	if (selected && !enabled.includes(selected))
+		saveSelectedModelId(settings, "");
+}
+
+export function loadSelectedModelId(settings: ApplicationSettings): string {
+	return settings.getItem(SELECTED_MODEL_ID_KEY) ?? "";
+}
+
+export function saveSelectedModelId(
+	settings: ApplicationSettings,
+	selectedModelId: string,
+): void {
+	settings.setItem(SELECTED_MODEL_ID_KEY, selectedModelId);
 }
 
 export function deriveVisibleModels(

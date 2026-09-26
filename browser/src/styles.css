@@ -810,6 +810,10 @@ canvas {
 	margin: 0;
 }
 
+.agent-current-model {
+	margin: var(--s0);
+}
+
 .agent-messages {
 	flex: 1;
 	min-height: 0;
@@ -904,6 +908,15 @@ canvas {
 	width: 100%;
 }
 
+.agent-composer-disabled {
+	opacity: 0.5;
+}
+
+.agent-composer-disabled .agent-input,
+.agent-composer-disabled .agent-send {
+	cursor: not-allowed;
+}
+
 .agent-input {
 	background: transparent;
 	border: 0;
@@ -930,7 +943,7 @@ canvas {
 	width: var(--s5);
 }
 
-.agent-send:hover {
+.agent-send:not(:disabled):hover {
 	background-color: var(--color-control);
 	color: var(--color-text);
 }

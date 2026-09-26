@@ -38,6 +38,8 @@ export function AgentPanel({
 	actions,
 	allowCopying,
 	disabled = false,
+	disabledReason,
+	modelLabel,
 	messages,
 	status,
 	errorMessage = null,
@@ -45,6 +47,8 @@ export function AgentPanel({
 	readonly actions: AgentActions;
 	readonly allowCopying: boolean;
 	readonly disabled?: boolean;
+	readonly disabledReason?: string | undefined;
+	readonly modelLabel?: string | undefined;
 	readonly messages: readonly AgentMessage[];
 	readonly status: AgentStatus;
 	readonly errorMessage?: string | null;
@@ -100,9 +104,10 @@ export function AgentPanel({
 					</p>
 				</aside>
 			)}
+			{modelLabel && <p className="agent-current-model">Model: {modelLabel}</p>}
 			{disabled && (
-				<p className="agent-disabled-note">
-					Save this sketch before using the Agent.
+				<p className="agent-disabled-note" id="agent-disabled-reason">
+					{disabledReason ?? "The Agent is unavailable."}
 				</p>
 			)}
 			<div className="agent-messages" aria-live="polite" ref={transcriptRef}>
@@ -148,7 +153,9 @@ export function AgentPanel({
 				{status === "cancelled" && <p>The question was cancelled.</p>}
 			</div>
 			<form
-				className="agent-composer"
+				className={
+					disabled ? "agent-composer agent-composer-disabled" : "agent-composer"
+				}
 				onSubmit={(event) => {
 					event.preventDefault();
 					if (status !== "streaming") submit();
@@ -156,8 +163,10 @@ export function AgentPanel({
 			>
 				<textarea
 					aria-label="Message agent"
+					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
 					disabled={disabled}
 					className="agent-input"
+					placeholder={disabled ? disabledReason : undefined}
 					rows={1}
 					value={question}
 					onChange={(event) => {
@@ -168,6 +177,7 @@ export function AgentPanel({
 				/>
 				<Button
 					aria-label={status === "streaming" ? "Stop agent" : "Send message"}
+					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
 					className="agent-send"
 					disabled={disabled}
 					type={status === "streaming" ? "button" : "submit"}

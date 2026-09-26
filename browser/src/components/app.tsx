@@ -68,7 +68,9 @@ import { modelDiscoveryError } from "../lib/model-discovery.ts";
 import {
 	deriveVisibleModels,
 	loadEnabledModelIds,
+	loadSelectedModelId,
 	saveEnabledModelIds,
+	saveSelectedModelId,
 	selectedVisibleModelId,
 } from "../lib/model-preferences.ts";
 
@@ -193,7 +195,7 @@ export function App({
 				const enabled = loadEnabledModelIds(settings);
 				setEnabledModelIds(enabled);
 				const preferredErrorIndex =
-					opencodeModel.startsWith("openrouter/") ||
+					loadSelectedModelId(settings).startsWith("openrouter/") ||
 					status?.opencodeAuthenticated !== true
 						? 1
 						: 0;
@@ -206,12 +208,12 @@ export function App({
 						? modelDiscoveryError(failedProvider.reason)
 						: null,
 				);
-				setOpencodeModel((current) => {
-					return selectedVisibleModelId(
-						current,
+				setOpencodeModel(
+					selectedVisibleModelId(
+						loadSelectedModelId(settings),
 						deriveVisibleModels(availableModels, enabled),
-					);
-				});
+					),
+				);
 			})
 			.catch((error: unknown) => {
 				if (request !== opencodeModelsRequest.current) return;
@@ -233,12 +235,20 @@ export function App({
 			: enabledModelIds.filter((modelId) => modelId !== id);
 		saveEnabledModelIds(settings, next);
 		setEnabledModelIds(next);
-		setOpencodeModel((current) =>
+		setOpencodeModel(
 			selectedVisibleModelId(
-				current,
+				loadSelectedModelId(settings),
 				deriveVisibleModels(opencodeModels, next),
 			),
 		);
+	};
+	const changeSelectedModel = (id: string) => {
+		const selected = selectedVisibleModelId(
+			id,
+			deriveVisibleModels(opencodeModels, enabledModelIds),
+		);
+		saveSelectedModelId(settings, selected);
+		setOpencodeModel(selected);
 	};
 	useEffect(() => {
 		if (desktop === undefined) return;
@@ -390,6 +400,28 @@ export function App({
 		preview.onSourceChange(nextSource);
 	};
 
+	const activeAgentModel = deriveVisibleModels(
+		opencodeModels,
+		enabledModelIds,
+	).find((candidate) => candidate.id === opencodeModel);
+	const agentModelLabel =
+		activeAgentModel === undefined
+			? undefined
+			: `${activeAgentModel.id.startsWith("opencode-zen/") ? "OpenCode Zen" : "OpenRouter"} · ${activeAgentModel.name}`;
+	let agentDisabledReason: string | undefined;
+	if (desktop !== undefined) {
+		const needsSave = documents.documentState.kind === "untitled";
+		const needsModel = activeAgentModel === undefined;
+		if (needsSave && needsModel) {
+			agentDisabledReason =
+				"Save this sketch and choose an Agent model in Settings.";
+		} else if (needsSave) {
+			agentDisabledReason = "Save this sketch before using the Agent.";
+		} else if (needsModel) {
+			agentDisabledReason = "No Agent model selected. Choose one in Settings.";
+		}
+	}
+
 	const renderTab = (node: TabNode, values: ITabRenderValues) => {
 		if (node.getId() === PROBLEMS_ID) {
 			const label = countLabel("Problems", preview.state.problems.length);
@@ -449,12 +481,10 @@ export function App({
 					<AgentPanel
 						actions={agent}
 						allowCopying={agentResponseCopying}
-						disabled={
-							desktop !== undefined &&
-							(documents.documentState.kind === "untitled" ||
-								opencodeModel === "")
-						}
+						disabled={agentDisabledReason !== undefined}
+						disabledReason={agentDisabledReason}
 						messages={agent.messages}
+						modelLabel={agentModelLabel}
 						status={agent.status}
 						errorMessage={agent.errorMessage}
 					/>
@@ -483,7 +513,7 @@ export function App({
 						selectedModel={opencodeModel}
 						modelError={opencodeModelError}
 						onRetryModels={() => loadOpencodeModels(providerStatus)}
-						onModelChange={setOpencodeModel}
+						onModelChange={changeSelectedModel}
 						onModelVisibilityChange={changeModelVisibility}
 						onProviderAuthenticated={(status) => {
 							setProviderStatus(status);

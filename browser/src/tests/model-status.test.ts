@@ -349,3 +349,50 @@ test("OpenRouter questions do not require an in-app terms checkbox", () => {
 		/<button[^>]*disabled[^>]*aria-label="Send message"/,
 	);
 });
+
+test("Agent panel explains a missing model and marks the composer disabled", () => {
+	const html = renderToStaticMarkup(
+		createElement(AgentPanel, {
+			actions: {
+				cancel: () => {},
+				retry: () => {},
+				submit: () => {},
+				startNewSession: async () => {},
+			},
+			allowCopying: false,
+			disabled: true,
+			disabledReason: "No Agent model selected. Choose one in Settings.",
+			messages: [],
+			status: "ready",
+		}),
+	);
+	assert.match(html, /No Agent model selected\. Choose one in Settings\./);
+	assert.doesNotMatch(html, /Save this sketch before using the Agent/);
+	assert.match(html, /class="agent-composer agent-composer-disabled"/);
+	assert.match(html, /<textarea[^>]*disabled/);
+	assert.match(html, /aria-describedby="agent-disabled-reason"/);
+	assert.match(
+		html,
+		/<button(?=[^>]*aria-label="Send message")(?=[^>]*disabled)[^>]*>/,
+	);
+});
+
+test("Agent panel shows the selected provider and model without disabling input", () => {
+	const html = renderToStaticMarkup(
+		createElement(AgentPanel, {
+			actions: {
+				cancel: () => {},
+				retry: () => {},
+				submit: () => {},
+				startNewSession: async () => {},
+			},
+			allowCopying: false,
+			modelLabel: "OpenRouter · GLM-5.3",
+			messages: [],
+			status: "ready",
+		}),
+	);
+	assert.match(html, /Model: OpenRouter · GLM-5\.3/);
+	assert.doesNotMatch(html, /agent-composer-disabled/);
+	assert.doesNotMatch(html, /<textarea[^>]*disabled/);
+});

@@ -9,7 +9,9 @@ import {
 	deriveVisibleModels,
 	filterModels,
 	loadEnabledModelIds,
+	loadSelectedModelId,
 	saveEnabledModelIds,
+	saveSelectedModelId,
 	selectedVisibleModelId,
 } from "../lib/model-preferences.ts";
 
@@ -65,7 +67,54 @@ test("only models with proven reference tools enter the searchable picker", () =
 test("fresh settings do not preselect an unverified or paid model", () => {
 	const settings = new MemorySettings();
 	assert.deepEqual(loadEnabledModelIds(settings), []);
+	assert.equal(loadSelectedModelId(settings), "");
 	assert.equal(settings.values.size, 0);
+});
+
+test("an explicit selection survives a settings reload only when eligible", () => {
+	const settings = new MemorySettings();
+	saveEnabledModelIds(settings, [verifiedZenModel.id, openRouterPaidModel.id]);
+	saveSelectedModelId(settings, openRouterPaidModel.id);
+
+	const reloaded = new MemorySettings();
+	for (const [key, value] of settings.values) reloaded.setItem(key, value);
+	const selected = loadSelectedModelId(reloaded);
+	assert.equal(selected, openRouterPaidModel.id);
+	assert.equal(
+		selectedVisibleModelId(
+			selected,
+			deriveVisibleModels(
+				[verifiedZenModel, openRouterPaidModel],
+				loadEnabledModelIds(reloaded),
+			),
+		),
+		openRouterPaidModel.id,
+	);
+	assert.equal(
+		selectedVisibleModelId(
+			selected,
+			deriveVisibleModels([verifiedZenModel], loadEnabledModelIds(reloaded)),
+		),
+		"",
+	);
+	assert.equal(loadSelectedModelId(reloaded), openRouterPaidModel.id);
+});
+
+test("clearing a selected model persists an empty choice", () => {
+	const settings = new MemorySettings();
+	saveSelectedModelId(settings, verifiedZenModel.id);
+	saveSelectedModelId(settings, "");
+	assert.equal(loadSelectedModelId(settings), "");
+});
+
+test("disabling the selected model clears its saved choice", () => {
+	const settings = new MemorySettings();
+	saveEnabledModelIds(settings, [verifiedZenModel.id, openRouterPaidModel.id]);
+	saveSelectedModelId(settings, openRouterPaidModel.id);
+	saveEnabledModelIds(settings, [verifiedZenModel.id]);
+
+	assert.equal(loadSelectedModelId(settings), "");
+	assert.deepEqual(loadEnabledModelIds(settings), [verifiedZenModel.id]);
 });
 
 test("OpenRouter catalog models are not enabled by default, including free models", () => {
