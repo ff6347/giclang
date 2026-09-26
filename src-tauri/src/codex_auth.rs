@@ -10,10 +10,24 @@ use tokio_util::sync::CancellationToken;
 
 const AUTH_EVENT: &str = "codex-auth-event";
 const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
-const DEVICE_CODE_URL: &str = "https://auth.openai.com/api/accounts/deviceauth/usercode";
-const DEVICE_TOKEN_URL: &str = "https://auth.openai.com/api/accounts/deviceauth/token";
-const OAUTH_TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
 const VERIFY_URL: &str = "https://auth.openai.com/codex/device";
+
+#[derive(Clone)]
+struct Endpoints {
+    device_code: String,
+    device_token: String,
+    oauth_token: String,
+}
+
+impl Endpoints {
+    fn production() -> Self {
+        Self {
+            device_code: "https://auth.openai.com/api/accounts/deviceauth/usercode".to_owned(),
+            device_token: "https://auth.openai.com/api/accounts/deviceauth/token".to_owned(),
+            oauth_token: "https://auth.openai.com/oauth/token".to_owned(),
+        }
+    }
+}
 
 pub(crate) struct CodexAuth {
     cancellation: Mutex<Option<CancellationToken>>,
@@ -136,9 +150,16 @@ fn emit(app: &AppHandle, event: CodexAuthEvent) {
     let _ = app.emit(AUTH_EVENT, event);
 }
 
+#[derive(Debug)]
 enum LoginError {
     Cancelled,
     Failed,
+}
+
+struct AuthorizedTokens {
+    access_token: String,
+    refresh_token: String,
+    account_id: String,
 }
 
 async fn device_login(
@@ -147,8 +168,32 @@ async fn device_login(
     cancellation: CancellationToken,
 ) -> Result<(), LoginError> {
     let client = reqwest::Client::new();
+    let tokens = authorize(
+        &client,
+        &Endpoints::production(),
+        cancellation,
+        |url, user_code| {
+            emit(app, CodexAuthEvent::DeviceAuthorization { url, user_code });
+        },
+    )
+    .await?;
+    credentials
+        .authenticate_codex(
+            &tokens.access_token,
+            &tokens.refresh_token,
+            &tokens.account_id,
+        )
+        .map_err(|_| LoginError::Failed)
+}
+
+async fn authorize(
+    client: &reqwest::Client,
+    endpoints: &Endpoints,
+    cancellation: CancellationToken,
+    present: impl FnOnce(String, String),
+) -> Result<AuthorizedTokens, LoginError> {
     let device = client
-        .post(DEVICE_CODE_URL)
+        .post(&endpoints.device_code)
         .json(&serde_json::json!({ "client_id": CLIENT_ID }))
         .send()
         .await
@@ -158,14 +203,11 @@ async fn device_login(
         .json::<DeviceCode>()
         .await
         .map_err(|_| LoginError::Failed)?;
-    emit(
-        app,
-        CodexAuthEvent::DeviceAuthorization {
-            url: device
-                .verification_uri
-                .unwrap_or_else(|| VERIFY_URL.to_owned()),
-            user_code: device.user_code.clone(),
-        },
+    present(
+        device
+            .verification_uri
+            .unwrap_or_else(|| VERIFY_URL.to_owned()),
+        device.user_code.clone(),
     );
     let interval = Duration::from_secs(device.interval.unwrap_or(5));
     let code = loop {
@@ -173,7 +215,7 @@ async fn device_login(
             return Err(LoginError::Cancelled);
         }
         let response = client
-            .post(DEVICE_TOKEN_URL)
+            .post(&endpoints.device_token)
             .json(&serde_json::json!({
                 "device_auth_id": device.device_auth_id,
                 "user_code": device.user_code,
@@ -196,7 +238,7 @@ async fn device_login(
         }
     };
     let tokens = client
-        .post(OAUTH_TOKEN_URL)
+        .post(&endpoints.oauth_token)
         .form(&[
             ("grant_type", "authorization_code"),
             ("code", code.authorization_code.as_str()),
@@ -221,9 +263,11 @@ async fn device_login(
         .and_then(account_id)
         .or_else(|| account_id(&tokens.access_token))
         .ok_or(LoginError::Failed)?;
-    credentials
-        .authenticate_codex(&tokens.access_token, &tokens.refresh_token, &account)
-        .map_err(|_| LoginError::Failed)
+    Ok(AuthorizedTokens {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        account_id: account,
+    })
 }
 
 fn optional_interval<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
@@ -257,4 +301,89 @@ fn account_id(token: &str) -> Option<String> {
                 .as_str()
                 .map(str::to_owned)
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+    };
+
+    async fn server(responses: [&str; 3]) -> (Endpoints, tokio::task::JoinHandle<Vec<String>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let responses = responses.map(str::to_owned);
+        let server = tokio::spawn(async move {
+            let mut requests = Vec::new();
+            for response in responses {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut data = Vec::new();
+                let mut incoming = [0; 1024];
+                loop {
+                    let count = socket.read(&mut incoming).await.unwrap();
+                    data.extend_from_slice(&incoming[..count]);
+                    if data.windows(4).any(|window| window == b"\r\n\r\n") {
+                        break;
+                    }
+                }
+                requests.push(String::from_utf8_lossy(&data).to_string());
+                socket
+                    .write_all(
+                        format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            response.len(),
+                            response
+                        )
+                        .as_bytes(),
+                    )
+                    .await
+                    .unwrap();
+            }
+            requests
+        });
+        let base = format!("http://{address}");
+        (
+            Endpoints {
+                device_code: format!("{base}/device"),
+                device_token: format!("{base}/poll"),
+                oauth_token: format!("{base}/token"),
+            },
+            server,
+        )
+    }
+
+    #[tokio::test]
+    async fn device_flow_polls_exchanges_and_never_sends_tokens_to_presenter() {
+        let (endpoints, server) = server([
+            r#"{"device_auth_id":"device","user_code":"ABCD","verification_uri":"https://auth.example/device","interval":"0"}"#,
+            r#"{"authorization_code":"code","code_verifier":"verifier"}"#,
+            r#"{"access_token":"x.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjb3VudCJ9fQ.x","refresh_token":"synthetic-refresh"}"#,
+        ]).await;
+        let mut presented = None;
+        let tokens = authorize(
+            &reqwest::Client::new(),
+            &endpoints,
+            CancellationToken::new(),
+            |url, user_code| presented = Some((url, user_code)),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            presented,
+            Some(("https://auth.example/device".to_owned(), "ABCD".to_owned()))
+        );
+        assert_eq!(tokens.account_id, "account");
+        assert_eq!(tokens.access_token, "x.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjb3VudCJ9fQ.x");
+        assert_eq!(tokens.refresh_token, "synthetic-refresh");
+        let requests = server.await.unwrap();
+        assert!(requests
+            .iter()
+            .all(|request| !request.contains("synthetic-refresh")));
+        assert!(requests
+            .iter()
+            .all(|request| !request.contains("/responses")));
+    }
 }
