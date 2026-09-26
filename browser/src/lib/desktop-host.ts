@@ -16,6 +16,8 @@ export interface OpencodeModel {
 	readonly id: string;
 	readonly name: string;
 	readonly pricing?: string;
+	readonly isFree?: boolean;
+	readonly otherCharges?: boolean;
 	readonly accountLimit?: string;
 }
 

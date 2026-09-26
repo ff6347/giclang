@@ -1,4 +1,12 @@
-import { Button, Checkbox } from "@base-ui/react";
+import {
+	Button,
+	Checkbox,
+	Collapsible,
+	Field,
+	Select,
+	Switch,
+} from "@base-ui/react";
+import { ChevronRight } from "pixelarticons/react";
 import { useState } from "react";
 import type { Appearance, DarkTheme, LightTheme } from "../lib/theme.ts";
 import {
@@ -12,6 +20,138 @@ import type {
 	OpencodeModel,
 	ProviderCredentialStatus,
 } from "../lib/desktop-host.ts";
+import { filterModels } from "../lib/model-preferences.ts";
+import { SettingsModelPicker } from "./settings-model-picker.tsx";
+
+function SettingsSelect<Value extends string>({
+	label,
+	value,
+	choices,
+	onChange,
+}: {
+	label: string;
+	value: Value;
+	choices: readonly { value: Value; label: string }[];
+	onChange: (value: Value) => void;
+}) {
+	return (
+		<Field.Root className="settings-row">
+			<Field.Label>{label}</Field.Label>
+			<Select.Root
+				items={choices}
+				value={value}
+				onValueChange={(next) => next && onChange(next)}
+			>
+				<Select.Trigger className="application-input settings-control settings-select-trigger">
+					<Select.Value className="settings-select-value" />
+					<Select.Icon className="settings-select-indicator">▾</Select.Icon>
+				</Select.Trigger>
+				<Select.Portal>
+					<Select.Positioner
+						alignItemWithTrigger={false}
+						sideOffset={4}
+						className="settings-picker-positioner"
+					>
+						<Select.Popup className="settings-picker-popup settings-select-popup">
+							<Select.List>
+								{choices.map((choice) => (
+									<Select.Item
+										key={choice.value}
+										value={choice.value}
+										className="settings-picker-item"
+									>
+										<Select.ItemText>{choice.label}</Select.ItemText>
+									</Select.Item>
+								))}
+							</Select.List>
+						</Select.Popup>
+					</Select.Positioner>
+				</Select.Portal>
+			</Select.Root>
+		</Field.Root>
+	);
+}
+
+function ModelSettings({
+	provider,
+	models,
+	enabledModelIds,
+	onModelVisibilityChange,
+}: {
+	provider: "OpenCode Zen" | "OpenRouter";
+	models: readonly OpencodeModel[];
+	enabledModelIds: readonly string[];
+	onModelVisibilityChange: (id: string, enabled: boolean) => void;
+}) {
+	const [search, setSearch] = useState("");
+	const matchingModels = filterModels(models, search);
+	return (
+		<Collapsible.Root className="settings-advanced">
+			<Collapsible.Trigger className="application-button settings-advanced-trigger">
+				{provider} advanced model settings
+				<ChevronRight
+					aria-hidden="true"
+					className="settings-collapse-indicator"
+				/>
+			</Collapsible.Trigger>
+			<Collapsible.Panel keepMounted className="settings-advanced-panel">
+				{models.length === 0 ? (
+					<p>No eligible models for {provider}.</p>
+				) : (
+					<>
+						<Field.Root className="settings-row">
+							<Field.Label>Search {provider} models</Field.Label>
+							<Field.Control
+								className="application-input"
+								type="search"
+								value={search}
+								onChange={(event) => setSearch(event.currentTarget.value)}
+							/>
+						</Field.Root>
+						{matchingModels.length === 0 && (
+							<p role="status">No matching models for {provider}.</p>
+						)}
+						<ul className="settings-model-list">
+							{matchingModels.map((model) => {
+								const prices = model.pricing?.split(", ");
+								return (
+									<li key={model.id} className="settings-model">
+										<span className="settings-model-name">{model.name}</span>
+										<Switch.Root
+											aria-label={`Enable ${model.name}`}
+											checked={enabledModelIds.includes(model.id)}
+											onCheckedChange={(checked) =>
+												onModelVisibilityChange(model.id, checked)
+											}
+											className="settings-switch"
+										>
+											<Switch.Thumb className="settings-switch-thumb" />
+										</Switch.Root>
+										<span className="settings-model-price">
+											{prices?.[0] && prices[1]
+												? `${model.isFree === true ? "Free — " : ""}Input: ${prices[0]} · Output: ${prices[1]}`
+												: "Price unavailable"}
+										</span>
+										{model.otherCharges === true && (
+											<span className="settings-model-price">
+												Additional charges may apply.
+											</span>
+										)}
+										{model.accountLimit && (
+											<span className="settings-model-price">
+												{model.accountLimit}
+											</span>
+										)}
+									</li>
+								);
+							})}
+						</ul>
+					</>
+				)}
+			</Collapsible.Panel>
+		</Collapsible.Root>
+	);
+}
 
 export function SettingsPanel({
 	agentResponseCopying,
@@ -31,10 +171,12 @@ export function SettingsPanel({
 	desktop,
 	providerStatus,
 	models,
+	enabledModelIds,
 	selectedModel,
 	modelError,
 	onRetryModels,
 	onModelChange,
+	onModelVisibilityChange,
 	onProviderAuthenticated,
 }: {
 	agentResponseCopying: boolean;
@@ -54,10 +196,12 @@ export function SettingsPanel({
 	readonly desktop: DesktopHost | undefined;
 	readonly providerStatus: ProviderCredentialStatus | null;
 	readonly models: readonly OpencodeModel[];
+	readonly enabledModelIds: readonly string[];
 	readonly selectedModel: string;
 	readonly modelError: string | null;
 	readonly onRetryModels: () => void;
 	readonly onModelChange: (model: string) => void;
+	readonly onModelVisibilityChange: (id: string, enabled: boolean) => void;
 	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
 	const [apiKey, setApiKey] = useState("");
@@ -83,10 +227,39 @@ export function SettingsPanel({
 		onProviderAuthenticated(await desktop.signOutOpenrouter());
 	};
 	return (
-		<section aria-label="Settings" className="workspace-panel padded-panel">
-			<h2>OpenCode tutor</h2>
+		<section
+			aria-label="Settings"
+			className="workspace-panel padded-panel settings-panel"
+		>
 			{desktop !== undefined && (
 				<>
+					<h2>Tutor</h2>
+					{(providerStatus?.opencodeAuthenticated === true ||
+						providerStatus?.openrouterAuthenticated === true) && (
+						<>
+							<SettingsModelPicker
+								models={models}
+								enabledModelIds={enabledModelIds}
+								selectedModel={selectedModel}
+								onModelChange={onModelChange}
+							/>
+							{modelError !== null ? (
+								<p role="alert">{modelError}</p>
+							) : models.length === 0 ? (
+								<p role="status">No eligible models are available.</p>
+							) : null}
+							{(modelError !== null || models.length === 0) && (
+								<Button
+									className="application-button"
+									type="button"
+									onClick={onRetryModels}
+								>
+									Retry models
+								</Button>
+							)}
+						</>
+					)}
+					<h3>OpenCode Zen</h3>
 					<p className="settings-help">
 						Connect OpenCode Zen with an API key to use the desktop tutor.
 					</p>
@@ -106,16 +279,16 @@ export function SettingsPanel({
 						</>
 					) : (
 						<>
-							<label className="settings-option">
-								API key
-								<input
+							<Field.Root className="settings-row">
+								<Field.Label>OpenCode API key</Field.Label>
+								<Field.Control
 									aria-label="OpenCode API key"
 									className="application-input"
 									type="password"
 									value={apiKey}
 									onChange={(event) => setApiKey(event.currentTarget.value)}
 								/>
-							</label>
+							</Field.Root>
 							<Button
 								className="application-button"
 								type="button"
@@ -126,48 +299,21 @@ export function SettingsPanel({
 							</Button>
 						</>
 					)}
-					{(providerStatus?.opencodeAuthenticated === true ||
-						providerStatus?.openrouterAuthenticated === true) && (
-						<>
-							<label className="settings-option">
-								Model
-								<select
-									aria-label="Tutor model"
-									className="application-input"
-									value={selectedModel}
-									onChange={(event) => onModelChange(event.currentTarget.value)}
-								>
-									<option value="">Choose a model</option>
-									{models.map((model) => (
-										<option key={model.id} value={model.id}>
-											{model.name}
-											{model.pricing ? ` — ${model.pricing}` : ""}
-											{model.accountLimit ? ` — ${model.accountLimit}` : ""}
-										</option>
-									))}
-								</select>
-							</label>
-							{modelError !== null ? (
-								<p role="alert">{modelError}</p>
-							) : models.length === 0 ? (
-								<p role="status">No eligible models are available.</p>
-							) : null}
-							{(modelError !== null || models.length === 0) && (
-								<Button
-									className="application-button"
-									type="button"
-									onClick={onRetryModels}
-								>
-									Retry models
-								</Button>
+					{providerStatus?.opencodeAuthenticated === true && (
+						<ModelSettings
+							provider="OpenCode Zen"
+							models={models.filter((model) =>
+								model.id.startsWith("opencode-zen/"),
 							)}
-						</>
+							enabledModelIds={enabledModelIds}
+							onModelVisibilityChange={onModelVisibilityChange}
+						/>
 					)}
 				</>
 			)}
-			<h2>OpenRouter tutor</h2>
 			{desktop !== undefined && (
 				<>
+					<h3>OpenRouter tutor</h3>
 					<p className="settings-help">
 						OpenRouter is optional bring-your-own-key access for adults 18 and
 						older. Questions send sketch source, diagnostics, output, and
@@ -190,9 +336,9 @@ export function SettingsPanel({
 						</>
 					) : (
 						<>
-							<label className="settings-option">
-								OpenRouter API key
-								<input
+							<Field.Root className="settings-row">
+								<Field.Label>OpenRouter API key</Field.Label>
+								<Field.Control
 									aria-label="OpenRouter API key"
 									className="application-input"
 									type="password"
@@ -201,7 +347,7 @@ export function SettingsPanel({
 										setOpenrouterApiKey(event.currentTarget.value)
 									}
 								/>
-							</label>
+							</Field.Root>
 							<Button
 								className="application-button"
 								type="button"
@@ -212,58 +358,54 @@ export function SettingsPanel({
 							</Button>
 						</>
 					)}
+					{providerStatus?.openrouterAuthenticated === true && (
+						<ModelSettings
+							provider="OpenRouter"
+							models={models.filter((model) =>
+								model.id.startsWith("openrouter/"),
+							)}
+							enabledModelIds={enabledModelIds}
+							onModelVisibilityChange={onModelVisibilityChange}
+						/>
+					)}
 				</>
 			)}
 			<h2>Workspace</h2>
-			<label className="settings-option">
-				Appearance
-				<select
-					aria-label="Appearance"
-					className="application-input"
-					value={appearance}
-					onChange={(event) =>
-						onAppearanceChange(event.currentTarget.value as Appearance)
-					}
-				>
-					<option value="system">System</option>
-					<option value="light">Light</option>
-					<option value="dark">Dark</option>
-				</select>
-			</label>
-			<label className="settings-option">
-				Light theme
-				<select
-					aria-label="Light theme"
-					className="application-input"
-					value={lightTheme}
-					onChange={(event) =>
-						onLightThemeChange(event.currentTarget.value as LightTheme)
-					}
-				>
-					<option value="vs-light">VS Light</option>
-					<option value="macos-classic">macOS Classic</option>
-					<option value="catppuccin-latte">Catppuccin Latte</option>
-				</select>
-			</label>
-			<label className="settings-option">
-				Dark theme
-				<select
-					aria-label="Dark theme"
-					className="application-input"
-					value={darkTheme}
-					onChange={(event) =>
-						onDarkThemeChange(event.currentTarget.value as DarkTheme)
-					}
-				>
-					<option value="vs-dark">VS Dark</option>
-					<option value="nord">Nord</option>
-					<option value="catppuccin-frappe">Catppuccin Frappé</option>
-					<option value="catppuccin-macchiato">Catppuccin Macchiato</option>
-					<option value="catppuccin-mocha">Catppuccin Mocha</option>
-				</select>
-			</label>
+			<SettingsSelect
+				label="Appearance"
+				value={appearance}
+				onChange={onAppearanceChange}
+				choices={[
+					{ value: "system", label: "System" },
+					{ value: "light", label: "Light" },
+					{ value: "dark", label: "Dark" },
+				]}
+			/>
+			<SettingsSelect
+				label="Light theme"
+				value={lightTheme}
+				onChange={onLightThemeChange}
+				choices={[
+					{ value: "vs-light", label: "VS Light" },
+					{ value: "macos-classic", label: "macOS Classic" },
+					{ value: "catppuccin-latte", label: "Catppuccin Latte" },
+				]}
+			/>
+			<SettingsSelect
+				label="Dark theme"
+				value={darkTheme}
+				onChange={onDarkThemeChange}
+				choices={[
+					{ value: "vs-dark", label: "VS Dark" },
+					{ value: "nord", label: "Nord" },
+					{ value: "catppuccin-frappe", label: "Catppuccin Frappé" },
+					{ value: "catppuccin-macchiato", label: "Catppuccin Macchiato" },
+					{ value: "catppuccin-mocha", label: "Catppuccin Mocha" },
+				]}
+			/>
 			<label className="settings-option">
 				<Checkbox.Root
+					aria-label="Allow copying agent responses"
 					checked={agentResponseCopying}
 					className="settings-checkbox"
 					onCheckedChange={onAgentResponseCopyingChange}
@@ -274,6 +416,7 @@ export function SettingsPanel({
 			</label>
 			<label className="settings-option">
 				<Checkbox.Root
+					aria-label="Format on save"
 					checked={formatOnSave}
 					className="settings-checkbox"
 					onCheckedChange={onFormatOnSaveChange}
@@ -284,6 +427,7 @@ export function SettingsPanel({
 			</label>
 			<label className="settings-option">
 				<Checkbox.Root
+					aria-label="Canvas frame"
 					checked={canvasFrame}
 					className="settings-checkbox"
 					onCheckedChange={onCanvasFrameChange}

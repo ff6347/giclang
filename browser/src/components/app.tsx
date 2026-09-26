@@ -65,6 +65,12 @@ import { useWorkspace } from "../hooks/use-workspace.ts";
 import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 import { modelDiscoveryError } from "../lib/model-discovery.ts";
+import {
+	deriveVisibleModels,
+	loadEnabledModelIds,
+	saveEnabledModelIds,
+	selectedVisibleModelId,
+} from "../lib/model-preferences.ts";
 
 const AGENT_RESPONSE_COPYING_STORAGE_KEY = "gic.agentResponseCopying";
 const APPEARANCE_STORAGE_KEY = "gic.appearance";
@@ -111,6 +117,9 @@ export function App({
 	const [opencodeModels, setOpencodeModels] = useState<
 		readonly OpencodeModel[]
 	>([]);
+	const [enabledModelIds, setEnabledModelIds] = useState(() =>
+		loadEnabledModelIds(settings, []),
+	);
 	const [opencodeModel, setOpencodeModel] = useState("");
 	const [opencodeModelError, setOpencodeModelError] = useState<string | null>(
 		null,
@@ -181,6 +190,8 @@ export function App({
 					results[1].status === "fulfilled" ? results[1].value : [];
 				const availableModels = [...zenModels, ...openrouterModels];
 				setOpencodeModels(availableModels);
+				const enabled = loadEnabledModelIds(settings, availableModels);
+				setEnabledModelIds(enabled);
 				const preferredErrorIndex =
 					opencodeModel.startsWith("openrouter/") ||
 					status?.opencodeAuthenticated !== true
@@ -196,20 +207,10 @@ export function App({
 						: null,
 				);
 				setOpencodeModel((current) => {
-					if (availableModels.some((model) => model.id === current))
-						return current;
-					if (
-						availableModels.some(
-							(model) => model.id === "opencode-zen/big-pickle",
-						)
-					) {
-						return "opencode-zen/big-pickle";
-					}
-					return status?.opencodeAuthenticated === true
-						? (availableModels.find((model) =>
-								model.id.startsWith("opencode-zen/"),
-							)?.id ?? "")
-						: "";
+					return selectedVisibleModelId(
+						current,
+						deriveVisibleModels(availableModels, enabled),
+					);
 				});
 			})
 			.catch((error: unknown) => {
@@ -218,6 +219,19 @@ export function App({
 				setOpencodeModel("");
 				setOpencodeModelError(modelDiscoveryError(error));
 			});
+	};
+	const changeModelVisibility = (id: string, enabled: boolean) => {
+		const next = enabled
+			? [...new Set([...enabledModelIds, id])]
+			: enabledModelIds.filter((modelId) => modelId !== id);
+		saveEnabledModelIds(settings, next);
+		setEnabledModelIds(next);
+		setOpencodeModel((current) =>
+			selectedVisibleModelId(
+				current,
+				deriveVisibleModels(opencodeModels, next),
+			),
+		);
 	};
 	useEffect(() => {
 		if (desktop === undefined) return;
@@ -458,10 +472,12 @@ export function App({
 						desktop={desktop}
 						providerStatus={providerStatus}
 						models={opencodeModels}
+						enabledModelIds={enabledModelIds}
 						selectedModel={opencodeModel}
 						modelError={opencodeModelError}
 						onRetryModels={() => loadOpencodeModels(providerStatus)}
 						onModelChange={setOpencodeModel}
+						onModelVisibilityChange={changeModelVisibility}
 						onProviderAuthenticated={(status) => {
 							setProviderStatus(status);
 							loadOpencodeModels(status);
