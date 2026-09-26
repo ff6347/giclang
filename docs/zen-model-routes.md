@@ -58,7 +58,7 @@ The Gemini endpoint has a successful direct smoke check, but the integrated tuto
 
 A documented text route does not establish that a model can use GIC's bounded `search_reference` and `read_reference` tools. A successful direct tool-call → reference-result → text-answer probe establishes provider-specific evidence; the native allowlist separately controls which models are selectable in GIC.
 
-Each explicit question allows at most two tool-bearing model turns and two reference calls in total, followed by one no-tools answer turn. That is **up to three provider requests per question**, subject to a single 90-second deadline; BYOK providers may bill for each request.
+Each question requires at least one successful bundled-reference lookup and allows at most two reference calls in total. A useful search excerpt can ground an answer without a separate section read; `read_reference` supplies the full named section when needed. The tutor makes **up to three provider requests per question** under a single 90-second deadline; BYOK providers may bill for each request.
 
 | Provider-qualified model | Direct reference-tool probe | Integrated tutor |
 | --- | --- | --- |
