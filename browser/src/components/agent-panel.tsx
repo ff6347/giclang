@@ -1,7 +1,7 @@
 // ABOUTME: Presents the optional Socratic agent with explicit question submission.
 // ABOUTME: Keeps response selection and copying disabled unless a student opts in.
 
-import { useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@base-ui/react/button";
 import { CircleQuestion, Loading, Send, Stop } from "pixelarticons/react";
 import { Streamdown, type Components } from "streamdown";
@@ -38,17 +38,28 @@ export function AgentPanel({
 	actions,
 	allowCopying,
 	disabled = false,
+	disabledReason,
+	modelLabel,
 	messages,
 	status,
+	errorMessage = null,
 }: {
 	readonly actions: AgentActions;
 	readonly allowCopying: boolean;
 	readonly disabled?: boolean;
+	readonly disabledReason?: string | undefined;
+	readonly modelLabel?: string | undefined;
 	readonly messages: readonly AgentMessage[];
 	readonly status: AgentStatus;
+	readonly errorMessage?: string | null;
 }) {
 	const [question, setQuestion] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
+	const transcriptRef = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		const transcript = transcriptRef.current;
+		if (transcript !== null) transcript.scrollTop = transcript.scrollHeight;
+	}, [messages, status, errorMessage]);
 	const submit = () => {
 		const trimmed = question.trim();
 		if (trimmed === "/new") {
@@ -93,12 +104,13 @@ export function AgentPanel({
 					</p>
 				</aside>
 			)}
+			{modelLabel && <p className="agent-current-model">Model: {modelLabel}</p>}
 			{disabled && (
-				<p className="agent-disabled-note">
-					Save this sketch before using the Agent.
+				<p className="agent-disabled-note" id="agent-disabled-reason">
+					{disabledReason ?? "The Agent is unavailable."}
 				</p>
 			)}
-			<div className="agent-messages" aria-live="polite">
+			<div className="agent-messages" aria-live="polite" ref={transcriptRef}>
 				{messages.map((message, index) => (
 					<div
 						className={`agent-message agent-message-${message.role}`}
@@ -134,12 +146,16 @@ export function AgentPanel({
 					</div>
 				))}
 				{status === "error" && (
-					<p role="alert">The agent could not answer. Try again.</p>
+					<p role="alert">
+						{errorMessage ?? "The agent could not answer. Try again."}
+					</p>
 				)}
 				{status === "cancelled" && <p>The question was cancelled.</p>}
 			</div>
 			<form
-				className="agent-composer"
+				className={
+					disabled ? "agent-composer agent-composer-disabled" : "agent-composer"
+				}
 				onSubmit={(event) => {
 					event.preventDefault();
 					if (status !== "streaming") submit();
@@ -147,8 +163,10 @@ export function AgentPanel({
 			>
 				<textarea
 					aria-label="Message agent"
+					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
 					disabled={disabled}
 					className="agent-input"
+					placeholder={disabled ? disabledReason : undefined}
 					rows={1}
 					value={question}
 					onChange={(event) => {
@@ -159,6 +177,7 @@ export function AgentPanel({
 				/>
 				<Button
 					aria-label={status === "streaming" ? "Stop agent" : "Send message"}
+					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
 					className="agent-send"
 					disabled={disabled}
 					type={status === "streaming" ? "button" : "submit"}

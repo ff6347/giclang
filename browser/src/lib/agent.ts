@@ -11,11 +11,14 @@ export interface AgentContext {
 export interface AgentRequest {
 	readonly question: string;
 	readonly context: AgentContext;
+	readonly messages?: readonly AgentMessage[];
 }
 
 export interface AgentProvider {
 	stream(request: AgentRequest, signal: AbortSignal): AsyncIterable<string>;
 }
+
+import type { DesktopHost, OpencodeAgentEvent } from "./desktop-host.ts";
 
 export interface AgentMessage {
 	readonly role: "student" | "agent";
@@ -74,6 +77,78 @@ export function parseAgentSession(serialized: string): AgentSessionRecord[] {
 	return records;
 }
 
+export interface DesktopAgentOptions {
+	readonly model: string;
+}
+
+export function createDesktopAgent(
+	desktop: DesktopHost,
+	options: DesktopAgentOptions,
+): AgentProvider {
+	return {
+		async *stream(request, signal) {
+			if (signal.aborted) return;
+			const events: Extract<OpencodeAgentEvent, { kind: "text" }>[] = [];
+			const requestId = crypto.randomUUID();
+			let wake: (() => void) | undefined;
+			let unlisten: (() => void) | undefined;
+			let terminal: "complete" | "cancelled" | "error" | undefined;
+			let terminalError: Error | undefined;
+			const onEvent = (event: OpencodeAgentEvent) => {
+				if (event.requestId !== requestId) return;
+				if (terminal !== undefined) return;
+				if (event.kind === "text") events.push(event);
+				else if (event.kind === "error") {
+					terminal = "error";
+					terminalError = new Error(event.message);
+				} else terminal = event.kind;
+				wake?.();
+			};
+			unlisten = await desktop.onOpencodeAgentEvent(onEvent);
+			const cancel = () => {
+				void desktop.cancelOpencodeRequest(requestId);
+				wake?.();
+			};
+			signal.addEventListener("abort", cancel, { once: true });
+			try {
+				if (signal.aborted) return;
+				const pendingRequest = desktop.sendOpencodeRequest({
+					requestId,
+					question: request.question,
+					context: JSON.stringify({
+						sketch: request.context,
+						turns: request.messages ?? [],
+					}),
+					model: options.model,
+				});
+				void pendingRequest.catch((error: unknown) => {
+					if (terminal === undefined) {
+						terminal = "error";
+						terminalError =
+							error instanceof Error ? error : new Error(String(error));
+						wake?.();
+					}
+				});
+				while (terminal === undefined && !signal.aborted) {
+					if (events.length > 0) {
+						yield events.shift()!.text;
+						continue;
+					}
+					await new Promise<void>((resolve) => {
+						wake = resolve;
+					});
+					wake = undefined;
+				}
+				while (events.length > 0) yield events.shift()!.text;
+				if (terminal === "error") throw terminalError;
+			} finally {
+				signal.removeEventListener("abort", cancel);
+				unlisten?.();
+			}
+		},
+	};
+}
+
 export function createDeterministicAgent(): AgentProvider {
 	return {
 		async *stream(request, signal) {
@@ -83,6 +158,15 @@ export function createDeterministicAgent(): AgentProvider {
 				yield character;
 				await new Promise((resolve) => setTimeout(resolve, 12));
 			}
+		},
+	};
+}
+
+export function createUnavailableAgent(message: string): AgentProvider {
+	return {
+		async *stream() {
+			yield* [];
+			throw new Error(message);
 		},
 	};
 }

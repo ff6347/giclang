@@ -7,6 +7,31 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { WindowTheme } from "./theme.ts";
 import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
+export interface ProviderCredentialStatus {
+	readonly opencodeAuthenticated: boolean;
+	readonly openrouterAuthenticated: boolean;
+}
+
+export interface OpencodeModel {
+	readonly id: string;
+	readonly name: string;
+	readonly referenceToolsVerified?: boolean;
+	readonly pricing?: string;
+	readonly isFree?: boolean;
+	readonly otherCharges?: boolean;
+	readonly accountLimit?: string;
+}
+
+export type OpencodeAgentEvent =
+	| { readonly requestId: string; readonly kind: "text"; readonly text: string }
+	| { readonly requestId: string; readonly kind: "complete" }
+	| { readonly requestId: string; readonly kind: "cancelled" }
+	| {
+			readonly requestId: string;
+			readonly kind: "error";
+			readonly message: string;
+	  };
+
 const MENU_ACTION_EVENT = "desktop-menu-action";
 
 export interface DesktopDocument {
@@ -161,6 +186,59 @@ export class DesktopHost {
 		return invoke<WorkspaceStatus>("resolve_workspace_file", {
 			path,
 			resolution,
+		});
+	}
+
+	providerCredentialStatus(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("provider_credential_status");
+	}
+
+	authenticateOpencode(apiKey: string): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("authenticate_opencode", {
+			apiKey,
+		});
+	}
+
+	authenticateOpenrouter(apiKey: string): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("authenticate_openrouter", {
+			apiKey,
+		});
+	}
+
+	signOutOpencode(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_opencode");
+	}
+
+	signOutOpenrouter(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_openrouter");
+	}
+
+	opencodeModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("opencode_models");
+	}
+
+	openrouterModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("openrouter_models");
+	}
+
+	sendOpencodeRequest(request: {
+		readonly requestId: string;
+		readonly question: string;
+		readonly context: string;
+		readonly model: string;
+	}): Promise<void> {
+		return invoke<void>("send_opencode_request", request);
+	}
+
+	cancelOpencodeRequest(requestId: string): Promise<void> {
+		return invoke<void>("cancel_opencode_request", { requestId });
+	}
+
+	onOpencodeAgentEvent(
+		handler: (event: OpencodeAgentEvent) => void,
+	): Promise<UnlistenFn> {
+		return listen<OpencodeAgentEvent>("opencode-agent-event", (event) => {
+			handler(event.payload);
 		});
 	}
 

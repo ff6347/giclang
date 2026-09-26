@@ -15,11 +15,25 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 chrono = { version = "0.4.45", features = ["serde"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+reqwest = { version = "0.13.5", default-features = false, features = [
+	"json",
+	"rustls",
+	"stream",
+] }
+futures-util = "0.3.31"
 sha2 = "0.10"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2.7.3"
 tempfile = "3.27.0"
 uuid = { version = "1.26.1", features = ["v4"] }
+rig-core = "0.42.0"
+tokio = { version = "1", features = ["io-util", "macros", "net", "rt", "time"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+http = "1"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+
+[target."cfg(windows)".dependencies]
+winapi = { version = "0.3.9", features = ["winbase", "winnt"] }
+windows-acl = "0.3.0"

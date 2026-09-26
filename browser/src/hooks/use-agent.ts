@@ -1,10 +1,12 @@
 // ABOUTME: Owns deterministic agent state, cancellation, and local session persistence.
 // ABOUTME: Sends sketch context only when the student explicitly submits a question.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
+	createDesktopAgent,
 	createDeterministicAgent,
+	createUnavailableAgent,
 	parseAgentSession,
 	serializeAgentSession,
 	type AgentContext,
@@ -34,13 +36,26 @@ export function useAgent(
 	sketchId: string,
 	desktop?: DesktopHost,
 	documentId?: string,
+	model = "gpt-5.5",
+	providerEnabled = false,
 ) {
-	const provider = useRef(createDeterministicAgent()).current;
+	const provider = useMemo(
+		() =>
+			desktop === undefined
+				? createDeterministicAgent()
+				: providerEnabled
+					? createDesktopAgent(desktop, { model })
+					: createUnavailableAgent(
+							"Connect an OpenCode account in Settings to use the desktop tutor.",
+						),
+		[desktop, model, providerEnabled],
+	);
 	const abortController = useRef<AbortController | null>(null);
 	const [messages, setMessages] = useState<AgentMessage[]>(() =>
 		loadMessages(sketchId),
 	);
 	const [status, setStatus] = useState<AgentStatus>("ready");
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const sessionId = useRef<string | null>(null);
 	const lastQuestion = useRef("");
 
@@ -49,6 +64,7 @@ export function useAgent(
 		abortController.current = null;
 		sessionId.current = null;
 		setStatus("ready");
+		setErrorMessage(null);
 		if (desktop === undefined) {
 			setMessages(loadMessages(sketchId));
 			return;
@@ -146,9 +162,14 @@ export function useAgent(
 	};
 
 	const cancel = useCallback(() => {
-		abortController.current?.abort();
+		if (abortController.current === null) return;
+		abortController.current.abort();
 		abortController.current = null;
+		setMessages((current) =>
+			current.at(-1)?.role === "agent" ? current.slice(0, -1) : current,
+		);
 		setStatus("cancelled");
+		setErrorMessage(null);
 	}, []);
 
 	const submit = useCallback(
@@ -164,6 +185,7 @@ export function useAgent(
 			setMessages(nextMessages);
 			persist(nextMessages);
 			setStatus("streaming");
+			setErrorMessage(null);
 			void (async () => {
 				let answer = "";
 				try {
@@ -177,9 +199,14 @@ export function useAgent(
 						);
 					}
 					for await (const chunk of provider.stream(
-						{ question: trimmed, context },
+						{
+							question: trimmed,
+							context,
+							messages: messages.map(({ role, text }) => ({ role, text })),
+						},
 						controller.signal,
 					)) {
+						if (controller.signal.aborted) return;
 						answer += chunk;
 						setMessages([
 							...nextMessages,
@@ -202,8 +229,16 @@ export function useAgent(
 						);
 					}
 					setStatus("ready");
-				} catch {
-					if (!controller.signal.aborted) setStatus("error");
+				} catch (error) {
+					if (!controller.signal.aborted) {
+						setMessages(nextMessages);
+						setStatus("error");
+						setErrorMessage(
+							error instanceof Error
+								? error.message
+								: "The agent could not answer.",
+						);
+					}
 				} finally {
 					if (abortController.current === controller)
 						abortController.current = null;
@@ -218,6 +253,7 @@ export function useAgent(
 		messages,
 		startNewSession,
 		status,
+		errorMessage,
 		submit,
 		retry: () => submit(lastQuestion.current),
 	};

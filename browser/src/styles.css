@@ -549,6 +549,180 @@ canvas {
 	gap: var(--s2);
 }
 
+.settings-panel > * {
+	box-sizing: border-box;
+	max-width: 800px;
+}
+
+.settings-row {
+	align-items: center;
+	display: grid;
+	gap: var(--s2);
+	grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr);
+	width: 100%;
+}
+
+.settings-control,
+.settings-row > .application-input {
+	box-sizing: border-box;
+	min-width: 0;
+	width: 100%;
+}
+
+.settings-control > .application-input {
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.settings-select-trigger {
+	align-items: center;
+	display: flex;
+	gap: var(--s2);
+	justify-content: space-between;
+	text-align: left;
+}
+
+.settings-select-value {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-align: left;
+	text-overflow: ellipsis;
+}
+
+.settings-select-indicator {
+	flex: none;
+}
+
+.settings-advanced {
+	width: 100%;
+}
+
+.settings-advanced-trigger {
+	align-items: center;
+	display: inline-flex;
+	gap: var(--s2);
+	justify-content: space-between;
+}
+
+.settings-advanced-trigger[data-panel-open] .settings-collapse-indicator {
+	transform: rotate(90deg);
+}
+
+.settings-advanced-panel {
+	border: 1px solid currentColor;
+	box-sizing: border-box;
+	margin-block: var(--s2);
+	padding: var(--s3);
+}
+
+.settings-model-table-scroll {
+	overflow-x: auto;
+}
+
+.settings-model-table-scroll:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.settings-model-table {
+	border-collapse: collapse;
+	margin-block: var(--s2);
+	min-width: 42rem;
+	width: 100%;
+}
+
+.settings-model-table th,
+.settings-model-table td {
+	border-bottom: 1px solid currentColor;
+	padding: var(--s2);
+	text-align: left;
+	vertical-align: top;
+}
+
+.settings-model-table th[scope="row"] {
+	overflow-wrap: anywhere;
+}
+
+.settings-model-table th:last-child,
+.settings-model-table td:last-child {
+	text-align: center;
+}
+
+.settings-model-detail {
+	display: block;
+	margin-block-start: var(--s1);
+}
+
+.settings-picker-positioner {
+	z-index: 10;
+}
+
+.settings-picker-popup {
+	background: var(--color-background);
+	border: 1px solid currentColor;
+	box-sizing: border-box;
+	max-height: 16rem;
+	overflow: auto;
+}
+
+.settings-select-popup {
+	max-width: var(--available-width);
+	min-width: var(--anchor-width);
+}
+
+.settings-model-popup {
+	max-width: var(--available-width);
+	width: var(--anchor-width);
+}
+
+.settings-picker-item {
+	cursor: pointer;
+	overflow-wrap: anywhere;
+	padding: var(--s1) var(--s2);
+}
+
+.settings-picker-item[data-highlighted] {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
+}
+
+.settings-switch {
+	align-items: center;
+	border: 1px solid currentColor;
+	cursor: pointer;
+	display: inline-flex;
+	height: 1.25rem;
+	padding: 2px;
+	width: 2.5rem;
+}
+
+.settings-switch-thumb {
+	background: currentColor;
+	height: 0.75rem;
+	width: 0.75rem;
+}
+
+.settings-switch[data-checked] .settings-switch-thumb {
+	margin-left: auto;
+}
+
+.settings-switch[data-disabled] {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.settings-switch:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+@media (max-width: 32rem) {
+	.settings-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 .settings-checkbox {
 	align-items: center;
 	border: 2px solid currentColor;
@@ -639,6 +813,10 @@ canvas {
 	margin: 0;
 }
 
+.agent-current-model {
+	margin: var(--s0);
+}
+
 .agent-messages {
 	flex: 1;
 	min-height: 0;
@@ -694,6 +872,8 @@ canvas {
 
 .agent-markdown code {
 	background: var(--color-control);
+	font-family: inherit;
+	font-size: 1rem;
 	padding: 0 var(--s1);
 }
 
@@ -704,6 +884,8 @@ canvas {
 	border-bottom: 2px solid var(--color-text);
 
 	box-shadow: 3px 3px 0 var(--color-text);
+	font-family: inherit;
+	font-size: 1rem;
 	margin: var(--s2) 3px var(--s2) var(--s0);
 	overflow: auto;
 	padding: var(--s2);
@@ -727,6 +909,15 @@ canvas {
 	padding: var(--s2);
 	position: relative;
 	width: 100%;
+}
+
+.agent-composer-disabled {
+	opacity: 0.5;
+}
+
+.agent-composer-disabled .agent-input,
+.agent-composer-disabled .agent-send {
+	cursor: not-allowed;
 }
 
 .agent-input {
@@ -755,7 +946,7 @@ canvas {
 	width: var(--s5);
 }
 
-.agent-send:hover {
+.agent-send:not(:disabled):hover {
 	background-color: var(--color-control);
 	color: var(--color-text);
 }

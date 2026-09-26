@@ -1,13 +1,20 @@
 // ABOUTME: Implements the narrow native boundary for the GIC desktop application.
 // ABOUTME: Persists approved non-secret settings without exposing filesystem paths.
 
+mod agent;
+mod credentials;
 mod desktop_menu;
 mod documents;
 mod external_tools;
 mod managed_files;
+mod reference;
 mod sessions;
 mod workspace;
 
+use agent::{
+    cancel_opencode_request, opencode_models, openrouter_models, send_opencode_request, TutorState,
+};
+use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
 use sessions::{SessionRecord, SessionStore, SessionSummary};
@@ -27,13 +34,15 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tempfile::NamedTempFile;
 use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
-const ALLOWED_SETTING_KEYS: [&str; 7] = [
+const ALLOWED_SETTING_KEYS: [&str; 9] = [
     "gic.appearance",
     "gic.canvasFrame",
     "gic.darkTheme",
     "gic.formatOnSave",
     "gic.lightTheme",
     "gic.projectsDirectory",
+    "gic.tutor.enabled-model-ids",
+    "gic.tutor.selected-model",
     "gic.workspaceLayout",
 ];
 
@@ -42,13 +51,16 @@ const DEFAULT_WORKSPACE_DIR: &str = "gestalten-in-code";
 struct SettingsStore {
     access: Mutex<()>,
     path: PathBuf,
+    layout_path: PathBuf,
 }
 
 impl SettingsStore {
     fn new(path: PathBuf) -> Self {
+        let layout_path = path.with_file_name("workspace-layout.json");
         Self {
             access: Mutex::new(()),
             path,
+            layout_path,
         }
     }
 
@@ -61,16 +73,31 @@ impl SettingsStore {
     }
 
     fn read_file(&self) -> Result<BTreeMap<String, String>, String> {
-        if !self.path.exists() {
-            return Ok(BTreeMap::new());
-        }
-        let Ok(contents) = fs::read_to_string(&self.path) else {
-            return Ok(BTreeMap::new());
-        };
-        let Ok(mut settings) = serde_json::from_str::<BTreeMap<String, String>>(&contents) else {
-            return Ok(BTreeMap::new());
+        let mut settings = if self.path.exists() {
+            let Ok(contents) = fs::read_to_string(&self.path) else {
+                return Ok(BTreeMap::new());
+            };
+            let Ok(settings) = serde_json::from_str::<BTreeMap<String, String>>(&contents) else {
+                return Ok(BTreeMap::new());
+            };
+            settings
+        } else {
+            BTreeMap::new()
         };
         settings.retain(|key, _| ALLOWED_SETTING_KEYS.contains(&key.as_str()));
+        if let Some(embedded_layout) = settings.remove("gic.workspaceLayout") {
+            if !self.layout_path.exists() {
+                if let Ok(layout) = serde_json::from_str::<serde_json::Value>(&embedded_layout) {
+                    let _ = self.write_layout(&layout);
+                }
+            }
+            self.persist_settings(&settings)?;
+        }
+        if self.layout_path.exists() {
+            if let Ok(layout) = fs::read_to_string(&self.layout_path) {
+                settings.insert("gic.workspaceLayout".to_owned(), layout);
+            }
+        }
         Ok(settings)
     }
 
@@ -83,13 +110,23 @@ impl SettingsStore {
             .lock()
             .map_err(|_| "Desktop settings are unavailable.".to_owned())?;
         let mut settings = self.read_file()?;
+        if key == "gic.workspaceLayout" {
+            let layout = serde_json::from_str::<serde_json::Value>(value)
+                .map_err(|_| "Unable to save desktop settings.".to_owned())?;
+            self.write_layout(&layout)?;
+            return Ok(());
+        }
         settings.insert(key.to_owned(), value.to_owned());
+        self.persist_settings(&settings)
+    }
+
+    fn persist_settings(&self, settings: &BTreeMap<String, String>) -> Result<(), String> {
         let parent = self
             .path
             .parent()
             .ok_or_else(|| "Desktop settings path has no parent.".to_owned())?;
         fs::create_dir_all(parent).map_err(|_| "Unable to prepare desktop settings.".to_owned())?;
-        let contents = serde_json::to_vec(&settings)
+        let contents = serde_json::to_vec(settings)
             .map_err(|_| "Unable to serialize desktop settings.".to_owned())?;
         let mut temporary_file = NamedTempFile::new_in(parent)
             .map_err(|_| "Unable to prepare desktop settings.".to_owned())?;
@@ -102,6 +139,51 @@ impl SettingsStore {
             .map_err(|_| "Unable to replace desktop settings.".to_owned())?;
         Ok(())
     }
+
+    fn write_layout(&self, layout: &serde_json::Value) -> Result<(), String> {
+        let parent = self
+            .layout_path
+            .parent()
+            .ok_or_else(|| "Workspace layout path has no parent.".to_owned())?;
+        fs::create_dir_all(parent).map_err(|_| "Unable to prepare workspace layout.".to_owned())?;
+        let contents = serde_json::to_vec_pretty(layout)
+            .map_err(|_| "Unable to serialize workspace layout.".to_owned())?;
+        let mut temporary_file = NamedTempFile::new_in(parent)
+            .map_err(|_| "Unable to prepare workspace layout.".to_owned())?;
+        temporary_file
+            .write_all(&contents)
+            .and_then(|()| temporary_file.as_file().sync_all())
+            .map_err(|_| "Unable to write workspace layout.".to_owned())?;
+        temporary_file
+            .persist(&self.layout_path)
+            .map_err(|_| "Unable to replace workspace layout.".to_owned())?;
+        Ok(())
+    }
+}
+
+fn app_configuration_directory(app: &AppHandle) -> Result<PathBuf, std::io::Error> {
+    Ok(app
+        .path()
+        .home_dir()
+        .map_err(std::io::Error::other)?
+        .join(".config")
+        .join("gestalten-in-code"))
+}
+
+fn migrate_platform_configuration(
+    app: &AppHandle,
+    destination: &Path,
+) -> Result<(), std::io::Error> {
+    let legacy_directory = app.path().app_config_dir().map_err(std::io::Error::other)?;
+    fs::create_dir_all(destination)?;
+    for name in ["settings.json", "auth.json", "managed-workspace.json"] {
+        let legacy_path = legacy_directory.join(name);
+        let destination_path = destination.join(name);
+        if legacy_path.exists() && !destination_path.exists() {
+            fs::rename(legacy_path, destination_path)?;
+        }
+    }
+    Ok(())
 }
 
 fn resolve_projects_directory(
@@ -398,6 +480,43 @@ fn resolve_workspace_file(
 }
 
 #[tauri::command]
+fn provider_credential_status(
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.status()
+}
+
+#[tauri::command]
+fn authenticate_opencode(
+    api_key: String,
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.authenticate_opencode(&api_key)?;
+    store.status()
+}
+
+#[tauri::command]
+fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out_opencode()?;
+    store.status()
+}
+
+#[tauri::command]
+fn authenticate_openrouter(
+    api_key: String,
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.authenticate_openrouter(&api_key)?;
+    store.status()
+}
+
+#[tauri::command]
+fn sign_out_openrouter(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out_openrouter()?;
+    store.status()
+}
+
+#[tauri::command]
 fn assistant_status() -> Vec<AssistantStatus> {
     external_tools::assistant_status()
 }
@@ -438,22 +557,19 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let settings_path = app
-                .path()
-                .app_config_dir()
-                .map_err(std::io::Error::other)?
-                .join("settings.json");
+            let configuration_directory = app_configuration_directory(app.handle())?;
+            migrate_platform_configuration(app.handle(), &configuration_directory)?;
+            let settings_path = configuration_directory.join("settings.json");
             let settings = SettingsStore::new(settings_path);
+            let credential_path = configuration_directory.join("auth.json");
             let workspace_root = resolve_projects_directory(app.handle(), &settings)?;
             let first_run = !workspace_root.exists();
             app.manage(settings);
+            app.manage(CredentialStore::new(credential_path));
+            app.manage(TutorState::default());
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
-            let manifest_path = app
-                .path()
-                .app_config_dir()
-                .map_err(std::io::Error::other)?
-                .join("managed-workspace.json");
+            let manifest_path = configuration_directory.join("managed-workspace.json");
             app.manage(WorkspaceManager::new(workspace_root.clone(), manifest_path));
             desktop_menu::install(app)?;
             if first_run {
@@ -486,6 +602,15 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             assistant_status,
+            authenticate_opencode,
+            authenticate_openrouter,
+            cancel_opencode_request,
+            opencode_models,
+            openrouter_models,
+            send_opencode_request,
+            provider_credential_status,
+            sign_out_opencode,
+            sign_out_openrouter,
             choose_projects_directory,
             launch_assistant,
             open_gic,
@@ -513,7 +638,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::SettingsStore;
+    use super::{credentials::CredentialStore, SettingsStore};
     use std::path::{Path, PathBuf};
 
     fn remove_test_directory(path: &Path) {
@@ -527,6 +652,204 @@ mod tests {
             "gic-desktop-settings-{}-{name}",
             std::process::id(),
         ))
+    }
+
+    #[test]
+    fn credentials_round_trip_without_exposing_the_key() {
+        let directory = test_directory("credentials-round-trip");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+
+        store
+            .authenticate_opencode("synthetic-secret")
+            .expect("store key");
+
+        assert!(store.status().expect("read status").opencode_authenticated);
+        assert!(!format!("{:?}", store.status().expect("read status")).contains("synthetic-secret"));
+        assert!(std::fs::read_to_string(directory.join("auth.json"))
+            .expect("read auth file")
+            .contains("synthetic-secret"));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn openrouter_credentials_round_trip_and_sign_out_independently() {
+        let directory = test_directory("openrouter-credentials");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("zen-secret")
+            .expect("store Zen key");
+        store
+            .authenticate_openrouter("openrouter-secret")
+            .expect("store OpenRouter key");
+
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(status.openrouter_authenticated);
+        assert!(!format!("{status:?}").contains("openrouter-secret"));
+
+        store.sign_out_openrouter().expect("sign out OpenRouter");
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(!status.openrouter_authenticated);
+        assert!(directory.join("auth.json").exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn provider_sign_out_preserves_the_other_key_and_deletes_the_last_key() {
+        let directory = test_directory("provider-sign-out-isolation");
+        remove_test_directory(&directory);
+        let auth_path = directory.join("auth.json");
+        let store = CredentialStore::new(auth_path.clone());
+        store
+            .authenticate_opencode("zen-synthetic")
+            .expect("store Zen key");
+        store
+            .authenticate_openrouter("openrouter-synthetic")
+            .expect("store OpenRouter key");
+
+        store.sign_out_opencode().expect("sign out Zen");
+
+        let status = store.status().expect("read status");
+        assert!(!status.opencode_authenticated);
+        assert!(status.openrouter_authenticated);
+        let contents = std::fs::read_to_string(&auth_path).expect("read auth file");
+        assert!(!contents.contains("zen-synthetic"));
+        assert!(contents.contains("openrouter-synthetic"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&auth_path)
+                .expect("auth metadata")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+
+        store
+            .authenticate_opencode("zen-synthetic")
+            .expect("restore Zen key");
+        store.sign_out_openrouter().expect("sign out OpenRouter");
+
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(!status.openrouter_authenticated);
+        let contents = std::fs::read_to_string(&auth_path).expect("read auth file");
+        assert!(contents.contains("zen-synthetic"));
+        assert!(!contents.contains("openrouter-synthetic"));
+        store.sign_out_opencode().expect("sign out final provider");
+        assert!(!auth_path.exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn credentials_are_replaced_atomically_and_sign_out_deletes_them() {
+        let directory = test_directory("credentials-replace");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("first-secret")
+            .expect("store first key");
+        store
+            .authenticate_opencode("second-secret")
+            .expect("replace key");
+
+        assert!(!std::fs::read_to_string(directory.join("auth.json"))
+            .expect("read auth file")
+            .contains("first-secret"));
+        store.sign_out_opencode().expect("sign out");
+        assert!(!store.status().expect("read status").opencode_authenticated);
+        assert!(!directory.join("auth.json").exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn credential_file_uses_owner_only_permissions() {
+        let directory = test_directory("credentials-permissions");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("synthetic-secret")
+            .expect("store key");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(directory.join("auth.json"))
+                .expect("auth metadata")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn insecure_credential_files_are_rejected_without_being_repaired_silently() {
+        let directory = test_directory("credentials-insecure");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let path = directory.join("auth.json");
+        std::fs::write(&path, r#"{"opencode_api_key":"synthetic-secret"}"#)
+            .expect("write credential fixture");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
+                .expect("make credential fixture insecure");
+        }
+        let store = CredentialStore::new(path.clone());
+
+        assert!(store.status().is_err());
+        assert!(store.authenticate_opencode("replacement-secret").is_err());
+        assert_eq!(
+            std::fs::read_to_string(path).expect("read rejected fixture"),
+            r#"{"opencode_api_key":"synthetic-secret"}"#
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn workspace_layout_is_stored_as_readable_json() {
+        let directory = test_directory("settings-readable-layout");
+        remove_test_directory(&directory);
+        let store = SettingsStore::new(directory.join("settings.json"));
+        let layout = r#"{"layout":{"type":"row"},"version":7}"#;
+
+        store
+            .write("gic.workspaceLayout", layout)
+            .expect("write workspace layout");
+
+        let stored = std::fs::read_to_string(directory.join("workspace-layout.json"))
+            .expect("read workspace layout");
+        assert!(stored.contains("\n  \"layout\""));
+        assert!(!directory.join("settings.json").exists());
+        assert!(store
+            .read()
+            .expect("read saved layout")
+            .contains_key("gic.workspaceLayout"));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn embedded_workspace_layout_is_migrated_to_its_own_file() {
+        let directory = test_directory("settings-layout-migration");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(
+            directory.join("settings.json"),
+            r#"{"gic.workspaceLayout":"{\"layout\":{\"type\":\"row\"},\"version\":7}"}"#,
+        )
+        .expect("write embedded layout fixture");
+        let store = SettingsStore::new(directory.join("settings.json"));
+
+        let settings = store.read().expect("read migrated settings");
+
+        assert!(settings.contains_key("gic.workspaceLayout"));
+        assert!(directory.join("workspace-layout.json").is_file());
+        remove_test_directory(&directory);
     }
 
     #[test]
@@ -546,6 +869,41 @@ mod tests {
                 .get("gic.canvasFrame")
                 .map(String::as_str),
             Some("false"),
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn tutor_model_preferences_persist_across_settings_store_instances() {
+        let directory = test_directory("tutor-model-preferences");
+        remove_test_directory(&directory);
+        let path = directory.join("settings.json");
+        let store = SettingsStore::new(path.clone());
+
+        store
+            .write("gic.tutor.enabled-model-ids", r#"["zen/alpha","zen/beta"]"#)
+            .expect("write enabled model IDs");
+        store
+            .write("gic.tutor.selected-model", "zen/beta")
+            .expect("write selected model");
+
+        let restored = SettingsStore::new(path)
+            .read()
+            .expect("read saved settings");
+
+        assert_eq!(
+            restored
+                .get("gic.tutor.enabled-model-ids")
+                .map(String::as_str),
+            Some(r#"["zen/alpha","zen/beta"]"#),
+        );
+        assert_eq!(
+            restored.get("gic.tutor.selected-model").map(String::as_str),
+            Some("zen/beta"),
+        );
+        assert_eq!(
+            store.write("credential", "must-not-enter-settings"),
+            Err("Unsupported setting key.".to_owned()),
         );
         remove_test_directory(&directory);
     }

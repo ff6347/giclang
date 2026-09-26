@@ -126,7 +126,7 @@ test("places application preferences in Settings", async ({ page }) => {
 		name: "Allow copying agent responses",
 	});
 	await expect(allowAgentCopying).not.toBeChecked();
-	await allowAgentCopying.click();
+	await page.getByText("Allow copying agent responses").click();
 	await expect(allowAgentCopying).toBeChecked();
 	await expect(
 		page.getByRole("button", { name: "Reset Layout" }),
@@ -134,6 +134,24 @@ test("places application preferences in Settings", async ({ page }) => {
 	await expect(
 		page.getByRole("region", { name: "Settings" }),
 	).not.toContainText("Agent provider");
+});
+
+test("settings selects stay aligned and reveal full-width options", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Settings" }).click();
+	const appearance = page.getByRole("combobox", { name: "Appearance" });
+	const trigger = await appearance.boundingBox();
+	expect(trigger).not.toBeNull();
+	expect(trigger!.width).toBeLessThan(550);
+	await expect(appearance.locator(".settings-select-indicator")).toBeVisible();
+	await appearance.click();
+	const popup = await page.getByRole("listbox").boundingBox();
+	expect(popup).not.toBeNull();
+	expect(popup!.width).toBeGreaterThanOrEqual(trigger!.width - 2);
+	expect(Math.abs(popup!.x - trigger!.x)).toBeLessThan(3);
 });
 
 test("defaults to system appearance and persists an explicit theme", async ({
@@ -151,11 +169,18 @@ test("defaults to system appearance and persists an explicit theme", async ({
 	const appearance = page.getByRole("combobox", { name: "Appearance" });
 	const lightTheme = page.getByRole("combobox", { name: "Light theme" });
 	const darkTheme = page.getByRole("combobox", { name: "Dark theme" });
-	await expect(appearance).toHaveValue("system");
-	await expect(lightTheme).toHaveValue("vs-light");
-	await expect(darkTheme).toHaveValue("vs-dark");
+	await expect(appearance.locator(".settings-select-value")).toHaveText(
+		"System",
+	);
+	await expect(lightTheme.locator(".settings-select-value")).toHaveText(
+		"VS Light",
+	);
+	await expect(darkTheme.locator(".settings-select-value")).toHaveText(
+		"VS Dark",
+	);
 
-	await darkTheme.selectOption("catppuccin-mocha");
+	await darkTheme.click();
+	await page.getByRole("option", { name: "Catppuccin Mocha" }).click();
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-theme",
 		"catppuccin-mocha",
@@ -166,8 +191,10 @@ test("defaults to system appearance and persists an explicit theme", async ({
 		"rgb(30, 30, 46)",
 	);
 	await page.getByRole("tab", { name: "Settings" }).click();
-	await appearance.selectOption("light");
-	await lightTheme.selectOption("macos-classic");
+	await appearance.click();
+	await page.getByRole("option", { name: "Light", exact: true }).click();
+	await lightTheme.click();
+	await page.getByRole("option", { name: "macOS Classic" }).click();
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-theme",
 		"macos-classic",
@@ -183,15 +210,21 @@ test("defaults to system appearance and persists an explicit theme", async ({
 		"macos-classic",
 	);
 	await page.getByRole("tab", { name: "Settings" }).click();
-	await expect(page.getByRole("combobox", { name: "Appearance" })).toHaveValue(
-		"light",
-	);
-	await expect(page.getByRole("combobox", { name: "Light theme" })).toHaveValue(
-		"macos-classic",
-	);
-	await expect(page.getByRole("combobox", { name: "Dark theme" })).toHaveValue(
-		"catppuccin-mocha",
-	);
+	await expect(
+		page
+			.getByRole("combobox", { name: "Appearance" })
+			.locator(".settings-select-value"),
+	).toHaveText("Light");
+	await expect(
+		page
+			.getByRole("combobox", { name: "Light theme" })
+			.locator(".settings-select-value"),
+	).toHaveText("macOS Classic");
+	await expect(
+		page
+			.getByRole("combobox", { name: "Dark theme" })
+			.locator(".settings-select-value"),
+	).toHaveText("Catppuccin Mocha");
 });
 
 test("persists the Canvas frame setting across reloads", async ({ page }) => {
