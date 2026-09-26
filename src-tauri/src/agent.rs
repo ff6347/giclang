@@ -558,7 +558,14 @@ fn openrouter_provider_error(error: CompletionError, fallback: &str) -> String {
 }
 
 fn openrouter_model_eligible(model: &OpenRouterModel, today: chrono::NaiveDate) -> bool {
-    model.architecture.modality.as_deref() == Some("text->text")
+    model
+        .architecture
+        .modality
+        .as_deref()
+        .and_then(|modality| modality.split_once("->"))
+        .is_some_and(|(input, output)| {
+            output == "text" && input.split('+').any(|part| part == "text")
+        })
         && match model.expiration_date.as_deref() {
             None => true,
             Some(date) => {
@@ -931,7 +938,8 @@ mod tests {
         let image: OpenRouterModel = serde_json::from_value(serde_json::json!({
             "id": "author/image",
             "name": "Image",
-            "architecture": {"modality": "text+image->text"},
+            "architecture": {"modality": "image->text"},
+            "pricing": {"prompt": "0", "completion": "0"},
         }))
         .unwrap();
         let expired: OpenRouterModel = serde_json::from_value(serde_json::json!({
@@ -953,6 +961,29 @@ mod tests {
         assert!(!openrouter_model_eligible(&expired, today));
         assert!(!openrouter_model_eligible(&malformed_expiration, today));
         assert!(serde_json::from_str::<OpenRouterModelList>(r#"{"data":null}"#).is_err());
+    }
+
+    #[test]
+    fn openrouter_catalog_accepts_text_input_from_multimodal_models() {
+        let today = chrono::NaiveDate::from_ymd_opt(2026, 9, 25).unwrap();
+        let gpt: OpenRouterModel = serde_json::from_value(serde_json::json!({
+            "id": "openai/gpt-6-sol",
+            "name": "OpenAI: GPT-6 Sol",
+            "architecture": {"modality": "text+image+file->text"},
+            "pricing": {"prompt": "0.000002", "completion": "0.00001"},
+        }))
+        .unwrap();
+        assert!(openrouter_model_eligible(&gpt, today));
+        for modality in ["image->text", "text->image", "textbook->text"] {
+            let model: OpenRouterModel = serde_json::from_value(serde_json::json!({
+                "id": "author/unsupported",
+                "name": "Unsupported",
+                "architecture": {"modality": modality},
+                "pricing": {"prompt": "0", "completion": "0"},
+            }))
+            .unwrap();
+            assert!(!openrouter_model_eligible(&model, today), "{modality}");
+        }
     }
 
     #[test]
@@ -1036,7 +1067,7 @@ mod tests {
             let mut paths = Vec::new();
             for response_body in [
                 r#"{"data":{"limit":10,"limit_remaining":7.5}}"#,
-                r#"{"data":[{"id":"author/model","name":"Model","architecture":{"modality":"text->text"},"pricing":{"prompt":"0.0000001","completion":"0.0000002"}}]}"#,
+                r#"{"data":[{"id":"author/model","name":"Model","architecture":{"modality":"text->text"},"pricing":{"prompt":"0.0000001","completion":"0.0000002"}},{"id":"openai/gpt-6-sol","name":"OpenAI: GPT-6 Sol","architecture":{"modality":"text+image+file->text"},"pricing":{"prompt":"0.000002","completion":"0.00001"}}]}"#,
             ] {
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let mut request = Vec::new();
@@ -1080,8 +1111,9 @@ mod tests {
         let paths = server.await.unwrap();
         assert_eq!(paths[0], "GET /api/v1/key HTTP/1.1");
         assert_eq!(paths[1], "GET /api/v1/models/user HTTP/1.1");
-        assert_eq!(models.len(), 1);
+        assert_eq!(models.len(), 2);
         assert_eq!(models[0].id, "openrouter/author/model");
+        assert_eq!(models[1].id, "openrouter/openai/gpt-6-sol");
         assert_eq!(models[0].is_free, Some(false));
         assert_eq!(serde_json::to_value(&models[0]).unwrap()["isFree"], false);
         assert_eq!(
@@ -1164,7 +1196,7 @@ mod tests {
                 let body = if index % 2 == 0 {
                     r#"{"data":{"limit":10,"limit_remaining":10}}"#
                 } else {
-                    r#"{"data":[{"id":"author/free:free","name":"Free","architecture":{"modality":"text->text"},"pricing":{"prompt":"0","completion":"0"}},{"id":"author/image","name":"Image","architecture":{"modality":"text+image->text"},"pricing":{"prompt":"0","completion":"0"}},{"id":"author/expired","name":"Expired","architecture":{"modality":"text->text"},"pricing":{"prompt":"0","completion":"0"},"expiration_date":"2000-01-01"}]}"#
+                    r#"{"data":[{"id":"author/free:free","name":"Free","architecture":{"modality":"text->text"},"pricing":{"prompt":"0","completion":"0"}},{"id":"author/image","name":"Image","architecture":{"modality":"image->text"},"pricing":{"prompt":"0","completion":"0"}},{"id":"author/expired","name":"Expired","architecture":{"modality":"text->text"},"pricing":{"prompt":"0","completion":"0"},"expiration_date":"2000-01-01"}]}"#
                 }.as_bytes();
                 socket.write_all(format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
