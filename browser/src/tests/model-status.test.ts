@@ -150,6 +150,62 @@ test("picker only offers enabled models while advanced switches include every mo
 	assert.doesNotMatch(html, /<option/);
 });
 
+test("advanced provider tables list verified models first without reordering peers", () => {
+	const html = renderModels(
+		true,
+		null,
+		[
+			{ id: "opencode-zen/first", name: "Zen unverified A" },
+			{
+				id: "opencode-zen/second",
+				name: "Zen verified A",
+				referenceToolsVerified: true,
+			},
+			{ id: "opencode-zen/third", name: "Zen unverified B" },
+			{
+				id: "opencode-zen/fourth",
+				name: "Zen verified B",
+				referenceToolsVerified: true,
+			},
+			{ id: "openrouter/author/first", name: "Router unverified" },
+			{
+				id: "openrouter/author/second",
+				name: "Router verified",
+				referenceToolsVerified: true,
+			},
+		],
+		true,
+		[],
+	);
+	assert.match(html, /<table[^>]*aria-label="OpenCode Zen models"/);
+	assert.match(html, /<table[^>]*aria-label="OpenRouter models"/);
+	assert.match(html, /<th scope="col">Model<\/th>/);
+	assert.match(html, /<th scope="col">Reference tools<\/th>/);
+	assert.match(html, /<th scope="col">Input price<\/th>/);
+	assert.match(html, /<th scope="col">Output price<\/th>/);
+	assert.match(html, /<th scope="col">Show in picker<\/th>/);
+	const rows = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)].map(
+		([row]) => row,
+	);
+	assert.deepEqual(
+		rows.map((row) => row.match(/<th scope="row">([^<]+)/)?.[1]),
+		[
+			"Zen verified A",
+			"Zen verified B",
+			"Zen unverified A",
+			"Zen unverified B",
+			"Router verified",
+			"Router unverified",
+		],
+	);
+	assert.match(rows[0]!, /Enable Zen verified A/);
+	assert.doesNotMatch(rows[0]!, /data-disabled/);
+	assert.match(rows[2]!, /data-disabled/);
+	assert.match(rows[4]!, /Enable Router verified/);
+	assert.doesNotMatch(rows[4]!, /data-disabled/);
+	assert.match(rows[5]!, /data-disabled/);
+});
+
 test("unverified models remain visible but cannot be enabled or selected", () => {
 	const html = renderModels(
 		true,
@@ -165,7 +221,7 @@ test("unverified models remain visible but cannot be enabled or selected", () =>
 		false,
 		["opencode-zen/big-pickle", "opencode-zen/gpt-6-luna"],
 	);
-	const bigPickle = [...html.matchAll(/<li class="settings-model">.*?<\/li>/g)]
+	const bigPickle = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
 		.map(([row]) => row)
 		.find((row) => row.includes("Big Pickle"));
 	assert.ok(bigPickle);
@@ -239,15 +295,15 @@ test("free and paid OpenRouter prices are distinguished in advanced rows", () =>
 		[],
 	);
 	assert.match(html, /Free tutor/);
-	assert.match(html, /Free/);
-	assert.match(html, /Input: \$0\.10\/1M/);
-	assert.match(html, /Output: \$0\.20\/1M/);
-	const lowCostRow = [...html.matchAll(/<li class="settings-model">.*?<\/li>/g)]
+	assert.match(html, /<strong class="settings-model-detail">Free<\/strong>/);
+	assert.match(html, /<td>\$0\.10\/1M input tokens<\/td>/);
+	assert.match(html, /<td>\$0\.20\/1M output tokens<\/td>/);
+	const lowCostRow = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
 		.map(([row]) => row)
 		.find((row) => row.includes("Low-cost tutor"));
 	assert.ok(lowCostRow);
-	assert.doesNotMatch(lowCostRow, /Free —/);
-	const requestRow = [...html.matchAll(/<li class="settings-model">.*?<\/li>/g)]
+	assert.doesNotMatch(lowCostRow, /<strong[^>]*>Free<\/strong>/);
+	const requestRow = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
 		.map(([row]) => row)
 		.find((row) => row.includes("Request-priced tutor"));
 	assert.ok(requestRow);

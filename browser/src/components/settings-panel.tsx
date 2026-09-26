@@ -84,7 +84,11 @@ function ModelSettings({
 	onModelVisibilityChange: (id: string, enabled: boolean) => void;
 }) {
 	const [search, setSearch] = useState("");
-	const matchingModels = filterModels(models, search);
+	const matchingModels = filterModels(models, search).sort(
+		(first, second) =>
+			Number(second.referenceToolsVerified === true) -
+			Number(first.referenceToolsVerified === true),
+	);
 	return (
 		<Collapsible.Root className="settings-advanced">
 			<Collapsible.Trigger className="application-button settings-advanced-trigger">
@@ -111,48 +115,77 @@ function ModelSettings({
 						{matchingModels.length === 0 && (
 							<p role="status">No matching models for {provider}.</p>
 						)}
-						<ul className="settings-model-list">
-							{matchingModels.map((model) => {
-								const prices = model.pricing?.split(", ");
-								const verified = model.referenceToolsVerified === true;
-								return (
-									<li key={model.id} className="settings-model">
-										<span className="settings-model-name">{model.name}</span>
-										<Switch.Root
-											aria-label={`Enable ${model.name}`}
-											checked={verified && enabledModelIds.includes(model.id)}
-											disabled={!verified}
-											onCheckedChange={(checked) =>
-												onModelVisibilityChange(model.id, checked)
-											}
-											className="settings-switch"
-										>
-											<Switch.Thumb className="settings-switch-thumb" />
-										</Switch.Root>
-										{!verified && (
-											<span className="settings-model-price">
-												Reference tools not verified
-											</span>
-										)}
-										<span className="settings-model-price">
-											{prices?.[0] && prices[1]
-												? `${model.isFree === true ? "Free — " : ""}Input: ${prices[0]} · Output: ${prices[1]}`
-												: "Price unavailable"}
-										</span>
-										{model.otherCharges === true && (
-											<span className="settings-model-price">
-												Additional charges may apply.
-											</span>
-										)}
-										{model.accountLimit && (
-											<span className="settings-model-price">
-												{model.accountLimit}
-											</span>
-										)}
-									</li>
-								);
-							})}
-						</ul>
+						<div
+							className="settings-model-table-scroll"
+							role="region"
+							aria-label={`${provider} model table`}
+							tabIndex={0}
+						>
+							<table
+								aria-label={`${provider} models`}
+								className="settings-model-table"
+							>
+								<thead>
+									<tr>
+										<th scope="col">Model</th>
+										<th scope="col">Reference tools</th>
+										<th scope="col">Input price</th>
+										<th scope="col">Output price</th>
+										<th scope="col">Show in picker</th>
+									</tr>
+								</thead>
+								<tbody>
+									{matchingModels.map((model) => {
+										const prices = model.pricing?.split(", ");
+										const verified = model.referenceToolsVerified === true;
+										return (
+											<tr key={model.id} className="settings-model">
+												<th scope="row">
+													{model.name}
+													{model.isFree === true && (
+														<strong className="settings-model-detail">
+															Free
+														</strong>
+													)}
+													{model.otherCharges === true && (
+														<span className="settings-model-detail">
+															Additional charges may apply.
+														</span>
+													)}
+													{model.accountLimit && (
+														<span className="settings-model-detail">
+															{model.accountLimit}
+														</span>
+													)}
+												</th>
+												<td>
+													{verified
+														? "Verified"
+														: "Reference tools not verified"}
+												</td>
+												<td>{prices?.[0] || "Price unavailable"}</td>
+												<td>{prices?.[1] || "Price unavailable"}</td>
+												<td>
+													<Switch.Root
+														aria-label={`Enable ${model.name}`}
+														checked={
+															verified && enabledModelIds.includes(model.id)
+														}
+														disabled={!verified}
+														onCheckedChange={(checked) =>
+															onModelVisibilityChange(model.id, checked)
+														}
+														className="settings-switch"
+													>
+														<Switch.Thumb className="settings-switch-thumb" />
+													</Switch.Root>
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
 					</>
 				)}
 			</Collapsible.Panel>
