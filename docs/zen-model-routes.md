@@ -56,7 +56,7 @@ The Gemini endpoint has a successful direct smoke check, but the integrated tuto
 
 ## Reference-tool capability
 
-A documented text route does not establish that a model can use GIC's bounded `search_reference` and `read_reference` tools. Only models with a completed tool-call → reference-result → text-answer probe are marked verified for the integrated tutor:
+A documented text route does not establish that a model can use GIC's bounded `search_reference` and `read_reference` tools. A successful direct tool-call → reference-result → text-answer probe establishes provider-specific evidence; the native allowlist separately controls which models are selectable in GIC.
 
 Each explicit question allows at most two tool-bearing model turns and two reference calls in total, followed by one no-tools answer turn. That is **up to three provider requests per question**, subject to a single 90-second deadline; BYOK providers may bill for each request.
 
@@ -65,20 +65,31 @@ Each explicit question allows at most two tool-bearing model turns and two refer
 | `opencode-zen/gpt-6-luna` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
 | `opencode-zen/claude-sonnet-5` | Search and read calls consumed their results; final text completed | Selectable if present in the live catalog |
 | `opencode-zen/big-pickle` | Plain text and tool requests both returned HTTP 403, including with a conversation-specific session header | Unverified; not selectable |
-| OpenRouter models | No account-key reference-tool probe completed | Unverified; not selectable |
+| OpenRouter models | Account-key probes for exact model IDs are listed below | Not yet in the native allowlist |
 
-Additional Zen Chat Completions probes used the same bounded search → read → answer workflow. These are **direct Zen API results**, not Go or packaged-app verification; GIC's native selectable-model allowlist has not been expanded on the basis of these probes.
+Additional Zen probes used the same bounded search → read → answer workflow. These are **direct Zen API results**, not Go or packaged-app verification; GIC's native selectable-model allowlist has not been expanded on the basis of these probes.
 
 | Zen model ID | Direct reference-tool result |
 | --- | --- |
-| `glm-5.3`, `glm-5.3-flash`, `kimi-k3` | Search, read, and final text completed |
-| `deepseek-v4.1-flash`, `deepseek-v4-flash` | Search, read, and final text completed |
+| `claude-sonnet-5`, `deepseek-v4-flash`, `deepseek-v4.1-flash`, `glm-5.3` | Search, read, and final text completed |
+| `gpt-5.6-luna`, `gpt-5.6-terra`, `gpt-5.6-sol`, `gpt-6-sol`, `gpt-6-luna` | Search, read, and final text completed |
+| `minimax-m3`, `qwen3.8-max` | Search, read, and final text completed |
 | `space-bunny-free` | Search, read, and final text completed; free-tier access is model-specific |
+| `glm-5.3-flash`, `kimi-k3` | Search, read, and final text completed in the earlier Zen probes |
+| `claude-opus-5-5`, `qwen3.8-flash` | HTTP 400 on the initial request; tool capability is unproven |
 | `kimi-k2.7-code`, `deepseek-v4-pro` | HTTP 404 on the initial request; tool capability is unproven |
-| `mimo-v2.6-flash-free` | HTTP 403 on the initial request; tool capability is unproven |
+| `mimo-v2.6-flash-free`, `muse-spark-1.3-contributor-free`, `nemotron-3.5-lightning-free` | HTTP 403 on the initial request; tool capability is unproven |
 | `mimo-v2.6-pro` | Not in the Zen catalog or documented Zen routes; not requested |
 
-The Go model `mimo-v2.6-flash` is not the same Zen ID as `mimo-v2.6-flash-free`. OpenRouter's `stealth/space-bunny-alpha` is not Zen's `space-bunny-free`; neither should be substituted silently.
+The OpenRouter account-specific catalog included each of the following exact IDs. Each request used OpenRouter's Chat Completions endpoint and the same bounded tool-result continuation:
+
+| OpenRouter model ID | Direct reference-tool result |
+| --- | --- |
+| `z-ai/glm-5.3`, `z-ai/glm-5.3-flash`, `moonshotai/kimi-k3`, `moonshotai/kimi-k2.7-code` | Search, read, and final text completed |
+| `xiaomi/mimo-v2.6-flash`, `deepseek/deepseek-v4.1-flash`, `deepseek/deepseek-v4-pro`, `deepseek/deepseek-v4-flash` | Search, read, and final text completed |
+| `xiaomi/mimo-v2.6-pro` | HTTP 200 on the initial request, but no reference tool call or completed answer was observed; unverified |
+
+The Go model `mimo-v2.6-flash` is not the same Zen ID as `mimo-v2.6-flash-free`. OpenRouter's `stealth/space-bunny-alpha` is not Zen's `space-bunny-free`; no exact OpenRouter Space Bunny Free match was probed. Models with the same display name on different providers require separate proof.
 
 Local native HTTP tests cover tool-result correlation for Chat Completions, Responses, and Messages, including OpenRouter's wire format. A live packaged tutor interaction is still needed; direct API probe success does not by itself prove packaged behavior.
 
@@ -91,4 +102,4 @@ When the catalog changes:
 3. Keep smoke-confirmed examples limited to routes actually tested with [`scripts/zen-smoke.ts`](../scripts/zen-smoke.ts); do not imply that all IDs have been smoke-tested.
 4. Check the native route map in [`src-tauri/src/agent.rs`](../src-tauri/src/agent.rs) and its route tests. It selects the protocol, while `reference_tools_verified` controls which models are callable. Updating this document alone does not enable a model.
 5. Preserve GIC's text-only tutor boundary. A provider endpoint's broader capabilities do not imply that GIC supports non-text interactions.
-6. To certify another model, use the bounded [`zen-reference-smoke.ts`](../scripts/zen-reference-smoke.ts) probe only after the key owner authorizes paid inference. Confirm both reference tools and the final answer, then update the verification table, native allowlist, and tests. OpenRouter needs its own provider-specific proof; a Zen result cannot certify an OpenRouter route.
+6. To certify another model, use the bounded [`zen-reference-smoke.ts`](../scripts/zen-reference-smoke.ts) or [`openrouter-reference-smoke.ts`](../scripts/openrouter-reference-smoke.ts) probe only after the key owner authorizes paid inference. Confirm both reference tools and the final answer, then update the verification table, native allowlist, and tests. A result from one provider cannot certify another.
