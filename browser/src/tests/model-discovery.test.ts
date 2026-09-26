@@ -41,3 +41,12 @@ test("untrusted failures do not expose provider or credential text", () => {
 	assert.doesNotMatch(message, /synthetic-secret|Bearer/);
 	assert.match(message, /HTTP 401/);
 });
+
+test("OpenRouter account failures remain provider-specific and redacted", () => {
+	const message = modelDiscoveryError(
+		"OpenRouter rejected this API key (HTTP 401). Reconnect with a valid key.",
+	);
+	assert.match(message, /OpenRouter/);
+	assert.match(message, /HTTP 401/);
+	assert.doesNotMatch(message, /synthetic-secret|Bearer/);
+});

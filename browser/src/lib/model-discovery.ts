@@ -3,6 +3,9 @@
 
 export function modelDiscoveryError(error: unknown): string {
 	if (typeof error === "string") {
+		if (error.startsWith("OpenRouter ")) {
+			return error;
+		}
 		const status = /^OpenCode request failed \(HTTP ([45]\d{2})\):/.exec(
 			error,
 		)?.[1];
@@ -22,5 +25,5 @@ export function modelDiscoveryError(error: unknown): string {
 			return "No OpenCode key is saved. Sign out and reconnect.";
 		}
 	}
-	return "OpenCode Zen models could not be loaded. Check your network connection, then retry.";
+	return "Tutor models could not be loaded. Check your network connection, then retry.";
 }

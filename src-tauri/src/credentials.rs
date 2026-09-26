@@ -8,12 +8,14 @@ use tempfile::NamedTempFile;
 #[derive(Default, Deserialize, Serialize)]
 struct AuthFile {
     opencode_api_key: Option<String>,
+    openrouter_api_key: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CredentialStatus {
     pub opencode_authenticated: bool,
+    pub openrouter_authenticated: bool,
 }
 
 pub(crate) struct CredentialStore {
@@ -46,9 +48,28 @@ impl CredentialStore {
         Ok(operation(&api_key))
     }
 
+    pub(crate) fn with_openrouter_key<T>(
+        &self,
+        operation: impl FnOnce(&str) -> T,
+    ) -> Result<T, String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let auth = self
+            .read_unlocked()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let api_key = auth
+            .openrouter_api_key
+            .ok_or_else(|| "OpenRouter is not authenticated.".to_owned())?;
+        Ok(operation(&api_key))
+    }
+
     pub(crate) fn status(&self) -> Result<CredentialStatus, String> {
+        let auth = self.read()?;
         Ok(CredentialStatus {
-            opencode_authenticated: self.read()?.opencode_api_key.is_some(),
+            opencode_authenticated: auth.opencode_api_key.is_some(),
+            openrouter_authenticated: auth.openrouter_api_key.is_some(),
         })
     }
 
@@ -69,16 +90,49 @@ impl CredentialStore {
         self.write_unlocked(&auth)
     }
 
-    pub(crate) fn sign_out(&self) -> Result<(), String> {
+    pub(crate) fn authenticate_openrouter(&self, api_key: &str) -> Result<(), String> {
+        if api_key.trim().is_empty() {
+            return Err("Enter an OpenRouter API key.".to_owned());
+        }
         let _access = self
             .access
             .lock()
             .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
-        match fs::remove_file(&self.path) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(_) => Err("Unable to remove provider credentials.".to_owned()),
-        }
+        let mut auth = match self.read_unlocked() {
+            Ok(auth) => auth,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => AuthFile::default(),
+            Err(_) => return Err("Provider credentials are unavailable.".to_owned()),
+        };
+        auth.openrouter_api_key = Some(api_key.to_owned());
+        self.write_unlocked(&auth)
+    }
+
+    pub(crate) fn sign_out_openrouter(&self) -> Result<(), String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let mut auth = match self.read_unlocked() {
+            Ok(auth) => auth,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => AuthFile::default(),
+            Err(_) => return Err("Provider credentials are unavailable.".to_owned()),
+        };
+        auth.openrouter_api_key = None;
+        self.write_unlocked(&auth)
+    }
+
+    pub(crate) fn sign_out_opencode(&self) -> Result<(), String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let mut auth = match self.read_unlocked() {
+            Ok(auth) => auth,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => AuthFile::default(),
+            Err(_) => return Err("Provider credentials are unavailable.".to_owned()),
+        };
+        auth.opencode_api_key = None;
+        self.write_unlocked(&auth)
     }
 
     fn read(&self) -> Result<AuthFile, String> {
@@ -104,6 +158,13 @@ impl CredentialStore {
     }
 
     fn write_unlocked(&self, auth: &AuthFile) -> Result<(), String> {
+        if auth.opencode_api_key.is_none() && auth.openrouter_api_key.is_none() {
+            return match fs::remove_file(&self.path) {
+                Ok(()) => Ok(()),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+                Err(_) => Err("Unable to remove provider credentials.".to_owned()),
+            };
+        }
         let parent = self
             .path
             .parent()

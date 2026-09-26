@@ -9,11 +9,14 @@ import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
 export interface ProviderCredentialStatus {
 	readonly opencodeAuthenticated: boolean;
+	readonly openrouterAuthenticated: boolean;
 }
 
 export interface OpencodeModel {
 	readonly id: string;
 	readonly name: string;
+	readonly pricing?: string;
+	readonly accountLimit?: string;
 }
 
 export type OpencodeAgentEvent =
@@ -193,12 +196,26 @@ export class DesktopHost {
 		});
 	}
 
+	authenticateOpenrouter(apiKey: string): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("authenticate_openrouter", {
+			apiKey,
+		});
+	}
+
 	signOutOpencode(): Promise<ProviderCredentialStatus> {
 		return invoke<ProviderCredentialStatus>("sign_out_opencode");
 	}
 
+	signOutOpenrouter(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_openrouter");
+	}
+
 	opencodeModels(): Promise<OpencodeModel[]> {
 		return invoke<OpencodeModel[]>("opencode_models");
+	}
+
+	openrouterModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("openrouter_models");
 	}
 
 	sendOpencodeRequest(request: {

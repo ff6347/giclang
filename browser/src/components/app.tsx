@@ -155,26 +155,62 @@ export function App({
 	const workspace = useWorkspace(desktop);
 	const loadOpencodeModels = (status: ProviderCredentialStatus | null) => {
 		const request = ++opencodeModelsRequest.current;
-		if (desktop === undefined || status?.opencodeAuthenticated !== true) {
+		if (
+			desktop === undefined ||
+			(status?.opencodeAuthenticated !== true &&
+				status?.openrouterAuthenticated !== true)
+		) {
 			setOpencodeModels([]);
 			setOpencodeModel("");
 			setOpencodeModelError(null);
 			return;
 		}
-		void desktop
-			.opencodeModels()
-			.then((models) => {
+		void Promise.allSettled([
+			status?.opencodeAuthenticated === true
+				? desktop.opencodeModels()
+				: Promise.resolve([]),
+			status?.openrouterAuthenticated === true
+				? desktop.openrouterModels()
+				: Promise.resolve([]),
+		])
+			.then((results) => {
 				if (request !== opencodeModelsRequest.current) return;
-				setOpencodeModels(models);
-				setOpencodeModelError(null);
-				setOpencodeModel((current) =>
-					models.some((model) => model.id === current)
-						? current
-						: (models.find((model) => model.id === "opencode-zen/big-pickle")
-								?.id ??
-							models[0]?.id ??
-							""),
+				const zenModels =
+					results[0].status === "fulfilled" ? results[0].value : [];
+				const openrouterModels =
+					results[1].status === "fulfilled" ? results[1].value : [];
+				const availableModels = [...zenModels, ...openrouterModels];
+				setOpencodeModels(availableModels);
+				const preferredErrorIndex =
+					opencodeModel.startsWith("openrouter/") ||
+					status?.opencodeAuthenticated !== true
+						? 1
+						: 0;
+				const failedProvider =
+					results[preferredErrorIndex].status === "rejected"
+						? results[preferredErrorIndex]
+						: results.find((result) => result.status === "rejected");
+				setOpencodeModelError(
+					failedProvider?.status === "rejected"
+						? modelDiscoveryError(failedProvider.reason)
+						: null,
 				);
+				setOpencodeModel((current) => {
+					if (availableModels.some((model) => model.id === current))
+						return current;
+					if (
+						availableModels.some(
+							(model) => model.id === "opencode-zen/big-pickle",
+						)
+					) {
+						return "opencode-zen/big-pickle";
+					}
+					return status?.opencodeAuthenticated === true
+						? (availableModels.find((model) =>
+								model.id.startsWith("opencode-zen/"),
+							)?.id ?? "")
+						: "";
+				});
 			})
 			.catch((error: unknown) => {
 				if (request !== opencodeModelsRequest.current) return;
@@ -203,7 +239,12 @@ export function App({
 		desktop,
 		documents.documentId,
 		opencodeModel,
-		providerStatus?.opencodeAuthenticated === true,
+		opencodeModel === ""
+			? providerStatus?.opencodeAuthenticated === true ||
+					providerStatus?.openrouterAuthenticated === true
+			: opencodeModel.startsWith("openrouter/")
+				? providerStatus?.openrouterAuthenticated === true
+				: providerStatus?.opencodeAuthenticated === true,
 	);
 
 	useEffect(() => {
@@ -389,7 +430,8 @@ export function App({
 						allowCopying={agentResponseCopying}
 						disabled={
 							desktop !== undefined &&
-							documents.documentState.kind === "untitled"
+							(documents.documentState.kind === "untitled" ||
+								opencodeModel === "")
 						}
 						messages={agent.messages}
 						status={agent.status}

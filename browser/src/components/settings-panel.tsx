@@ -61,6 +61,7 @@ export function SettingsPanel({
 	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
 	const [apiKey, setApiKey] = useState("");
+	const [openrouterApiKey, setOpenrouterApiKey] = useState("");
 	const authenticate = async () => {
 		if (desktop === undefined || apiKey.trim().length === 0) return;
 		const status = await desktop.authenticateOpencode(apiKey);
@@ -70,6 +71,16 @@ export function SettingsPanel({
 	const signOut = async () => {
 		if (desktop === undefined) return;
 		onProviderAuthenticated(await desktop.signOutOpencode());
+	};
+	const authenticateOpenrouter = async () => {
+		if (desktop === undefined || openrouterApiKey.trim().length === 0) return;
+		const status = await desktop.authenticateOpenrouter(openrouterApiKey);
+		setOpenrouterApiKey("");
+		onProviderAuthenticated(status);
+	};
+	const signOutOpenrouter = async () => {
+		if (desktop === undefined) return;
+		onProviderAuthenticated(await desktop.signOutOpenrouter());
 	};
 	return (
 		<section aria-label="Settings" className="workspace-panel padded-panel">
@@ -115,19 +126,23 @@ export function SettingsPanel({
 							</Button>
 						</>
 					)}
-					{providerStatus?.opencodeAuthenticated === true && (
+					{(providerStatus?.opencodeAuthenticated === true ||
+						providerStatus?.openrouterAuthenticated === true) && (
 						<>
 							<label className="settings-option">
 								Model
 								<select
-									aria-label="OpenCode model"
+									aria-label="Tutor model"
 									className="application-input"
 									value={selectedModel}
 									onChange={(event) => onModelChange(event.currentTarget.value)}
 								>
+									<option value="">Choose a model</option>
 									{models.map((model) => (
 										<option key={model.id} value={model.id}>
 											{model.name}
+											{model.pricing ? ` — ${model.pricing}` : ""}
+											{model.accountLimit ? ` — ${model.accountLimit}` : ""}
 										</option>
 									))}
 								</select>
@@ -135,9 +150,7 @@ export function SettingsPanel({
 							{modelError !== null ? (
 								<p role="alert">{modelError}</p>
 							) : models.length === 0 ? (
-								<p role="status">
-									No eligible OpenCode Zen models are available.
-								</p>
+								<p role="status">No eligible models are available.</p>
 							) : null}
 							{(modelError !== null || models.length === 0) && (
 								<Button
@@ -148,6 +161,55 @@ export function SettingsPanel({
 									Retry models
 								</Button>
 							)}
+						</>
+					)}
+				</>
+			)}
+			<h2>OpenRouter tutor</h2>
+			{desktop !== undefined && (
+				<>
+					<p className="settings-help">
+						OpenRouter is optional bring-your-own-key access for adults 18 and
+						older. Questions send sketch source, diagnostics, output, and
+						conversation to OpenRouter, which may route them to third-party
+						providers with their own retention terms. Your key stays in native
+						storage; cancellation may not prevent billing.
+					</p>
+					{providerStatus?.openrouterAuthenticated === true ? (
+						<>
+							<p role="status">
+								OpenRouter key saved. It is checked when models load.
+							</p>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={signOutOpenrouter}
+							>
+								Sign out of OpenRouter
+							</Button>
+						</>
+					) : (
+						<>
+							<label className="settings-option">
+								OpenRouter API key
+								<input
+									aria-label="OpenRouter API key"
+									className="application-input"
+									type="password"
+									value={openrouterApiKey}
+									onChange={(event) =>
+										setOpenrouterApiKey(event.currentTarget.value)
+									}
+								/>
+							</label>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={authenticateOpenrouter}
+								disabled={openrouterApiKey.trim().length === 0}
+							>
+								Connect OpenRouter
+							</Button>
 						</>
 					)}
 				</>

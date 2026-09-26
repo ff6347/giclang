@@ -10,7 +10,9 @@ mod managed_files;
 mod sessions;
 mod workspace;
 
-use agent::{cancel_opencode_request, opencode_models, send_opencode_request, TutorState};
+use agent::{
+    cancel_opencode_request, opencode_models, openrouter_models, send_opencode_request, TutorState,
+};
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
@@ -492,7 +494,22 @@ fn authenticate_opencode(
 
 #[tauri::command]
 fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
-    store.sign_out()?;
+    store.sign_out_opencode()?;
+    store.status()
+}
+
+#[tauri::command]
+fn authenticate_openrouter(
+    api_key: String,
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.authenticate_openrouter(&api_key)?;
+    store.status()
+}
+
+#[tauri::command]
+fn sign_out_openrouter(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out_openrouter()?;
     store.status()
 }
 
@@ -583,11 +600,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             assistant_status,
             authenticate_opencode,
+            authenticate_openrouter,
             cancel_opencode_request,
             opencode_models,
+            openrouter_models,
             send_opencode_request,
             provider_credential_status,
             sign_out_opencode,
+            sign_out_openrouter,
             choose_projects_directory,
             launch_assistant,
             open_gic,
@@ -650,6 +670,78 @@ mod tests {
     }
 
     #[test]
+    fn openrouter_credentials_round_trip_and_sign_out_independently() {
+        let directory = test_directory("openrouter-credentials");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_opencode("zen-secret")
+            .expect("store Zen key");
+        store
+            .authenticate_openrouter("openrouter-secret")
+            .expect("store OpenRouter key");
+
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(status.openrouter_authenticated);
+        assert!(!format!("{status:?}").contains("openrouter-secret"));
+
+        store.sign_out_openrouter().expect("sign out OpenRouter");
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(!status.openrouter_authenticated);
+        assert!(directory.join("auth.json").exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn provider_sign_out_preserves_the_other_key_and_deletes_the_last_key() {
+        let directory = test_directory("provider-sign-out-isolation");
+        remove_test_directory(&directory);
+        let auth_path = directory.join("auth.json");
+        let store = CredentialStore::new(auth_path.clone());
+        store
+            .authenticate_opencode("zen-synthetic")
+            .expect("store Zen key");
+        store
+            .authenticate_openrouter("openrouter-synthetic")
+            .expect("store OpenRouter key");
+
+        store.sign_out_opencode().expect("sign out Zen");
+
+        let status = store.status().expect("read status");
+        assert!(!status.opencode_authenticated);
+        assert!(status.openrouter_authenticated);
+        let contents = std::fs::read_to_string(&auth_path).expect("read auth file");
+        assert!(!contents.contains("zen-synthetic"));
+        assert!(contents.contains("openrouter-synthetic"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&auth_path)
+                .expect("auth metadata")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+
+        store
+            .authenticate_opencode("zen-synthetic")
+            .expect("restore Zen key");
+        store.sign_out_openrouter().expect("sign out OpenRouter");
+
+        let status = store.status().expect("read status");
+        assert!(status.opencode_authenticated);
+        assert!(!status.openrouter_authenticated);
+        let contents = std::fs::read_to_string(&auth_path).expect("read auth file");
+        assert!(contents.contains("zen-synthetic"));
+        assert!(!contents.contains("openrouter-synthetic"));
+        store.sign_out_opencode().expect("sign out final provider");
+        assert!(!auth_path.exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn credentials_are_replaced_atomically_and_sign_out_deletes_them() {
         let directory = test_directory("credentials-replace");
         remove_test_directory(&directory);
@@ -664,7 +756,7 @@ mod tests {
         assert!(!std::fs::read_to_string(directory.join("auth.json"))
             .expect("read auth file")
             .contains("first-secret"));
-        store.sign_out().expect("sign out");
+        store.sign_out_opencode().expect("sign out");
         assert!(!store.status().expect("read status").opencode_authenticated);
         assert!(!directory.join("auth.json").exists());
         remove_test_directory(&directory);
