@@ -2,7 +2,7 @@
 // ABOUTME: Keeps provider credentials and cancellation state inside the native desktop boundary.
 
 use crate::credentials::CredentialStore;
-use crate::reference::{read_reference, search_reference};
+use crate::reference::{read_reference, reference_headings, search_reference};
 use futures_util::StreamExt;
 use rig_core::{
     client::CompletionClient,
@@ -399,14 +399,19 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
     redact: impl Fn(CompletionError) -> String,
 ) -> Result<(), String> {
     let work = async {
+        let preamble = format!(
+            "{TUTOR_POLICY}\n\nAvailable reference sections: {}.\nSearch returns short excerpts with section headings; read a named section when more detail is needed. Ground GIC syntax claims in a successful lookup.",
+            reference_headings()
+        );
         let mut history = request.history;
         history.push(Message::user(request.prompt.clone()));
         let mut read_done = false;
         let mut needs_section = false;
         let mut calls_used = 0;
         for round in 0..=MAX_REFERENCE_TOOL_TURNS {
-            let final_round = round == MAX_REFERENCE_TOOL_TURNS || (round == 1 && !needs_section);
-            if final_round && !read_done {
+            let final_round = round == MAX_REFERENCE_TOOL_TURNS
+                || (round > 0 && (read_done || calls_used == MAX_REFERENCE_CALLS));
+            if final_round && calls_used == 0 {
                 return Err(TOOL_FAILURE.to_owned());
             }
             if !final_round && calls_used == MAX_REFERENCE_CALLS {
@@ -415,36 +420,45 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
             let (prompt, previous) = history
                 .split_last()
                 .expect("the current question remains in the conversation");
-            let mut builder = model
-                .completion_request(prompt.clone())
-                .preamble(TUTOR_POLICY.to_owned())
-                .messages(previous.iter().cloned())
-                .max_tokens(2048)
-                .tool(reference_tool(
-                    "search_reference",
-                    "query",
-                    "Search the bundled GIC language reference for a short query.",
-                ))
-                .tool(reference_tool(
+            let (name, argument, description) = if needs_section {
+                (
                     "read_reference",
                     "section",
                     "Read a named section of the bundled GIC language reference.",
-                ));
+                )
+            } else {
+                (
+                    "search_reference",
+                    "query",
+                    "Search the bundled GIC language reference for a short query.",
+                )
+            };
+            let mut builder = model
+                .completion_request(prompt.clone())
+                .preamble(preamble.clone())
+                .messages(previous.iter().cloned())
+                .max_tokens(2048)
+                .tool(reference_tool(name, argument, description));
             if final_round {
                 builder = builder.tool_choice(ToolChoice::None);
             } else {
-                builder = builder.tool_choice(ToolChoice::Required);
+                builder = builder.tool_choice(ToolChoice::Specific {
+                    function_names: vec![name.to_owned()],
+                });
             }
             let mut response = model.stream(builder.build()).await.map_err(&redact)?;
             let mut calls = Vec::new();
             let mut finish = None;
             let mut final_text_nonempty = false;
+            let mut answer = String::new();
             while let Some(chunk) = response.next().await {
                 match chunk.map_err(&redact)? {
                     StreamedAssistantContent::Text(part) => {
                         if final_round {
                             final_text_nonempty |= !part.text.trim().is_empty();
                             emit(ProviderEvent::Text(part.text));
+                        } else {
+                            answer.push_str(&part.text);
                         }
                     }
                     StreamedAssistantContent::ToolCall { tool_call, .. } => calls.push(tool_call),
@@ -456,6 +470,15 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
                 if !calls.is_empty() || finish != Some(FinishReason::Stop) || !final_text_nonempty {
                     return Err(TOOL_FAILURE.to_owned());
                 }
+                emit(ProviderEvent::Complete);
+                return Ok(());
+            }
+            if calls.is_empty()
+                && finish == Some(FinishReason::Stop)
+                && calls_used > 0
+                && !answer.trim().is_empty()
+            {
+                emit(ProviderEvent::Text(answer));
                 emit(ProviderEvent::Complete);
                 return Ok(());
             }
@@ -1021,6 +1044,37 @@ mod tests {
         assert!(!message.contains("Big Pickle"));
     }
 
+    #[tokio::test]
+    #[ignore = "requires OPENCODE_API_KEY and contacts the Zen API"]
+    async fn live_zen_reference_tool_smoke() {
+        let key = std::env::var("OPENCODE_API_KEY").expect("Zen API key is required");
+        let provider = RigOpenCodeProvider {
+            base_url: "https://opencode.ai/zen/v1".to_owned(),
+        };
+        for model in ["space-bunny-free", "deepseek-v4.1-flash", "claude-sonnet-5"] {
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: key.clone(),
+                        model: model.to_owned(),
+                        prompt: "Sketch and preview context:\ncircle(50, 50, 10);\n\nStudent question: How many arguments does circle take? Answer briefly.".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            assert_eq!(result, Ok(()), "{model}");
+            assert!(
+                events
+                    .iter()
+                    .any(|event| matches!(event, ProviderEvent::Complete)),
+                "{model}"
+            );
+        }
+    }
+
     #[test]
     fn openrouter_models_require_author_and_model_and_exclude_router_aliases() {
         assert_eq!(
@@ -1549,7 +1603,10 @@ mod tests {
         assert_eq!(sent["model"], "big-pickle");
         assert_eq!(sent["stream"], true);
         assert_eq!(sent["messages"][0]["role"], "system");
-        assert_eq!(sent["tool_choice"], "required");
+        assert_eq!(
+            sent["tool_choice"],
+            serde_json::json!({"type":"function","function":{"name":"search_reference"}})
+        );
         assert!(events.is_empty());
     }
 
@@ -1888,10 +1945,16 @@ mod tests {
         assert!(!headers.contains("x-opencode-session"));
         assert_eq!(sent["model"], "author/model:free");
         assert_eq!(sent["stream"], true);
-        assert_eq!(sent["tool_choice"], "required");
-        assert_eq!(sent["tools"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            sent["tool_choice"],
+            serde_json::json!({"type":"function","function":{"name":"search_reference"}})
+        );
+        assert_eq!(sent["tools"].as_array().unwrap().len(), 1);
         assert_eq!(sent["messages"][0]["role"], "system");
-        assert_eq!(sent["messages"][0]["content"][0]["text"], TUTOR_POLICY);
+        assert!(sent["messages"][0]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .starts_with(TUTOR_POLICY));
         assert_eq!(sent["messages"][1]["content"], "prior question");
         assert_eq!(sent["messages"][2]["content"][0]["text"], "prior answer");
         assert_eq!(sent["messages"][3]["content"], "question");
@@ -2653,14 +2716,24 @@ mod tests {
             }
             assert_eq!(
                 first["tool_choice"],
-                if route == "messages" {
-                    serde_json::json!({"type":"any"})
-                } else {
-                    serde_json::json!("required")
+                match route {
+                    "messages" => serde_json::json!({"type":"tool","name":"search_reference"}),
+                    "responses" => serde_json::json!({"type":"function","name":"search_reference"}),
+                    _ =>
+                        serde_json::json!({"type":"function","function":{"name":"search_reference"}}),
                 },
                 "{route}"
             );
-            assert_eq!(second["tool_choice"], first["tool_choice"], "{route}");
+            assert_eq!(
+                second["tool_choice"],
+                match route {
+                    "messages" => serde_json::json!({"type":"tool","name":"read_reference"}),
+                    "responses" => serde_json::json!({"type":"function","name":"read_reference"}),
+                    _ =>
+                        serde_json::json!({"type":"function","function":{"name":"read_reference"}}),
+                },
+                "{route}"
+            );
             assert_eq!(
                 next["tool_choice"],
                 if route == "messages" {
@@ -2670,7 +2743,9 @@ mod tests {
                 },
                 "{route}"
             );
-            assert_eq!(first["tools"].as_array().unwrap().len(), 2, "{route}");
+            assert_eq!(first["tools"].as_array().unwrap().len(), 1, "{route}");
+            assert_eq!(second["tools"].as_array().unwrap().len(), 1, "{route}");
+            assert!(second.to_string().contains("read_reference"), "{route}");
             let parameters = match route {
                 "messages" => &first["tools"][0]["input_schema"],
                 "responses" => &first["tools"][0]["parameters"],
@@ -2686,7 +2761,12 @@ mod tests {
                 "{route}"
             );
             assert!(first.to_string().contains("search_reference"));
-            assert!(first.to_string().contains("read_reference"));
+            assert!(
+                first
+                    .to_string()
+                    .contains("Available reference sections: Values, Comments, Variables"),
+                "{route}"
+            );
             let messages = if route == "responses" {
                 &next["input"]
             } else {
@@ -2763,6 +2843,71 @@ mod tests {
                 matches!(&events[..], [ProviderEvent::Text(text), ProviderEvent::Complete] if text == "answer"),
                 "{route}"
             );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_successful_search_can_ground_an_answer_without_a_section_read() {
+        for searches in [1, 2] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = tokio::spawn(async move {
+                let calls = (0..searches)
+                    .map(|index| serde_json::json!({
+                        "index": index,
+                        "id": format!("search_{index}"),
+                        "type": "function",
+                        "function": {"name":"search_reference","arguments":"{\"query\":\"circle\"}"}
+                    }))
+                    .collect::<Vec<_>>();
+                let first_response = format!(
+                    "data: {}\n\ndata: {{\"choices\":[{{\"delta\":{{}},\"finish_reason\":\"tool_calls\"}}]}}\n\ndata: [DONE]\n\n",
+                    serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"space-bunny-free","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
+                );
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let _ = read_wire_request(&mut socket).await;
+                write_wire_response(&mut socket, &first_response, true).await;
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let second = read_wire_request(&mut socket).await;
+                write_wire_response(
+                    &mut socket,
+                    concat!(
+                        "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"space-bunny-free\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Three arguments.\"},\"finish_reason\":null}]}\n\n",
+                        "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"space-bunny-free\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
+                        "data: [DONE]\n\n"
+                    ),
+                    true,
+                )
+                .await;
+                second
+            });
+            let provider = RigOpenCodeProvider {
+                base_url: format!("http://{address}/v1"),
+            };
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: "space-bunny-free".to_owned(),
+                        prompt: "How many arguments does circle take?".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            let second = server.await.unwrap();
+            assert_eq!(result, Ok(()), "{searches}");
+            assert!(
+                matches!(&events[..], [ProviderEvent::Text(text), ProviderEvent::Complete] if text == "Three arguments."),
+                "{searches}"
+            );
+            if searches == 1 {
+                assert_eq!(second["tool_choice"]["function"]["name"], "read_reference");
+            } else {
+                assert_eq!(second["tool_choice"], "none");
+            }
         }
     }
 
@@ -2938,43 +3083,52 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn too_many_wire_calls_fail_without_a_continuation() {
-        let calls = (0..3)
-            .map(|index| {
-                serde_json::json!({
-                    "index": index,
-                    "id": format!("call_{index}"),
-                    "type": "function",
-                    "function": {"name": "search_reference", "arguments": "{\"query\":\"PI\"}"}
+    async fn invalid_wire_call_batches_fail_without_a_continuation() {
+        for ids in [&["first", "second", "third"][..], &["same", "same"][..]] {
+            let calls = ids
+                .iter()
+                .enumerate()
+                .map(|(index, id)| {
+                    serde_json::json!({
+                        "index": index,
+                        "id": id,
+                        "type": "function",
+                        "function": {"name": "search_reference", "arguments": "{\"query\":\"PI\"}"}
+                    })
                 })
-            })
-            .collect::<Vec<_>>();
-        let body = format!(
-            "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
-            serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
-            serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
-        );
-        let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
-        let mut events = Vec::new();
-        let result = provider
-            .stream(
-                TutorRequest {
-                    api_key: "test-key".to_owned(),
-                    model: "big-pickle".to_owned(),
-                    prompt: "question".to_owned(),
-                    history: Vec::new(),
-                    cancellation: CancellationToken::new(),
-                },
-                &mut |event| events.push(event),
-            )
-            .await;
-        server.await.unwrap();
-        assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
-        assert!(events.is_empty());
+                .collect::<Vec<_>>();
+            let body = format!(
+                "data: {}\n\ndata: {}\n\ndata: [DONE]\n\n",
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
+                serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"big-pickle","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]})
+            );
+            let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let mut events = Vec::new();
+            let result = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "test-key".to_owned(),
+                        model: "big-pickle".to_owned(),
+                        prompt: "question".to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await;
+            server.await.unwrap();
+            let expected = if ids.len() > MAX_REFERENCE_CALLS {
+                TOOL_FAILURE
+            } else {
+                "OpenCode request failed. Check your connection or sign in again."
+            };
+            assert_eq!(result, Err(expected.to_owned()), "{ids:?}");
+            assert!(events.is_empty(), "{ids:?}");
+        }
     }
 
     #[tokio::test]
-    async fn repeated_searches_cannot_finish_without_reading_a_section() {
+    async fn repeated_searches_still_require_a_completed_answer() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
@@ -2988,6 +3142,15 @@ mod tests {
                 );
                 write_wire_response(&mut socket, &body, true).await;
             }
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let final_request = read_wire_request(&mut socket).await;
+            write_wire_response(
+                &mut socket,
+                "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n",
+                true,
+            )
+            .await;
+            final_request
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
@@ -3005,7 +3168,8 @@ mod tests {
                 &mut |event| events.push(event),
             )
             .await;
-        server.await.unwrap();
+        let final_request = server.await.unwrap();
+        assert_eq!(final_request["tool_choice"], "none");
         assert_eq!(result, Err(TOOL_FAILURE.to_owned()));
         assert!(events.is_empty());
     }
