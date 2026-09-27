@@ -23,37 +23,15 @@ export function PreviewPanel({
 	}, [canvasRef]);
 
 	const downloadPng = () => {
-		if (
-			onSavePng !== undefined &&
-			import.meta.env.VITE_GIC_EXPORT_DEBUG === "1"
-		) {
-			console.info("GIC export PNG: click");
-		}
 		const canvas = canvasRef.current;
 		if (canvas === null) return;
 		canvas.toBlob((blob) => {
-			if (
-				onSavePng !== undefined &&
-				import.meta.env.VITE_GIC_EXPORT_DEBUG === "1"
-			) {
-				console.info("GIC export PNG: canvas result", blob?.size ?? null);
-			}
 			if (blob === null) return;
 			if (onSavePng !== undefined) {
 				void blob
 					.arrayBuffer()
 					.then((buffer) => onSavePng(new Uint8Array(buffer)))
-					.then((saved) => {
-						if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
-							console.info("GIC export PNG: native result", saved);
-						}
-					})
-					.catch((error: unknown) => {
-						if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
-							console.error("GIC export PNG: failure", error);
-						}
-						window.alert("GIC could not save the PNG export.");
-					});
+					.catch(() => window.alert("GIC could not save the PNG export."));
 				return;
 			}
 			const url = URL.createObjectURL(blob);

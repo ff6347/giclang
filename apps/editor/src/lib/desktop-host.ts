@@ -171,9 +171,6 @@ export class DesktopHost {
 
 	saveExport(format: "png" | "html", contents: Uint8Array): Promise<boolean> {
 		const command = format === "png" ? "save_png_export" : "save_html_export";
-		if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
-			console.info("GIC export: native invoke", format, contents.byteLength);
-		}
 		return invoke<boolean>(command, contents);
 	}
 
