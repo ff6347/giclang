@@ -207,7 +207,7 @@ export function CodexSignIn({
 
 	return (
 		<>
-			<h2>Codex</h2>
+			<h3>Codex</h3>
 			{authenticated ? (
 				<>
 					<p role="status">Signed in to Codex.</p>
