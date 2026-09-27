@@ -504,15 +504,33 @@ export function App({
 								void downloadStandaloneHtml(source);
 								return;
 							}
+							if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
+								console.info("GIC export HTML: click");
+							}
 							void createStandaloneHtml(source)
-								.then((html) =>
-									desktop.saveExport("html", new TextEncoder().encode(html)),
-								)
-								.catch(() =>
+								.then((html) => {
+									const contents = new TextEncoder().encode(html);
+									if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
+										console.info(
+											"GIC export HTML: generated",
+											contents.byteLength,
+										);
+									}
+									return desktop.saveExport("html", contents);
+								})
+								.then((saved) => {
+									if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
+										console.info("GIC export HTML: native result", saved);
+									}
+								})
+								.catch((error: unknown) => {
+									if (import.meta.env.VITE_GIC_EXPORT_DEBUG === "1") {
+										console.error("GIC export HTML: failure", error);
+									}
 									window.alert(
 										"GIC could not save the standalone HTML export.",
-									),
-								);
+									);
+								});
 						}}
 						onSavePng={
 							desktop === undefined
