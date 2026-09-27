@@ -199,6 +199,8 @@
 
 ## Delivery Planning
 
+- [decision] Agent workflow records (memory, journals, plans, decisions, milestones, and the lesson ledger) live in `.agents/`. `docs/` holds human-facing specifications, learning and design notes, and the Zen model routes reference; `content/` holds authored application content.
+- [decision] The Lox teaching project lives in `ff6347/lox-lang`; GIC does not build or package its Java sources.
 - [decision] GIC v0.9 requirements are published as git-bug issue `60b2077`. `.agents/plans/vertical-slice-roadmap.md` decomposes the static workshop release into independently testable CLI, Monaco, assistance, layout, document, export, PWA, desktop, workspace, tutor, provider, and packaging slices.
 - [decision] Static generative graphics are the v0.9 release gate. Setup/loop lifecycle, animation built-ins, frame scheduling, and Canvas animation remain a stretch slice and cannot block the release.
 - [decision] Normal work now uses direct end-to-end engineering ownership for faster application delivery. The project tutor skill applies only when Fabian explicitly requests teaching behavior or when implementing the product's Socratic tutor policy.
