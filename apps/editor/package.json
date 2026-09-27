@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "pnpm build:standalone && vite build",
 		"build:standalone": "node scripts/build-standalone.mjs",
-		"dev": "pnpm build:standalone && vite",
+		"dev": "pnpm build:standalone && node scripts/dev.mjs",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
