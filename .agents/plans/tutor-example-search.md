@@ -13,7 +13,7 @@ Let the integrated desktop tutor find enabled example sketches by title, categor
 
 - Reuse `productContent.examples` from `apps/editor/src/lib/content.ts`: `packages/content/src/content-model.ts` already validates bundles and excludes `enabled: false` examples. Pass only this filtered catalogue (ID, title, categories, tags, description text, and source) to the native tutor with the request. Do not introduce another Rust frontmatter parser or independently packaged example list.
 - Keep the catalogue local until a model-requested example lookup; search deterministically in the native host, with bounded query, match count, and total returned source size. Never put the whole catalogue in every model prompt. Consider description HTML conversion at the content/editor boundary so lookup searches readable text rather than markup.
-- Extend the existing tutor tool flow to allow an example search when relevant without removing language-reference lookup for syntax and signatures. Preserve the Socratic policy: suggest examples for exploration and name their titles, but do not present entire sketches as assignment solutions. Treat source/description as reference data, not instructions from the student or model.
+- Extend the existing tutor tool flow so a successful example search can satisfy the first-lookup requirement for inspiration-only questions; retain the language-reference lookup requirement before explaining syntax or signatures. Preserve the Socratic policy: suggest examples for exploration and name their titles, but do not present entire sketches as assignment solutions. Treat source/description as reference data, not instructions from the student or model.
 
 ## Red-green verification
 
