@@ -12,6 +12,7 @@ export interface AgentRequest {
 	readonly question: string;
 	readonly context: AgentContext;
 	readonly messages?: readonly AgentMessage[];
+	readonly examples?: readonly ExampleContent[];
 	readonly sessionId?: string;
 }
 
@@ -20,6 +21,7 @@ export interface AgentProvider {
 }
 
 import type { DesktopHost, OpencodeAgentEvent } from "./desktop-host.ts";
+import type { ExampleContent } from "@giclang/content/model";
 
 export interface AgentMessage {
 	readonly role: "student" | "agent";
@@ -120,6 +122,24 @@ export function createDesktopAgent(
 						sketch: request.context,
 						turns: request.messages ?? [],
 					}),
+					examples:
+						request.examples?.map((example) => ({
+							id: example.id,
+							title: example.title,
+							categories: example.categories,
+							tags: example.tags,
+							description: example.html
+								.replace(/<[^>]*>/g, " ")
+								.replace(/&nbsp;/gi, " ")
+								.replace(/&amp;/gi, "&")
+								.replace(/&lt;/gi, "<")
+								.replace(/&gt;/gi, ">")
+								.replace(/&quot;/gi, '"')
+								.replace(/&#39;/gi, "'")
+								.replace(/\s+/g, " ")
+								.trim(),
+							source: example.source,
+						})) ?? [],
 					model: options.model,
 					...(request.sessionId === undefined
 						? {}
