@@ -6,6 +6,7 @@ import "monaco-editor/features/register.all.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
 import type { Diagnostic } from "@giclang/core";
 import { builtIns } from "@giclang/core/built-ins";
+import { namedColorRanges } from "./color-swatches.ts";
 import {
 	completeSource,
 	formatSourceDocument,
@@ -57,6 +58,44 @@ function registerGicLanguage() {
 	}
 
 	monaco.languages.register({ id: LANGUAGE_ID });
+	monaco.languages.registerColorProvider(LANGUAGE_ID, {
+		provideDocumentColors(model) {
+			const canvas = document.createElement("canvas");
+			canvas.width = 1;
+			canvas.height = 1;
+			const context = canvas.getContext("2d");
+			if (context === null) return [];
+			return namedColorRanges(model.getValue()).map(({ color, start, end }) => {
+				context.clearRect(0, 0, 1, 1);
+				context.fillStyle = color;
+				context.fillRect(0, 0, 1, 1);
+				const pixel = context.getImageData(0, 0, 1, 1).data;
+				const startPosition = model.getPositionAt(start);
+				const endPosition = model.getPositionAt(end);
+				return {
+					color: {
+						red: pixel[0]! / 255,
+						green: pixel[1]! / 255,
+						blue: pixel[2]! / 255,
+						alpha: pixel[3]! / 255,
+					},
+					range: new monaco.Range(
+						startPosition.lineNumber,
+						startPosition.column,
+						endPosition.lineNumber,
+						endPosition.column,
+					),
+				};
+			});
+		},
+		provideColorPresentations(model, colorInfo) {
+			return [
+				{
+					label: `"${model.getValueInRange(colorInfo.range)}"`,
+				},
+			];
+		},
+	});
 	monaco.languages.setLanguageConfiguration(LANGUAGE_ID, {
 		brackets: [
 			["(", ")"],
