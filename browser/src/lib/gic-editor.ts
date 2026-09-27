@@ -49,6 +49,14 @@ function registerGicLanguage() {
 	}
 
 	monaco.languages.register({ id: LANGUAGE_ID });
+	monaco.languages.setLanguageConfiguration(LANGUAGE_ID, {
+		brackets: [
+			["(", ")"],
+			["[", "]"],
+			["{", "}"],
+		],
+		comments: { lineComment: "//" },
+	});
 	monaco.languages.setMonarchTokensProvider(LANGUAGE_ID, {
 		builtIns: Object.keys(builtIns),
 		keywords: Object.keys(keywords),

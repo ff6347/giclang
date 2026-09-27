@@ -71,6 +71,38 @@ test("wraps long GIC source lines", async ({ page }) => {
 		.toBeGreaterThan(1);
 });
 
+test("encloses selected GIC text with opening brackets", async ({ page }) => {
+	await page.goto("/");
+
+	for (const [openingBracket, closingBracket] of [
+		["(", ")"],
+		["[", "]"],
+		["{", "}"],
+	]) {
+		await setEditorSource(page, "point");
+		await page.keyboard.press("Control+A");
+		await page.keyboard.type(openingBracket);
+		await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+			`${openingBracket}point${closingBracket}`,
+		);
+	}
+});
+
+test("toggles GIC line comments with Ctrl+/", async ({ page }) => {
+	await page.goto("/");
+	await setEditorSource(page, "point(10, 10);\nline(0, 0, 10, 10);");
+	await page.keyboard.press("Control+A");
+	await page.keyboard.press("Control+/");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		"// point(10, 10);\n// line(0, 0, 10, 10);",
+	);
+
+	await page.keyboard.press("Control+/");
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		"point(10, 10);\nline(0, 0, 10, 10);",
+	);
+});
+
 test("loads Monaco without requesting external assets", async ({ page }) => {
 	const externalRequests: string[] = [];
 	page.on("request", (request) => {
