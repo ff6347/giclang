@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { chromium, firefox, webkit } from "@playwright/test";
-import { standaloneHtml } from "../browser/src/lib/standalone-export.ts";
+import { standaloneHtml } from "../apps/editor/src/lib/standalone-export.ts";
 
 const outputDirectory = resolve("test-results/standalone-html-export");
 const artifactPath = resolve(outputDirectory, "sketch.html");
@@ -22,8 +22,8 @@ forever();`;
 
 async function artifact() {
 	const [runtime, worker] = await Promise.all([
-		readFile("browser/public/standalone/runtime.js", "utf8"),
-		readFile("browser/public/standalone/worker.js", "utf8"),
+		readFile("apps/editor/public/standalone/runtime.js", "utf8"),
+		readFile("apps/editor/public/standalone/worker.js", "utf8"),
 	]);
 	return standaloneHtml(source, runtime, worker);
 }

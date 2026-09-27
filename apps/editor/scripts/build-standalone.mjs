@@ -5,15 +5,15 @@ import { rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { build } from "vite";
 
-const outputDirectory = resolve("browser/public/standalone");
+const outputDirectory = resolve("public/standalone");
 const entries = [
 	{
-		entry: resolve("browser/src/standalone-runtime.ts"),
+		entry: resolve("src/standalone-runtime.ts"),
 		fileName: "runtime",
 		name: "GicStandaloneRuntime",
 	},
 	{
-		entry: resolve("browser/src/standalone-worker.ts"),
+		entry: resolve("src/standalone-worker.ts"),
 		fileName: "worker",
 		name: "GicStandaloneWorker",
 	},
@@ -34,5 +34,6 @@ for (const { entry, fileName, name } of entries) {
 			outDir: outputDirectory,
 		},
 		configFile: false,
+		publicDir: false,
 	});
 }

@@ -7,16 +7,37 @@ settings:
 importers:
 
   .:
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.62.1
+        version: 1.62.1
+      '@tauri-apps/cli':
+        specifier: 2.11.5
+        version: 2.11.5
+      '@types/node':
+        specifier: 25.7.0
+        version: 25.7.0
+      oxfmt:
+        specifier: 0.61.0
+        version: 0.61.0
+      oxlint:
+        specifier: 1.76.0
+        version: 1.76.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  apps/editor:
     dependencies:
       '@base-ui/react':
         specifier: 1.8.0
         version: 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@giclang/content':
         specifier: workspace:^
-        version: link:packages/content
+        version: link:../../packages/content
       '@giclang/core':
         specifier: workspace:^
-        version: link:packages/core
+        version: link:../../packages/core
       '@tauri-apps/api':
         specifier: 2.11.1
         version: 2.11.1
@@ -38,43 +59,25 @@ importers:
       streamdown:
         specifier: 2.6.0
         version: 2.6.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)
+      workbox-window:
+        specifier: 7.4.1
+        version: 7.4.1
     devDependencies:
-      '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
-      '@tauri-apps/cli':
-        specifier: 2.11.5
-        version: 2.11.5
-      '@types/node':
-        specifier: 25.7.0
-        version: 25.7.0
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      oxfmt:
-        specifier: 0.61.0
-        version: 0.61.0
-      oxlint:
-        specifier: 1.76.0
-        version: 1.76.0
       sass:
         specifier: 1.104.1
         version: 1.104.1
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
       vite:
         specifier: 8.2.2
         version: 8.2.2(@types/node@25.7.0)(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2)
       vite-plugin-pwa:
         specifier: 1.3.0
         version: 1.3.0(supports-color@8.1.1)(vite@8.2.2(@types/node@25.7.0)(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2))(workbox-build@7.4.1(supports-color@8.1.1))(workbox-window@7.4.1)
-      workbox-window:
-        specifier: 7.4.1
-        version: 7.4.1
 
   packages/cli:
     dependencies:

@@ -4,7 +4,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-	testDir: "./pwa-e2e",
+	testDir: "./apps/editor/pwa-e2e",
 	forbidOnly: true,
 	fullyParallel: false,
 	retries: 1,
@@ -29,7 +29,8 @@ export default defineConfig({
 		},
 	],
 	webServer: {
-		command: "pnpm prepare:pwa-tests && node scripts/serve-pwa-tests.mjs",
+		command:
+			"pnpm prepare:pwa-tests && node apps/editor/scripts/serve-pwa-tests.mjs",
 		url: "http://127.0.0.1:4173",
 		reuseExistingServer: false,
 		stdout: "pipe",

@@ -3,11 +3,11 @@
 
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
-import { setEditorSource } from "../e2e/editor.ts";
+import { setEditorSource } from "../../../e2e/editor.ts";
 
 const repeatExamplePath = fileURLToPath(
 	new URL(
-		"../packages/content/content/examples/repeat/repeat.gic",
+		"../../../packages/content/content/examples/repeat/repeat.gic",
 		import.meta.url,
 	),
 );

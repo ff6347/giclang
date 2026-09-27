@@ -10,7 +10,7 @@ import { validateExampleFiles } from "@giclang/content/model";
 import { compileMarkdown } from "@giclang/content/markdown";
 
 const CONTENT_ROOT = fileURLToPath(
-	new URL("./packages/content/content/", import.meta.url),
+	new URL("../../packages/content/content/", import.meta.url),
 );
 const PWA_DESCRIPTION = "Create static generative graphics with GIC.";
 
@@ -49,7 +49,7 @@ function productContent(): Plugin {
 		},
 		async buildStart() {
 			const exampleDirectories = await readdir(
-				new URL("./packages/content/content/examples/", import.meta.url),
+				new URL("../../packages/content/content/examples/", import.meta.url),
 				{ withFileTypes: true },
 			);
 			for (const directory of exampleDirectories) {
@@ -63,7 +63,7 @@ function productContent(): Plugin {
 				}
 				const files = await readdir(
 					new URL(
-						`./packages/content/content/examples/${directory.name}/`,
+						`../../packages/content/content/examples/${directory.name}/`,
 						import.meta.url,
 					),
 				);
@@ -158,5 +158,5 @@ export default defineConfig({
 			},
 		}),
 	],
-	root: "browser",
+	root: ".",
 });

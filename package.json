@@ -11,8 +11,8 @@
 		"build": "pnpm build:cli && pnpm build:browser",
 		"build:cli": "pnpm --filter @giclang/core build && pnpm --filter @giclang/cli build",
 		"build:desktop": "tauri build",
-		"prepare:pwa-tests": "node scripts/prepare-pwa-tests.mjs",
-		"test:compact": "pnpm build:cli && pnpm --filter @giclang/content build && node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot packages/core/src/tests/*.test.ts packages/cli/src/tests/*.test.ts packages/content/src/tests/*.test.ts browser/src/tests/*.test.ts scripts/*.test.ts",
+		"prepare:pwa-tests": "node apps/editor/scripts/prepare-pwa-tests.mjs",
+		"test:compact": "pnpm build:cli && pnpm --filter @giclang/content build && node --test --import='data:text/javascript,Error.stackTraceLimit=0' --test-reporter=dot packages/core/src/tests/*.test.ts packages/cli/src/tests/*.test.ts packages/content/src/tests/*.test.ts apps/editor/src/tests/*.test.ts scripts/*.test.ts",
 		"test:desktop": "cargo test --manifest-path src-tauri/Cargo.toml",
 		"test": "pnpm build:cli && node --test packages/core/src/tests/*.test.ts packages/cli/src/tests/*.test.ts",
 		"test:e2e": "playwright test",
@@ -22,36 +22,18 @@
 		"lint": "oxlint",
 		"lint:fix": "oxlint --fix",
 		"typecheck": "pnpm --filter @giclang/core build && pnpm --filter @giclang/core typecheck && pnpm --filter @giclang/cli typecheck && pnpm --filter @giclang/content typecheck",
-		"typecheck:browser": "pnpm --filter @giclang/content build && tsc --project browser/tsconfig.json --noEmit",
-		"build:standalone": "node scripts/build-standalone.mjs",
-		"build:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm build:standalone && vite build",
-		"dev:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm build:standalone && vite",
+		"typecheck:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor typecheck",
+		"build:standalone": "pnpm --filter @giclang/core build && pnpm --filter @giclang/editor build:standalone",
+		"build:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor build",
+		"dev:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor dev",
 		"dev:desktop": "tauri dev"
-	},
-	"dependencies": {
-		"@base-ui/react": "1.8.0",
-		"@giclang/content": "workspace:^",
-		"@giclang/core": "workspace:^",
-		"@tauri-apps/api": "2.11.1",
-		"flexlayout-react": "0.11.0",
-		"monaco-editor": "0.56.0",
-		"pixelarticons": "2.4.1",
-		"react": "19.3.0",
-		"react-dom": "19.3.0",
-		"streamdown": "2.6.0"
 	},
 	"devDependencies": {
 		"@playwright/test": "1.62.1",
 		"@tauri-apps/cli": "2.11.5",
 		"@types/node": "25.7.0",
-		"@types/react": "19.3.0",
-		"@types/react-dom": "19.3.0",
 		"oxfmt": "0.61.0",
 		"oxlint": "1.76.0",
-		"sass": "1.104.1",
-		"typescript": "6.0.3",
-		"vite": "8.2.2",
-		"vite-plugin-pwa": "1.3.0",
-		"workbox-window": "7.4.1"
+		"typescript": "6.0.3"
 	}
 }

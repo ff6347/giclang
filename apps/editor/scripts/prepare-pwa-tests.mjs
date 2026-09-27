@@ -5,11 +5,9 @@ import { execFileSync } from "node:child_process";
 import { copyFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const projectRoot = fileURLToPath(new URL("../", import.meta.url));
-const serviceWorker = fileURLToPath(
-	new URL("../browser/dist/sw.js", import.meta.url),
-);
-const fixtureDirectory = new URL("../browser/.pwa-test/", import.meta.url);
+const projectRoot = fileURLToPath(new URL("../../../", import.meta.url));
+const serviceWorker = fileURLToPath(new URL("../dist/sw.js", import.meta.url));
+const fixtureDirectory = new URL("../.pwa-test/", import.meta.url);
 const initialServiceWorker = new URL("sw-initial.js", fixtureDirectory);
 const updatedServiceWorker = new URL("sw-updated.js", fixtureDirectory);
 

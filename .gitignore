@@ -33,8 +33,8 @@ coverage
 # Playwright output
 playwright-report/
 test-results/
-browser/.pwa-test/
-browser/public/standalone/
+apps/editor/.pwa-test/
+apps/editor/public/standalone/
 
 # Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt

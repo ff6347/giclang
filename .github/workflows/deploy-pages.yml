@@ -1,5 +1,5 @@
 # ABOUTME: Builds the browser shell and deploys its static output to GitHub Pages.
-# ABOUTME: Publishes browser/dist with the repository-specific Pages base path.
+# ABOUTME: Publishes the editor output with the repository-specific Pages base path.
 
 name: Deploy browser preview to Pages
 
@@ -46,7 +46,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: browser/dist
+          path: apps/editor/dist
 
       - name: Deploy to Pages
         id: deployment

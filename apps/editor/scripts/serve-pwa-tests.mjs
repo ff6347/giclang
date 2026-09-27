@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("../browser/dist/", import.meta.url));
+const root = fileURLToPath(new URL("../dist/", import.meta.url));
 const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
 const contentTypes = new Map([
 	[".css", "text/css; charset=utf-8"],

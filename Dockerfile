@@ -7,19 +7,21 @@ WORKDIR /app
 RUN npm install --global --allow-scripts=pnpm pnpm@12.3.4
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/core/package.json ./packages/core/package.json
+COPY packages/cli/package.json ./packages/cli/package.json
+COPY packages/content/package.json ./packages/content/package.json
+COPY apps/editor/package.json ./apps/editor/package.json
 RUN pnpm install --frozen-lockfile
 
-COPY browser ./browser
-COPY content ./content
-COPY scripts ./scripts
-COPY src ./src
-COPY tsconfig.json tsconfig.build.json vite.config.ts ./
+COPY packages/core ./packages/core
+COPY packages/content ./packages/content
+COPY apps/editor ./apps/editor
 
 RUN pnpm run build:browser
 
 FROM caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
 
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /app/browser/dist /srv
+COPY --from=build /app/apps/editor/dist /srv
 
 EXPOSE 80

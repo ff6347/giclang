@@ -3,7 +3,7 @@
 
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { standaloneHtml } from "../browser/src/lib/standalone-export.ts";
+import { standaloneHtml } from "../apps/editor/src/lib/standalone-export.ts";
 import { setEditorSource } from "./editor.ts";
 
 test("downloads the exact current standalone HTML artifact", async ({
@@ -40,8 +40,8 @@ test("downloads the exact current standalone HTML artifact", async ({
 
 	const [downloaded, runtime, worker] = await Promise.all([
 		readFile(await download.path(), "utf8"),
-		readFile("browser/public/standalone/runtime.js", "utf8"),
-		readFile("browser/public/standalone/worker.js", "utf8"),
+		readFile("apps/editor/public/standalone/runtime.js", "utf8"),
+		readFile("apps/editor/public/standalone/worker.js", "utf8"),
 	]);
 	expect(downloaded).toBe(
 		standaloneHtml(currentSource.replaceAll("\n", "\r\n"), runtime, worker),

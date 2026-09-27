@@ -4,16 +4,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { copyFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { setEditorSource } from "../e2e/editor.ts";
+import { setEditorSource } from "../../../e2e/editor.ts";
 
 const initialServiceWorker = fileURLToPath(
-	new URL("../browser/.pwa-test/sw-initial.js", import.meta.url),
+	new URL("../.pwa-test/sw-initial.js", import.meta.url),
 );
 const updatedServiceWorker = fileURLToPath(
-	new URL("../browser/.pwa-test/sw-updated.js", import.meta.url),
+	new URL("../.pwa-test/sw-updated.js", import.meta.url),
 );
 const servedServiceWorker = fileURLToPath(
-	new URL("../browser/dist/sw.js", import.meta.url),
+	new URL("../dist/sw.js", import.meta.url),
 );
 
 async function waitForActiveServiceWorker(page: Page) {
