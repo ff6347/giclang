@@ -10,11 +10,13 @@ export function PreviewPanel({
 	canvasRef,
 	isCurrentSourceRendered,
 	onDownloadStandalone,
+	onSavePng,
 }: {
 	canvasFrame: boolean;
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 	isCurrentSourceRendered: boolean;
 	onDownloadStandalone: () => void;
+	onSavePng: ((contents: Uint8Array) => Promise<boolean>) | undefined;
 }) {
 	useEffect(() => {
 		canvasRef.current?.getContext("2d");
@@ -25,6 +27,13 @@ export function PreviewPanel({
 		if (canvas === null) return;
 		canvas.toBlob((blob) => {
 			if (blob === null) return;
+			if (onSavePng !== undefined) {
+				void blob
+					.arrayBuffer()
+					.then((buffer) => onSavePng(new Uint8Array(buffer)))
+					.catch(() => window.alert("GIC could not save the PNG export."));
+				return;
+			}
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = url;

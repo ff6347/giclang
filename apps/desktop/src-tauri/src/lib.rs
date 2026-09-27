@@ -7,6 +7,7 @@ mod codex_session;
 mod credentials;
 mod desktop_menu;
 mod documents;
+mod exports;
 mod external_tools;
 mod managed_files;
 mod reference;
@@ -21,6 +22,7 @@ use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth, VERIFY_URL};
 use codex_session::CodexSession;
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
+use exports::ExportFormat;
 use external_tools::AssistantStatus;
 use sessions::{SessionRecord, SessionStore, SessionSummary};
 use std::{
@@ -34,7 +36,7 @@ use std::{
         Arc, Mutex,
     },
 };
-use tauri::{AppHandle, Manager, State};
+use tauri::{ipc::Request, AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_opener::OpenerExt;
 use tempfile::NamedTempFile;
@@ -292,6 +294,49 @@ async fn save_gic_as(
                 })
         })
         .transpose()
+}
+
+async fn save_export(
+    app: AppHandle,
+    format: ExportFormat,
+    contents: Vec<u8>,
+) -> Result<bool, String> {
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    app.dialog()
+        .file()
+        .set_title(format.title())
+        .add_filter(format.filter(), &[format.extension()])
+        .set_file_name(format.file_name())
+        .save_file(move |selected| {
+            let _ = sender.send(selected);
+        });
+    let selected = receiver
+        .await
+        .map_err(|_| "Unable to select export location.".to_owned())?;
+    let Some(selected) = selected else {
+        return Ok(false);
+    };
+    let path = selected
+        .into_path()
+        .map_err(|_| "Unable to use the selected export location.".to_owned())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        exports::save_export_bytes(&path, format, &contents)
+    })
+    .await
+    .map_err(|_| "Unable to save export.".to_owned())??;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn save_png_export(app: AppHandle, request: Request<'_>) -> Result<bool, String> {
+    let contents = exports::export_contents(request.body())?;
+    save_export(app, ExportFormat::Png, contents).await
+}
+
+#[tauri::command]
+async fn save_html_export(app: AppHandle, request: Request<'_>) -> Result<bool, String> {
+    let contents = exports::export_contents(request.body())?;
+    save_export(app, ExportFormat::Html, contents).await
 }
 
 #[tauri::command]
@@ -677,6 +722,8 @@ pub fn run() {
             reveal_sketch_folder,
             save_gic,
             save_gic_as,
+            save_png_export,
+            save_html_export,
             show_workspace_notice,
             uninstall_workspace,
             workspace_status,

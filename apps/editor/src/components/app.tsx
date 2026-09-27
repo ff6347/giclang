@@ -44,7 +44,10 @@ import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
 import { useDocument } from "../hooks/use-document.ts";
 import { useAppUpdate } from "../hooks/use-app-update.ts";
-import { downloadStandaloneHtml } from "../lib/standalone-export.ts";
+import {
+	createStandaloneHtml,
+	downloadStandaloneHtml,
+} from "../lib/standalone-export.ts";
 import { AppUpdate } from "./app-update.tsx";
 import type { ApplicationSettings } from "../lib/application-settings.ts";
 import type {
@@ -495,8 +498,26 @@ export function App({
 						canvasFrame={canvasFrame}
 						canvasRef={canvasRef}
 						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
-						onDownloadStandalone={() =>
-							void downloadStandaloneHtml(documents.documentState.source)
+						onDownloadStandalone={() => {
+							const source = documents.documentState.source;
+							if (desktop === undefined) {
+								void downloadStandaloneHtml(source);
+								return;
+							}
+							void createStandaloneHtml(source)
+								.then((html) =>
+									desktop.saveExport("html", new TextEncoder().encode(html)),
+								)
+								.catch(() =>
+									window.alert(
+										"GIC could not save the standalone HTML export.",
+									),
+								);
+						}}
+						onSavePng={
+							desktop === undefined
+								? undefined
+								: (contents) => desktop.saveExport("png", contents)
 						}
 					/>
 				);

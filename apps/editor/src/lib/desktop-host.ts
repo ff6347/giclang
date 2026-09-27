@@ -169,6 +169,11 @@ export class DesktopHost {
 		});
 	}
 
+	saveExport(format: "png" | "html", contents: Uint8Array): Promise<boolean> {
+		const command = format === "png" ? "save_png_export" : "save_html_export";
+		return invoke<boolean>(command, contents);
+	}
+
 	workspaceStatus(): Promise<WorkspaceStatus> {
 		return invoke<WorkspaceStatus>("workspace_status");
 	}
