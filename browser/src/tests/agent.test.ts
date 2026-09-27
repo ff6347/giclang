@@ -61,6 +61,7 @@ test("desktop provider forwards ordered native events and cancellation", async (
 		| undefined;
 	let cancelled = false;
 	let requestId = "";
+	let sessionId = "";
 	const desktop = {
 		async onOpencodeAgentEvent(
 			handler: (
@@ -70,8 +71,12 @@ test("desktop provider forwards ordered native events and cancellation", async (
 			emit = handler;
 			return () => undefined;
 		},
-		async sendOpencodeRequest(request: { requestId: string }) {
+		async sendOpencodeRequest(request: {
+			requestId: string;
+			sessionId: string;
+		}) {
 			requestId = request.requestId;
+			sessionId = request.sessionId;
 			emit?.({ requestId, kind: "text", text: "first " });
 			emit?.({ requestId, kind: "text", text: "second" });
 			emit?.({ requestId, kind: "complete" });
@@ -83,12 +88,17 @@ test("desktop provider forwards ordered native events and cancellation", async (
 	const provider = createDesktopAgent(desktop, { model: "gpt-5.5" });
 	let response = "";
 	for await (const chunk of provider.stream(
-		{ question: "Why?", context: buildAgentContext("rect(1);", [], []) },
+		{
+			question: "Why?",
+			context: buildAgentContext("rect(1);", [], []),
+			sessionId: "conversation-1",
+		},
 		new AbortController().signal,
 	))
 		response += chunk;
 	assert.equal(response, "first second");
 	assert.equal(cancelled, false);
+	assert.equal(sessionId, "conversation-1");
 });
 
 test("desktop provider yields text before the native request completes", async () => {

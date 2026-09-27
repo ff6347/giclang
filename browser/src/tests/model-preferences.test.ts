@@ -37,6 +37,11 @@ const verifiedZenModel: OpencodeModel = {
 	name: "GPT-6 Luna",
 	referenceToolsVerified: true,
 };
+const goModel: OpencodeModel = {
+	id: "opencode-go/kimi-k3",
+	name: "Kimi K3",
+	referenceToolsVerified: true,
+};
 const openRouterFreeModel: OpencodeModel = {
 	id: "openrouter/provider/free-model",
 	name: "Free Model",
@@ -82,6 +87,7 @@ test("the selected Agent model names its provider and marks unverified choices",
 		"OpenCode Zen · Big Pickle · Not verified",
 	);
 	assert.equal(agentModelLabel(verifiedZenModel), "OpenCode Zen · GPT-6 Luna");
+	assert.equal(agentModelLabel(goModel), "OpenCode Go · Kimi K3");
 	assert.equal(
 		agentModelLabel(openRouterFreeModel),
 		"OpenRouter · Free Model · Not verified",
@@ -213,6 +219,7 @@ test("visible models require an enabled ID from a supported provider", () => {
 			[
 				zenModel,
 				verifiedZenModel,
+				goModel,
 				openRouterFreeModel,
 				openRouterPaidModel,
 				unknownProviderModel,
@@ -220,13 +227,20 @@ test("visible models require an enabled ID from a supported provider", () => {
 			[
 				zenModel.id,
 				verifiedZenModel.id,
+				goModel.id,
 				openRouterFreeModel.id,
 				openRouterPaidModel.id,
 				unknownProviderModel.id,
 				"openrouter/provider/missing",
 			],
 		),
-		[zenModel, verifiedZenModel, openRouterFreeModel, openRouterPaidModel],
+		[
+			zenModel,
+			verifiedZenModel,
+			goModel,
+			openRouterFreeModel,
+			openRouterPaidModel,
+		],
 	);
 });
 

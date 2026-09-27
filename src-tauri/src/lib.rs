@@ -14,7 +14,7 @@ mod sessions;
 mod workspace;
 
 use agent::{
-    cancel_opencode_request, codex_models, opencode_models, openrouter_models,
+    cancel_opencode_request, codex_models, go_models, opencode_models, openrouter_models,
     send_opencode_request, TutorState,
 };
 use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth, VERIFY_URL};
@@ -508,6 +508,21 @@ fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStat
 }
 
 #[tauri::command]
+fn authenticate_go(
+    api_key: String,
+    store: State<'_, CredentialStore>,
+) -> Result<CredentialStatus, String> {
+    store.authenticate_go(&api_key)?;
+    store.status()
+}
+
+#[tauri::command]
+fn sign_out_go(store: State<'_, CredentialStore>) -> Result<CredentialStatus, String> {
+    store.sign_out_go()?;
+    store.status()
+}
+
+#[tauri::command]
 fn sign_out_codex(
     store: State<'_, CredentialStore>,
     auth: State<'_, CodexAuth>,
@@ -630,16 +645,19 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             assistant_status,
             authenticate_opencode,
+            authenticate_go,
             authenticate_openrouter,
             cancel_codex_login,
             cancel_opencode_request,
             codex_models,
             opencode_models,
+            go_models,
             open_codex_verification,
             openrouter_models,
             send_opencode_request,
             provider_credential_status,
             sign_out_opencode,
+            sign_out_go,
             sign_out_codex,
             sign_out_openrouter,
             start_codex_login,
@@ -835,6 +853,32 @@ mod tests {
         assert!(status.opencode_authenticated);
         assert!(!status.openrouter_authenticated);
         assert!(directory.join("auth.json").exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn go_credentials_are_private_and_independent_of_zen() {
+        let directory = test_directory("go-credentials");
+        remove_test_directory(&directory);
+        let auth_path = directory.join("auth.json");
+        let store = CredentialStore::new(auth_path.clone());
+        store.authenticate_opencode("zen-synthetic").unwrap();
+        store.authenticate_go("go-synthetic").unwrap();
+        let status = store.status().unwrap();
+        assert!(status.opencode_authenticated);
+        assert!(status.go_authenticated);
+        assert!(!format!("{status:?}").contains("go-synthetic"));
+        assert_eq!(store.with_go_key(str::to_owned).unwrap(), "go-synthetic");
+
+        store.sign_out_go().unwrap();
+        let status = store.status().unwrap();
+        assert!(status.opencode_authenticated);
+        assert!(!status.go_authenticated);
+        let contents = std::fs::read_to_string(&auth_path).unwrap();
+        assert!(!contents.contains("go-synthetic"));
+        assert!(contents.contains("zen-synthetic"));
+        store.sign_out_opencode().unwrap();
+        assert!(!auth_path.exists());
         remove_test_directory(&directory);
     }
 

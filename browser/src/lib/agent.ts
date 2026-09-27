@@ -12,6 +12,7 @@ export interface AgentRequest {
 	readonly question: string;
 	readonly context: AgentContext;
 	readonly messages?: readonly AgentMessage[];
+	readonly sessionId?: string;
 }
 
 export interface AgentProvider {
@@ -120,6 +121,9 @@ export function createDesktopAgent(
 						turns: request.messages ?? [],
 					}),
 					model: options.model,
+					...(request.sessionId === undefined
+						? {}
+						: { sessionId: request.sessionId }),
 				});
 				void pendingRequest.catch((error: unknown) => {
 					if (terminal === undefined) {

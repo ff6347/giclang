@@ -50,3 +50,24 @@ test("OpenRouter account failures remain provider-specific and redacted", () => 
 	assert.match(message, /HTTP 401/);
 	assert.doesNotMatch(message, /synthetic-secret|Bearer/);
 });
+
+test("Go key and limit errors retain provider identity and actionable guidance", () => {
+	assert.match(
+		modelDiscoveryError(
+			"OpenCode Go rejected the saved key (HTTP 401). Sign out and reconnect with a valid Go API key.",
+		),
+		/OpenCode Go.*HTTP 401/,
+	);
+	assert.match(
+		modelDiscoveryError(
+			"OpenCode Go usage limit reached (HTTP 429). Check the Go console or retry after the limit resets.",
+		),
+		/OpenCode Go.*limit/,
+	);
+	assert.match(
+		modelDiscoveryError(
+			"OpenCode request failed (HTTP 401): the API key was rejected.",
+		),
+		/Zen.*HTTP 401/,
+	);
+});

@@ -203,6 +203,7 @@ export function useAgent(
 							question: trimmed,
 							context,
 							messages: messages.map(({ role, text }) => ({ role, text })),
+							sessionId: activeSessionId,
 						},
 						controller.signal,
 					)) {

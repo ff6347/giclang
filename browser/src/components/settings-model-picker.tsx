@@ -11,7 +11,9 @@ function modelLabel(model: OpencodeModel): string {
 	}
 	const provider = model.id.startsWith("opencode-zen/")
 		? "OpenCode Zen"
-		: "OpenRouter";
+		: model.id.startsWith("opencode-go/")
+			? "OpenCode Go"
+			: "OpenRouter";
 	const cost = model.pricing ?? "Price unavailable";
 	const charges =
 		model.otherCharges === true ? " · Additional charges may apply" : "";

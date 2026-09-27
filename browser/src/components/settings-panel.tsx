@@ -79,7 +79,7 @@ function ModelSettings({
 	enabledModelIds,
 	onModelVisibilityChange,
 }: {
-	provider: "OpenCode Zen" | "OpenRouter" | "Codex";
+	provider: "OpenCode Zen" | "OpenCode Go" | "OpenRouter" | "Codex";
 	models: readonly OpencodeModel[];
 	enabledModelIds: readonly string[];
 	onModelVisibilityChange: (id: string, enabled: boolean) => void;
@@ -136,7 +136,7 @@ function ModelSettings({
 									<tr>
 										<th scope="col">Model</th>
 										<th scope="col">Reference tools</th>
-										{provider !== "Codex" && (
+										{provider !== "Codex" && provider !== "OpenCode Go" && (
 											<>
 												<th scope="col">Input price</th>
 												<th scope="col">Output price</th>
@@ -177,7 +177,7 @@ function ModelSettings({
 													)}
 												</th>
 												<td>{verified ? "Verified" : "Not verified"}</td>
-												{provider !== "Codex" && (
+												{provider !== "Codex" && provider !== "OpenCode Go" && (
 													<>
 														<td>{prices?.[0] || "Price unavailable"}</td>
 														<td>{prices?.[1] || "Price unavailable"}</td>
@@ -260,6 +260,7 @@ export function SettingsPanel({
 	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
 	const [apiKey, setApiKey] = useState("");
+	const [goApiKey, setGoApiKey] = useState("");
 	const [openrouterApiKey, setOpenrouterApiKey] = useState("");
 	const authenticate = async () => {
 		if (desktop === undefined || apiKey.trim().length === 0) return;
@@ -270,6 +271,16 @@ export function SettingsPanel({
 	const signOut = async () => {
 		if (desktop === undefined) return;
 		onProviderAuthenticated(await desktop.signOutOpencode());
+	};
+	const authenticateGo = async () => {
+		if (desktop === undefined || goApiKey.trim().length === 0) return;
+		const status = await desktop.authenticateGo(goApiKey);
+		setGoApiKey("");
+		onProviderAuthenticated(status);
+	};
+	const signOutGo = async () => {
+		if (desktop === undefined) return;
+		onProviderAuthenticated(await desktop.signOutGo());
 	};
 	const authenticateOpenrouter = async () => {
 		if (desktop === undefined || openrouterApiKey.trim().length === 0) return;
@@ -290,6 +301,7 @@ export function SettingsPanel({
 				<>
 					<h2>Tutor</h2>
 					{(providerStatus?.opencodeAuthenticated === true ||
+						providerStatus?.goAuthenticated === true ||
 						providerStatus?.openrouterAuthenticated === true ||
 						providerStatus?.codexAuthenticated === true) && (
 						<>
@@ -363,6 +375,61 @@ export function SettingsPanel({
 							provider="OpenCode Zen"
 							models={models.filter((model) =>
 								model.id.startsWith("opencode-zen/"),
+							)}
+							enabledModelIds={enabledModelIds}
+							onModelVisibilityChange={onModelVisibilityChange}
+						/>
+					)}
+					<h3>OpenCode Go</h3>
+					<p className="settings-help">
+						Connect OpenCode Go with an API key to use the desktop tutor. Go
+						uses a separate subscription and endpoint from OpenCode Zen. Model
+						usage counts against Go limits; if you enable Use balance in the Go
+						console, requests beyond those limits may use paid Zen credits.
+						Contributor models may use your prompts and responses for training.
+						Reference lookups may use up to two additional model requests per
+						question.
+					</p>
+					{providerStatus?.goAuthenticated === true ? (
+						<>
+							<p role="status">
+								API key saved; it will be checked when you send a question.
+							</p>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={signOutGo}
+							>
+								Sign out
+							</Button>
+						</>
+					) : (
+						<>
+							<Field.Root className="settings-row">
+								<Field.Label>OpenCode Go API key</Field.Label>
+								<Field.Control
+									aria-label="OpenCode Go API key"
+									className="application-input"
+									type="password"
+									value={goApiKey}
+									onChange={(event) => setGoApiKey(event.currentTarget.value)}
+								/>
+							</Field.Root>
+							<Button
+								className="application-button"
+								type="button"
+								onClick={authenticateGo}
+								disabled={goApiKey.trim().length === 0}
+							>
+								Connect OpenCode Go
+							</Button>
+						</>
+					)}
+					{providerStatus?.goAuthenticated === true && (
+						<ModelSettings
+							provider="OpenCode Go"
+							models={models.filter((model) =>
+								model.id.startsWith("opencode-go/"),
 							)}
 							enabledModelIds={enabledModelIds}
 							onModelVisibilityChange={onModelVisibilityChange}

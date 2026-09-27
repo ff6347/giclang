@@ -62,6 +62,7 @@ export function deriveVisibleModels(
 		(model) =>
 			enabled.has(model.id) &&
 			(model.id.startsWith("opencode-zen/") ||
+				model.id.startsWith("opencode-go/") ||
 				model.id.startsWith("openrouter/") ||
 				model.id.startsWith("openai-codex/")),
 	);
@@ -70,9 +71,11 @@ export function deriveVisibleModels(
 export function agentModelLabel(model: OpencodeModel): string {
 	const provider = model.id.startsWith("opencode-zen/")
 		? "OpenCode Zen"
-		: model.id.startsWith("openai-codex/")
-			? "Codex"
-			: "OpenRouter";
+		: model.id.startsWith("opencode-go/")
+			? "OpenCode Go"
+			: model.id.startsWith("openai-codex/")
+				? "Codex"
+				: "OpenRouter";
 	const verification =
 		model.referenceToolsVerified === true ? "" : " · Not verified";
 	return `${provider} · ${model.name}${verification}`;

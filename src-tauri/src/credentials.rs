@@ -9,6 +9,7 @@ use tempfile::NamedTempFile;
 struct AuthFile {
     codex: Option<CodexCredentials>,
     opencode_api_key: Option<String>,
+    go_api_key: Option<String>,
     openrouter_api_key: Option<String>,
 }
 
@@ -24,6 +25,7 @@ struct CodexCredentials {
 pub(crate) struct CredentialStatus {
     pub codex_authenticated: bool,
     pub opencode_authenticated: bool,
+    pub go_authenticated: bool,
     pub openrouter_authenticated: bool,
 }
 
@@ -54,6 +56,20 @@ impl CredentialStore {
         let api_key = auth
             .opencode_api_key
             .ok_or_else(|| "OpenCode is not authenticated.".to_owned())?;
+        Ok(operation(&api_key))
+    }
+
+    pub(crate) fn with_go_key<T>(&self, operation: impl FnOnce(&str) -> T) -> Result<T, String> {
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let auth = self
+            .read_unlocked()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let api_key = auth
+            .go_api_key
+            .ok_or_else(|| "OpenCode Go is not authenticated.".to_owned())?;
         Ok(operation(&api_key))
     }
 
@@ -100,6 +116,7 @@ impl CredentialStore {
         Ok(CredentialStatus {
             codex_authenticated: auth.codex.is_some(),
             opencode_authenticated: auth.opencode_api_key.is_some(),
+            go_authenticated: auth.go_api_key.is_some(),
             openrouter_authenticated: auth.openrouter_api_key.is_some(),
         })
     }
@@ -171,6 +188,13 @@ impl CredentialStore {
         self.write_unlocked(&auth)
     }
 
+    pub(crate) fn authenticate_go(&self, api_key: &str) -> Result<(), String> {
+        if api_key.trim().is_empty() {
+            return Err("Enter an OpenCode Go API key.".to_owned());
+        }
+        self.update(|auth| auth.go_api_key = Some(api_key.to_owned()))
+    }
+
     pub(crate) fn authenticate_openrouter(&self, api_key: &str) -> Result<(), String> {
         if api_key.trim().is_empty() {
             return Err("Enter an OpenRouter API key.".to_owned());
@@ -216,6 +240,10 @@ impl CredentialStore {
         self.write_unlocked(&auth)
     }
 
+    pub(crate) fn sign_out_go(&self) -> Result<(), String> {
+        self.update(|auth| auth.go_api_key = None)
+    }
+
     pub(crate) fn sign_out_codex(&self) -> Result<(), String> {
         self.update(|auth| auth.codex = None)
     }
@@ -259,6 +287,7 @@ impl CredentialStore {
     fn write_unlocked(&self, auth: &AuthFile) -> Result<(), String> {
         if auth.codex.is_none()
             && auth.opencode_api_key.is_none()
+            && auth.go_api_key.is_none()
             && auth.openrouter_api_key.is_none()
         {
             return match fs::remove_file(&self.path) {

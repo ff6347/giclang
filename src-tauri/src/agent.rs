@@ -1,4 +1,4 @@
-// ABOUTME: Streams constrained Socratic requests through the OpenCode Zen API.
+// ABOUTME: Streams constrained Socratic requests through native tutor providers.
 // ABOUTME: Keeps provider credentials and cancellation state inside the native desktop boundary.
 
 use crate::codex_session::CodexSession;
@@ -24,6 +24,8 @@ use tokio_util::sync::CancellationToken;
 const EVENT_NAME: &str = "opencode-agent-event";
 const ZEN_URL: &str = "https://opencode.ai/zen/v1/chat/completions";
 const ZEN_MODELS_URL: &str = "https://opencode.ai/zen/v1/models";
+const GO_URL: &str = "https://opencode.ai/zen/go/v1";
+const GO_MODELS_URL: &str = "https://opencode.ai/zen/go/v1/models";
 const OPENROUTER_MODELS_URL: &str = "https://openrouter.ai/api/v1/models/user";
 const OPENROUTER_KEY_URL: &str = "https://openrouter.ai/api/v1/key";
 const TUTOR_POLICY: &str = include_str!("../workspace/gic-tutor/SKILL.md");
@@ -154,6 +156,11 @@ struct ModelList {
 }
 
 #[derive(Deserialize)]
+struct GoModelList {
+    data: Vec<ModelInfo>,
+}
+
+#[derive(Deserialize)]
 struct ModelInfo {
     id: String,
     #[serde(default)]
@@ -233,9 +240,12 @@ struct TutorRequest {
     cancellation: CancellationToken,
 }
 
-struct TutorInput {
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TutorInput {
     question: String,
     context: String,
+    session_id: Option<String>,
 }
 
 trait TutorProvider {
@@ -261,74 +271,146 @@ impl TutorProvider for RigOpenCodeProvider {
             "x-opencode-session",
             http::HeaderValue::from_static("gic-tutor"),
         );
-        match zen_route(&request.model) {
-            Some(ZenRoute::Responses) => {
-                let client = openai::Client::builder()
-                    .api_key(request.api_key.clone())
-                    .base_url(&self.base_url)
-                    .http_headers(headers)
-                    .build()
-                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
-                stream_zen_model(
-                    client.completion_model(request.model.clone()),
-                    request,
-                    emit,
-                )
-                .await
-            }
-            Some(ZenRoute::Messages) => {
-                let client = anthropic::Client::builder()
-                    .api_key(request.api_key.clone())
-                    .base_url(&self.base_url)
-                    .http_headers(headers)
-                    .build()
-                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
-                stream_zen_model(
-                    client.completion_model(request.model.clone()),
-                    request,
-                    emit,
-                )
-                .await
-            }
-            Some(ZenRoute::ChatCompletions) => {
-                let client = openai::Client::builder()
-                    .api_key(request.api_key.clone())
-                    .base_url(&self.base_url)
-                    .http_headers(headers)
-                    .build()
-                    .map_err(|_| "OpenCode client could not start.".to_owned())?;
-                stream_zen_model(
-                    client
-                        .completions_api()
-                        .completion_model(request.model.clone()),
-                    request,
-                    emit,
-                )
-                .await
-            }
-            None => Err("Choose a supported OpenCode model.".to_owned()),
-        }
+        stream_opencode_request(
+            &self.base_url,
+            zen_route(&request.model),
+            headers,
+            request,
+            emit,
+            false,
+        )
+        .await
     }
 }
 
-async fn stream_zen_model<M: CompletionModel + Clone>(
+struct RigGoProvider {
+    base_url: String,
+    session_id: String,
+}
+
+impl TutorProvider for RigGoProvider {
+    async fn stream(
+        &self,
+        request: TutorRequest,
+        emit: &mut (dyn FnMut(ProviderEvent) + Send),
+    ) -> Result<(), String> {
+        if self.session_id.trim().is_empty() {
+            return Err(
+                "OpenCode Go conversation is unavailable. Start a new conversation.".to_owned(),
+            );
+        }
+        let session = http::HeaderValue::from_str(&self.session_id).map_err(|_| {
+            "OpenCode Go conversation is unavailable. Start a new conversation.".to_owned()
+        })?;
+        let mut headers = http::HeaderMap::new();
+        headers.insert("x-opencode-session", session);
+        headers.insert(
+            http::header::USER_AGENT,
+            http::HeaderValue::from_static("gic-tutor/0.1"),
+        );
+        stream_opencode_request(
+            &self.base_url,
+            go_route(&request.model),
+            headers,
+            request,
+            emit,
+            true,
+        )
+        .await
+    }
+}
+
+async fn stream_opencode_request(
+    base_url: &str,
+    route: Option<ZenRoute>,
+    headers: http::HeaderMap,
+    request: TutorRequest,
+    emit: &mut (dyn FnMut(ProviderEvent) + Send),
+    go: bool,
+) -> Result<(), String> {
+    match route {
+        Some(ZenRoute::Responses) => {
+            let client = openai::Client::builder()
+                .api_key(request.api_key.clone())
+                .base_url(base_url)
+                .http_headers(headers)
+                .build()
+                .map_err(|_| "OpenCode client could not start.".to_owned())?;
+            stream_opencode_model(
+                client.completion_model(request.model.clone()),
+                request,
+                emit,
+                go,
+            )
+            .await
+        }
+        Some(ZenRoute::Messages) => {
+            let client = anthropic::Client::builder()
+                .api_key(request.api_key.clone())
+                .base_url(base_url)
+                .http_headers(headers)
+                .build()
+                .map_err(|_| "OpenCode client could not start.".to_owned())?;
+            stream_opencode_model(
+                client.completion_model(request.model.clone()),
+                request,
+                emit,
+                go,
+            )
+            .await
+        }
+        Some(ZenRoute::ChatCompletions) => {
+            let client = openai::Client::builder()
+                .api_key(request.api_key.clone())
+                .base_url(base_url)
+                .http_headers(headers)
+                .build()
+                .map_err(|_| "OpenCode client could not start.".to_owned())?;
+            stream_opencode_model(
+                client
+                    .completions_api()
+                    .completion_model(request.model.clone()),
+                request,
+                emit,
+                go,
+            )
+            .await
+        }
+        None => Err("Choose a supported OpenCode model.".to_owned()),
+    }
+}
+
+async fn stream_opencode_model<M: CompletionModel + Clone>(
     model: M,
     request: TutorRequest,
     emit: &mut (dyn FnMut(ProviderEvent) + Send),
+    go: bool,
 ) -> Result<(), String> {
-    stream_reference_model(
+    let result = stream_reference_model(
         model,
         request,
         emit,
         tokio::time::Instant::now() + TUTOR_DEADLINE,
         |error| {
-            provider_error(
-                error,
-                "OpenCode request failed. Check your connection or sign in again.",
-            )
+            if go {
+                error
+                    .provider_response_status()
+                    .map(go_status_error)
+                    .unwrap_or_else(|| "OpenCode Go stream failed. Check your connection or retry with another Go model.".to_owned())
+            } else {
+                provider_error(
+                    error,
+                    "OpenCode request failed. Check your connection or sign in again.",
+                )
+            }
         },
     )
-    .await
+    .await;
+    if go && result.as_ref().err().map(String::as_str) == Some(TOOL_FAILURE) {
+        Err("OpenCode Go did not finish its answer or reference lookup. Retry or choose another Go model.".to_owned())
+    } else {
+        result
+    }
 }
 
 struct RigCodexProvider {
@@ -611,6 +693,15 @@ fn validate_model(model: &str) -> Result<&str, String> {
     Ok(model_id)
 }
 
+fn validate_go_model(model: &str) -> Result<&str, String> {
+    let id = model
+        .strip_prefix("opencode-go/")
+        .ok_or_else(|| "Choose an OpenCode Go model.".to_owned())?;
+    go_route(id)
+        .map(|_| id)
+        .ok_or_else(|| "Choose a supported OpenCode Go model.".to_owned())
+}
+
 fn reference_tools_verified(model: &str) -> bool {
     matches!(
         model,
@@ -642,6 +733,10 @@ fn validate_tutor_model(model: &str) -> Result<String, String> {
         validate_codex_model(model)?;
         return Ok(model.to_owned());
     }
+    if model.starts_with("opencode-go/") {
+        validate_go_model(model)?;
+        return Ok(model.to_owned());
+    }
     if model.starts_with("openrouter/") {
         validate_openrouter_model(model)?;
         Ok(model.to_owned())
@@ -655,6 +750,40 @@ enum ZenRoute {
     ChatCompletions,
     Responses,
     Messages,
+}
+
+fn go_route(model: &str) -> Option<ZenRoute> {
+    match model {
+        "grok-4.7"
+        | "grok-4.6"
+        | "gpt-6-luna"
+        | "gpt-5.6-luna"
+        | "muse-spark-1.3-contributor"
+        | "muse-spark-1.2-contributor" => Some(ZenRoute::Responses),
+        "minimax-m3" | "minimax-m2.7" | "minimax-m2.5" | "qwen3.8-max" | "qwen3.8-flash"
+        | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.6-plus" => Some(ZenRoute::Messages),
+        "glm-5.3-flash"
+        | "glm-5.3"
+        | "glm-5.2"
+        | "glm-5.1"
+        | "kimi-k3"
+        | "kimi-k2.7-code"
+        | "kimi-k2.6"
+        | "longcat-2.0"
+        | "deepseek-v4.1-flash"
+        | "deepseek-v4-pro"
+        | "deepseek-v4-flash"
+        | "deepseek-v4-flash-vision-exp"
+        | "mimo-v2.6-flash"
+        | "mimo-v2.6-pro"
+        | "mimo-v2.5"
+        | "mimo-v2.5-pro"
+        | "hy4-preview"
+        | "hy3"
+        | "space-bunny-free"
+        | "longcat-2.5-preview-free" => Some(ZenRoute::ChatCompletions),
+        _ => None,
+    }
 }
 
 fn zen_route(model: &str) -> Option<ZenRoute> {
@@ -840,6 +969,20 @@ fn safe_error(status: reqwest::StatusCode) -> String {
     }
 }
 
+fn go_status_error(status: reqwest::StatusCode) -> String {
+    match status.as_u16() {
+        400 => "OpenCode Go rejected this model or request (HTTP 400). Choose another supported Go model.",
+        401 => "OpenCode Go rejected the saved key (HTTP 401). Sign out and reconnect with a valid Go API key.",
+        402 => "OpenCode Go has insufficient subscription access or balance (HTTP 402). Check your Go subscription and account balance.",
+        403 => "OpenCode Go denied access (HTTP 403). Check your Go subscription and model access.",
+        404 => "OpenCode Go could not find this model (HTTP 404). Refresh the Go model list and choose another model.",
+        429 => "OpenCode Go usage limit reached (HTTP 429). Check the Go console or retry after the limit resets.",
+        502 | 503 => "OpenCode Go is temporarily unavailable. Retry later.",
+        _ => "OpenCode Go request failed. Check your account and try again.",
+    }
+    .to_owned()
+}
+
 fn provider_error(error: CompletionError, fallback: &str) -> String {
     error
         .provider_response_status()
@@ -890,6 +1033,18 @@ pub(crate) async fn opencode_models(
         .build()
         .map_err(|_| "OpenCode client could not start.".to_owned())?;
     fetch_models(&client, ZEN_MODELS_URL, &api_key).await
+}
+
+#[tauri::command]
+pub(crate) async fn go_models(
+    credentials: State<'_, CredentialStore>,
+) -> Result<Vec<TutorModel>, String> {
+    let api_key = credentials.with_go_key(str::to_owned)?;
+    let client = reqwest::Client::builder()
+        .user_agent("gic-tutor/0.1")
+        .build()
+        .map_err(|_| "OpenCode Go client could not start.".to_owned())?;
+    fetch_go_models(&client, GO_MODELS_URL, &api_key).await
 }
 
 #[tauri::command]
@@ -957,6 +1112,43 @@ async fn fetch_models(
             }
         })
         .filter(|model| validate_model(&model.id).is_ok())
+        .collect())
+}
+
+async fn fetch_go_models(
+    client: &reqwest::Client,
+    url: &str,
+    api_key: &str,
+) -> Result<Vec<TutorModel>, String> {
+    let response = client
+        .get(url)
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .map_err(|_| {
+            "OpenCode Go models could not be loaded. Check your connection and retry.".to_owned()
+        })?;
+    if !response.status().is_success() {
+        return Err(go_status_error(response.status()));
+    }
+    let list = response
+        .json::<GoModelList>()
+        .await
+        .map_err(|_| "OpenCode Go returned an invalid model list. Retry models.".to_owned())?;
+    Ok(list
+        .data
+        .into_iter()
+        .filter(|model| go_route(&model.id).is_some())
+        .map(|model| TutorModel {
+            id: format!("opencode-go/{}", model.id),
+            name: model.name.unwrap_or(model.id),
+            reference_tools_verified: false,
+            beginner_default: None,
+            pricing: None,
+            is_free: None,
+            other_charges: None,
+            account_limit: Some("Go subscription limits apply; model and tool access are checked when you ask a question.".to_owned()),
+        })
         .collect())
 }
 
@@ -1078,8 +1270,7 @@ pub(crate) async fn send_opencode_request(
     app: AppHandle,
     credentials: State<'_, CredentialStore>,
     state: State<'_, TutorState>,
-    question: String,
-    context: String,
+    input: TutorInput,
     model: String,
     request_id: String,
 ) -> Result<(), String> {
@@ -1092,7 +1283,7 @@ pub(crate) async fn send_opencode_request(
         &credentials,
         &codex,
         cancellation.clone(),
-        TutorInput { question, context },
+        input,
         model_id,
         request_id.clone(),
     )
@@ -1234,6 +1425,189 @@ mod tests {
         assert!(message.contains("access"));
         assert!(!message.contains("Choose another model"));
         assert!(!message.contains("Big Pickle"));
+    }
+
+    #[test]
+    fn go_models_use_only_their_documented_protocols() {
+        assert_eq!(
+            validate_go_model("opencode-go/gpt-6-luna"),
+            Ok("gpt-6-luna")
+        );
+        assert_eq!(go_route("gpt-6-luna"), Some(ZenRoute::Responses));
+        assert_eq!(go_route("minimax-m3"), Some(ZenRoute::Messages));
+        assert_eq!(go_route("glm-5.3"), Some(ZenRoute::ChatCompletions));
+        assert_eq!(go_route("kimi-k2.6"), Some(ZenRoute::ChatCompletions));
+        assert!(validate_go_model("opencode-go/big-pickle").is_err());
+        assert!(validate_go_model("opencode-go/claude-sonnet-5").is_err());
+        assert!(validate_go_model("opencode-zen/gpt-6-luna").is_err());
+        assert_eq!(
+            validate_tutor_model("opencode-go/minimax-m3"),
+            Ok("opencode-go/minimax-m3".to_owned())
+        );
+    }
+
+    #[test]
+    fn go_failures_explain_account_action_without_exposing_the_response() {
+        assert!(go_status_error(reqwest::StatusCode::BAD_REQUEST).contains("model"));
+        assert!(go_status_error(reqwest::StatusCode::PAYMENT_REQUIRED).contains("balance"));
+        assert!(go_status_error(reqwest::StatusCode::TOO_MANY_REQUESTS).contains("limit"));
+        assert!(go_status_error(reqwest::StatusCode::UNAUTHORIZED).contains("key"));
+        assert!(go_status_error(reqwest::StatusCode::NOT_FOUND).contains("model"));
+    }
+
+    #[test]
+    fn go_catalog_requires_model_data_and_request_accepts_a_conversation_id() {
+        assert!(serde_json::from_str::<GoModelList>("{}").is_err());
+        let input: TutorInput = serde_json::from_value(serde_json::json!({
+            "question": "Why?",
+            "context": "{}",
+            "sessionId": "conversation-123"
+        }))
+        .unwrap();
+        assert_eq!(input.session_id.as_deref(), Some("conversation-123"));
+    }
+
+    #[tokio::test]
+    async fn go_catalog_uses_go_namespace_and_excludes_other_routes() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = [0; 2048];
+            let size = socket.read(&mut request).await.unwrap();
+            let headers = String::from_utf8_lossy(&request[..size]);
+            assert!(headers.starts_with("GET /zen/go/v1/models "));
+            assert!(headers.contains("Bearer go-synthetic"));
+            let body = r#"{"data":[{"id":"gpt-6-luna","name":"GPT 6 Luna"},{"id":"minimax-m3","name":"MiniMax M3"},{"id":"big-pickle","name":"Big Pickle"}]}"#;
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+        });
+        let models = fetch_go_models(
+            &reqwest::Client::new(),
+            &format!("http://{address}/zen/go/v1/models"),
+            "go-synthetic",
+        )
+        .await
+        .unwrap();
+        server.await.unwrap();
+        assert_eq!(
+            models
+                .iter()
+                .map(|model| model.id.as_str())
+                .collect::<Vec<_>>(),
+            ["opencode-go/gpt-6-luna", "opencode-go/minimax-m3"]
+        );
+        assert!(models.iter().all(|model| !model.reference_tools_verified));
+    }
+
+    #[tokio::test]
+    async fn go_streams_use_documented_paths_and_conversation_headers() {
+        for (model, path) in [
+            ("gpt-6-luna", "/zen/go/v1/responses"),
+            ("minimax-m3", "/zen/go/v1/messages"),
+            ("glm-5.3", "/zen/go/v1/chat/completions"),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut request = Vec::new();
+                let mut incoming = [0; 4096];
+                loop {
+                    let count = socket.read(&mut incoming).await.unwrap();
+                    request.extend_from_slice(&incoming[..count]);
+                    let Some(end) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n")
+                    else {
+                        continue;
+                    };
+                    let headers = String::from_utf8_lossy(&request[..end]).to_lowercase();
+                    let length: usize = headers
+                        .lines()
+                        .find_map(|line| line.strip_prefix("content-length: "))
+                        .unwrap()
+                        .parse()
+                        .unwrap();
+                    if request.len() >= end + 4 + length {
+                        break;
+                    }
+                }
+                socket.write_all(b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: 20\r\nConnection: close\r\n\r\n{\"error\":\"private!\"}").await.unwrap();
+                String::from_utf8(request).unwrap()
+            });
+            let provider = RigGoProvider {
+                base_url: format!("http://{address}/zen/go/v1"),
+                session_id: "conversation-123".to_owned(),
+            };
+            let mut events = Vec::new();
+            let error = provider
+                .stream(
+                    TutorRequest {
+                        api_key: "go-synthetic".to_owned(),
+                        model: model.to_owned(),
+                        prompt: "Sketch and preview context:\n{}\n\nStudent question: Help."
+                            .to_owned(),
+                        history: Vec::new(),
+                        cancellation: CancellationToken::new(),
+                    },
+                    &mut |event| events.push(event),
+                )
+                .await
+                .unwrap_err();
+            let sent = server.await.unwrap();
+            assert!(
+                sent.starts_with(&format!("POST {path} ")),
+                "{model}: {sent}"
+            );
+            assert!(sent
+                .to_lowercase()
+                .contains("x-opencode-session: conversation-123\r\n"));
+            assert!(sent
+                .to_lowercase()
+                .contains("user-agent: gic-tutor/0.1\r\n"));
+            assert!(
+                sent.to_lowercase().contains("go-synthetic"),
+                "{model}: {sent}"
+            );
+            assert!(sent.contains(model));
+            assert!(error.contains("balance"), "{model}: {error}");
+            assert!(!error.contains("private!"));
+            assert!(events.is_empty());
+        }
+    }
+
+    #[tokio::test]
+    async fn go_incomplete_stream_reports_a_retryable_provider_error() {
+        let (zen, server) = zen_provider_for(200, b"data: [DONE]\n\n").await;
+        let provider = RigGoProvider {
+            base_url: zen.base_url,
+            session_id: "conversation-123".to_owned(),
+        };
+        let mut events = Vec::new();
+        let result = provider
+            .stream(
+                TutorRequest {
+                    api_key: "go-synthetic".to_owned(),
+                    model: "glm-5.3".to_owned(),
+                    prompt: "Help with my sketch".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await;
+        server.await.unwrap();
+        let message = result.unwrap_err();
+        assert!(message.contains("OpenCode Go"), "{message}");
+        assert!(message.contains("Retry"), "{message}");
+        assert!(events.is_empty());
     }
 
     #[tokio::test]
@@ -3697,6 +4071,28 @@ async fn stream_request(
             TutorRequest {
                 api_key: access.access_token,
                 model: selected,
+                prompt,
+                history,
+                cancellation,
+            },
+            &request_id,
+        )
+        .await
+    } else if model.starts_with("opencode-go/") {
+        let api_key = credentials.with_go_key(str::to_owned)?;
+        let model = validate_go_model(&model)?.to_owned();
+        let provider = RigGoProvider {
+            base_url: GO_URL.to_owned(),
+            session_id: input.session_id.ok_or_else(|| {
+                "OpenCode Go conversation is unavailable. Start a new conversation.".to_owned()
+            })?,
+        };
+        stream_with_provider(
+            app,
+            &provider,
+            TutorRequest {
+                api_key,
+                model,
                 prompt,
                 history,
                 cancellation,

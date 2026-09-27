@@ -9,6 +9,7 @@ import type { AssistantStatus, WorkspaceStatus } from "./workspace-support.ts";
 
 export interface ProviderCredentialStatus {
 	readonly codexAuthenticated: boolean;
+	readonly goAuthenticated: boolean;
 	readonly opencodeAuthenticated: boolean;
 	readonly openrouterAuthenticated: boolean;
 }
@@ -240,6 +241,10 @@ export class DesktopHost {
 		});
 	}
 
+	authenticateGo(apiKey: string): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("authenticate_go", { apiKey });
+	}
+
 	authenticateOpenrouter(apiKey: string): Promise<ProviderCredentialStatus> {
 		return invoke<ProviderCredentialStatus>("authenticate_openrouter", {
 			apiKey,
@@ -250,12 +255,20 @@ export class DesktopHost {
 		return invoke<ProviderCredentialStatus>("sign_out_opencode");
 	}
 
+	signOutGo(): Promise<ProviderCredentialStatus> {
+		return invoke<ProviderCredentialStatus>("sign_out_go");
+	}
+
 	signOutOpenrouter(): Promise<ProviderCredentialStatus> {
 		return invoke<ProviderCredentialStatus>("sign_out_openrouter");
 	}
 
 	opencodeModels(): Promise<OpencodeModel[]> {
 		return invoke<OpencodeModel[]>("opencode_models");
+	}
+
+	goModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("go_models");
 	}
 
 	codexModels(): Promise<OpencodeModel[]> {
@@ -271,8 +284,17 @@ export class DesktopHost {
 		readonly question: string;
 		readonly context: string;
 		readonly model: string;
+		readonly sessionId?: string;
 	}): Promise<void> {
-		return invoke<void>("send_opencode_request", request);
+		return invoke<void>("send_opencode_request", {
+			requestId: request.requestId,
+			model: request.model,
+			input: {
+				question: request.question,
+				context: request.context,
+				sessionId: request.sessionId,
+			},
+		});
 	}
 
 	cancelOpencodeRequest(requestId: string): Promise<void> {

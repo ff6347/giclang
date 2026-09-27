@@ -170,6 +170,7 @@ export function App({
 		if (
 			desktop === undefined ||
 			(status?.opencodeAuthenticated !== true &&
+				status?.goAuthenticated !== true &&
 				status?.openrouterAuthenticated !== true &&
 				status?.codexAuthenticated !== true)
 		) {
@@ -181,6 +182,9 @@ export function App({
 		void Promise.allSettled([
 			status?.opencodeAuthenticated === true
 				? desktop.opencodeModels()
+				: Promise.resolve([]),
+			status?.goAuthenticated === true
+				? desktop.goModels()
 				: Promise.resolve([]),
 			status?.openrouterAuthenticated === true
 				? desktop.openrouterModels()
@@ -194,11 +198,14 @@ export function App({
 				const zenModels =
 					results[0].status === "fulfilled" ? results[0].value : [];
 				const openrouterModels =
-					results[1].status === "fulfilled" ? results[1].value : [];
-				const codexModels =
 					results[2].status === "fulfilled" ? results[2].value : [];
+				const codexModels =
+					results[3].status === "fulfilled" ? results[3].value : [];
+				const goModels =
+					results[1].status === "fulfilled" ? results[1].value : [];
 				const availableModels = [
 					...zenModels,
+					...goModels,
 					...openrouterModels,
 					...codexModels,
 				];
@@ -209,12 +216,17 @@ export function App({
 					loadSelectedModelId(settings).startsWith("openai-codex/") ||
 					(status?.codexAuthenticated === true &&
 						status.opencodeAuthenticated !== true &&
+						status.goAuthenticated !== true &&
 						status.openrouterAuthenticated !== true)
-						? 2
+						? 3
 						: loadSelectedModelId(settings).startsWith("openrouter/") ||
-							  status?.opencodeAuthenticated !== true
-							? 1
-							: 0;
+							  (status?.opencodeAuthenticated !== true &&
+									status?.goAuthenticated !== true)
+							? 2
+							: loadSelectedModelId(settings).startsWith("opencode-go/") ||
+								  status?.opencodeAuthenticated !== true
+								? 1
+								: 0;
 				const failedProvider =
 					results[preferredErrorIndex].status === "rejected"
 						? results[preferredErrorIndex]
@@ -282,13 +294,16 @@ export function App({
 		opencodeModel,
 		opencodeModel === ""
 			? providerStatus?.opencodeAuthenticated === true ||
+					providerStatus?.goAuthenticated === true ||
 					providerStatus?.openrouterAuthenticated === true ||
 					providerStatus?.codexAuthenticated === true
 			: opencodeModel.startsWith("openrouter/")
 				? providerStatus?.openrouterAuthenticated === true
 				: opencodeModel.startsWith("openai-codex/")
 					? providerStatus?.codexAuthenticated === true
-					: providerStatus?.opencodeAuthenticated === true,
+					: opencodeModel.startsWith("opencode-go/")
+						? providerStatus?.goAuthenticated === true
+						: providerStatus?.opencodeAuthenticated === true,
 	);
 
 	useEffect(() => {

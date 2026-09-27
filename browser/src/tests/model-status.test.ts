@@ -32,6 +32,7 @@ function renderModels(
 	openrouterAuthenticated = false,
 	enabledModelIds: readonly string[] = models.map((model) => model.id),
 	desktopMode = true,
+	goAuthenticated = false,
 ): string {
 	return renderToStaticMarkup(
 		createElement(SettingsPanel, {
@@ -53,6 +54,7 @@ function renderModels(
 			providerStatus: {
 				opencodeAuthenticated: authenticated,
 				openrouterAuthenticated,
+				goAuthenticated,
 			},
 			models,
 			enabledModelIds,
@@ -93,9 +95,34 @@ test("desktop provider headings are peers under Tutor", () => {
 	const html = renderModels(false, null);
 	const tutor = html.indexOf(">Tutor</h2>");
 	const zen = html.indexOf(">OpenCode Zen</h3>");
+	const go = html.indexOf(">OpenCode Go</h3>");
 	const codex = html.indexOf(">Codex</h3>");
 	const router = html.indexOf(">OpenRouter tutor</h3>");
-	assert.ok(tutor >= 0 && tutor < zen && zen < codex && codex < router);
+	assert.ok(
+		tutor >= 0 && tutor < zen && zen < go && go < codex && codex < router,
+	);
+});
+
+test("Go models and its connection appear independently from Zen", () => {
+	const html = renderModels(
+		false,
+		null,
+		[
+			{
+				id: "opencode-go/kimi-k3",
+				name: "Kimi K3",
+				referenceToolsVerified: true,
+			},
+		],
+		false,
+		["opencode-go/kimi-k3"],
+		true,
+		true,
+	);
+	assert.match(html, /OpenCode Go with an API key/);
+	assert.match(html, /Search OpenCode Go models/);
+	assert.match(html, /OpenCode Go · Kimi K3/);
+	assert.doesNotMatch(html, /API key saved; it has not been verified/);
 });
 
 test("model discovery failure is visible and can be retried", () => {
