@@ -258,6 +258,15 @@ trait TutorProvider {
 
 struct RigOpenCodeProvider {
     base_url: String,
+    session_id: String,
+}
+
+fn zen_session_header(session_id: &str) -> Result<http::HeaderValue, String> {
+    if session_id.trim().is_empty() {
+        return Err("OpenCode conversation is unavailable. Start a new conversation.".to_owned());
+    }
+    http::HeaderValue::from_str(session_id)
+        .map_err(|_| "OpenCode conversation is unavailable. Start a new conversation.".to_owned())
 }
 
 impl TutorProvider for RigOpenCodeProvider {
@@ -266,11 +275,9 @@ impl TutorProvider for RigOpenCodeProvider {
         request: TutorRequest,
         emit: &mut (dyn FnMut(ProviderEvent) + Send),
     ) -> Result<(), String> {
+        let session = zen_session_header(&self.session_id)?;
         let mut headers = http::HeaderMap::new();
-        headers.insert(
-            "x-opencode-session",
-            http::HeaderValue::from_static("gic-tutor"),
-        );
+        headers.insert("x-opencode-session", session);
         stream_opencode_request(
             &self.base_url,
             zen_route(&request.model),
@@ -1456,8 +1463,12 @@ mod tests {
     }
 
     #[test]
-    fn go_catalog_requires_model_data_and_request_accepts_a_conversation_id() {
+    fn go_catalog_requires_model_data() {
         assert!(serde_json::from_str::<GoModelList>("{}").is_err());
+    }
+
+    #[test]
+    fn tutor_request_accepts_a_conversation_id() {
         let input: TutorInput = serde_json::from_value(serde_json::json!({
             "question": "Why?",
             "context": "{}",
@@ -1465,6 +1476,23 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(input.session_id.as_deref(), Some("conversation-123"));
+    }
+
+    #[test]
+    fn zen_session_headers_are_stable_per_conversation() {
+        let first_turn = zen_session_header("conversation-123").unwrap();
+        let later_turn = zen_session_header("conversation-123").unwrap();
+        let next_conversation = zen_session_header("conversation-456").unwrap();
+
+        assert_eq!(first_turn, later_turn);
+        assert_ne!(first_turn, next_conversation);
+    }
+
+    #[test]
+    fn zen_session_headers_reject_invalid_ids() {
+        let message = "OpenCode conversation is unavailable. Start a new conversation.";
+        assert_eq!(zen_session_header("  ").unwrap_err(), message);
+        assert_eq!(zen_session_header("invalid\nheader").unwrap_err(), message);
     }
 
     #[tokio::test]
@@ -1616,6 +1644,7 @@ mod tests {
         let key = std::env::var("OPENCODE_API_KEY").expect("Zen API key is required");
         let provider = RigOpenCodeProvider {
             base_url: "https://opencode.ai/zen/v1".to_owned(),
+            session_id: "test-session".to_owned(),
         };
         for model in ["space-bunny-free", "deepseek-v4.1-flash", "claude-sonnet-5"] {
             let mut events = Vec::new();
@@ -2030,6 +2059,7 @@ mod tests {
         (
             RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
+                session_id: "test-session".to_owned(),
             },
             server,
         )
@@ -2178,8 +2208,9 @@ mod tests {
 
     #[tokio::test]
     async fn zen_gpt_and_claude_use_their_native_streaming_endpoints() {
-        for (model, expected_path, expected_auth, body) in [
+        for (session_id, model, expected_path, expected_auth, body) in [
             (
+                "conversation-123",
                 "gpt-5.6-terra",
                 "POST /v1/responses HTTP/1.1",
                 "authorization: bearer test-key",
@@ -2191,6 +2222,7 @@ mod tests {
                 ),
             ),
             (
+                "conversation-123",
                 "claude-sonnet-4-6",
                 "POST /v1/messages HTTP/1.1",
                 "x-api-key: test-key",
@@ -2211,6 +2243,10 @@ mod tests {
             ),
         ] {
             let (provider, server) = zen_provider_for(200, body.as_bytes()).await;
+            let provider = RigOpenCodeProvider {
+                base_url: provider.base_url,
+                session_id: session_id.to_owned(),
+            };
             let mut events = Vec::new();
             let result = provider
                 .stream(
@@ -2231,7 +2267,7 @@ mod tests {
             let (path, headers, sent) = server.await.unwrap();
             assert_eq!(path, expected_path.to_lowercase());
             assert!(headers.contains(expected_auth));
-            assert!(headers.contains("x-opencode-session: gic-tutor"));
+            assert!(headers.contains(&format!("x-opencode-session: {session_id}")));
             assert_eq!(sent["model"], model);
             assert_eq!(sent["stream"], true);
             assert!(sent.to_string().contains("Socratic"));
@@ -2291,6 +2327,7 @@ mod tests {
         (
             RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
+                session_id: "test-session".to_owned(),
             },
             server,
         )
@@ -2450,6 +2487,7 @@ mod tests {
             });
             let provider = RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
+                session_id: "test-session".to_owned(),
             };
             let cancellation = CancellationToken::new();
             let cancel = cancellation.clone();
@@ -2859,6 +2897,7 @@ mod tests {
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let cancellation = CancellationToken::new();
         let cancel = cancellation.clone();
@@ -3313,6 +3352,7 @@ mod tests {
             } else {
                 RigOpenCodeProvider {
                     base_url: format!("http://{address}/v1"),
+                    session_id: "test-session".to_owned(),
                 }
                 .stream(request, &mut |event| events.push(event))
                 .await
@@ -3518,6 +3558,7 @@ mod tests {
             });
             let provider = RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
+                session_id: "test-session".to_owned(),
             };
             let mut events = Vec::new();
             let result = provider
@@ -3595,6 +3636,7 @@ mod tests {
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let mut events = Vec::new();
         provider
@@ -3789,6 +3831,7 @@ mod tests {
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let mut events = Vec::new();
         let result = provider
@@ -3842,6 +3885,7 @@ mod tests {
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let mut events = Vec::new();
         let result = provider
@@ -3885,6 +3929,7 @@ mod tests {
         let cancel = cancellation.clone();
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let mut events = Vec::new();
         {
@@ -3944,6 +3989,7 @@ mod tests {
             });
             let provider = RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
+                session_id: "test-session".to_owned(),
             };
             let mut events = Vec::new();
             let result = provider
@@ -4011,6 +4057,7 @@ mod tests {
         });
         let provider = RigOpenCodeProvider {
             base_url: format!("http://{address}/v1"),
+            session_id: "test-session".to_owned(),
         };
         let (events, mut received) = tokio::sync::mpsc::unbounded_channel();
         let request = tokio::spawn(async move {
@@ -4123,6 +4170,9 @@ async fn stream_request(
         let api_key = credentials.with_opencode_key(|key| key.to_owned())?;
         let provider = RigOpenCodeProvider {
             base_url: ZEN_URL.trim_end_matches("/chat/completions").to_owned(),
+            session_id: input.session_id.ok_or_else(|| {
+                "OpenCode conversation is unavailable. Start a new conversation.".to_owned()
+            })?,
         };
         stream_with_provider(
             app,
