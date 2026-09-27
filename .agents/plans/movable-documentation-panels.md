@@ -5,11 +5,11 @@
 
 ## Goal
 
-Each Markdown file under `content/docs/` appears exactly once as a documentation panel. Initially, all documentation panels live inside the Docs workspace, in authored order. A user can drag a panel, such as Named colors, into Gestalten beside the editor or into another permitted workspace location, reorder it, and retain that arrangement after restart. Moving is not copying: the page leaves its previous location. Reset Layout restores the current authored default arrangement.
+Each Markdown file under `packages/content/content/docs/` appears exactly once as a documentation panel. Initially, all documentation panels live inside the Docs workspace, in authored order. A user can drag a panel, such as Named colors, into Gestalten beside the editor or into another permitted workspace location, reorder it, and retain that arrangement after restart. Moving is not copying: the page leaves its previous location. Reset Layout restores the current authored default arrangement.
 
 ## Scope and constraints
 
-- Keep the existing bundled Markdown pipeline (`browser/src/lib/content.ts`, `content-model.ts`, and `markdown-content.ts`); no network dependency or user-edited documentation.
+- Keep the existing bundled Markdown pipeline (`apps/editor/src/lib/content.ts`, `packages/content/src/content-model.ts`, and `packages/content/src/markdown-content.ts`); no network dependency or user-edited documentation.
 - Preserve stable identities independent of titles and numeric `order`. Existing document IDs are derived from paths relative to `content/docs/`. A rename or move is therefore an identity change requiring an explicit migration decision.
 - `order` defines only the initial arrangement; saved layout order is the user's preference. Do not persist user choices in frontmatter.
 - Gestalten's editor, preview, output, and other authoring panels remain usable. About, Examples, and Settings retain their existing roles.
@@ -19,11 +19,11 @@ Each Markdown file under `content/docs/` appears exactly once as a documentation
 
 ## Existing seams
 
-- `browser/src/components/docs-panel.tsx` currently concatenates all documentation into one article.
-- `browser/src/lib/workspace-model.ts` has one top-level Docs tab and a `code-workspace` sublayout under Gestalten. `validateWorkspace` requires the Docs tab in the top-level tabset and authoring panels in fixed tabsets. Layout storage currently uses version 6 and `Reset Layout` rebuilds the default model.
-- `browser/src/components/app.tsx` dispatches one `DOCS_ID` component and saves FlexLayout changes via `onModelChange`.
-- `browser/src/lib/content-model.ts` already exposes ordered documentation records with path-derived IDs. `browser/src/tests/content-model.test.ts` tests ordering; `e2e/workspace-layout.spec.ts` tests dragging within Gestalten, persistence, invalid layouts, and reset.
-- `browser/src/lib/markdown-content.ts` currently marks all Markdown links to open in a new tab; internal documentation links need separate handling without changing external-link behavior.
+- `apps/editor/src/components/docs-panel.tsx` currently concatenates all documentation into one article.
+- `apps/editor/src/lib/workspace-model.ts` has one top-level Docs tab and a `code-workspace` sublayout under Gestalten. `validateWorkspace` requires the Docs tab in the top-level tabset and authoring panels in fixed tabsets. Layout storage currently uses version 6 and `Reset Layout` rebuilds the default model.
+- `apps/editor/src/components/app.tsx` dispatches one `DOCS_ID` component and saves FlexLayout changes via `onModelChange`.
+- `packages/content/src/content-model.ts` already exposes ordered documentation records with path-derived IDs. `packages/content/src/tests/content-model.test.ts` tests ordering; `e2e/workspace-layout.spec.ts` tests dragging within Gestalten, persistence, invalid layouts, and reset.
+- `packages/content/src/markdown-content.ts` currently marks all Markdown links to open in a new tab; internal documentation links need separate handling without changing external-link behavior.
 
 ## Gate 1: verify the requested drag interaction
 

@@ -4,9 +4,15 @@ gic-lang is a small c style language with the narrow purpose of creating two dim
 
 It has the deliberately narrow surface. Things like interactivity, typography, or image loading are left out on purpose. It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount of way of doing things. Once students have grasp the basic constructs of programming they are encouraged to move on to more complex tool kits like p5.js, Processing or or even leave the c style languages behind and use VVVV or cables.gl to name a few.
 
+## Repository
+
+This repository is a pnpm workspace. [`packages/core`](packages/core/) contains the browser-neutral language API, [`packages/cli`](packages/cli/) contains the `gic` executable, and [`packages/content`](packages/content/) contains bundled About pages, documentation, and examples. The shared PWA lives in [`apps/editor`](apps/editor/); [`apps/desktop`](apps/desktop/) packages that same editor in Tauri. The root package is private and retains the development and test commands.
+
+Install the toolchain from `mise.toml`, then run `pnpm install --frozen-lockfile`. Use `pnpm build:cli` to build the executable and `node packages/cli/dist/main.js help` to run it from this checkout. Use `pnpm dev:browser --host 127.0.0.1` for the editor or `pnpm dev:desktop` for the desktop shell. `@giclang/core` and `@giclang/cli` are prepared for publication; this repository move does not publish either package or change the deployed PWA origin.
+
 ## Command Line
 
-The installed package exposes a `gic` executable. Validate a file without running it:
+The CLI package exposes a `gic` executable when installed. Validate a file without running it:
 
 ```sh
 gic check path/to/sketch.gic

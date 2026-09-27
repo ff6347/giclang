@@ -37,26 +37,27 @@ Static authoring is the release gate. Animation is a stretch goal and must not b
 
 ## Repository Structure
 
-This is one pnpm package, not a monorepo.
+This is one pnpm workspace with a private root command orchestrator and one lockfile.
 
-- `src/` — reusable language modules and the Node CLI entry point.
+- `packages/core/src/` — browser-neutral language modules, exposed through `@giclang/core`.
   - `lexer.ts`, `parser.ts`, `ast.ts` — source to AST.
   - `analyzer.ts`, `scope.ts`, `analyser-diagnostics.ts` — semantic analysis.
   - `interpreter.ts`, `environment.ts`, `callable-registry.ts` — execution.
   - `built-ins.ts`, `draw.ts`, `math.ts` — built-in metadata and behavior.
   - `commands.ts`, `output.ts` — serializable drawing and `print` results.
   - `core.ts` — host-neutral `parseSource` and `runSource` API.
-  - `main.ts` — Node CLI entry point.
-- `src/tests/` — core, parser, analyzer, interpreter, formatter, and CLI tests.
-- `browser/` — Vite application rooted at `browser/index.html`.
-- `browser/src/components/` — React application and workspace presentation.
-- `browser/src/hooks/` — React document and preview orchestration.
-- `browser/src/lib/content.ts`, `content-model.ts`, `markdown-content.ts` — product-content discovery, validation, and trusted Markdown compilation.
-- `browser/src/lib/` — browser adapters, models, Monaco integration, Canvas rendering, and export helpers.
-- `browser/src/worker.ts` — runs the shared core away from the UI thread.
-- `browser/src/tests/` — unit tests for browser-specific pure functions.
-- `src-tauri/` — Tauri shell, capabilities, native settings bridge, and desktop package configuration.
-- `content/` — host-neutral About, documentation, and immutable example bundles for the PWA and desktop application.
+- `packages/core/src/tests/` — parser, analyzer, interpreter, and language-service tests.
+- `packages/cli/src/main.ts` — Node CLI entry point; `packages/cli/src/tests/` covers CLI output and installed tarballs.
+- `packages/content/content/` — host-neutral About, documentation, and immutable example bundles.
+- `packages/content/src/` — content validation, model, and trusted Markdown compilation.
+- `apps/editor/` — shared Vite React/Monaco/Canvas application and offline PWA.
+- `apps/editor/src/lib/content.ts` — Vite-specific product-content discovery.
+- `apps/editor/src/components/` and `src/hooks/` — React presentation and orchestration.
+- `apps/editor/src/lib/` — browser adapters, models, Canvas rendering, and export helpers.
+- `apps/editor/src/worker.ts` — runs the shared core away from the UI thread.
+- `apps/editor/src/tests/` — browser-specific pure-function tests.
+- `apps/editor/pwa-e2e/` — production PWA lifecycle acceptance.
+- `apps/desktop/src-tauri/` — Tauri shell, capabilities, native bridge, and bundled workspace.
 - `e2e/` — Playwright Firefox tests of visible browser behavior.
 - `.agents/decisions/` — architecture decision records.
 - `.agents/milestones/` and `.agents/LESSONS.md` — capability definitions and completion ledger.
@@ -66,8 +67,9 @@ This is one pnpm package, not a monorepo.
 
 ## Architecture Boundaries
 
-- Keep modules imported by `core.ts` independent of Node, DOM, Canvas, Monaco, workers, desktop shells, and provider APIs.
-- Product Markdown under `content/` starts with YAML frontmatter. Do not add `ABOUTME` comments because these files are authored application content.
+- Keep modules imported by `packages/core/src/core.ts` independent of Node, DOM, Canvas, Monaco, workers, desktop shells, and provider APIs.
+- Product Markdown under `packages/content/content/` starts with YAML frontmatter. Do not add `ABOUTME` comments because these files are authored application content.
+- Content compilation and validation belong to `@giclang/content`; Vite glob imports and asset URLs belong to `apps/editor`.
 - GIC uses a tree-walking interpreter; never evaluate GIC source as JavaScript.
 - `runSource` owns the shared parse → analyze → execute pipeline. Hosts only adapt and present its result.
 - Drawing crosses host boundaries as an ordered, serializable `Command[]`. `print` crosses as structured `OutputEntry[]`.
@@ -77,7 +79,7 @@ This is one pnpm package, not a monorepo.
 - Worker messages are structured-clone-safe plain data.
 - Preview runs use disposable workers. Replacement and timeout must prevent stale results from updating Canvas or diagnostics.
 - Canvas rendering consumes commands in source order and owns render-local style state; language execution never imports Canvas.
-- Core and browser TypeScript projects remain separately type-checked.
+- Core, CLI, content, and editor TypeScript projects remain separately type-checked.
 
 ## Commands
 
@@ -87,10 +89,10 @@ Use the Node and pnpm versions declared in `mise.toml`.
 | --- | --- |
 | `mise install` | Install the declared toolchain. |
 | `pnpm install --frozen-lockfile` | Install locked dependencies. |
-| `pnpm test` | Run `src/tests/*.test.ts`. |
-| `pnpm test:compact` | Discover core and browser-local Node tests with compact output. |
-| `pnpm typecheck` | Type-check the Node/core project. |
-| `pnpm typecheck:browser` | Type-check the DOM/Vite browser project. |
+| `pnpm test` | Build and test the core and CLI packages. |
+| `pnpm test:compact` | Discover core, CLI, content, editor-local, and script Node tests with compact output. |
+| `pnpm typecheck` | Type-check the core, CLI, and content packages. |
+| `pnpm typecheck:browser` | Type-check the DOM/Vite editor package. |
 | `pnpm lint` | Run oxlint. |
 | `pnpm fmt:check` | Check formatting with oxfmt. |
 | `pnpm format` | Format supported files. |
@@ -100,6 +102,7 @@ Use the Node and pnpm versions declared in `mise.toml`.
 | `pnpm dev:desktop` | Start the shared IDE in the Tauri development shell. |
 | `pnpm test:desktop` | Run native bridge and persistence tests. |
 | `pnpm test:e2e` | Run Playwright acceptance tests in Firefox. |
+| `pnpm test:pwa` | Run production PWA offline and update acceptance in three browser engines. |
 
 ## Project Test Seams
 
@@ -119,8 +122,8 @@ Follow the global TDD rules using the narrowest project seam that proves the beh
 Focused test examples:
 
 ```bash
-node --test src/tests/interpreter.functions.test.ts
-node --test browser/src/tests/color-conversion.test.ts
+node --test packages/core/src/tests/interpreter.functions.test.ts
+node --test apps/editor/src/tests/color-conversion.test.ts
 pnpm exec playwright test e2e/static-preview.spec.ts
 ```
 
@@ -146,8 +149,8 @@ For desktop changes, also run:
 
 ```bash
 pnpm test:desktop
-cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
+cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 pnpm build:desktop
 ```
 

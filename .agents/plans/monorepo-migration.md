@@ -3,7 +3,7 @@
 
 # Pnpm workspace migration
 
-Status: Proposed for review; no workspace files have been moved.
+Status: Implemented on `feat/monorepo-migration`; deployment and packaged-interaction verification remain open.
 
 ## Goal and boundaries
 
@@ -47,7 +47,7 @@ On a migration branch, record a clean baseline using the quality gates in root `
 
 Move the browser-neutral language implementation into `packages/core/` and the Node entry point plus CLI-only presentation into `packages/cli/`. Keep `gic check`/`gic run` output, exit statuses, and package-install behavior unchanged. Move their tests with their owning behavior; keep the root test entry points discovering the same suites. Update real imports to package entry points and preserve separate Node/core and browser TypeScript checks. Register only the actual packages in `pnpm-workspace.yaml`; use the package manager to maintain workspace dependencies and lockfile.
 
-Build core before every consumer of its compiled exports, not only CLI. From a clean checkout and install with no generated core output, run the root CLI and browser/standalone build and development commands; do not let a stale `dist/` or a development-only source alias mask a missing build dependency. Pack both packages, inspect their exports, declarations, dependency metadata, executable path, and included files, and install their tarballs in a temporary directory outside the workspace. Spawn `gic` from that installation and verify check/run success and error cases. The installed-package acceptance test in `src/tests/cli.test.ts` must move with the CLI and cover the two-package install. Keep the existing root `build:cli` and `pnpm test` contracts passing before making the root private.
+Build core before every consumer of its compiled exports, not only CLI. From a clean checkout and install with no generated core output, run the root CLI and browser/standalone build and development commands; do not let a stale `dist/` or a development-only source alias mask a missing build dependency. Pack both packages, inspect their exports, declarations, dependency metadata, executable path, and included files, and install their tarballs in a temporary directory outside the workspace. Spawn `gic` from that installation and verify check/run success and error cases. The installed-package acceptance test in `packages/cli/src/tests/cli.test.ts` covers the two-package install. Keep the existing root `build:cli` and `pnpm test` contracts passing before making the root private.
 
 **Exit:** Node CLI and browser-neutral API work from package exports; root browser/standalone builds and development startup resolve core from a clean install without prebuilt output; tarball installation runs `gic` without repository-relative files; all root core/CLI gates pass.
 
