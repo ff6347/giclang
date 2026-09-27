@@ -3452,7 +3452,14 @@ mod tests {
             });
             let mut events = Vec::new();
             let request = TutorRequest {
-                examples: Vec::new(),
+                examples: vec![Example {
+                    id: "orbit".to_owned(),
+                    title: "Orbit".to_owned(),
+                    categories: vec!["form".to_owned()],
+                    tags: vec!["circles".to_owned()],
+                    description: "A study of circular balance".to_owned(),
+                    source: "circle(50, 50, 20);".to_owned(),
+                }],
                 api_key: "test-key".to_owned(),
                 model: match route {
                     "chat" => "big-pickle",
@@ -3492,6 +3499,17 @@ mod tests {
             };
             assert!(result.is_ok(), "{route}: {result:?}");
             let (first, second, next) = server.await.unwrap();
+            let required = if route == "messages" {
+                serde_json::json!({"type": "any"})
+            } else {
+                serde_json::json!("required")
+            };
+            assert_eq!(first["tool_choice"], required, "{route}");
+            assert!(first.to_string().contains("search_examples"), "{route}");
+            assert!(
+                !first.to_string().contains("circle(50, 50, 20);"),
+                "{route}"
+            );
             for (stage, wire) in [("first", &first), ("second", &second)] {
                 let items = if matches!(route, "responses" | "codex") {
                     &wire["input"]
@@ -3521,17 +3539,6 @@ mod tests {
                 }
             }
             assert_eq!(
-                first["tool_choice"],
-                match route {
-                    "messages" => serde_json::json!({"type":"tool","name":"search_reference"}),
-                    "responses" | "codex" =>
-                        serde_json::json!({"type":"function","name":"search_reference"}),
-                    _ =>
-                        serde_json::json!({"type":"function","function":{"name":"search_reference"}}),
-                },
-                "{route}"
-            );
-            assert_eq!(
                 second["tool_choice"],
                 match route {
                     "messages" => serde_json::json!({"type":"tool","name":"read_reference"}),
@@ -3551,7 +3558,7 @@ mod tests {
                 },
                 "{route}"
             );
-            assert_eq!(first["tools"].as_array().unwrap().len(), 1, "{route}");
+            assert_eq!(first["tools"].as_array().unwrap().len(), 2, "{route}");
             assert_eq!(second["tools"].as_array().unwrap().len(), 1, "{route}");
             assert!(second.to_string().contains("read_reference"), "{route}");
             let parameters = match route {
