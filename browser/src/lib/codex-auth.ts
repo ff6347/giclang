@@ -15,8 +15,24 @@ export type CodexSignInState =
 	| { readonly kind: "cancelled"; readonly attemptId: number }
 	| { readonly kind: "error"; readonly attemptId?: number };
 
+export type CodexAccountAction =
+	| "start"
+	| "cancel"
+	| "signOut"
+	| "switchAccount";
+
 export function beginCodexSignIn(): CodexSignInState {
 	return { kind: "starting" };
+}
+
+export function canBeginCodexAction(
+	activeAction: CodexAccountAction | undefined,
+): boolean {
+	return activeAction === undefined;
+}
+
+export function isCodexSignInActive(state: CodexSignInState): boolean {
+	return state.kind === "starting" || state.kind === "deviceAuthorization";
 }
 
 export function receiveCodexAuthEvent(

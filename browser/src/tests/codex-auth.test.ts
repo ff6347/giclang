@@ -3,7 +3,12 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
-import { beginCodexSignIn, receiveCodexAuthEvent } from "../lib/codex-auth.ts";
+import {
+	beginCodexSignIn,
+	canBeginCodexAction,
+	isCodexSignInActive,
+	receiveCodexAuthEvent,
+} from "../lib/codex-auth.ts";
 
 test("a device authorization event presents its one-time code", () => {
 	const state = receiveCodexAuthEvent(beginCodexSignIn(), {
@@ -50,4 +55,23 @@ test("a matching completion ends the active sign-in attempt", () => {
 	});
 
 	assert.deepEqual(state, { kind: "complete", attemptId: 4 });
+});
+
+test("an active account action blocks every competing account action", () => {
+	assert.equal(canBeginCodexAction(undefined), true);
+	assert.equal(canBeginCodexAction("signOut"), false);
+	assert.equal(canBeginCodexAction("switchAccount"), false);
+});
+
+test("a pending device authorization blocks a second sign-in", () => {
+	const authorization = receiveCodexAuthEvent(beginCodexSignIn(), {
+		kind: "deviceAuthorization",
+		attemptId: 4,
+		url: "https://auth.openai.com/codex/device",
+		userCode: "ABCD-EFGH",
+	});
+
+	assert.equal(isCodexSignInActive(beginCodexSignIn()), true);
+	assert.equal(isCodexSignInActive(authorization), true);
+	assert.equal(isCodexSignInActive({ kind: "complete", attemptId: 4 }), false);
 });

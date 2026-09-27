@@ -5,7 +5,10 @@ import { Button, Field } from "@base-ui/react";
 import { useEffect, useRef, useState } from "react";
 import {
 	beginCodexSignIn,
+	canBeginCodexAction,
+	isCodexSignInActive,
 	receiveCodexAuthEvent,
+	type CodexAccountAction,
 	type CodexSignInState,
 } from "../lib/codex-auth.ts";
 import type {
@@ -27,6 +30,12 @@ export function CodexSignIn({
 	const [signIn, setSignIn] = useState<CodexSignInState>({ kind: "idle" });
 	const [copied, setCopied] = useState(false);
 	const [listenerReady, setListenerReady] = useState(false);
+	const [activeAction, setActiveAction] = useState<
+		CodexAccountAction | undefined
+	>();
+	const activeActionRef = useRef<CodexAccountAction | undefined>(undefined);
+	const generationRef = useRef(0);
+	const loginGenerationRef = useRef(0);
 	const onProviderAuthenticatedRef = useRef(onProviderAuthenticated);
 	onProviderAuthenticatedRef.current = onProviderAuthenticated;
 	const completedAttemptId =
@@ -37,10 +46,14 @@ export function CodexSignIn({
 	useEffect(() => {
 		let disposed = false;
 		let unlisten: (() => void) | undefined;
+		generationRef.current += 1;
+		loginGenerationRef.current = generationRef.current;
+		activeActionRef.current = undefined;
+		setActiveAction(undefined);
 		setListenerReady(false);
 		void desktop
 			.onCodexAuthEvent((event) => {
-				if (!disposed) {
+				if (!disposed && loginGenerationRef.current === generationRef.current) {
 					setSignIn((current) => receiveCodexAuthEvent(current, event));
 				}
 			})
@@ -62,45 +75,124 @@ export function CodexSignIn({
 	}, [desktop]);
 
 	useEffect(() => {
+		if (
+			signIn.kind === "deviceAuthorization" ||
+			signIn.kind === "complete" ||
+			signIn.kind === "cancelled" ||
+			signIn.kind === "error"
+		) {
+			if (
+				activeActionRef.current === "start" ||
+				activeActionRef.current === "cancel" ||
+				activeActionRef.current === "switchAccount"
+			) {
+				activeActionRef.current = undefined;
+				setActiveAction(undefined);
+			}
+		}
+	}, [signIn.kind]);
+
+	useEffect(() => {
 		if (signIn.kind !== "complete" && signIn.kind !== "cancelled") return;
+		const generation = generationRef.current;
 		void desktop
 			.providerCredentialStatus()
-			.then(onProviderAuthenticatedRef.current)
+			.then((status) => {
+				if (generationRef.current === generation) {
+					onProviderAuthenticatedRef.current(status);
+				}
+			})
 			.catch(() => undefined);
 	}, [desktop, completedAttemptId, signIn.kind]);
 
-	const start = () => {
+	const beginAction = (action: CodexAccountAction) => {
+		if (!canBeginCodexAction(activeActionRef.current)) return undefined;
+		const generation = generationRef.current + 1;
+		generationRef.current = generation;
+		activeActionRef.current = action;
+		setActiveAction(action);
+		return generation;
+	};
+	const finishAction = (action: CodexAccountAction, generation: number) => {
+		if (
+			generationRef.current !== generation ||
+			activeActionRef.current !== action
+		) {
+			return;
+		}
+		activeActionRef.current = undefined;
+		setActiveAction(undefined);
+	};
+	const isCurrentGeneration = (generation: number) =>
+		generationRef.current === generation;
+	const startLogin = (generation: number) => {
+		if (!isCurrentGeneration(generation)) return;
+		loginGenerationRef.current = generation;
 		setCopied(false);
 		setSignIn(beginCodexSignIn());
 		void desktop.startCodexLogin().catch(() => {
-			setSignIn({ kind: "error" });
+			if (isCurrentGeneration(generation)) {
+				setSignIn((current) =>
+					isCodexSignInActive(current) ? { kind: "error" } : current,
+				);
+				finishAction("start", generation);
+				finishAction("switchAccount", generation);
+			}
 		});
 	};
-	const refreshCredentialStatus = () =>
-		desktop.providerCredentialStatus().then(onProviderAuthenticated);
+	const start = () => {
+		if (isCodexSignInActive(signIn)) return;
+		const generation = beginAction("start");
+		if (generation !== undefined) startLogin(generation);
+	};
+	const refreshCredentialStatus = (generation: number) =>
+		desktop.providerCredentialStatus().then((status) => {
+			if (isCurrentGeneration(generation)) {
+				onProviderAuthenticatedRef.current(status);
+			}
+		});
 	const cancel = () => {
+		const generation = beginAction("cancel");
+		if (generation === undefined) return;
 		void desktop.cancelCodexLogin().catch(() => {
-			setSignIn({ kind: "error" });
+			if (isCurrentGeneration(generation)) {
+				setSignIn({ kind: "error" });
+				finishAction("cancel", generation);
+			}
 		});
 	};
 	const signOut = () => {
+		const generation = beginAction("signOut");
+		if (generation === undefined) return;
+		loginGenerationRef.current = generation;
+		setSignIn({ kind: "idle" });
 		void desktop
 			.signOutCodex()
 			.then(() => {
-				setSignIn({ kind: "idle" });
-				return refreshCredentialStatus();
+				if (!isCurrentGeneration(generation)) return;
+				return refreshCredentialStatus(generation);
 			})
 			.catch(() => {
-				setSignIn({ kind: "error" });
+				if (isCurrentGeneration(generation)) setSignIn({ kind: "error" });
+			})
+			.finally(() => {
+				finishAction("signOut", generation);
 			});
 	};
 	const switchAccount = () => {
+		const generation = beginAction("switchAccount");
+		if (generation === undefined) return;
+		loginGenerationRef.current = generation;
+		setSignIn({ kind: "idle" });
 		void desktop
 			.signOutCodex()
-			.then(() => refreshCredentialStatus())
-			.then(start)
+			.then(() => refreshCredentialStatus(generation))
+			.then(() => startLogin(generation))
 			.catch(() => {
-				setSignIn({ kind: "error" });
+				if (isCurrentGeneration(generation)) {
+					setSignIn({ kind: "error" });
+					finishAction("switchAccount", generation);
+				}
 			});
 	};
 	const copyCode = () => {
@@ -121,6 +213,7 @@ export function CodexSignIn({
 						className="application-button"
 						type="button"
 						onClick={signOut}
+						disabled={activeAction !== undefined || isCodexSignInActive(signIn)}
 					>
 						Sign out of Codex
 					</Button>
@@ -128,7 +221,11 @@ export function CodexSignIn({
 						className="application-button"
 						type="button"
 						onClick={switchAccount}
-						disabled={!listenerReady}
+						disabled={
+							!listenerReady ||
+							activeAction !== undefined ||
+							isCodexSignInActive(signIn)
+						}
 					>
 						Switch Codex account
 					</Button>
@@ -143,7 +240,11 @@ export function CodexSignIn({
 						className="application-button"
 						type="button"
 						onClick={start}
-						disabled={!listenerReady}
+						disabled={
+							!listenerReady ||
+							activeAction !== undefined ||
+							isCodexSignInActive(signIn)
+						}
 					>
 						Sign in to Codex
 					</Button>
@@ -179,10 +280,16 @@ export function CodexSignIn({
 						className="application-button"
 						type="button"
 						onClick={copyCode}
+						disabled={!listenerReady || activeAction !== undefined}
 					>
 						{copied ? "Code copied" : "Copy code"}
 					</Button>
-					<Button className="application-button" type="button" onClick={cancel}>
+					<Button
+						className="application-button"
+						type="button"
+						onClick={cancel}
+						disabled={!listenerReady || activeAction !== undefined}
+					>
 						Cancel sign-in
 					</Button>
 				</>
