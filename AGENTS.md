@@ -31,6 +31,9 @@ Static authoring is the release gate. Animation is a stretch goal and must not b
 - Accepted records in `.agents/decisions/` define architecture and scope.
 - `.agents/MEMORY.md` and recent `.agents/journals/` contain implementation context.
 - `docs/deprecated/` contains historical specifications and is not authoritative.
+- `docs/Implementing GIC.md` contains Fabian's personal learning notes; do not rewrite them unless explicitly requested.
+- Mark a milestone complete in `.agents/LESSONS.md` only after all its criteria pass.
+- Verify relative links, milestone names, roadmap references, tables, and diagrams when changing documentation.
 
 ## Repository Structure
 
