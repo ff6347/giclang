@@ -13,7 +13,6 @@ The root `AGENTS.md` applies throughout this directory.
 
 - `Language specification.md` is the active language specification.
 - `deprecated/` contains historical specifications and is not authoritative.
-- `zen-model-routes.md` is the technical reference for tutor provider routes.
 - `Implementing GIC.md` contains personal learning notes and should not be rewritten unless the task explicitly targets it.
 - Agent workflow records, including decisions, milestones, plans, journals, and memory, live under `.agents/` at the repository root.
 

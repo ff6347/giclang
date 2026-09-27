@@ -10,3 +10,5 @@
 - [lesson] Relocated Markdown links to the active language specification must cross from `.agents/decisions/` or `.agents/milestones/` to `../../docs/Language specification.md`. Historical journal prose remains unchanged.
 
 The GIC changes are on `chore/move-agent-state` in commits `cff5486` and `c777c10`; the Lox import is commit `da396cc` on `ff6347/lox-lang` `main`.
+
+- [decision] Fabian classified the Zen provider route evidence as agent documentation. Its authoritative path is `.agents/zen-model-routes.md`.
