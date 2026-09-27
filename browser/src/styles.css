@@ -644,6 +644,10 @@ canvas {
 	overflow-wrap: anywhere;
 }
 
+.settings-model-unverified {
+	background-color: var(--color-chrome);
+}
+
 .settings-model-table th:last-child,
 .settings-model-table td:last-child {
 	text-align: center;

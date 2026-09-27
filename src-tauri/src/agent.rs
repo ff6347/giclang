@@ -642,15 +642,12 @@ fn validate_tutor_model(model: &str) -> Result<String, String> {
         validate_codex_model(model)?;
         return Ok(model.to_owned());
     }
-    let selected = if model.starts_with("openrouter/") {
-        format!("openrouter/{}", validate_openrouter_model(model)?)
+    if model.starts_with("openrouter/") {
+        validate_openrouter_model(model)?;
+        Ok(model.to_owned())
     } else {
-        validate_model(model)?.to_owned()
-    };
-    if !reference_tools_verified(model) {
-        return Err("This model has not passed GIC reference tools verification.".to_owned());
+        Ok(validate_model(model)?.to_owned())
     }
-    Ok(selected)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -2625,7 +2622,7 @@ mod tests {
     }
 
     #[test]
-    fn only_reference_tool_verified_models_can_be_submitted() {
+    fn supported_native_routes_can_be_submitted_without_reference_verification() {
         for model in [
             "opencode-zen/gpt-6-luna",
             "opencode-zen/claude-sonnet-5",
@@ -2662,18 +2659,28 @@ mod tests {
             "opencode-zen/big-pickle",
             "opencode-zen/deepseek-v4-pro",
             "opencode-zen/glm-5.3-flash",
+        ] {
+            assert_eq!(
+                validate_tutor_model(model).unwrap(),
+                model.strip_prefix("opencode-zen/").unwrap(),
+                "{model}"
+            );
+        }
+        for model in [
             "openrouter/z-ai/glm-5.3:free",
             "openrouter/deepseek/deepseek-v4.1-flash:free",
             "openrouter/xiaomi/mimo-v2.6-pro",
             "openrouter/moonshotai/kimi-k3:free",
             "openrouter/openai/gpt-6-sol",
         ] {
-            assert!(
-                validate_tutor_model(model)
-                    .unwrap_err()
-                    .contains("reference tools"),
-                "{model}"
-            );
+            assert_eq!(validate_tutor_model(model).unwrap(), model, "{model}");
+        }
+        for model in [
+            "opencode-zen/not-supported",
+            "openrouter/invalid",
+            "openrouter/provider/model/extra",
+        ] {
+            assert!(validate_tutor_model(model).is_err(), "{model}");
         }
     }
 

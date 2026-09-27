@@ -6,6 +6,7 @@ import test from "node:test";
 import type { ApplicationSettings } from "../lib/application-settings.ts";
 import type { OpencodeModel } from "../lib/desktop-host.ts";
 import {
+	agentModelLabel,
 	deriveVisibleModels,
 	filterModels,
 	loadEnabledModelIds,
@@ -64,15 +65,28 @@ const unknownProviderModel: OpencodeModel = {
 	referenceToolsVerified: true,
 };
 
-test("only models with proven reference tools enter the searchable picker", () => {
+test("enabled provider models enter the picker without reference verification", () => {
 	assert.deepEqual(
 		deriveVisibleModels(
 			[zenModel, verifiedZenModel],
 			[zenModel.id, verifiedZenModel.id],
 		),
-		[verifiedZenModel],
+		[zenModel, verifiedZenModel],
 	);
 	assert.deepEqual(loadEnabledModelIds(new MemorySettings()), []);
+});
+
+test("the selected Agent model names its provider and marks unverified choices", () => {
+	assert.equal(
+		agentModelLabel(zenModel),
+		"OpenCode Zen · Big Pickle · Not verified",
+	);
+	assert.equal(agentModelLabel(verifiedZenModel), "OpenCode Zen · GPT-6 Luna");
+	assert.equal(
+		agentModelLabel(openRouterFreeModel),
+		"OpenRouter · Free Model · Not verified",
+	);
+	assert.equal(agentModelLabel(codexModel), "Codex · GPT-5.6 Luna");
 });
 
 test("fresh settings do not preselect an unverified or paid model", () => {
@@ -206,12 +220,13 @@ test("visible models require an enabled ID from a supported provider", () => {
 			[
 				zenModel.id,
 				verifiedZenModel.id,
+				openRouterFreeModel.id,
 				openRouterPaidModel.id,
 				unknownProviderModel.id,
 				"openrouter/provider/missing",
 			],
 		),
-		[verifiedZenModel, openRouterPaidModel],
+		[zenModel, verifiedZenModel, openRouterFreeModel, openRouterPaidModel],
 	);
 });
 

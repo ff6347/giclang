@@ -66,6 +66,7 @@ import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 import { modelDiscoveryError } from "../lib/model-discovery.ts";
 import {
+	agentModelLabel,
 	deriveVisibleModels,
 	loadEnabledModelIds,
 	loadSelectedModelId,
@@ -238,13 +239,7 @@ export function App({
 			});
 	};
 	const changeModelVisibility = (id: string, enabled: boolean) => {
-		if (
-			!opencodeModels.some(
-				(model) => model.id === id && model.referenceToolsVerified === true,
-			)
-		) {
-			return;
-		}
+		if (!opencodeModels.some((model) => model.id === id)) return;
 		const next = enabled
 			? [...new Set([...enabledModelIds, id])]
 			: enabledModelIds.filter((modelId) => modelId !== id);
@@ -422,10 +417,10 @@ export function App({
 		opencodeModels,
 		enabledModelIds,
 	).find((candidate) => candidate.id === opencodeModel);
-	const agentModelLabel =
+	const selectedAgentModelLabel =
 		activeAgentModel === undefined
 			? undefined
-			: `${activeAgentModel.id.startsWith("opencode-zen/") ? "OpenCode Zen" : "OpenRouter"} · ${activeAgentModel.name}`;
+			: agentModelLabel(activeAgentModel);
 	let agentDisabledReason: string | undefined;
 	if (desktop !== undefined) {
 		const needsSave = documents.documentState.kind === "untitled";
@@ -502,7 +497,7 @@ export function App({
 						disabled={agentDisabledReason !== undefined}
 						disabledReason={agentDisabledReason}
 						messages={agent.messages}
-						modelLabel={agentModelLabel}
+						modelLabel={selectedAgentModelLabel}
 						status={agent.status}
 						errorMessage={agent.errorMessage}
 					/>

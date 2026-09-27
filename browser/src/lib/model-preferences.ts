@@ -26,9 +26,7 @@ export function loadEnabledModelIds(
 
 	const beginner = catalog.find(
 		(model) =>
-			model.id.startsWith("openai-codex/") &&
-			model.referenceToolsVerified === true &&
-			model.beginnerDefault === true,
+			model.id.startsWith("openai-codex/") && model.beginnerDefault === true,
 	);
 	return beginner === undefined ? [] : [beginner.id];
 }
@@ -63,11 +61,21 @@ export function deriveVisibleModels(
 	return catalog.filter(
 		(model) =>
 			enabled.has(model.id) &&
-			model.referenceToolsVerified === true &&
 			(model.id.startsWith("opencode-zen/") ||
 				model.id.startsWith("openrouter/") ||
 				model.id.startsWith("openai-codex/")),
 	);
+}
+
+export function agentModelLabel(model: OpencodeModel): string {
+	const provider = model.id.startsWith("opencode-zen/")
+		? "OpenCode Zen"
+		: model.id.startsWith("openai-codex/")
+			? "Codex"
+			: "OpenRouter";
+	const verification =
+		model.referenceToolsVerified === true ? "" : " · Not verified";
+	return `${provider} · ${model.name}${verification}`;
 }
 
 export function filterModels(

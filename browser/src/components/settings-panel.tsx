@@ -150,7 +150,14 @@ function ModelSettings({
 										const prices = model.pricing?.split(", ");
 										const verified = model.referenceToolsVerified === true;
 										return (
-											<tr key={model.id} className="settings-model">
+											<tr
+												key={model.id}
+												className={
+													verified
+														? "settings-model"
+														: "settings-model settings-model-unverified"
+												}
+											>
 												<th scope="row">
 													{model.name}
 													{model.isFree === true && (
@@ -169,11 +176,7 @@ function ModelSettings({
 														</span>
 													)}
 												</th>
-												<td>
-													{verified
-														? "Verified"
-														: "Reference tools not verified"}
-												</td>
+												<td>{verified ? "Verified" : "Not verified"}</td>
 												{provider !== "Codex" && (
 													<>
 														<td>{prices?.[0] || "Price unavailable"}</td>
@@ -183,10 +186,7 @@ function ModelSettings({
 												<td>
 													<Switch.Root
 														aria-label={`Enable ${model.name}`}
-														checked={
-															verified && enabledModelIds.includes(model.id)
-														}
-														disabled={!verified}
+														checked={enabledModelIds.includes(model.id)}
 														onCheckedChange={(checked) =>
 															onModelVisibilityChange(model.id, checked)
 														}

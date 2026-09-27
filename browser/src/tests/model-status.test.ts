@@ -8,6 +8,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 import type { DesktopHost, OpencodeModel } from "../lib/desktop-host.ts";
+import { agentModelLabel } from "../lib/model-preferences.ts";
 
 const vite = await createServer({
 	configFile: false,
@@ -65,6 +66,14 @@ function renderModels(
 	);
 }
 
+function modelRows(html: string): string[] {
+	return [
+		...html.matchAll(
+			/<tr class="settings-model(?: settings-model-unverified)?">.*?<\/tr>/g,
+		),
+	].map(([row]) => row);
+}
+
 test("disconnected desktop does not claim the model catalog is empty", () => {
 	const html = renderModels(false, null);
 	assert.doesNotMatch(html, /No eligible models/);
@@ -75,8 +84,18 @@ test("browser-only Settings does not show empty provider sections", () => {
 	const html = renderModels(false, null, [], false, [], false);
 	assert.doesNotMatch(html, />Tutor<\/h2>/);
 	assert.doesNotMatch(html, />OpenCode Zen<\/h3>/);
+	assert.doesNotMatch(html, />Codex<\/h3>/);
 	assert.doesNotMatch(html, />OpenRouter tutor<\/h3>/);
 	assert.match(html, />Workspace<\/h2>/);
+});
+
+test("desktop provider headings are peers under Tutor", () => {
+	const html = renderModels(false, null);
+	const tutor = html.indexOf(">Tutor</h2>");
+	const zen = html.indexOf(">OpenCode Zen</h3>");
+	const codex = html.indexOf(">Codex</h3>");
+	const router = html.indexOf(">OpenRouter tutor</h3>");
+	assert.ok(tutor >= 0 && tutor < zen && zen < codex && codex < router);
 });
 
 test("model discovery failure is visible and can be retried", () => {
@@ -184,9 +203,7 @@ test("advanced provider tables list verified models first without reordering pee
 	assert.match(html, /<th scope="col">Input price<\/th>/);
 	assert.match(html, /<th scope="col">Output price<\/th>/);
 	assert.match(html, /<th scope="col">Show in picker<\/th>/);
-	const rows = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)].map(
-		([row]) => row,
-	);
+	const rows = modelRows(html);
 	assert.deepEqual(
 		rows.map((row) => row.match(/<th scope="row">([^<]+)/)?.[1]),
 		[
@@ -200,13 +217,15 @@ test("advanced provider tables list verified models first without reordering pee
 	);
 	assert.match(rows[0]!, /Enable Zen verified A/);
 	assert.doesNotMatch(rows[0]!, /data-disabled/);
-	assert.match(rows[2]!, /data-disabled/);
+	assert.match(rows[2]!, /class="settings-model settings-model-unverified"/);
+	assert.doesNotMatch(rows[2]!, /data-disabled/);
 	assert.match(rows[4]!, /Enable Router verified/);
 	assert.doesNotMatch(rows[4]!, /data-disabled/);
-	assert.match(rows[5]!, /data-disabled/);
+	assert.match(rows[5]!, /class="settings-model settings-model-unverified"/);
+	assert.doesNotMatch(rows[5]!, /data-disabled/);
 });
 
-test("unverified models remain visible but cannot be enabled or selected", () => {
+test("unverified models can be enabled and selected with a verification mark", () => {
 	const html = renderModels(
 		true,
 		null,
@@ -221,16 +240,15 @@ test("unverified models remain visible but cannot be enabled or selected", () =>
 		false,
 		["opencode-zen/big-pickle", "opencode-zen/gpt-6-luna"],
 	);
-	const bigPickle = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
-		.map(([row]) => row)
-		.find((row) => row.includes("Big Pickle"));
+	const bigPickle = modelRows(html).find((row) => row.includes("Big Pickle"));
 	assert.ok(bigPickle);
-	assert.match(bigPickle, /data-disabled/);
-	assert.match(bigPickle, /Reference tools not verified/);
-	assert.doesNotMatch(html, /value="OpenCode Zen · Big Pickle/);
+	assert.match(bigPickle, /class="settings-model settings-model-unverified"/);
+	assert.doesNotMatch(bigPickle, /data-disabled/);
+	assert.match(bigPickle, />Not verified<\/td>/);
+	assert.match(html, /value="OpenCode Zen · Big Pickle/);
 });
 
-test("an unverified-only catalog explains why no Agent model can be selected", () => {
+test("an unverified-only catalog still offers enabled models", () => {
 	const html = renderModels(
 		true,
 		null,
@@ -238,8 +256,9 @@ test("an unverified-only catalog explains why no Agent model can be selected", (
 		false,
 		["opencode-zen/big-pickle"],
 	);
-	assert.match(html, /No models verified for reference tools yet/);
-	assert.doesNotMatch(html, /Search tutor models/);
+	assert.doesNotMatch(html, /No models verified for reference tools yet/);
+	assert.match(html, /Search tutor models/);
+	assert.match(html, /value="OpenCode Zen · Big Pickle/);
 });
 
 test("no enabled models has an explicit instruction without calling discovery empty", () => {
@@ -298,14 +317,14 @@ test("free and paid OpenRouter prices are distinguished in advanced rows", () =>
 	assert.match(html, /<strong class="settings-model-detail">Free<\/strong>/);
 	assert.match(html, /<td>\$0\.10\/1M input tokens<\/td>/);
 	assert.match(html, /<td>\$0\.20\/1M output tokens<\/td>/);
-	const lowCostRow = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
-		.map(([row]) => row)
-		.find((row) => row.includes("Low-cost tutor"));
+	const lowCostRow = modelRows(html).find((row) =>
+		row.includes("Low-cost tutor"),
+	);
 	assert.ok(lowCostRow);
 	assert.doesNotMatch(lowCostRow, /<strong[^>]*>Free<\/strong>/);
-	const requestRow = [...html.matchAll(/<tr class="settings-model">.*?<\/tr>/g)]
-		.map(([row]) => row)
-		.find((row) => row.includes("Request-priced tutor"));
+	const requestRow = modelRows(html).find((row) =>
+		row.includes("Request-priced tutor"),
+	);
 	assert.ok(requestRow);
 	assert.match(requestRow, /Additional charges may apply/);
 });
@@ -395,4 +414,26 @@ test("Agent panel shows the selected provider and model without disabling input"
 	assert.match(html, /Model: OpenRouter · GLM-5\.3/);
 	assert.doesNotMatch(html, /agent-composer-disabled/);
 	assert.doesNotMatch(html, /<textarea[^>]*disabled/);
+});
+
+test("Agent header marks an unverified selected model without disabling input", () => {
+	const html = renderToStaticMarkup(
+		createElement(AgentPanel, {
+			actions: {
+				cancel: () => {},
+				retry: () => {},
+				submit: () => {},
+				startNewSession: async () => {},
+			},
+			allowCopying: false,
+			modelLabel: agentModelLabel({
+				id: "openrouter/author/experimental",
+				name: "Experimental",
+			}),
+			messages: [],
+			status: "ready",
+		}),
+	);
+	assert.match(html, /Model: OpenRouter · Experimental · Not verified/);
+	assert.doesNotMatch(html, /agent-composer-disabled/);
 });
