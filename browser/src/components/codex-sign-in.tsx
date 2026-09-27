@@ -29,6 +29,7 @@ export function CodexSignIn({
 }) {
 	const [signIn, setSignIn] = useState<CodexSignInState>({ kind: "idle" });
 	const [copied, setCopied] = useState(false);
+	const [verificationError, setVerificationError] = useState(false);
 	const [listenerReady, setListenerReady] = useState(false);
 	const [activeAction, setActiveAction] = useState<
 		CodexAccountAction | undefined
@@ -129,6 +130,7 @@ export function CodexSignIn({
 		if (!isCurrentGeneration(generation)) return;
 		loginGenerationRef.current = generation;
 		setCopied(false);
+		setVerificationError(false);
 		setSignIn(beginCodexSignIn());
 		void desktop.startCodexLogin().catch(() => {
 			if (isCurrentGeneration(generation)) {
@@ -263,10 +265,23 @@ export function CodexSignIn({
 							href={OPENAI_DEVICE_VERIFICATION_URL}
 							target="_blank"
 							rel="noreferrer"
+							onClick={(event) => {
+								event.preventDefault();
+								setVerificationError(false);
+								void desktop
+									.openCodexVerification()
+									.catch(() => setVerificationError(true));
+							}}
 						>
 							OpenAI device verification
 						</a>
 					</p>
+					{verificationError && (
+						<p role="alert">
+							Could not open your browser. Visit{" "}
+							{OPENAI_DEVICE_VERIFICATION_URL} manually.
+						</p>
+					)}
 					<Field.Root className="settings-row">
 						<Field.Label>One-time code</Field.Label>
 						<Field.Control

@@ -15,7 +15,7 @@ use tokio_util::sync::CancellationToken;
 const AUTH_EVENT: &str = "codex-auth-event";
 pub(crate) const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
 pub(crate) const OAUTH_TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
-const VERIFY_URL: &str = "https://auth.openai.com/codex/device";
+pub(crate) const VERIFY_URL: &str = "https://auth.openai.com/codex/device";
 const AUTHORIZATION_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 
 #[derive(Clone)]

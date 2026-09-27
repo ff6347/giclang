@@ -214,6 +214,10 @@ export class DesktopHost {
 		return invoke<void>("start_codex_login");
 	}
 
+	openCodexVerification(): Promise<void> {
+		return invoke<void>("open_codex_verification");
+	}
+
 	cancelCodexLogin(): Promise<void> {
 		return invoke<void>("cancel_codex_login");
 	}

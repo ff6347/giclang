@@ -17,7 +17,7 @@ use agent::{
     cancel_opencode_request, codex_models, opencode_models, openrouter_models,
     send_opencode_request, TutorState,
 };
-use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth};
+use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth, VERIFY_URL};
 use codex_session::CodexSession;
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
@@ -36,6 +36,7 @@ use std::{
 };
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+use tauri_plugin_opener::OpenerExt;
 use tempfile::NamedTempFile;
 use workspace::{Resolution, WorkspaceManager, WorkspaceStatus};
 
@@ -518,6 +519,13 @@ fn sign_out_codex(
 }
 
 #[tauri::command]
+fn open_codex_verification(app: AppHandle) -> Result<(), String> {
+    app.opener()
+        .open_url(VERIFY_URL, None::<&str>)
+        .map_err(|_| "Could not open the Codex verification page.".to_owned())
+}
+
+#[tauri::command]
 fn authenticate_openrouter(
     api_key: String,
     store: State<'_, CredentialStore>,
@@ -572,6 +580,7 @@ fn launch_assistant(name: &str, manager: State<'_, WorkspaceManager>) -> Result<
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let configuration_directory = app_configuration_directory(app.handle())?;
             migrate_platform_configuration(app.handle(), &configuration_directory)?;
@@ -626,6 +635,7 @@ pub fn run() {
             cancel_opencode_request,
             codex_models,
             opencode_models,
+            open_codex_verification,
             openrouter_models,
             send_opencode_request,
             provider_credential_status,
