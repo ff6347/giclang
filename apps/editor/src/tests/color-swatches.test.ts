@@ -37,7 +37,17 @@ test("only decorates a complete direct first string argument", () => {
 				'fill("red", mix("blue")); fill(("red")); ' +
 				'fill(makeColor("red")); fill("red" + "blue");',
 		),
-		[{ color: "red", start: 43, end: 46 }],
+		[],
+	);
+});
+
+test("does not decorate named colors in calls with extra arguments", () => {
+	assert.deepEqual(
+		namedColorRanges('background("blue"); fill("red", 1); stroke("green");'),
+		[
+			{ color: "blue", start: 12, end: 16 },
+			{ color: "green", start: 44, end: 49 },
+		],
 	);
 });
 

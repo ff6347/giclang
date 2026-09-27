@@ -122,8 +122,8 @@ export function namedColorRanges(source: string): NamedColorRange[] {
 		} else if (token.type === "comma" && calls.length > 0) {
 			const call = calls[calls.length - 1];
 			if (call) {
-				if (call.color !== undefined) ranges.push(call.color);
 				call.color = undefined;
+				call.firstArgument = "invalid";
 				call.argumentIndex += 1;
 			}
 		} else if (token.type === "string") {
