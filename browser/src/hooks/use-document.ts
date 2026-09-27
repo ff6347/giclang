@@ -2,7 +2,7 @@
 // ABOUTME: Keeps React panels independent from portable file and storage operations.
 
 import { useEffect, useRef, useState } from "react";
-import { applySaveFormatting } from "../../../src/language-service.ts";
+import { applySaveFormatting } from "@giclang/core/language-service";
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
 import { nextSketchName } from "../lib/sketch-naming.ts";

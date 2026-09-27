@@ -1,0 +1,21 @@
+{
+	"name": "@giclang/cli",
+	"version": "0.1.0",
+	"description": "Command-line checker and headless runner for GIC",
+	"license": "CC BY-NC-SA 4.0",
+	"bin": {
+		"gic": "./dist/main.js"
+	},
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"prepack": "pnpm -C ../.. build:cli",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@giclang/core": "workspace:^"
+	}
+}

@@ -13,7 +13,7 @@ import test, { describe } from "node:test";
 import assert from "node:assert";
 
 const testDirectory = dirname(fileURLToPath(import.meta.url));
-const projectDirectory = resolve(testDirectory, "../..");
+const projectDirectory = resolve(testDirectory, "../../../..");
 const mainPath = resolve(testDirectory, "../main.ts");
 const fixturePath = (name: string) => resolve(testDirectory, "fixture", name);
 
@@ -263,33 +263,36 @@ describe("gic run", () => {
 		t.after(() => rmSync(temporaryDirectory, { recursive: true, force: true }));
 		mkdirSync(installDirectory);
 
-		const pack = spawnSync(
-			process.platform === "win32" ? "pnpm.cmd" : "pnpm",
-			["pack", "--pack-destination", packageDirectory],
-			{
-				cwd: projectDirectory,
-				encoding: "utf-8",
-			},
-		);
-		assert.strictEqual(
-			pack.status,
-			0,
-			pack.stderr || pack.error?.message || "pnpm pack failed",
-		);
+		for (const name of ["core", "cli"]) {
+			const pack = spawnSync(
+				process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+				["pack", "--pack-destination", packageDirectory],
+				{
+					cwd: resolve(projectDirectory, "packages", name),
+					encoding: "utf-8",
+				},
+			);
+			assert.strictEqual(
+				pack.status,
+				0,
+				pack.stderr || pack.error?.message || `pnpm pack ${name} failed`,
+			);
+		}
 
-		const tarballName = readdirSync(packageDirectory).find((name) =>
-			name.endsWith(".tgz"),
-		);
-		assert.notStrictEqual(tarballName, undefined);
+		const tarballs = readdirSync(packageDirectory)
+			.filter((name) => name.endsWith(".tgz"))
+			.map((name) => resolve(packageDirectory, name));
+		assert.strictEqual(tarballs.length, 2);
 
 		const install = spawnSync(
 			process.platform === "win32" ? "npm.cmd" : "npm",
 			[
 				"install",
 				"--ignore-scripts",
+				"--offline",
 				"--no-package-lock",
 				"--no-save",
-				resolve(packageDirectory, tarballName!),
+				...tarballs,
 			],
 			{
 				cwd: installDirectory,

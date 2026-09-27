@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { report } from "./message-formatter.ts";
-import { checkSource, runSource, type Diagnostic } from "./core.ts";
+import { checkSource, runSource, type Diagnostic } from "@giclang/core";
 
 const USAGE =
 	"Usage: gic check <file>\n       gic run <file> [--commands]\n       gic help";

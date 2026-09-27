@@ -1,6 +1,6 @@
 // ABOUTME: Renders ordered GIC drawing commands onto a browser Canvas.
 // ABOUTME: Clears each preview and applies deterministic default drawing styles.
-import type { Command } from "../../../src/core";
+import type { Command } from "@giclang/core";
 import { colorToCanvasStyle } from "./color-conversion.ts";
 import { degreeToRadians } from "./degree-to-radians.ts";
 

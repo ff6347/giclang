@@ -9,7 +9,7 @@ import {
 	type RefObject,
 } from "react";
 import Worker from "../worker.ts?worker";
-import type { RunResult } from "../../../src/core.ts";
+import type { RunResult } from "@giclang/core";
 import { setEditorDiagnostics, type GicEditor } from "../lib/gic-editor.ts";
 import { clearCanvas, renderToCanvas } from "../lib/render-to-canvas.ts";
 

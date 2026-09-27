@@ -1,5 +1,8 @@
 # ABOUTME: Records project-level pnpm dependency build-script decisions.
 # ABOUTME: Uses Sass's JavaScript fallback instead of building its optional watcher.
+packages:
+  - "packages/*"
+  - "apps/*"
 allowBuilds:
   "@parcel/watcher": false
 minimumReleaseAgeExclude:

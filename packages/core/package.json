@@ -1,0 +1,33 @@
+{
+	"name": "@giclang/core",
+	"version": "0.1.0",
+	"description": "Browser-neutral language core for GIC",
+	"license": "CC BY-NC-SA 4.0",
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/core.d.ts",
+			"default": "./dist/core.js"
+		},
+		"./built-ins": {
+			"types": "./dist/built-ins.d.ts",
+			"default": "./dist/built-ins.js"
+		},
+		"./keywords": {
+			"types": "./dist/keywords.d.ts",
+			"default": "./dist/keywords.js"
+		},
+		"./language-service": {
+			"types": "./dist/language-service.d.ts",
+			"default": "./dist/language-service.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"prepack": "pnpm build",
+		"typecheck": "tsc --noEmit"
+	}
+}

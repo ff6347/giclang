@@ -1,6 +1,6 @@
 // ABOUTME: Runs the shared GIC source pipeline outside the browser main thread.
 // ABOUTME: Returns serializable execution results to the preview controller.
-import { runSource } from "../../src/core.ts";
+import { runSource } from "@giclang/core";
 self.onmessage = (event: MessageEvent<{ source: string }>) => {
 	const { source } = event.data;
 
