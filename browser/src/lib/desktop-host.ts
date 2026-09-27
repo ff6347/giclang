@@ -16,12 +16,17 @@ export interface ProviderCredentialStatus {
 export type CodexAuthEvent =
 	| {
 			readonly kind: "deviceAuthorization";
+			readonly attemptId: number;
 			readonly url: string;
 			readonly userCode: string;
 	  }
-	| { readonly kind: "complete" }
-	| { readonly kind: "cancelled" }
-	| { readonly kind: "error"; readonly message: string };
+	| { readonly kind: "complete"; readonly attemptId: number }
+	| { readonly kind: "cancelled"; readonly attemptId: number }
+	| {
+			readonly kind: "error";
+			readonly attemptId: number;
+			readonly message: string;
+	  };
 
 export interface OpencodeModel {
 	readonly id: string;

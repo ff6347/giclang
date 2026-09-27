@@ -21,6 +21,7 @@ import type {
 	ProviderCredentialStatus,
 } from "../lib/desktop-host.ts";
 import { filterModels } from "../lib/model-preferences.ts";
+import { CodexSignIn } from "./codex-sign-in.tsx";
 import { SettingsModelPicker } from "./settings-model-picker.tsx";
 
 function SettingsSelect<Value extends string>({
@@ -273,6 +274,11 @@ export function SettingsPanel({
 		>
 			{desktop !== undefined && (
 				<>
+					<CodexSignIn
+						desktop={desktop}
+						authenticated={providerStatus?.codexAuthenticated === true}
+						onProviderAuthenticated={onProviderAuthenticated}
+					/>
 					<h2>Tutor</h2>
 					{(providerStatus?.opencodeAuthenticated === true ||
 						providerStatus?.openrouterAuthenticated === true) && (
