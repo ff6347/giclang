@@ -222,7 +222,9 @@ test("offers GIC completion through Monaco", async ({ page }) => {
 	await expect(
 		suggestions.getByText("circle", { exact: true }).first(),
 	).toBeVisible();
-	await page.keyboard.press("Control+Space");
+	if (!(await page.locator(".suggest-details").isVisible())) {
+		await page.keyboard.press("Control+Space");
+	}
 	await expect(page.locator(".suggest-details")).toContainText(
 		"Draw a circle centered at (x, y).",
 	);
