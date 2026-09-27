@@ -3,6 +3,7 @@
 
 mod agent;
 mod codex_auth;
+mod codex_session;
 mod credentials;
 mod desktop_menu;
 mod documents;
@@ -13,9 +14,11 @@ mod sessions;
 mod workspace;
 
 use agent::{
-    cancel_opencode_request, opencode_models, openrouter_models, send_opencode_request, TutorState,
+    cancel_opencode_request, codex_models, opencode_models, openrouter_models,
+    send_opencode_request, TutorState,
 };
 use codex_auth::{cancel_codex_login, start_codex_login, CodexAuth};
+use codex_session::CodexSession;
 use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use external_tools::AssistantStatus;
@@ -507,7 +510,9 @@ fn sign_out_opencode(store: State<'_, CredentialStore>) -> Result<CredentialStat
 fn sign_out_codex(
     store: State<'_, CredentialStore>,
     auth: State<'_, CodexAuth>,
+    tutor: State<'_, TutorState>,
 ) -> Result<CredentialStatus, String> {
+    tutor.cancel_codex()?;
     auth.sign_out(&store)?;
     store.status()
 }
@@ -578,6 +583,7 @@ pub fn run() {
             app.manage(settings);
             app.manage(CredentialStore::new(credential_path));
             app.manage(CodexAuth::default());
+            app.manage(CodexSession::default());
             app.manage(TutorState::default());
             app.manage(DocumentStore::default());
             app.manage(SessionStore);
@@ -618,6 +624,7 @@ pub fn run() {
             authenticate_openrouter,
             cancel_codex_login,
             cancel_opencode_request,
+            codex_models,
             opencode_models,
             openrouter_models,
             send_opencode_request,
@@ -733,6 +740,66 @@ mod tests {
         restarted.sign_out_codex().expect("sign out Codex");
         assert!(!restarted.status().expect("read status").codex_authenticated);
         assert!(!path.exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn codex_refresh_cannot_restore_a_signed_out_or_replaced_account() {
+        let directory = test_directory("codex-refresh-rotation");
+        remove_test_directory(&directory);
+        let store = CredentialStore::new(directory.join("auth.json"));
+        store
+            .authenticate_codex("first-access", "first-refresh", "first-account")
+            .unwrap();
+
+        assert!(store
+            .replace_codex_if_current(
+                "first-refresh",
+                "first-account",
+                "rotated-access",
+                "rotated-refresh",
+            )
+            .unwrap());
+        assert!(!store
+            .replace_codex_if_current(
+                "first-refresh",
+                "first-account",
+                "stale-access",
+                "stale-refresh",
+            )
+            .unwrap());
+        store.sign_out_codex().unwrap();
+        assert!(!store
+            .replace_codex_if_current(
+                "rotated-refresh",
+                "first-account",
+                "late-access",
+                "late-refresh",
+            )
+            .unwrap());
+        store
+            .authenticate_codex("other-access", "other-refresh", "other-account")
+            .unwrap();
+        assert!(!store
+            .replace_codex_if_current(
+                "rotated-refresh",
+                "first-account",
+                "late-access",
+                "late-refresh",
+            )
+            .unwrap());
+        assert_eq!(
+            store
+                .with_codex_credentials(|access, refresh, account| {
+                    (access.to_owned(), refresh.to_owned(), account.to_owned())
+                })
+                .unwrap(),
+            (
+                "other-access".to_owned(),
+                "other-refresh".to_owned(),
+                "other-account".to_owned(),
+            )
+        );
         remove_test_directory(&directory);
     }
 

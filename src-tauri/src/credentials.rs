@@ -125,6 +125,35 @@ impl CredentialStore {
         })
     }
 
+    pub(crate) fn replace_codex_if_current(
+        &self,
+        expected_refresh: &str,
+        expected_account: &str,
+        access_token: &str,
+        refresh_token: &str,
+    ) -> Result<bool, String> {
+        if access_token.trim().is_empty() || refresh_token.trim().is_empty() {
+            return Err("Codex authorization is incomplete. Sign in again.".to_owned());
+        }
+        let _access = self
+            .access
+            .lock()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let mut auth = self
+            .read_unlocked()
+            .map_err(|_| "Provider credentials are unavailable.".to_owned())?;
+        let Some(current) = auth.codex.as_mut() else {
+            return Ok(false);
+        };
+        if current.refresh_token != expected_refresh || current.account_id != expected_account {
+            return Ok(false);
+        }
+        current.access_token = access_token.to_owned();
+        current.refresh_token = refresh_token.to_owned();
+        self.write_unlocked(&auth)?;
+        Ok(true)
+    }
+
     pub(crate) fn authenticate_opencode(&self, api_key: &str) -> Result<(), String> {
         if api_key.trim().is_empty() {
             return Err("Enter an OpenCode API key.".to_owned());

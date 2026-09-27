@@ -13,7 +13,8 @@ use tauri::{AppHandle, Emitter, State};
 use tokio_util::sync::CancellationToken;
 
 const AUTH_EVENT: &str = "codex-auth-event";
-const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
+pub(crate) const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
+pub(crate) const OAUTH_TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
 const VERIFY_URL: &str = "https://auth.openai.com/codex/device";
 const AUTHORIZATION_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 
@@ -29,7 +30,7 @@ impl Endpoints {
         Self {
             device_code: "https://auth.openai.com/api/accounts/deviceauth/usercode".to_owned(),
             device_token: "https://auth.openai.com/api/accounts/deviceauth/token".to_owned(),
-            oauth_token: "https://auth.openai.com/oauth/token".to_owned(),
+            oauth_token: OAUTH_TOKEN_URL.to_owned(),
         }
     }
 }
@@ -460,19 +461,20 @@ where
         .transpose()
 }
 
-fn account_id(token: &str) -> Option<String> {
+pub(crate) fn account_id(token: &str) -> Option<String> {
+    token_claims(token)?
+        .get("https://api.openai.com/auth")?
+        .get("chatgpt_account_id")?
+        .as_str()
+        .map(str::to_owned)
+}
+
+pub(crate) fn token_claims(token: &str) -> Option<serde_json::Value> {
     token
         .split('.')
         .nth(1)
         .and_then(|payload| BASE64_URL_SAFE_NO_PAD.decode(payload).ok())
         .and_then(|payload| serde_json::from_slice::<serde_json::Value>(&payload).ok())
-        .and_then(|claims| {
-            claims
-                .get("https://api.openai.com/auth")?
-                .get("chatgpt_account_id")?
-                .as_str()
-                .map(str::to_owned)
-        })
 }
 
 #[cfg(test)]

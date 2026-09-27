@@ -1,6 +1,7 @@
 // ABOUTME: Streams constrained Socratic requests through the OpenCode Zen API.
 // ABOUTME: Keeps provider credentials and cancellation state inside the native desktop boundary.
 
+use crate::codex_session::CodexSession;
 use crate::credentials::CredentialStore;
 use crate::reference::{read_reference, reference_headings, search_reference};
 use futures_util::StreamExt;
@@ -10,14 +11,14 @@ use rig_core::{
         message::{AssistantContent, ToolCall, ToolChoice, ToolResultContent, UserContent},
         CompletionError, CompletionModel, FinishReason, Message, ToolDefinition,
     },
-    providers::{anthropic, openai},
+    providers::{anthropic, chatgpt, openai},
     streaming::StreamedAssistantContent,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio_util::sync::CancellationToken;
 
 const EVENT_NAME: &str = "opencode-agent-event";
@@ -30,6 +31,11 @@ const TUTOR_DEADLINE: Duration = Duration::from_secs(90);
 const MAX_REFERENCE_CALLS: usize = 2;
 const MAX_REFERENCE_TOOL_TURNS: usize = 2;
 const TOOL_FAILURE: &str = "Tutor could not complete a safe reference lookup.";
+const CODEX_MODELS: [(&str, &str); 3] = [
+    ("gpt-5.6-luna", "GPT-5.6 Luna"),
+    ("gpt-5.6-sol", "GPT-5.6 Sol"),
+    ("gpt-5.6-terra", "GPT-5.6 Terra"),
+];
 
 #[derive(Clone, Serialize)]
 #[serde(
@@ -50,6 +56,8 @@ pub(crate) struct TutorModel {
     pub name: String,
     #[serde(rename = "referenceToolsVerified")]
     pub reference_tools_verified: bool,
+    #[serde(rename = "beginnerDefault", skip_serializing_if = "Option::is_none")]
+    pub beginner_default: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pricing: Option<String>,
     #[serde(rename = "isFree", skip_serializing_if = "Option::is_none")]
@@ -67,6 +75,7 @@ pub(crate) struct TutorState {
 struct ActiveRequest {
     request_id: String,
     cancellation: CancellationToken,
+    codex: bool,
 }
 
 impl Default for TutorState {
@@ -78,7 +87,12 @@ impl Default for TutorState {
 }
 
 impl TutorState {
-    fn activate(&self, request_id: String, cancellation: CancellationToken) -> Result<(), String> {
+    fn activate(
+        &self,
+        request_id: String,
+        cancellation: CancellationToken,
+        model: &str,
+    ) -> Result<(), String> {
         let mut request = self
             .request
             .lock()
@@ -89,6 +103,7 @@ impl TutorState {
         *request = Some(ActiveRequest {
             request_id,
             cancellation,
+            codex: model.starts_with("openai-codex/"),
         });
         Ok(())
     }
@@ -113,6 +128,17 @@ impl TutorState {
             .as_ref()
             .filter(|active| active.request_id == request_id)
         {
+            active.cancellation.cancel();
+        }
+        Ok(())
+    }
+
+    pub(crate) fn cancel_codex(&self) -> Result<(), String> {
+        let request = self
+            .request
+            .lock()
+            .map_err(|_| "Tutor request is unavailable.".to_owned())?;
+        if let Some(active) = request.as_ref().filter(|active| active.codex) {
             active.cancellation.cancel();
         }
         Ok(())
@@ -203,6 +229,11 @@ struct TutorRequest {
     prompt: String,
     history: Vec<Message>,
     cancellation: CancellationToken,
+}
+
+struct TutorInput {
+    question: String,
+    context: String,
 }
 
 trait TutorProvider {
@@ -296,6 +327,42 @@ async fn stream_zen_model<M: CompletionModel + Clone>(
         },
     )
     .await
+}
+
+struct RigCodexProvider {
+    base_url: String,
+    account_id: String,
+}
+
+impl TutorProvider for RigCodexProvider {
+    async fn stream(
+        &self,
+        request: TutorRequest,
+        emit: &mut (dyn FnMut(ProviderEvent) + Send),
+    ) -> Result<(), String> {
+        if request.cancellation.is_cancelled() {
+            emit(ProviderEvent::Cancelled);
+            return Ok(());
+        }
+        let client = chatgpt::Client::builder()
+            .api_key(chatgpt::ChatGPTAuth::AccessToken {
+                access_token: request.api_key.clone(),
+                account_id: Some(self.account_id.clone()),
+            })
+            .base_url(&self.base_url)
+            .allow_device_flow(false)
+            .default_instructions(TUTOR_POLICY)
+            .build()
+            .map_err(|_| "Codex client could not start. Sign in again.".to_owned())?;
+        stream_reference_model(
+            client.completion_model(request.model.clone()),
+            request,
+            emit,
+            tokio::time::Instant::now() + TUTOR_DEADLINE,
+            codex_provider_error,
+        )
+        .await
+    }
 }
 
 struct RigOpenRouterProvider {
@@ -569,6 +636,10 @@ fn reference_tools_verified(model: &str) -> bool {
 }
 
 fn validate_tutor_model(model: &str) -> Result<String, String> {
+    if model.starts_with("openai-codex/") {
+        validate_codex_model(model)?;
+        return Ok(model.to_owned());
+    }
     let selected = if model.starts_with("openrouter/") {
         format!("openrouter/{}", validate_openrouter_model(model)?)
     } else {
@@ -643,6 +714,17 @@ fn zen_route(model: &str) -> Option<ZenRoute> {
         | "qwen3.6-plus" | "qwen3.8-flash" => Some(ZenRoute::Messages),
         _ => None,
     }
+}
+
+fn validate_codex_model(model: &str) -> Result<&str, String> {
+    let selected = model
+        .strip_prefix("openai-codex/")
+        .ok_or_else(|| "Choose a Codex model.".to_owned())?;
+    CODEX_MODELS
+        .iter()
+        .any(|(id, _)| *id == selected)
+        .then_some(selected)
+        .ok_or_else(|| "Choose a supported Codex model.".to_owned())
 }
 
 fn validate_openrouter_model(model: &str) -> Result<&str, String> {
@@ -766,6 +848,20 @@ fn provider_error(error: CompletionError, fallback: &str) -> String {
         .unwrap_or_else(|| fallback.to_owned())
 }
 
+fn codex_provider_error(error: CompletionError) -> String {
+    match error
+        .provider_response_status()
+        .map(|status| status.as_u16())
+    {
+        Some(400 | 404) => {
+            "This Codex model is unavailable to your account. Choose another model.".to_owned()
+        }
+        Some(401 | 403) => "Codex access expired or was revoked. Sign in again.".to_owned(),
+        Some(429) => "Codex usage is limited. Try again later.".to_owned(),
+        _ => "Codex request failed. Check your connection and try again.".to_owned(),
+    }
+}
+
 async fn authorize_openrouter_model(
     client: &reqwest::Client,
     key_url: &str,
@@ -795,6 +891,32 @@ pub(crate) async fn opencode_models(
         .build()
         .map_err(|_| "OpenCode client could not start.".to_owned())?;
     fetch_models(&client, ZEN_MODELS_URL, &api_key).await
+}
+
+#[tauri::command]
+pub(crate) fn codex_models(
+    credentials: State<'_, CredentialStore>,
+) -> Result<Vec<TutorModel>, String> {
+    credentials.with_codex_credentials(|_, _, _| bundled_codex_models())
+}
+
+fn bundled_codex_models() -> Vec<TutorModel> {
+    CODEX_MODELS
+        .iter()
+        .enumerate()
+        .map(|(index, (id, name))| TutorModel {
+            id: format!("openai-codex/{id}"),
+            name: (*name).to_owned(),
+            reference_tools_verified: true,
+            beginner_default: Some(index == 0),
+            pricing: None,
+            is_free: None,
+            other_charges: None,
+            account_limit: Some(
+                "Account model access is checked when you send a question.".to_owned(),
+            ),
+        })
+        .collect()
 }
 
 async fn fetch_models(
@@ -828,6 +950,7 @@ async fn fetch_models(
                 name: model.name.unwrap_or_else(|| model.id.clone()),
                 reference_tools_verified: reference_tools_verified(&id),
                 id,
+                beginner_default: None,
                 pricing: None,
                 is_free: None,
                 other_charges: None,
@@ -933,6 +1056,7 @@ async fn fetch_openrouter_models(
                 reference_tools_verified: reference_tools_verified(&id),
                 id,
                 name: model.name,
+                beginner_default: None,
                 pricing,
                 is_free,
                 other_charges: Some(other_charges),
@@ -962,13 +1086,14 @@ pub(crate) async fn send_opencode_request(
 ) -> Result<(), String> {
     let model_id = validate_tutor_model(&model)?;
     let cancellation = CancellationToken::new();
-    state.activate(request_id.clone(), cancellation.clone())?;
+    state.activate(request_id.clone(), cancellation.clone(), &model)?;
+    let codex = app.state::<CodexSession>();
     let result = stream_request(
         &app,
         &credentials,
+        &codex,
         cancellation.clone(),
-        question,
-        context,
+        TutorInput { question, context },
         model_id,
         request_id.clone(),
     )
@@ -1000,12 +1125,42 @@ mod tests {
     }
 
     #[test]
+    fn codex_selector_and_dispatch_share_the_release_checked_models() {
+        let models = bundled_codex_models();
+        assert_eq!(
+            models
+                .iter()
+                .map(|model| model.id.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "openai-codex/gpt-5.6-luna",
+                "openai-codex/gpt-5.6-sol",
+                "openai-codex/gpt-5.6-terra",
+            ]
+        );
+        assert_eq!(
+            models
+                .iter()
+                .map(|model| model.beginner_default)
+                .collect::<Vec<_>>(),
+            vec![Some(true), Some(false), Some(false)]
+        );
+        assert!(models.iter().all(|model| model.reference_tools_verified));
+        for model in models {
+            assert_eq!(validate_tutor_model(&model.id), Ok(model.id.clone()));
+        }
+        assert!(validate_tutor_model("openai-codex/gpt-5.3-instant").is_err());
+        assert!(validate_tutor_model("openai-codex/").is_err());
+    }
+
+    #[test]
     fn cancellation_only_targets_the_matching_request() {
         let state = TutorState::default();
         let cancellation = CancellationToken::new();
         *state.request.lock().unwrap() = Some(ActiveRequest {
             request_id: "current".to_owned(),
             cancellation: cancellation.clone(),
+            codex: false,
         });
 
         state.cancel("previous").unwrap();
@@ -1015,15 +1170,45 @@ mod tests {
     }
 
     #[test]
+    fn signing_out_codex_cancels_only_a_codex_tutor_request() {
+        let state = TutorState::default();
+        let codex = CancellationToken::new();
+        state
+            .activate(
+                "codex".to_owned(),
+                codex.clone(),
+                "openai-codex/gpt-5.6-luna",
+            )
+            .unwrap();
+        state.cancel_codex().unwrap();
+        assert!(codex.is_cancelled());
+
+        let zen = CancellationToken::new();
+        state
+            .activate("zen".to_owned(), zen.clone(), "opencode-zen/gpt-6-luna")
+            .unwrap();
+        state.cancel_codex().unwrap();
+        assert!(!zen.is_cancelled());
+    }
+
+    #[test]
     fn replacement_cancels_the_previous_request_and_keeps_the_new_request_active() {
         let state = TutorState::default();
         let previous = CancellationToken::new();
         let current = CancellationToken::new();
         state
-            .activate("previous".to_owned(), previous.clone())
+            .activate(
+                "previous".to_owned(),
+                previous.clone(),
+                "opencode-zen/gpt-6-luna",
+            )
             .unwrap();
         state
-            .activate("current".to_owned(), current.clone())
+            .activate(
+                "current".to_owned(),
+                current.clone(),
+                "opencode-zen/gpt-6-luna",
+            )
             .unwrap();
 
         assert!(previous.is_cancelled());
@@ -1962,6 +2147,55 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn codex_rejects_an_unavailable_model_without_exposing_provider_data() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let request = read_wire_request(&mut socket).await;
+            let body = "synthetic-secret account not eligible";
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len(),
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+            request
+        });
+        let provider = RigCodexProvider {
+            base_url: format!("http://{address}/backend-api/codex"),
+            account_id: "synthetic-account".to_owned(),
+        };
+        let mut events = Vec::new();
+        let error = provider
+            .stream(
+                TutorRequest {
+                    api_key: "synthetic-secret".to_owned(),
+                    model: "gpt-5.6-luna".to_owned(),
+                    prompt: "question".to_owned(),
+                    history: Vec::new(),
+                    cancellation: CancellationToken::new(),
+                },
+                &mut |event| events.push(event),
+            )
+            .await
+            .unwrap_err();
+        assert!(error.contains("unavailable"));
+        assert!(!error.contains("synthetic-secret"));
+        assert!(events.is_empty());
+        let request = server.await.unwrap();
+        assert_eq!(request["model"], "gpt-5.6-luna");
+        assert_eq!(
+            request["tool_choice"],
+            serde_json::json!({"type":"function","name":"search_reference"})
+        );
+    }
+
+    #[tokio::test]
     async fn rig_openrouter_rejects_an_ineligible_model_before_completion() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
@@ -2562,7 +2796,7 @@ mod tests {
 
     #[tokio::test]
     async fn reference_tools_continue_with_provider_call_ids_on_all_native_wires() {
-        for route in ["chat", "responses", "messages", "openrouter"] {
+        for route in ["chat", "responses", "messages", "openrouter", "codex"] {
             let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
             let address = listener.local_addr().unwrap();
             let route_name = route.to_owned();
@@ -2583,7 +2817,7 @@ mod tests {
                         "data: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n",
                         "data: [DONE]\n\n"
                     ),
-                    "responses" => concat!(
+                    "responses" | "codex" => concat!(
                         "event: response.output_item.added\n",
                         "data: {\"type\":\"response.output_item.added\",\"sequence_number\":1,\"output_index\":0,\"item\":{\"id\":\"fc_wire\",\"type\":\"function_call\",\"call_id\":\"call_wire\",\"name\":\"search_reference\",\"arguments\":\"\",\"status\":\"in_progress\"}}\n\n",
                         "event: response.function_call_arguments.delta\n",
@@ -2614,7 +2848,7 @@ mod tests {
                         "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
                         "data: [DONE]\n\n"
                     ),
-                    "responses" => concat!(
+                    "responses" | "codex" => concat!(
                         "event: response.output_text.delta\n",
                         "data: {\"type\":\"response.output_text.delta\",\"item_id\":\"msg_2\",\"output_index\":0,\"content_index\":0,\"sequence_number\":1,\"delta\":\"answer\"}\n\n",
                         "event: response.completed\n",
@@ -2660,6 +2894,7 @@ mod tests {
                 model: match route {
                     "chat" => "big-pickle",
                     "responses" => "gpt-6-luna",
+                    "codex" => "gpt-5.6-luna",
                     "messages" => "claude-sonnet-5",
                     _ => "author/model:free",
                 }
@@ -2671,7 +2906,14 @@ mod tests {
                 ],
                 cancellation: CancellationToken::new(),
             };
-            let result = if route == "openrouter" {
+            let result = if route == "codex" {
+                RigCodexProvider {
+                    base_url: format!("http://{address}/backend-api/codex"),
+                    account_id: "synthetic-account".to_owned(),
+                }
+                .stream(request, &mut |event| events.push(event))
+                .await
+            } else if route == "openrouter" {
                 RigOpenRouterProvider {
                     base_url: format!("http://{address}/api/v1"),
                 }
@@ -2687,7 +2929,7 @@ mod tests {
             assert!(result.is_ok(), "{route}: {result:?}");
             let (first, second, next) = server.await.unwrap();
             for (stage, wire) in [("first", &first), ("second", &second)] {
-                let items = if route == "responses" {
+                let items = if matches!(route, "responses" | "codex") {
                     &wire["input"]
                 } else {
                     &wire["messages"]
@@ -2718,7 +2960,8 @@ mod tests {
                 first["tool_choice"],
                 match route {
                     "messages" => serde_json::json!({"type":"tool","name":"search_reference"}),
-                    "responses" => serde_json::json!({"type":"function","name":"search_reference"}),
+                    "responses" | "codex" =>
+                        serde_json::json!({"type":"function","name":"search_reference"}),
                     _ =>
                         serde_json::json!({"type":"function","function":{"name":"search_reference"}}),
                 },
@@ -2728,7 +2971,8 @@ mod tests {
                 second["tool_choice"],
                 match route {
                     "messages" => serde_json::json!({"type":"tool","name":"read_reference"}),
-                    "responses" => serde_json::json!({"type":"function","name":"read_reference"}),
+                    "responses" | "codex" =>
+                        serde_json::json!({"type":"function","name":"read_reference"}),
                     _ =>
                         serde_json::json!({"type":"function","function":{"name":"read_reference"}}),
                 },
@@ -2748,7 +2992,7 @@ mod tests {
             assert!(second.to_string().contains("read_reference"), "{route}");
             let parameters = match route {
                 "messages" => &first["tools"][0]["input_schema"],
-                "responses" => &first["tools"][0]["parameters"],
+                "responses" | "codex" => &first["tools"][0]["parameters"],
                 _ => &first["tools"][0]["function"]["parameters"],
             };
             assert_eq!(
@@ -2767,7 +3011,7 @@ mod tests {
                     .contains("Available reference sections: Values, Comments, Variables"),
                 "{route}"
             );
-            let messages = if route == "responses" {
+            let messages = if matches!(route, "responses" | "codex") {
                 &next["input"]
             } else {
                 &next["messages"]
@@ -2802,7 +3046,7 @@ mod tests {
             );
             let question = question_positions[0];
             match route {
-                "responses" => {
+                "responses" | "codex" => {
                     assert_eq!(next["input"][question + 1]["id"], "fc_wire");
                     assert_eq!(next["input"][question + 1]["call_id"], "call_wire");
                     assert_eq!(next["input"][question + 2]["call_id"], "call_wire");
@@ -3412,15 +3656,38 @@ mod tests {
 async fn stream_request(
     app: &AppHandle,
     credentials: &CredentialStore,
+    codex: &CodexSession,
     cancellation: CancellationToken,
-    question: String,
-    context: String,
+    input: TutorInput,
     model: String,
     request_id: String,
 ) -> Result<(), String> {
-    let (sketch, history) = parse_context(&context);
-    let prompt = format!("Sketch and preview context:\n{sketch}\n\nStudent question: {question}");
-    let result = if model.starts_with("openrouter/") {
+    let (sketch, history) = parse_context(&input.context);
+    let prompt = format!(
+        "Sketch and preview context:\n{sketch}\n\nStudent question: {}",
+        input.question
+    );
+    let result = if model.starts_with("openai-codex/") {
+        let selected = validate_codex_model(&model)?.to_owned();
+        let access = codex.access(credentials, &cancellation).await?;
+        let provider = RigCodexProvider {
+            base_url: "https://chatgpt.com/backend-api/codex".to_owned(),
+            account_id: access.account_id,
+        };
+        stream_with_provider(
+            app,
+            &provider,
+            TutorRequest {
+                api_key: access.access_token,
+                model: selected,
+                prompt,
+                history,
+                cancellation,
+            },
+            &request_id,
+        )
+        .await
+    } else if model.starts_with("openrouter/") {
         let api_key = credentials.with_openrouter_key(|key| key.to_owned())?;
         let model = validate_openrouter_model(&model)?.to_owned();
         let provider = RigOpenRouterProvider {
