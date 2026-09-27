@@ -498,6 +498,7 @@ canvas {
 	background: transparent;
 	border: none;
 	bottom: var(--s2);
+	cursor: pointer;
 	position: absolute;
 	display: flex;
 	height: var(--s3);
@@ -509,6 +510,17 @@ canvas {
 
 .preview-html-download {
 	right: var(--s5);
+}
+
+.preview-download:disabled,
+.preview-html-download:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.preview-download:not(:disabled):is(:hover, :focus-visible),
+.preview-html-download:not(:disabled):is(:hover, :focus-visible) {
+	background-color: var(--color-control);
 }
 
 .padded-panel {

@@ -165,3 +165,34 @@ test("shows disabled standalone HTML export beside PNG export", async ({
 	expect(htmlBox!.x + htmlBox!.width).toBeLessThanOrEqual(pngBox!.x);
 	expect(htmlBox!.y).toBeCloseTo(pngBox!.y, 0);
 });
+
+test("distinguishes disabled exports and highlights enabled exports on hover", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const buttons = [
+		page.getByRole("button", { name: "Download PNG" }),
+		page.getByRole("button", { name: "Download standalone HTML" }),
+	];
+	for (const button of buttons) {
+		await expect(button).toBeDisabled();
+		const opacity = await button.evaluate(
+			(element) => getComputedStyle(element).opacity,
+		);
+		expect(Number(opacity)).toBeLessThan(1);
+	}
+
+	await setEditorSource(page, "circle(50, 50, 20);");
+	for (const button of buttons) {
+		await expect(button).toBeEnabled();
+		const restingColor = await button.evaluate(
+			(element) => getComputedStyle(element).backgroundColor,
+		);
+		await button.hover();
+		await expect
+			.poll(() =>
+				button.evaluate((element) => getComputedStyle(element).backgroundColor),
+			)
+			.not.toBe(restingColor);
+	}
+});
