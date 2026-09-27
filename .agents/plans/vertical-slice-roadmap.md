@@ -276,7 +276,7 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 - Credentials cross only the privileged provider boundary.
 - Protected `auth.json` updates atomically and uses owner-only platform access.
 - Credentials never appear in webview storage, logs, exports, prompts, or sessions.
-- The selector offers Zen models present in the live catalog only when their native route and GIC reference tools are verified; IDs remain `opencode-zen/<model>`, and no model is selected automatically.
+- The selector offers Zen models present in the live catalog when their native route is supported; GIC reference-tool verification is displayed but does not prevent selection. IDs remain `opencode-zen/<model>`, and no Zen model is selected automatically.
 - Invalid, revoked, offline, and unavailable-model states are actionable and do not disable the IDE.
 - Deterministic coverage and an explicit real-key smoke check both pass.
 
