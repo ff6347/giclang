@@ -154,5 +154,5 @@ vite.config.ts.timestamp-*
 .vite/
 
 # Tauri files
-src-tauri/gen/
-src-tauri/target/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/target/

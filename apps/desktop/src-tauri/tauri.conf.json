@@ -4,10 +4,10 @@
 	"version": "0.1.0",
 	"identifier": "cc.incode.gestalten",
 	"build": {
-		"beforeBuildCommand": "pnpm build:browser",
-		"beforeDevCommand": "pnpm dev:browser --host 127.0.0.1",
+		"beforeBuildCommand": "pnpm -C ../.. build:browser",
+		"beforeDevCommand": "pnpm -C ../.. dev:browser --host 127.0.0.1",
 		"devUrl": "http://127.0.0.1:5173",
-		"frontendDist": "../browser/dist"
+		"frontendDist": "../../editor/dist"
 	},
 	"app": {
 		"windows": [
@@ -30,7 +30,7 @@
 	"bundle": {
 		"active": true,
 		"category": "Education",
-		"icon": ["../browser/public/icons/gic-icon-512.png"],
+		"icon": ["../../editor/public/icons/gic-icon-512.png"],
 		"shortDescription": "Create static generative graphics with GIC.",
 		"targets": "all"
 	}

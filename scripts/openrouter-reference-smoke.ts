@@ -57,7 +57,7 @@ async function main(): Promise<void> {
 	}
 	const reference = await readFile(
 		new URL(
-			"../src-tauri/workspace/gic-tutor/references/language.md",
+			"../apps/desktop/src-tauri/workspace/gic-tutor/references/language.md",
 			import.meta.url,
 		),
 		"utf8",

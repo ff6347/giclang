@@ -103,7 +103,7 @@ test("OpenRouter reference probe correlates search and read calls over HTTP", as
 		assert(address && typeof address !== "string");
 		const reference = readFileSync(
 			new URL(
-				"../src-tauri/workspace/gic-tutor/references/language.md",
+				"../apps/desktop/src-tauri/workspace/gic-tutor/references/language.md",
 				import.meta.url,
 			),
 			"utf8",

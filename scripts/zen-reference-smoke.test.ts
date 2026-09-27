@@ -259,7 +259,7 @@ test("validates useful reference queries without requiring exact model wording",
 	);
 	const reference = readFileSync(
 		new URL(
-			"../src-tauri/workspace/gic-tutor/references/language.md",
+			"../apps/desktop/src-tauri/workspace/gic-tutor/references/language.md",
 			import.meta.url,
 		),
 		"utf8",
