@@ -28,9 +28,17 @@ const MARKER_OWNER = "gic";
 export type GicEditor = monaco.editor.IStandaloneCodeEditor;
 
 function completionKind(
-	kind: "constant" | "function" | "keyword" | "user-function" | "variable",
+	kind:
+		| "color"
+		| "constant"
+		| "function"
+		| "keyword"
+		| "user-function"
+		| "variable",
 ): monaco.languages.CompletionItemKind {
 	switch (kind) {
+		case "color":
+			return monaco.languages.CompletionItemKind.Color;
 		case "constant":
 			return monaco.languages.CompletionItemKind.Constant;
 		case "function":
@@ -193,6 +201,7 @@ export function createGicEditor(
 		scrollBeyondLastLine: false,
 		detectIndentation: true,
 		wordBasedSuggestions: "off",
+		quickSuggestions: { other: true, comments: false, strings: true },
 		colorDecorators: true,
 		value: initialSource,
 		lineNumbers: "on",

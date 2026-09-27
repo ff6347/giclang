@@ -64,6 +64,75 @@ describe("language service", () => {
 		);
 	});
 
+	it("completes color strings from the shared named-color registry", () => {
+		for (const name of ["background", "fill", "stroke"]) {
+			const marked = sourcePosition(`${name}("blu|");`);
+			assert.deepEqual(completeSource(marked.source, marked.position), [
+				{
+					kind: "color",
+					label: "blue",
+					replacement: {
+						start: marked.source.indexOf('"') + 1,
+						end: marked.source.indexOf('"', marked.position),
+					},
+				},
+				{
+					kind: "color",
+					label: "blueviolet",
+					replacement: {
+						start: marked.source.indexOf('"') + 1,
+						end: marked.source.indexOf('"', marked.position),
+					},
+				},
+			]);
+		}
+
+		const incomplete = sourcePosition('fill("alice|');
+		assert.deepEqual(completeSource(incomplete.source, incomplete.position), [
+			{
+				kind: "color",
+				label: "aliceblue",
+				replacement: { start: 6, end: 11 },
+			},
+		]);
+
+		const mixedCase = sourcePosition('stroke("Da|rkred");');
+		assert.deepEqual(
+			completeSource(mixedCase.source, mixedCase.position).find(
+				({ label }) => label === "darkred",
+			),
+			{
+				kind: "color",
+				label: "darkred",
+				replacement: { start: 8, end: 15 },
+			},
+		);
+	});
+
+	it("only offers named colors inside first color-string arguments", () => {
+		for (const markedSource of [
+			"blu|",
+			'print("blu|");',
+			'fill(1, "blu|");',
+			'fill(rgb("blu|"));',
+			'// fill("blu|',
+			'fill("blue"); print("blu|");',
+		]) {
+			const marked = sourcePosition(markedSource);
+			assert.equal(
+				completeSource(marked.source, marked.position).some(
+					({ kind }) => kind === "color",
+				),
+				false,
+				markedSource,
+			);
+		}
+		for (const markedSource of ['print("blu|");', 'fill(1, "blu|");']) {
+			const marked = sourcePosition(markedSource);
+			assert.deepEqual(completeSource(marked.source, marked.position), []);
+		}
+	});
+
 	it("offers only user declarations visible through analyzer scope", () => {
 		const nested = sourcePosition(`let globalValue = 1;
 func motif(size) {

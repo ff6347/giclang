@@ -6,6 +6,7 @@ import {
 	builtIns,
 	type FunctionEntry,
 } from "./built-ins.ts";
+import { colornames } from "./color-names.ts";
 import { checkSource, type Diagnostic } from "./core.ts";
 import { formatSource } from "./formatter.ts";
 import {
@@ -25,6 +26,7 @@ export interface SourceRange {
 export interface Completion {
 	readonly documentation?: string;
 	readonly kind:
+		| "color"
 		| "constant"
 		| "function"
 		| "keyword"
@@ -139,12 +141,63 @@ function declarationPosition(source: string, range: SourceRange): boolean {
 	return !significant.slice(openIndex + 1).some(({ type }) => type === "COMMA");
 }
 
+function colorStringRange(
+	source: string,
+	position: number,
+): SourceRange | null | undefined {
+	let tokens: Token[];
+	try {
+		tokens = new Lexer(source.slice(0, position) + '"').scanTokens();
+	} catch {
+		return undefined;
+	}
+	const string = tokens.at(-2);
+	const open = tokens.at(-3);
+	const name = tokens.at(-4);
+	if (string?.type !== "STRING" || string.end !== position + 1) {
+		return undefined;
+	}
+	if (
+		open?.type !== "LEFT_PAREN" ||
+		name?.type !== "IDENTIFIER" ||
+		!["background", "fill", "stroke"].includes(name.lexeme)
+	) {
+		return null;
+	}
+	const closingQuote = source.indexOf('"', position);
+	const newline = source.indexOf("\n", position);
+	return {
+		start: string.start + 1,
+		end:
+			closingQuote !== -1 && (newline === -1 || closingQuote < newline)
+				? closingQuote
+				: position,
+	};
+}
+
 export function diagnoseSource(source: string): Diagnostic[] {
 	return checkSource(source).diagnostics;
 }
 
 export function completeSource(source: string, position: number): Completion[] {
 	const currentPosition = normalizedPosition(source, position);
+	const colorRange = colorStringRange(source, currentPosition);
+	if (colorRange === null) {
+		return [];
+	}
+	if (colorRange !== undefined) {
+		const prefix = source
+			.slice(colorRange.start, currentPosition)
+			.toLowerCase();
+		return [...colornames]
+			.filter((name) => name.startsWith(prefix))
+			.sort()
+			.map((label) => ({
+				kind: "color",
+				label,
+				replacement: colorRange,
+			}));
+	}
 	const replacement = wordRange(source, currentPosition);
 	if (declarationPosition(source, replacement)) {
 		return [];
