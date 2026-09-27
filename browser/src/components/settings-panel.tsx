@@ -288,21 +288,6 @@ export function SettingsPanel({
 		>
 			{desktop !== undefined && (
 				<>
-					<CodexSignIn
-						desktop={desktop}
-						authenticated={providerStatus?.codexAuthenticated === true}
-						onProviderAuthenticated={onProviderAuthenticated}
-					/>
-					{providerStatus?.codexAuthenticated === true && (
-						<ModelSettings
-							provider="Codex"
-							models={models.filter((model) =>
-								model.id.startsWith("openai-codex/"),
-							)}
-							enabledModelIds={enabledModelIds}
-							onModelVisibilityChange={onModelVisibilityChange}
-						/>
-					)}
 					<h2>Tutor</h2>
 					{(providerStatus?.opencodeAuthenticated === true ||
 						providerStatus?.openrouterAuthenticated === true ||
@@ -378,6 +363,21 @@ export function SettingsPanel({
 							provider="OpenCode Zen"
 							models={models.filter((model) =>
 								model.id.startsWith("opencode-zen/"),
+							)}
+							enabledModelIds={enabledModelIds}
+							onModelVisibilityChange={onModelVisibilityChange}
+						/>
+					)}
+					<CodexSignIn
+						desktop={desktop}
+						authenticated={providerStatus?.codexAuthenticated === true}
+						onProviderAuthenticated={onProviderAuthenticated}
+					/>
+					{providerStatus?.codexAuthenticated === true && (
+						<ModelSettings
+							provider="Codex"
+							models={models.filter((model) =>
+								model.id.startsWith("openai-codex/"),
 							)}
 							enabledModelIds={enabledModelIds}
 							onModelVisibilityChange={onModelVisibilityChange}
