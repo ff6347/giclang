@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 import { setEditorSource } from "../e2e/editor.ts";
 
 const repeatExamplePath = fileURLToPath(
-	new URL("../content/examples/repeat/repeat.gic", import.meta.url),
+	new URL(
+		"../packages/content/content/examples/repeat/repeat.gic",
+		import.meta.url,
+	),
 );
 
 async function waitForServiceWorker(page: Page) {

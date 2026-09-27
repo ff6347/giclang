@@ -1,5 +1,5 @@
 import { Button } from "@base-ui/react";
-import type { ExampleContent } from "../lib/content-model.ts";
+import type { ExampleContent } from "@giclang/content/model";
 import { Markdown } from "./markdown.tsx";
 
 export function ExamplesPanel({

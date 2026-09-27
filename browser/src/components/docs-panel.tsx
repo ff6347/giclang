@@ -1,4 +1,4 @@
-import type { DocumentationContent } from "../lib/content-model";
+import type { DocumentationContent } from "@giclang/content/model";
 import { Markdown } from "./markdown";
 
 export function DocsPanel({ docs }: { docs: DocumentationContent[] }) {

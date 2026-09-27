@@ -6,10 +6,12 @@ import { isAbsolute, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { validateExampleFiles } from "./browser/src/lib/content-model.ts";
-import { compileMarkdown } from "./browser/src/lib/markdown-content.ts";
+import { validateExampleFiles } from "@giclang/content/model";
+import { compileMarkdown } from "@giclang/content/markdown";
 
-const CONTENT_ROOT = fileURLToPath(new URL("./content/", import.meta.url));
+const CONTENT_ROOT = fileURLToPath(
+	new URL("./packages/content/content/", import.meta.url),
+);
 const PWA_DESCRIPTION = "Create static generative graphics with GIC.";
 
 function isProductContent(path: string): boolean {
@@ -47,7 +49,7 @@ function productContent(): Plugin {
 		},
 		async buildStart() {
 			const exampleDirectories = await readdir(
-				new URL("./content/examples/", import.meta.url),
+				new URL("./packages/content/content/examples/", import.meta.url),
 				{ withFileTypes: true },
 			);
 			for (const directory of exampleDirectories) {
@@ -60,7 +62,10 @@ function productContent(): Plugin {
 					);
 				}
 				const files = await readdir(
-					new URL(`./content/examples/${directory.name}/`, import.meta.url),
+					new URL(
+						`./packages/content/content/examples/${directory.name}/`,
+						import.meta.url,
+					),
 				);
 				validateExampleFiles(
 					directory.name,

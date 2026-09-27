@@ -1,4 +1,4 @@
-import type { MarkdownContent } from "../lib/content-model";
+import type { MarkdownContent } from "@giclang/content/model";
 
 export function Markdown({ content }: { content: MarkdownContent }) {
 	return (

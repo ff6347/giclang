@@ -150,7 +150,10 @@ repeat(column, 0, 3) {
 
 test("renders the deterministic repeat example fixture", async ({ page }) => {
 	const source = await readFile(
-		new URL("../content/examples/repeat/repeat.gic", import.meta.url),
+		new URL(
+			"../packages/content/content/examples/repeat/repeat.gic",
+			import.meta.url,
+		),
 		"utf8",
 	);
 	await page.goto("/");

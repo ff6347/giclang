@@ -7,8 +7,8 @@ import {
 	createProductContent,
 	type ExampleDescription,
 	type MarkdownContent,
-} from "../lib/content-model.ts";
-import { compileMarkdown } from "../lib/markdown-content.ts";
+} from "../content-model.ts";
+import { compileMarkdown } from "../markdown-content.ts";
 
 function page(title: string, order: number): MarkdownContent {
 	return {

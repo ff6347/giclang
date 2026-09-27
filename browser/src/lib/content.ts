@@ -5,31 +5,31 @@ import {
 	createProductContent,
 	type ExampleDescription,
 	type MarkdownContent,
-} from "./content-model.ts";
+} from "@giclang/content/model";
 
 const about = import.meta.glob<MarkdownContent>(
-	"../../../content/about/index.md",
+	"../../../packages/content/content/about/index.md",
 	{
 		eager: true,
 		import: "default",
 	},
 );
 const docs = import.meta.glob<MarkdownContent>(
-	"../../../content/docs/**/*.md",
+	"../../../packages/content/content/docs/**/*.md",
 	{
 		eager: true,
 		import: "default",
 	},
 );
 const exampleDescriptions = import.meta.glob<ExampleDescription>(
-	"../../../content/examples/*/description.md",
+	"../../../packages/content/content/examples/*/description.md",
 	{
 		eager: true,
 		import: "default",
 	},
 );
 const exampleSources = import.meta.glob<string>(
-	"../../../content/examples/*/*.gic",
+	"../../../packages/content/content/examples/*/*.gic",
 	{
 		eager: true,
 		import: "default",
@@ -37,7 +37,7 @@ const exampleSources = import.meta.glob<string>(
 	},
 );
 const exampleThumbnails = import.meta.glob<string>(
-	"../../../content/examples/*/thumbnail.png",
+	"../../../packages/content/content/examples/*/thumbnail.png",
 	{
 		eager: true,
 		import: "default",

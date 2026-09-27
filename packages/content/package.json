@@ -1,0 +1,24 @@
+{
+	"name": "@giclang/content",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./model": {
+			"types": "./dist/content-model.d.ts",
+			"default": "./dist/content-model.js"
+		},
+		"./markdown": {
+			"types": "./dist/markdown-content.d.ts",
+			"default": "./dist/markdown-content.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc --project tsconfig.build.json",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"gray-matter": "4.0.3",
+		"markdown-it": "15.0.2"
+	}
+}

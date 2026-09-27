@@ -1,4 +1,4 @@
-import type { MarkdownContent } from "../lib/content-model";
+import type { MarkdownContent } from "@giclang/content/model";
 import { Markdown } from "./markdown";
 
 export function AboutPanel({ content }: { content: MarkdownContent }) {
