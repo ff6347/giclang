@@ -1,0 +1,124 @@
+<!-- ABOUTME: Describes interpreter support for user-defined GIC functions and return statements. -->
+<!-- ABOUTME: Covers call environments, argument binding, return propagation, and non-callable guards. -->
+
+# Interpreter Milestone: User-Defined Functions and Returns
+
+## Learning Goal
+
+Run user-defined functions with isolated call environments and observable `return` behavior.
+
+## Prerequisites
+
+- [Parser functions and returns](parser-functions.md), and [call expressions](parser-call-expressions.md) milestones.
+- [Call target syntax](../decisions/call-target-syntax.md) selects bare identifier targets; parser and AST alignment must be complete.
+- [Runtime value, environment, and error model](runtime-value-environment-errors.md) milestone.
+- [Interpreter expressions](interpreter-expressions.md), [variables and assignments](interpreter-variables-assignments.md), [conditionals](interpreter-conditionals.md), and [repeat statements](interpreter-repeat-statements.md).
+
+## Concepts to Understand
+
+- A function declaration creates an internal callable binding without running the body.
+- Calls resolve the target identifier, then expose argument-expression side effects before body effects.
+- Parameters and locals live in the call environment.
+- `return` ends the current function call, even when it appears inside nested statement bodies.
+- Analyzer lessons decide return-kind consistency and declared-before-use legality.
+
+## Relevant Specification Links
+
+- `../../docs/Language specification.md#functions`
+- `../../docs/Language specification.md#scoping-rules`
+- `../../docs/Language specification.md#grammar-ebnf`
+- `../../docs/Language specification.md#error-message-guidelines`
+
+## Existing Code Context
+
+- `parser-functions.md` defines `FuncStmt` and `ReturnStmt`.
+- `parser-call-expressions.md` defines `CallExpr`.
+- The environment model describes internal callable bindings and parameter binding.
+
+## Included
+
+- Execute function declarations by storing internal callables under their names.
+- Preserve observable source-order side effects from argument expressions.
+- Bind parameters in a fresh local environment for each call.
+- Execute function bodies with local variables isolated from callers.
+- Allow reads and assignments through the parent chain according to environment rules.
+- Make `return` stop the current function call and produce its optional result.
+- Support recursion through ordinary name lookup.
+- Runtime guard for calling non-callable values.
+
+## Non-Goals
+
+- Closures over arbitrary nested local environments.
+- Nested function declaration legality decisions.
+- Static arity, return-kind, or all-paths-return analysis.
+- Built-in function registry contents.
+- User-visible `null` or `undefined` for functions that do not return a value.
+
+## Grammar and AST Shape
+
+The relevant nodes are:
+
+```txt
+FuncStmt
+ReturnStmt
+CallExpr
+```
+
+`FuncStmt` contains a name, parameter tokens, and body statements. `ReturnStmt` contains an optional expression. `CallExpr` contains an identifier target and argument expressions.
+
+## Observable Function Call Behavior
+
+- A function declaration stores a callable under the function name and does not execute the body.
+- Argument expressions are evaluated in source order before any function-body side effects.
+- Arity errors are reported before a function body can observe partially bound parameters.
+- Each call gets its own local parameter bindings.
+- Local variables created during one call are not visible to later calls or to the caller.
+- A function can read globals through the environment chain and may mutate an existing global when the environment rules allow it.
+
+## Return Behavior
+
+A `return` statement ends the current function call immediately:
+
+- `return expression;` evaluates the expression and makes that value the call result.
+- `return;` ends the call without exposing `null`, `undefined`, or another user-visible placeholder.
+- Statements after a taken `return` do not execute.
+- A `return` inside an `if` branch or `repeat` body still exits the surrounding function call.
+- Return handling is an interpreter detail; tests should assert the visible call result and skipped side effects.
+
+## Scoping Rules
+
+- Function parameters and local variables do not leak after the call.
+- Globals can be read through the parent chain.
+- Assignments to existing globals may mutate globals when no nearer local binding owns the name.
+- No closures means a function should not secretly preserve arbitrary caller-local variables after the caller exits.
+
+## TDD-Oriented Student Checklist
+
+- A declaration stores a callable without executing the body.
+- Argument source-order side effects are observable.
+- Parameters are bound locally for each call.
+- Local variables do not leak after a call.
+- Globals are readable and mutable through the environment chain.
+- `return` exits early and skips later statements.
+- `return expression;` produces the expression value as the call result.
+- `return;` has no user-visible placeholder value.
+- Recursion works for a small terminating example.
+- Calling a non-callable value reports a runtime guard error.
+
+## Verification
+
+- Use counters to prove declaration-time bodies do not run.
+- Test argument source order with expressions that append to a print sink or mutate variables.
+- Include early-return cases inside conditionals or repeat bodies.
+- Add one non-callable call diagnostic test.
+
+## Decisions
+
+- Functions have no closures; each call environment is parented by global scope.
+- Nested function declarations are invalid.
+- Void returns use an internal marker and expose no user-visible `null`.
+- Semantic return-kind analysis determines whether a function is void or value-returning.
+
+## Notes
+
+This milestone should make built-ins feel like another callable kind later, while keeping user-defined call behavior understandable first.

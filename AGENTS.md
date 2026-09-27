@@ -26,10 +26,10 @@ Static authoring is the release gate. Animation is a stretch goal and must not b
 
 - The assigned git-bug issue defines the requested behavior and acceptance criteria.
 - Git-bug parent `60b2077` defines the v0.9 product requirements.
-- `docs/plans/vertical-slice-roadmap.md` defines delivery order and dependencies.
+- `.agents/plans/vertical-slice-roadmap.md` defines delivery order and dependencies.
 - `docs/Language specification.md` defines active language semantics.
-- Accepted records in `docs/decisions/` define architecture and scope.
-- `docs/MEMORY.md` and recent `docs/journals/` contain implementation context.
+- Accepted records in `.agents/decisions/` define architecture and scope.
+- `.agents/MEMORY.md` and recent `.agents/journals/` contain implementation context.
 - `docs/deprecated/` contains historical specifications and is not authoritative.
 
 ## Repository Structure
@@ -55,10 +55,11 @@ This is one pnpm package, not a monorepo.
 - `src-tauri/` — Tauri shell, capabilities, native settings bridge, and desktop package configuration.
 - `content/` — host-neutral About, documentation, and immutable example bundles for the PWA and desktop application.
 - `e2e/` — Playwright Firefox tests of visible browser behavior.
-- `docs/decisions/` — architecture decision records.
-- `docs/milestones/` and `docs/LESSONS.md` — capability definitions and completion ledger.
-- `docs/plans/` — active delivery plans.
-- `docs/journals/` — append-only implementation checkpoints.
+- `.agents/decisions/` — architecture decision records.
+- `.agents/milestones/` and `.agents/LESSONS.md` — capability definitions and completion ledger.
+- `.agents/plans/` — active delivery plans.
+- `.agents/journals/` — append-only implementation checkpoints.
+- `docs/` — human-facing specifications, technical references, and learning notes.
 
 ## Architecture Boundaries
 
