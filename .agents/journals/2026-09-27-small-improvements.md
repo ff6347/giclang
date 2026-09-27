@@ -10,3 +10,6 @@
 - [decision] OpenCode Zen sends the existing tutor conversation ID in `x-opencode-session`; absent or invalid IDs fail safely before a provider request.
 - [lesson] Full Firefox acceptance exposed extra auto-inserted braces after enabling Monaco language brackets. A focused selection-wrap test alone did not catch literal multi-line source entry; the existing print and Canvas tests did.
 - [verification] Core and browser typechecks, lint, formatting, browser build, 88 Firefox tests, 123 native tests, Clippy, Rust formatting, and a macOS desktop bundle passed. The initial full browser run had 12 failures from extra closing braces plus a completion-details timing failure; both were corrected and the full suite passed.
+- [lesson] Independent review caught color suggestions at `func fill("...` and missing suggestions in grouped call arguments. Completion context now skips grouping parentheses and excludes function declarations, with failing tests for both cases before the correction.
+- [lesson] HTTP header safety is weaker than session identity validation. Zen checks the UUID format already required by persisted tutor sessions; a header-safe non-UUID fails before dispatch.
+- [verification] After both review findings were fixed, core/browser/native tests, lint, formatting, Clippy, the full 88-test Firefox suite, and the macOS desktop bundle passed again.
