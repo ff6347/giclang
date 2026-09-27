@@ -525,13 +525,6 @@ fn reference_tool(name: &str, argument: &str, description: &str) -> ToolDefiniti
     }
 }
 
-fn asks_for_examples(prompt: &str) -> bool {
-    let prompt = prompt.to_lowercase();
-    ["example", "inspiration", "similar sketch", "starting point"]
-        .iter()
-        .any(|phrase| prompt.contains(phrase))
-}
-
 #[cfg(test)]
 fn lookup_reference(call: &ToolCall) -> Result<String, String> {
     lookup_reference_with_examples(call, &[])
@@ -592,12 +585,12 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
         );
         let mut history = request.history;
         history.push(Message::user(request.prompt.clone()));
-        let mut read_done = false;
+        let mut lookup_done = false;
         let mut needs_section = false;
         let mut calls_used = 0;
         for round in 0..=MAX_REFERENCE_TOOL_TURNS {
             let final_round = round == MAX_REFERENCE_TOOL_TURNS
-                || (round > 0 && (read_done || calls_used == MAX_REFERENCE_CALLS));
+                || (round > 0 && (lookup_done || calls_used == MAX_REFERENCE_CALLS));
             if final_round && calls_used == 0 {
                 return Err(TOOL_FAILURE.to_owned());
             }
@@ -613,15 +606,6 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
                     "section",
                     "Read a named section of the bundled GIC language reference.",
                 )
-            } else if round == 0
-                && !request.examples.is_empty()
-                && asks_for_examples(&request.prompt)
-            {
-                (
-                    "search_examples",
-                    "query",
-                    "Search enabled examples by title, category, tag, or description.",
-                )
             } else {
                 (
                     "search_reference",
@@ -635,8 +619,17 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
                 .messages(previous.iter().cloned())
                 .max_tokens(2048)
                 .tool(reference_tool(name, argument, description));
+            if round == 0 && !request.examples.is_empty() {
+                builder = builder.tool(reference_tool(
+                    "search_examples",
+                    "query",
+                    "Search enabled examples by title, category, tag, or description for inspiration.",
+                ));
+            }
             if final_round {
                 builder = builder.tool_choice(ToolChoice::None);
+            } else if round == 0 && !request.examples.is_empty() {
+                builder = builder.tool_choice(ToolChoice::Required);
             } else {
                 builder = builder.tool_choice(ToolChoice::Specific {
                     function_names: vec![name.to_owned()],
@@ -688,8 +681,9 @@ async fn stream_reference_model<M: CompletionModel + Clone>(
             let mut results = Vec::with_capacity(calls.len());
             for call in &calls {
                 let content = lookup_reference_with_examples(call, &request.examples)?;
-                if call.function.name == "read_reference" {
-                    read_done = true;
+                if call.function.name == "read_reference" || call.function.name == "search_examples"
+                {
+                    lookup_done = true;
                 }
                 results.push(UserContent::tool_result_for(
                     call.id.clone(),
@@ -3287,7 +3281,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn example_search_returns_selected_source_before_reference_grounded_answer() {
+    async fn example_search_can_inspire_without_an_unrelated_reference_lookup() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
@@ -3298,13 +3292,8 @@ mod tests {
                     "data: [DONE]\n\n"
                 ),
                 concat!(
-                    "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_reference\",\"type\":\"function\",\"function\":{\"name\":\"search_reference\",\"arguments\":\"{\\\"query\\\":\\\"circle(x, y, radius);\\\"}\"}}]},\"finish_reason\":null}]}\n\n",
-                    "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n",
-                    "data: [DONE]\n\n"
-                ),
-                concat!(
-                    "data: {\"id\":\"chatcmpl-3\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Explore Orbit by changing its radius.\"},\"finish_reason\":null}]}\n\n",
-                    "data: {\"id\":\"chatcmpl-3\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
+                    "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Explore Orbit as inspiration for your own composition.\"},\"finish_reason\":null}]}\n\n",
+                    "data: {\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"big-pickle\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n",
                     "data: [DONE]\n\n"
                 ),
             ];
@@ -3338,7 +3327,7 @@ mod tests {
                     }],
                     api_key: "test-key".to_owned(),
                     model: "big-pickle".to_owned(),
-                    prompt: "Show me an example of a circle sketch.".to_owned(),
+                    prompt: "Which sketch explores circular composition?".to_owned(),
                     history: Vec::new(),
                     cancellation: CancellationToken::new(),
                 },
@@ -3347,17 +3336,23 @@ mod tests {
             .await;
         let requests = server.await.unwrap();
         assert!(result.is_ok(), "{result:?}; requests: {requests:?}");
-        assert_eq!(requests.len(), 3);
+        assert_eq!(requests.len(), 2);
         assert!(requests[0]["tools"]
             .as_array()
             .unwrap()
             .iter()
             .any(|tool| tool["function"]["name"] == "search_examples"));
+        assert!(requests[0]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|tool| tool["function"]["name"] == "search_reference"));
+        assert_eq!(requests[0]["tool_choice"], "required");
         assert!(!requests[0].to_string().contains("circle(50, 50, 20);"));
         assert!(requests[1].to_string().contains("circle(50, 50, 20);"));
-        assert!(requests[2].to_string().contains("circle(x, y, radius);"));
+        assert_eq!(requests[1]["tool_choice"], "none");
         assert!(events.iter().any(
-            |event| matches!(event, ProviderEvent::Text(text) if text == "Explore Orbit by changing its radius.")
+            |event| matches!(event, ProviderEvent::Text(text) if text == "Explore Orbit as inspiration for your own composition.")
         ));
     }
 
@@ -3678,7 +3673,7 @@ mod tests {
                     serde_json::json!({"id":"chatcmpl-1","object":"chat.completion.chunk","created":1,"model":"space-bunny-free","choices":[{"index":0,"delta":{"tool_calls":calls},"finish_reason":null}]}),
                 );
                 let (mut socket, _) = listener.accept().await.unwrap();
-                let _ = read_wire_request(&mut socket).await;
+                let first = read_wire_request(&mut socket).await;
                 write_wire_response(&mut socket, &first_response, true).await;
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let second = read_wire_request(&mut socket).await;
@@ -3692,7 +3687,7 @@ mod tests {
                     true,
                 )
                 .await;
-                second
+                (first, second)
             });
             let provider = RigOpenCodeProvider {
                 base_url: format!("http://{address}/v1"),
@@ -3702,7 +3697,14 @@ mod tests {
             let result = provider
                 .stream(
                     TutorRequest {
-                        examples: Vec::new(),
+                        examples: vec![Example {
+                            id: "orbit".to_owned(),
+                            title: "Orbit".to_owned(),
+                            categories: vec!["shape".to_owned()],
+                            tags: vec!["circle".to_owned()],
+                            description: "A circular composition".to_owned(),
+                            source: "circle(50, 50, 20);".to_owned(),
+                        }],
                         api_key: "test-key".to_owned(),
                         model: "space-bunny-free".to_owned(),
                         prompt: "How many arguments does circle take?".to_owned(),
@@ -3712,8 +3714,10 @@ mod tests {
                     &mut |event| events.push(event),
                 )
                 .await;
-            let second = server.await.unwrap();
+            let (first, second) = server.await.unwrap();
             assert_eq!(result, Ok(()), "{searches}");
+            assert_eq!(first["tool_choice"], "required");
+            assert!(!first.to_string().contains("circle(50, 50, 20);"));
             assert!(
                 matches!(&events[..], [ProviderEvent::Text(text), ProviderEvent::Complete] if text == "Three arguments."),
                 "{searches}"
