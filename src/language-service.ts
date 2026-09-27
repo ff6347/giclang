@@ -152,14 +152,22 @@ function colorStringRange(
 		return undefined;
 	}
 	const string = tokens.at(-2);
-	const open = tokens.at(-3);
-	const name = tokens.at(-4);
 	if (string?.type !== "STRING" || string.end !== position + 1) {
 		return undefined;
 	}
+	let openIndex = tokens.length - 3;
+	while (
+		tokens[openIndex]?.type === "LEFT_PAREN" &&
+		tokens[openIndex - 1]?.type === "LEFT_PAREN"
+	) {
+		openIndex--;
+	}
+	const open = tokens[openIndex];
+	const name = tokens[openIndex - 1];
 	if (
 		open?.type !== "LEFT_PAREN" ||
 		name?.type !== "IDENTIFIER" ||
+		tokens[openIndex - 2]?.type === "FUNC" ||
 		!["background", "fill", "stroke"].includes(name.lexeme)
 	) {
 		return null;

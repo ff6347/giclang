@@ -107,11 +107,21 @@ describe("language service", () => {
 				replacement: { start: 8, end: 15 },
 			},
 		);
+
+		const grouped = sourcePosition('fill((("blu|")));');
+		assert.deepEqual(
+			completeSource(grouped.source, grouped.position).map(
+				({ label }) => label,
+			),
+			["blue", "blueviolet"],
+		);
 	});
 
 	it("only offers named colors inside first color-string arguments", () => {
 		for (const markedSource of [
 			"blu|",
+			'func fill("blu|',
+			'func background("blu|',
 			'print("blu|");',
 			'fill(1, "blu|");',
 			'fill(rgb("blu|"));',
