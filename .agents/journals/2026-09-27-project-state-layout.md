@@ -12,3 +12,4 @@
 The GIC changes are on `chore/move-agent-state` in commits `cff5486` and `c777c10`; the Lox import is commit `da396cc` on `ff6347/lox-lang` `main`.
 
 - [decision] Fabian classified the Zen provider route evidence as agent documentation. Its authoritative path is `.agents/zen-model-routes.md`.
+- [decision] The language specification describes syntax, semantics, examples, and diagnostics. Host architecture, delivery, and tests are governed by root `AGENTS.md`, accepted decisions, and `.agents/plans/vertical-slice-roadmap.md`; deferred editor and export options stay in decisions and git-bug, not in active language rules.

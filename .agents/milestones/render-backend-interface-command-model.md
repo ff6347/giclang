@@ -26,7 +26,7 @@ Define a platform-neutral rendering boundary before implementing drawing.
 - `../../docs/Language specification.md#colors`
 - `../../docs/Language specification.md#shape-style`
 - `../../docs/Language specification.md#shape-drawing`
-- `../../docs/Language specification.md#implementation-architecture`
+- `../../AGENTS.md#architecture-boundaries`
 
 ## Existing Code Context
 

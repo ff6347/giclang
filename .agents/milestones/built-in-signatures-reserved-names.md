@@ -35,7 +35,6 @@ Complete or review:
 - [Console Output](<../../docs/Language specification.md#console-output>)
 - [Math Functions](<../../docs/Language specification.md#math-functions>)
 - [Constants](<../../docs/Language specification.md#constants>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

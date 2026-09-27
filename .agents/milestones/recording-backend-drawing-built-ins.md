@@ -28,7 +28,7 @@ Make drawing built-ins testable deterministically without Canvas.
 - `../../docs/Language specification.md#colors`
 - `../../docs/Language specification.md#shape-style`
 - `../../docs/Language specification.md#shape-drawing`
-- `../../docs/Language specification.md#testing-strategy`
+- `../../AGENTS.md#project-test-seams`
 
 ## Existing Code Context
 

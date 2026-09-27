@@ -25,8 +25,7 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
-- [Implementation Architecture](<../../docs/Language specification.md#implementation-architecture>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
 - [Error Message Guidelines](<../../docs/Language specification.md#error-message-guidelines>)
 
 ## Grammar and AST Shape

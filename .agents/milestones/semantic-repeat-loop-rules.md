@@ -31,7 +31,6 @@ Complete or review:
 - [Animation](<../../docs/Language specification.md#animation>)
 - [Animated Programs](<../../docs/Language specification.md#animated-programs>)
 - [Grammar (EBNF)](<../../docs/Language specification.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

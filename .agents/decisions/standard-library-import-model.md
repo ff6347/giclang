@@ -11,7 +11,7 @@ Does GIC need a standard library or import mechanism, and if so, how should name
 
 ## Current Baseline
 
-Rev 2 asks whether GIC needs a standard library, but its grammar has no import statement. The scoping model is simple and flat, with globals, function locals, and loop locals. Project memory notes that dynamic list design should come before imports.
+The active GIC grammar has no import statement, and no standard-library design has been selected. The scoping model has global, function-local, and block-local bindings. Project memory notes that dynamic list design should come before imports.
 
 ## Depends On
 
@@ -61,10 +61,8 @@ Imports and libraries affect grammar, name resolution, reserved names, declarati
 
 ## Related Guidance
 
-- [Questions](<../../docs/Language specification.md#questions>)
 - [Grammar (EBNF)](<../../docs/Language specification.md#grammar-ebnf>)
 - [Scoping Rules](<../../docs/Language specification.md#scoping-rules>)
-- [Implementation Architecture](<../../docs/Language specification.md#implementation-architecture>)
 - [Memory: Language Design](../MEMORY.md#language-design)
 
 ## Non-Goals

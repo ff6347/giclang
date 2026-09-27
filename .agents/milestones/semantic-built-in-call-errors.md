@@ -29,7 +29,6 @@ Complete or review:
 - [Built-in Functions](<../../docs/Language specification.md#built-in-functions>)
 - [Data Types](<../../docs/Language specification.md#data-types>)
 - [Constants](<../../docs/Language specification.md#constants>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 - [Error Message Guidelines](<../../docs/Language specification.md#error-message-guidelines>)
 - [Memory](../MEMORY.md)
 

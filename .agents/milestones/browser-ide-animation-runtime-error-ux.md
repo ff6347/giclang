@@ -34,9 +34,7 @@ Extend the selected browser IDE from static preview to animation playback and cl
 - [Animated Programs](<../../docs/Language specification.md#animated-programs>)
 - [Animation Built-ins](<../../docs/Language specification.md#animation-built-ins>)
 - [Constants](<../../docs/Language specification.md#constants>)
-- [Interpreter component](<../../docs/Language specification.md#4-interpreter-interpreterts>)
-- [Render Backends](<../../docs/Language specification.md#5-render-backends>)
-- [Live Preview Panel](<../../docs/Language specification.md#live-preview-panel>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
 - [Error Message Guidelines](<../../docs/Language specification.md#error-message-guidelines>)
 
 ## Included

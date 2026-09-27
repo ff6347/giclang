@@ -27,7 +27,7 @@ Static authoring is the release gate. Animation is a stretch goal and must not b
 - The assigned git-bug issue defines the requested behavior and acceptance criteria.
 - Git-bug parent `60b2077` defines the v0.9 product requirements.
 - `.agents/plans/vertical-slice-roadmap.md` defines delivery order and dependencies.
-- `docs/Language specification.md` defines active language semantics.
+- `docs/Language specification.md` defines active language semantics, not implementation plans or repository layout.
 - Accepted records in `.agents/decisions/` define architecture and scope.
 - `.agents/MEMORY.md` and recent `.agents/journals/` contain implementation context.
 - `docs/deprecated/` contains historical specifications and is not authoritative.

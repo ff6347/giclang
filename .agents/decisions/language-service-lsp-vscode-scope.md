@@ -89,9 +89,6 @@ Return the active callable signature and parameter position for built-ins and us
 
 - [v0.9 vertical slices](../plans/vertical-slice-roadmap.md)
 - [Browser IDE technology and sandbox](browser-ide-technology-sandbox.md)
-- [LSP server](<../../docs/Language specification.md#6-lsp-server-lspserverts>)
-- [VS Code extension](<../../docs/Language specification.md#vs-code-extension>)
-- [Syntax highlighting](<../../docs/Language specification.md#syntax-highlighting>)
 - [Built-in functions](<../../docs/Language specification.md#built-in-functions>)
 
 ## Non-Goals

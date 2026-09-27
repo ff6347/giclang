@@ -34,7 +34,7 @@ Curate deterministic `.gic` examples as executable documentation and visual regr
 - [Math Functions](<../../docs/Language specification.md#math-functions>)
 - [Animation](<../../docs/Language specification.md#animation>)
 - [Animation Built-ins](<../../docs/Language specification.md#animation-built-ins>)
-- [Testing Strategy](<../../docs/Language specification.md#testing-strategy>)
+- [Project test seams](../../AGENTS.md#project-test-seams)
 
 ## Included
 

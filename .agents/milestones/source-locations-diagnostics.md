@@ -32,8 +32,7 @@ Complete or review [the loop-block parser milestone](parser-loop-block.md) and e
 ## Relevant Specification Links
 
 - [Fail Clearly](<../../docs/Language specification.md#4-fail-clearly>)
-- [Lexer component](<../../docs/Language specification.md#1-lexer-lexerts>)
-- [Parser component](<../../docs/Language specification.md#2-parser-parserts>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
 - [Error Message Guidelines](<../../docs/Language specification.md#error-message-guidelines>)
 - [Parser error journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 

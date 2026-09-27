@@ -30,11 +30,8 @@ Build the selected browser IDE foundation into an edit-check-static-preview loop
 
 - [Immediate Visual Feedback](<../../docs/Language specification.md#3-immediate-visual-feedback>)
 - [Fail Clearly](<../../docs/Language specification.md#4-fail-clearly>)
-- [Implementation Architecture](<../../docs/Language specification.md#implementation-architecture>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
-- [Render Backends](<../../docs/Language specification.md#5-render-backends>)
-- [LSP Server component](<../../docs/Language specification.md#6-lsp-server-lspserverts>)
-- [Live Preview Panel](<../../docs/Language specification.md#live-preview-panel>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
+- [Browser test seams](../../AGENTS.md#project-test-seams)
 - [Error Message Guidelines](<../../docs/Language specification.md#error-message-guidelines>)
 
 ## Included

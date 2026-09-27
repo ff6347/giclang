@@ -75,10 +75,9 @@ Monaco integration, worker construction, preview lifecycle, stale-result handlin
 
 - [v0.9 vertical slices](../plans/vertical-slice-roadmap.md)
 - [Language-Service decision](language-service-lsp-vscode-scope.md)
-- [Implementation architecture](<../../docs/Language specification.md#implementation-architecture>)
-- [Live preview panel](<../../docs/Language specification.md#live-preview-panel>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
+- [Browser test seams](../../AGENTS.md#project-test-seams)
 - [Error message guidelines](<../../docs/Language specification.md#error-message-guidelines>)
-- [Testing strategy](<../../docs/Language specification.md#testing-strategy>)
 
 ## Non-Goals
 

@@ -27,7 +27,7 @@ Connect animation lifecycle to browser scheduling through a testable adapter.
 - `../../docs/Language specification.md#animated-programs`
 - `../../docs/Language specification.md#animation-built-ins`
 - `../../docs/Language specification.md#canvas`
-- `../../docs/Language specification.md#implementation-architecture`
+- `../../AGENTS.md#architecture-boundaries`
 
 ## Existing Code Context
 

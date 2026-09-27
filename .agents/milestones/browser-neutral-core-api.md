@@ -25,9 +25,8 @@ Complete or review:
 
 ## Relevant Specification Links
 
-- [Implementation Architecture](<../../docs/Language specification.md#implementation-architecture>)
-- [Component Details](<../../docs/Language specification.md#component-details>)
-- [Project Structure](<../../docs/Language specification.md#project-structure>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
+- [Repository structure](../../AGENTS.md#repository-structure)
 - [Memory](../MEMORY.md)
 
 ## Grammar and AST Shape

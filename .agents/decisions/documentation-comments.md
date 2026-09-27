@@ -11,7 +11,7 @@ Should GIC support documentation comments, and if so, what syntax, metadata, and
 
 ## Current Baseline
 
-Revision 2.2 currently supports `//` single-line comments only and says proposed documentation comments are not part of the current syntax. The proposal mentions a small GIC-specific documentation format for functions, parameters, return values, variables, and reusable library code. Open git-bug `0885b28` tracks documentation-comment support.
+Revision 2.2 supports `//` single-line comments only. Open git-bug `0885b28` tracks a small GIC-specific documentation format for functions, parameters, return values, variables, and reusable library code.
 
 ## Why This Is a Gate
 
@@ -57,8 +57,6 @@ Documentation comments affect lexing, parsing or comment retention, AST associat
 ## Related Guidance
 
 - [Comments](<../../docs/Language specification.md#comments>)
-- [Proposed Documentation Comments](<../../docs/Language specification.md#proposed-documentation-comments>)
-- [LSP Server component](<../../docs/Language specification.md#6-lsp-server-lspserverts>)
 - [Browser IDE language assistance](../milestones/browser-ide-language-assistance.md)
 - [Language design journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 

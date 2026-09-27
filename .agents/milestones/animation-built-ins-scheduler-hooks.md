@@ -28,7 +28,7 @@ Expose frame state and scheduler seams without browser timers.
 - `../../docs/Language specification.md#animated-programs`
 - `../../docs/Language specification.md#animation-built-ins`
 - `../../docs/Language specification.md#constants`
-- `../../docs/Language specification.md#implementation-architecture`
+- `../../AGENTS.md#architecture-boundaries`
 
 ## Existing Code Context
 

@@ -21,10 +21,9 @@ What optional CLI export and server render backend scope, if any, will GIC suppo
   - [Implement animation built-ins and scheduler hooks](../milestones/animation-built-ins-scheduler-hooks.md)
   - [Add CLI check and run entry points](../milestones/cli-check-run-entry-points.md)
   - [Add example-program and visual-regression verification](../milestones/example-program-visual-regression.md)
-- Relevant specification anchors:
-  - [Render backends](<../../docs/Language specification.md#5-render-backends>)
-  - [CLI tool](<../../docs/Language specification.md#cli-tool>)
-  - [Testing strategy](<../../docs/Language specification.md#testing-strategy>)
+- Relevant delivery guidance:
+  - [CLI release slice](../plans/vertical-slice-roadmap.md#slice-5-stable-cli-check-and-run)
+  - [Core and CLI test seams](../../AGENTS.md#project-test-seams)
 
 ## Why This Is a Gate
 
@@ -75,9 +74,8 @@ Render backend milestones can define command records and deterministic tests wit
 - [Implement animation built-ins and scheduler hooks](../milestones/animation-built-ins-scheduler-hooks.md)
 - [Add CLI check and run entry points](../milestones/cli-check-run-entry-points.md)
 - [Add example-program and visual-regression verification](../milestones/example-program-visual-regression.md)
-- [Render backends](<../../docs/Language specification.md#5-render-backends>)
-- [CLI tool](<../../docs/Language specification.md#cli-tool>)
-- [Testing strategy](<../../docs/Language specification.md#testing-strategy>)
+- [CLI release slice](../plans/vertical-slice-roadmap.md#slice-5-stable-cli-check-and-run)
+- [Core and CLI test seams](../../AGENTS.md#project-test-seams)
 
 ## Non-Goals
 

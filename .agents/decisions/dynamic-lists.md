@@ -60,7 +60,6 @@ Collections affect the runtime value model, grammar, analyzer diagnostics, memor
 
 - [Data Types](<../../docs/Language specification.md#data-types>)
 - [Variables](<../../docs/Language specification.md#variables>)
-- [Implementation Architecture](<../../docs/Language specification.md#implementation-architecture>)
 - [Memory: Language Design](../MEMORY.md#language-design)
 - [Language design journal](../journals/2026-07-29-language-design-and-parser-errors.md)
 - [Runtime value milestone](../milestones/runtime-value-environment-errors.md)

@@ -26,7 +26,6 @@ Complete or review:
 ## Relevant Specification Links
 
 - [User-Defined Functions](<../../docs/Language specification.md#user-defined-functions>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 - [Grammar (EBNF)](<../../docs/Language specification.md#grammar-ebnf>)
 
 ## Grammar and AST Shape

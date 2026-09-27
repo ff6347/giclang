@@ -30,7 +30,6 @@ Complete or review:
 - [User-Defined Functions](<../../docs/Language specification.md#user-defined-functions>)
 - [Scoping Rules](<../../docs/Language specification.md#scoping-rules>)
 - [Grammar (EBNF)](<../../docs/Language specification.md#grammar-ebnf>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

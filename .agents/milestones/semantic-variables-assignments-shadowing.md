@@ -31,7 +31,6 @@ Complete or review:
 
 - [Variables](<../../docs/Language specification.md#variables>)
 - [Scoping Rules](<../../docs/Language specification.md#scoping-rules>)
-- [Semantic Analyzer component](<../../docs/Language specification.md#3-semantic-analyzer-analyzerts>)
 
 ## Grammar and AST Shape
 

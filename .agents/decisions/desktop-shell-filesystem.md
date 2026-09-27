@@ -160,9 +160,9 @@ Windowing, packaged callbacks, filesystem permissions, credentials, and provider
 - [v0.9 vertical slices](../plans/vertical-slice-roadmap.md)
 - [Browser IDE technology and sandbox](browser-ide-technology-sandbox.md)
 - [Language-service scope](language-service-lsp-vscode-scope.md)
-- [Implementation architecture](<../../docs/Language specification.md#implementation-architecture>)
+- [Architecture boundaries](../../AGENTS.md#architecture-boundaries)
 - [File extension](<../../docs/Language specification.md#file-extension>)
-- [CLI tool](<../../docs/Language specification.md#cli-tool>)
+- [CLI delivery](../plans/vertical-slice-roadmap.md#slice-5-stable-cli-check-and-run)
 
 ## Non-Goals
 
