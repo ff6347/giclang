@@ -49,6 +49,7 @@ describe("gic check", () => {
 		assert.strictEqual(
 			result.stderr,
 			"Error at line 2, column 1:\n" +
+				"  loop {\n" +
 				"  \n" +
 				"  ^\n" +
 				"  Expected '}' after block.\n",
@@ -224,6 +225,7 @@ describe("gic run", () => {
 		assert.strictEqual(
 			result.stderr,
 			"Error at line 2, column 15:\n" +
+				'  print("before");\n' +
 				"  let value = 1 / 0;\n" +
 				"                ^\n" +
 				"  Cannot divide by zero.\n",

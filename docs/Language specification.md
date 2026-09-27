@@ -729,12 +729,15 @@ Errors should be:
 
 The analyzer continues after an error so that independent mistakes at other source locations are reported together. When one declaration violates several rules, conflicts with names defined by GIC take priority over other declaration conflicts. For a built-in call with competing errors, report arity before direct literal kind, obvious signed-literal domain, and void-value use.
 
+For an error after the first line, the CLI renders the preceding source line before the error line to provide context. The caret identifies a location only on the error line.
+
 ### Examples
 
 **Good error:**
 
 ```
 Error at line 5, column 12:
+  let size = 20;
   circle(50, 50)
              ^
   Function 'circle' requires 3 arguments (x, y, radius), but got 2.
@@ -750,6 +753,7 @@ Unexpected token
 
 ```
 Error at line 3, column 5:
+  let size = 10;
   x = 10;
   ^
   Cannot find name 'x'.
@@ -759,6 +763,7 @@ Error at line 3, column 5:
 
 ```
 Error at line 8, column 10:
+  let size = 10;
   func draw(size) {
             ^^^^
   Cannot declare 'size' because that name already exists.
@@ -768,6 +773,7 @@ Error at line 8, column 10:
 
 ```
 Error at line 5, column 3:
+  func main() {
   helper(10);
   ^^^^^^
   Cannot call function 'helper' before its declaration.
@@ -777,6 +783,7 @@ Error at line 5, column 3:
 
 ```
 Error at line 12, column 14:
+  func main() {
   let x = drawSquare(10, 20, 5);
           ^^^^^^^^^^
   Function 'drawSquare' does not return a value and cannot be used in an expression.

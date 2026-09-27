@@ -6,6 +6,77 @@ import type { ParserError } from "../error.ts";
 import { locate, report } from "../message-formatter.ts";
 
 describe("message-formatter", () => {
+	test("shows the preceding source line before a diagnostic", () => {
+		const source = "let size = 10;\nghost = size;";
+
+		assert.strictEqual(
+			report({
+				start: source.indexOf("ghost"),
+				end: source.indexOf("ghost") + "ghost".length,
+				message: "Cannot find name 'ghost'.",
+				source,
+			}),
+			"Error at line 2, column 1:\n" +
+				"  let size = 10;\n" +
+				"  ghost = size;\n" +
+				"  ^^^^^\n" +
+				"  Cannot find name 'ghost'.",
+		);
+	});
+
+	test("shows the preceding line for an EOF diagnostic", () => {
+		const source = "loop {\n";
+
+		assert.strictEqual(
+			report({
+				start: source.length,
+				end: source.length,
+				message: "Expected '}' after block.",
+				source,
+			}),
+			"Error at line 2, column 1:\n" +
+				"  loop {\n" +
+				"  \n" +
+				"  ^\n" +
+				"  Expected '}' after block.",
+		);
+	});
+
+	test("omits preceding context for a first-line diagnostic", () => {
+		const source = "ghost = 1;";
+
+		assert.strictEqual(
+			report({
+				start: 0,
+				end: "ghost".length,
+				message: "Cannot find name 'ghost'.",
+				source,
+			}),
+			"Error at line 1, column 1:\n" +
+				"  ghost = 1;\n" +
+				"  ^^^^^\n" +
+				"  Cannot find name 'ghost'.",
+		);
+	});
+
+	test("shows a blank preceding line", () => {
+		const source = "loop {\n\n";
+
+		assert.strictEqual(
+			report({
+				start: source.length,
+				end: source.length,
+				message: "Expected '}' after block.",
+				source,
+			}),
+			"Error at line 3, column 1:\n" +
+				"  \n" +
+				"  \n" +
+				"  ^\n" +
+				"  Expected '}' after block.",
+		);
+	});
+
 	test("should write report string", () => {
 		const source = "let x = 0\nloop{}";
 		const lexer = new Lexer(source);
@@ -27,6 +98,7 @@ describe("message-formatter", () => {
 				assert.strictEqual(
 					m,
 					"Error at line 2, column 1:\n" +
+						"  let x = 0\n" +
 						"  loop{}\n" +
 						"  ^^^^\n" +
 						"  Expected semicolon after variable declaration.",
@@ -56,6 +128,7 @@ describe("message-formatter", () => {
 				});
 				const expected =
 					"Error at line 2, column 4:\n" +
+					"  let x = 0;\n" +
 					"  if x < 10){\n" +
 					"     ^\n" +
 					"  Expected '(' after 'if'.";
@@ -86,6 +159,7 @@ describe("message-formatter", () => {
 				});
 				const expected =
 					"Error at line 2, column 7:\n" +
+					"  let foo = 0;\n" +
 					"  let y foo;\n" +
 					"        ^^^\n" +
 					"  Expected '=' sign after variable name.";

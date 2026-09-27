@@ -16,9 +16,17 @@ export function report({
 	});
 	const indent = "  ";
 	const sourceLine = source.slice(lineStart, lineEnd);
+	const precedingLine =
+		line === 0
+			? ""
+			: source.slice(
+					source.lastIndexOf("\n", lineStart - 2) + 1,
+					lineStart - 1,
+				);
 
 	const caret = " ".repeat(column) + "^".repeat(Math.max(1, end - start));
-	return `Error at line ${line + 1}, column ${column + 1}:\n${indent}${sourceLine}\n${indent}${caret}\n${indent}${message}`;
+	const precedingContext = line === 0 ? "" : `${indent}${precedingLine}\n`;
+	return `Error at line ${line + 1}, column ${column + 1}:\n${precedingContext}${indent}${sourceLine}\n${indent}${caret}\n${indent}${message}`;
 }
 
 export function locate({ start, source }: { source: string; start: number }) {
