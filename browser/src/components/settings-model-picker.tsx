@@ -6,6 +6,9 @@ import type { OpencodeModel } from "../lib/desktop-host.ts";
 import { deriveVisibleModels } from "../lib/model-preferences.ts";
 
 function modelLabel(model: OpencodeModel): string {
+	if (model.id.startsWith("openai-codex/")) {
+		return `Codex · ${model.name} — Subscription access; availability checked on send`;
+	}
 	const provider = model.id.startsWith("opencode-zen/")
 		? "OpenCode Zen"
 		: "OpenRouter";

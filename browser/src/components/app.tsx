@@ -169,7 +169,8 @@ export function App({
 		if (
 			desktop === undefined ||
 			(status?.opencodeAuthenticated !== true &&
-				status?.openrouterAuthenticated !== true)
+				status?.openrouterAuthenticated !== true &&
+				status?.codexAuthenticated !== true)
 		) {
 			setOpencodeModels([]);
 			setOpencodeModel("");
@@ -183,6 +184,9 @@ export function App({
 			status?.openrouterAuthenticated === true
 				? desktop.openrouterModels()
 				: Promise.resolve([]),
+			status?.codexAuthenticated === true
+				? desktop.codexModels()
+				: Promise.resolve([]),
 		])
 			.then((results) => {
 				if (request !== opencodeModelsRequest.current) return;
@@ -190,15 +194,26 @@ export function App({
 					results[0].status === "fulfilled" ? results[0].value : [];
 				const openrouterModels =
 					results[1].status === "fulfilled" ? results[1].value : [];
-				const availableModels = [...zenModels, ...openrouterModels];
+				const codexModels =
+					results[2].status === "fulfilled" ? results[2].value : [];
+				const availableModels = [
+					...zenModels,
+					...openrouterModels,
+					...codexModels,
+				];
 				setOpencodeModels(availableModels);
-				const enabled = loadEnabledModelIds(settings);
+				const enabled = loadEnabledModelIds(settings, availableModels);
 				setEnabledModelIds(enabled);
 				const preferredErrorIndex =
-					loadSelectedModelId(settings).startsWith("openrouter/") ||
-					status?.opencodeAuthenticated !== true
-						? 1
-						: 0;
+					loadSelectedModelId(settings).startsWith("openai-codex/") ||
+					(status?.codexAuthenticated === true &&
+						status.opencodeAuthenticated !== true &&
+						status.openrouterAuthenticated !== true)
+						? 2
+						: loadSelectedModelId(settings).startsWith("openrouter/") ||
+							  status?.opencodeAuthenticated !== true
+							? 1
+							: 0;
 				const failedProvider =
 					results[preferredErrorIndex].status === "rejected"
 						? results[preferredErrorIndex]
@@ -272,10 +287,13 @@ export function App({
 		opencodeModel,
 		opencodeModel === ""
 			? providerStatus?.opencodeAuthenticated === true ||
-					providerStatus?.openrouterAuthenticated === true
+					providerStatus?.openrouterAuthenticated === true ||
+					providerStatus?.codexAuthenticated === true
 			: opencodeModel.startsWith("openrouter/")
 				? providerStatus?.openrouterAuthenticated === true
-				: providerStatus?.opencodeAuthenticated === true,
+				: opencodeModel.startsWith("openai-codex/")
+					? providerStatus?.codexAuthenticated === true
+					: providerStatus?.opencodeAuthenticated === true,
 	);
 
 	useEffect(() => {

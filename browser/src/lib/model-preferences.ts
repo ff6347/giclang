@@ -7,7 +7,10 @@ import type { OpencodeModel } from "./desktop-host.ts";
 const ENABLED_MODEL_IDS_KEY = "gic.tutor.enabled-model-ids";
 const SELECTED_MODEL_ID_KEY = "gic.tutor.selected-model";
 
-export function loadEnabledModelIds(settings: ApplicationSettings): string[] {
+export function loadEnabledModelIds(
+	settings: ApplicationSettings,
+	catalog: readonly OpencodeModel[] = [],
+): string[] {
 	const saved = settings.getItem(ENABLED_MODEL_IDS_KEY);
 	if (saved !== null) {
 		try {
@@ -21,7 +24,13 @@ export function loadEnabledModelIds(settings: ApplicationSettings): string[] {
 		return [];
 	}
 
-	return [];
+	const beginner = catalog.find(
+		(model) =>
+			model.id.startsWith("openai-codex/") &&
+			model.referenceToolsVerified === true &&
+			model.beginnerDefault === true,
+	);
+	return beginner === undefined ? [] : [beginner.id];
 }
 
 export function saveEnabledModelIds(
@@ -56,7 +65,8 @@ export function deriveVisibleModels(
 			enabled.has(model.id) &&
 			model.referenceToolsVerified === true &&
 			(model.id.startsWith("opencode-zen/") ||
-				model.id.startsWith("openrouter/")),
+				model.id.startsWith("openrouter/") ||
+				model.id.startsWith("openai-codex/")),
 	);
 }
 
@@ -76,6 +86,11 @@ export function selectedVisibleModelId(
 	selectedId: string,
 	visibleModels: readonly OpencodeModel[],
 ): string {
+	if (selectedId === "") {
+		return (
+			visibleModels.find((model) => model.beginnerDefault === true)?.id ?? ""
+		);
+	}
 	return visibleModels.some((model) => model.id === selectedId)
 		? selectedId
 		: "";

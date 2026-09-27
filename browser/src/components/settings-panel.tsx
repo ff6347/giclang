@@ -79,7 +79,7 @@ function ModelSettings({
 	enabledModelIds,
 	onModelVisibilityChange,
 }: {
-	provider: "OpenCode Zen" | "OpenRouter";
+	provider: "OpenCode Zen" | "OpenRouter" | "Codex";
 	models: readonly OpencodeModel[];
 	enabledModelIds: readonly string[];
 	onModelVisibilityChange: (id: string, enabled: boolean) => void;
@@ -104,6 +104,12 @@ function ModelSettings({
 					<p>No eligible models for {provider}.</p>
 				) : (
 					<>
+						{provider === "Codex" && (
+							<p>
+								Model access depends on your subscription and is checked when
+								you send a question.
+							</p>
+						)}
 						<Field.Root className="settings-row">
 							<Field.Label>Search {provider} models</Field.Label>
 							<Field.Control
@@ -130,8 +136,12 @@ function ModelSettings({
 									<tr>
 										<th scope="col">Model</th>
 										<th scope="col">Reference tools</th>
-										<th scope="col">Input price</th>
-										<th scope="col">Output price</th>
+										{provider !== "Codex" && (
+											<>
+												<th scope="col">Input price</th>
+												<th scope="col">Output price</th>
+											</>
+										)}
 										<th scope="col">Show in picker</th>
 									</tr>
 								</thead>
@@ -164,8 +174,12 @@ function ModelSettings({
 														? "Verified"
 														: "Reference tools not verified"}
 												</td>
-												<td>{prices?.[0] || "Price unavailable"}</td>
-												<td>{prices?.[1] || "Price unavailable"}</td>
+												{provider !== "Codex" && (
+													<>
+														<td>{prices?.[0] || "Price unavailable"}</td>
+														<td>{prices?.[1] || "Price unavailable"}</td>
+													</>
+												)}
 												<td>
 													<Switch.Root
 														aria-label={`Enable ${model.name}`}
@@ -279,9 +293,20 @@ export function SettingsPanel({
 						authenticated={providerStatus?.codexAuthenticated === true}
 						onProviderAuthenticated={onProviderAuthenticated}
 					/>
+					{providerStatus?.codexAuthenticated === true && (
+						<ModelSettings
+							provider="Codex"
+							models={models.filter((model) =>
+								model.id.startsWith("openai-codex/"),
+							)}
+							enabledModelIds={enabledModelIds}
+							onModelVisibilityChange={onModelVisibilityChange}
+						/>
+					)}
 					<h2>Tutor</h2>
 					{(providerStatus?.opencodeAuthenticated === true ||
-						providerStatus?.openrouterAuthenticated === true) && (
+						providerStatus?.openrouterAuthenticated === true ||
+						providerStatus?.codexAuthenticated === true) && (
 						<>
 							<SettingsModelPicker
 								models={models}

@@ -32,6 +32,7 @@ export interface OpencodeModel {
 	readonly id: string;
 	readonly name: string;
 	readonly referenceToolsVerified?: boolean;
+	readonly beginnerDefault?: boolean;
 	readonly pricing?: string;
 	readonly isFree?: boolean;
 	readonly otherCharges?: boolean;
@@ -251,6 +252,10 @@ export class DesktopHost {
 
 	opencodeModels(): Promise<OpencodeModel[]> {
 		return invoke<OpencodeModel[]>("opencode_models");
+	}
+
+	codexModels(): Promise<OpencodeModel[]> {
+		return invoke<OpencodeModel[]>("codex_models");
 	}
 
 	openrouterModels(): Promise<OpencodeModel[]> {

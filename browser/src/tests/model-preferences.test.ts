@@ -47,6 +47,17 @@ const openRouterPaidModel: OpencodeModel = {
 	pricing: "0.01",
 	referenceToolsVerified: true,
 };
+const codexModel: OpencodeModel = {
+	id: "openai-codex/gpt-5.6-luna",
+	name: "GPT-5.6 Luna",
+	referenceToolsVerified: true,
+	beginnerDefault: true,
+};
+const codexAdvancedModel: OpencodeModel = {
+	id: "openai-codex/gpt-5.6-sol",
+	name: "GPT-5.6 Sol",
+	referenceToolsVerified: true,
+};
 const unknownProviderModel: OpencodeModel = {
 	id: "other/provider/model",
 	name: "Other",
@@ -120,6 +131,34 @@ test("disabling the selected model clears its saved choice", () => {
 test("OpenRouter catalog models are not enabled by default, including free models", () => {
 	const settings = new MemorySettings();
 	assert.deepEqual(loadEnabledModelIds(settings), []);
+	assert.deepEqual(
+		deriveVisibleModels([openRouterPaidModel], loadEnabledModelIds(settings)),
+		[],
+	);
+});
+
+test("Codex shows only the beginner model by default and respects explicit choices", () => {
+	const settings = new MemorySettings();
+	const catalog = [codexModel, codexAdvancedModel, verifiedZenModel];
+	const enabled = loadEnabledModelIds(settings, catalog);
+	assert.deepEqual(deriveVisibleModels(catalog, enabled), [codexModel]);
+	assert.equal(
+		selectedVisibleModelId("", deriveVisibleModels(catalog, enabled)),
+		codexModel.id,
+	);
+
+	saveEnabledModelIds(settings, []);
+	assert.deepEqual(loadEnabledModelIds(settings), []);
+	assert.deepEqual(
+		deriveVisibleModels(catalog, loadEnabledModelIds(settings)),
+		[],
+	);
+
+	saveEnabledModelIds(settings, [codexAdvancedModel.id]);
+	assert.deepEqual(
+		deriveVisibleModels(catalog, loadEnabledModelIds(settings)),
+		[codexAdvancedModel],
+	);
 });
 
 test("explicit choices persist across provider catalogs and refreshes", () => {
