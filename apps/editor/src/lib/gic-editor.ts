@@ -88,12 +88,8 @@ function registerGicLanguage() {
 				};
 			});
 		},
-		provideColorPresentations(model, colorInfo) {
-			return [
-				{
-					label: `"${model.getValueInRange(colorInfo.range)}"`,
-				},
-			];
+		provideColorPresentations() {
+			return [];
 		},
 	});
 	monaco.languages.setLanguageConfiguration(LANGUAGE_ID, {

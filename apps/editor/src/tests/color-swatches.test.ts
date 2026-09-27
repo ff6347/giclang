@@ -30,6 +30,24 @@ test("ignores unrelated strings, comments, and invalid names", () => {
 	);
 });
 
+test("only decorates a complete direct first string argument", () => {
+	assert.deepEqual(
+		namedColorRanges(
+			'fill("red" 2); fill("red" + suffix); ' +
+				'fill("red", mix("blue")); fill(("red")); ' +
+				'fill(makeColor("red")); fill("red" + "blue");',
+		),
+		[{ color: "red", start: 43, end: 46 }],
+	);
+});
+
+test("ignores malformed and unterminated strings", () => {
+	assert.deepEqual(
+		namedColorRanges('fill("red); fill("blue");\nfill("green");'),
+		[{ color: "green", start: 32, end: 37 }],
+	);
+});
+
 test("updates the range and name after source edits", () => {
 	assert.deepEqual(namedColorRanges('background("tomato");'), [
 		{ color: "tomato", start: 12, end: 18 },
