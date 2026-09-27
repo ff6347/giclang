@@ -196,6 +196,7 @@ export function createGicEditor(
 		theme: editorThemeName(theme),
 		ariaLabel: "GiC",
 		automaticLayout: true,
+		autoClosingBrackets: "never",
 		language: LANGUAGE_ID,
 		minimap: { enabled: false },
 		scrollBeyondLastLine: false,
