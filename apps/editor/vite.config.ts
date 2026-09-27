@@ -30,19 +30,9 @@ function productContent(): Plugin {
 		configureServer(server) {
 			server.watcher.add(CONTENT_ROOT);
 		},
-		async hotUpdate({ file, server, timestamp, type }) {
+		hotUpdate({ file, server, type }) {
 			if (!isProductContent(file) || (type !== "create" && type !== "delete")) {
 				return;
-			}
-			const contentModule =
-				await server.moduleGraph.getModuleByUrl("/src/content.ts");
-			if (contentModule !== undefined) {
-				server.moduleGraph.invalidateModule(
-					contentModule,
-					new Set(),
-					timestamp,
-					true,
-				);
 			}
 			server.ws.send({ path: "*", type: "full-reload" });
 			return [];
