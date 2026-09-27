@@ -290,7 +290,7 @@ Spikes establish evidence and decisions. They are timeboxed, disposable, and do 
 
 - Login callback, refresh, restart, account switch, and sign-out behavior pass against the selected packaged runtime boundary.
 - Credential storage and redaction satisfy Slice 15's contract.
-- The selector shows only supported models available to the connected account, identified as `openai-codex/<model>` when Codex becomes callable.
+- The selector offers release-checked, Codex-specific models supported by the bundled adapter, identified as `openai-codex/<model>`; it does not claim that the connected account can use every listed model.
 - Cancelled, expired, revoked, offline, and unavailable-model states are actionable and do not disable the IDE.
 - Deterministic coverage and an explicit real-subscription smoke check both pass.
 
