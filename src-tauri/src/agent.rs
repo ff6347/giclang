@@ -31,8 +31,10 @@ const TUTOR_DEADLINE: Duration = Duration::from_secs(90);
 const MAX_REFERENCE_CALLS: usize = 2;
 const MAX_REFERENCE_TOOL_TURNS: usize = 2;
 const TOOL_FAILURE: &str = "Tutor could not complete a safe reference lookup.";
-const CODEX_MODELS: [(&str, &str); 3] = [
+const CODEX_MODELS: [(&str, &str); 5] = [
     ("gpt-5.6-luna", "GPT-5.6 Luna"),
+    ("gpt-6-luna", "GPT-6 Luna"),
+    ("gpt-6-sol", "GPT-6 Sol"),
     ("gpt-5.6-sol", "GPT-5.6 Sol"),
     ("gpt-5.6-terra", "GPT-5.6 Terra"),
 ];
@@ -1134,6 +1136,8 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 "openai-codex/gpt-5.6-luna",
+                "openai-codex/gpt-6-luna",
+                "openai-codex/gpt-6-sol",
                 "openai-codex/gpt-5.6-sol",
                 "openai-codex/gpt-5.6-terra",
             ]
@@ -1143,7 +1147,13 @@ mod tests {
                 .iter()
                 .map(|model| model.beginner_default)
                 .collect::<Vec<_>>(),
-            vec![Some(true), Some(false), Some(false)]
+            vec![
+                Some(true),
+                Some(false),
+                Some(false),
+                Some(false),
+                Some(false),
+            ]
         );
         assert!(models.iter().all(|model| model.reference_tools_verified));
         for model in models {
