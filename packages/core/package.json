@@ -16,6 +16,10 @@
 			"types": "./dist/built-ins.d.ts",
 			"default": "./dist/built-ins.js"
 		},
+		"./color-names": {
+			"types": "./dist/color-names.d.ts",
+			"default": "./dist/color-names.js"
+		},
 		"./keywords": {
 			"types": "./dist/keywords.d.ts",
 			"default": "./dist/keywords.js"

@@ -7,6 +7,7 @@ mod codex_session;
 mod credentials;
 mod desktop_menu;
 mod documents;
+mod examples;
 mod exports;
 mod external_tools;
 mod managed_files;

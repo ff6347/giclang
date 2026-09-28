@@ -288,6 +288,14 @@ export class DesktopHost {
 		readonly requestId: string;
 		readonly question: string;
 		readonly context: string;
+		readonly examples: readonly {
+			readonly id: string;
+			readonly title: string;
+			readonly categories: readonly string[];
+			readonly tags: readonly string[];
+			readonly description: string;
+			readonly source: string;
+		}[];
 		readonly model: string;
 		readonly sessionId?: string;
 	}): Promise<void> {
@@ -297,6 +305,7 @@ export class DesktopHost {
 			input: {
 				question: request.question,
 				context: request.context,
+				examples: request.examples,
 				sessionId: request.sessionId,
 			},
 		});
