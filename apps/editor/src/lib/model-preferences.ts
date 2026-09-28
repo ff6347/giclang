@@ -68,17 +68,20 @@ export function deriveVisibleModels(
 	);
 }
 
-export function agentModelLabel(model: OpencodeModel): string {
-	const provider = model.id.startsWith("opencode-zen/")
+export function agentModelProvider(model: OpencodeModel): string {
+	return model.id.startsWith("opencode-zen/")
 		? "OpenCode Zen"
 		: model.id.startsWith("opencode-go/")
 			? "OpenCode Go"
 			: model.id.startsWith("openai-codex/")
 				? "Codex"
 				: "OpenRouter";
+}
+
+export function agentModelLabel(model: OpencodeModel): string {
 	const verification =
 		model.referenceToolsVerified === true ? "" : " · Not verified";
-	return `${provider} · ${model.name}${verification}`;
+	return `${agentModelProvider(model)} · ${model.name}${verification}`;
 }
 
 export function filterModels(

@@ -688,8 +688,25 @@ canvas {
 }
 
 .agent-model-popup {
-	max-width: var(--available-width);
-	width: var(--anchor-width);
+	display: flex;
+	flex-direction: column;
+	max-height: min(22rem, var(--available-height));
+	max-width: min(30rem, var(--available-width));
+	min-width: min(20rem, var(--available-width));
+	overflow: hidden;
+	width: max-content;
+}
+
+.agent-model-search {
+	box-sizing: border-box;
+	flex: none;
+	width: 100%;
+}
+
+.agent-model-list {
+	flex: 0 1 auto;
+	min-height: 0;
+	overflow: auto;
 }
 
 .settings-picker-item {
@@ -830,22 +847,55 @@ canvas {
 }
 
 .agent-model-picker {
+	font-size: smaller;
+	min-width: 0;
+}
+
+.agent-model-picker p {
+	margin: 0;
+}
+
+.agent-model-trigger {
 	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--s2);
-	margin-right: var(--s6);
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid currentColor;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	gap: var(--s1);
+	max-width: 100%;
 	min-width: 0;
+	padding: var(--s1) 0;
+	text-align: left;
 }
 
-.agent-model-control {
-	flex: 1 1 16rem;
-	min-width: 0;
+.agent-model-trigger:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
 }
 
-.agent-model-control > .application-input {
-	box-sizing: border-box;
-	width: 100%;
+.agent-model-trigger:disabled {
+	cursor: not-allowed;
+}
+
+.agent-model-trigger svg {
+	height: 1em;
+	width: 1em;
+}
+
+.agent-model-summary {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.agent-model-verification,
+.agent-model-caret {
+	display: inline-flex;
+	flex: none;
 }
 
 .agent-messages {
@@ -942,6 +992,13 @@ canvas {
 	width: 100%;
 }
 
+.agent-composer-content {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .agent-composer-disabled {
 	opacity: 0.5;
 }
@@ -954,8 +1011,9 @@ canvas {
 .agent-input {
 	background: transparent;
 	border: 0;
+	box-sizing: border-box;
 	color: inherit;
-	flex: 1;
+	flex: none;
 	font: inherit;
 	max-height: 12rem;
 	min-height: 1.5rem;
@@ -963,6 +1021,7 @@ canvas {
 	overflow-y: auto;
 	padding: var(--s1);
 	resize: none;
+	width: 100%;
 }
 
 .agent-send {

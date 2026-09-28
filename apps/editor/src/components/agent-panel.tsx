@@ -65,13 +65,14 @@ export function AgentPanel({
 		if (transcript !== null) transcript.scrollTop = transcript.scrollHeight;
 	}, [messages, status, errorMessage]);
 	const submit = () => {
-		if (disabled || status === "streaming") return;
+		if (disabled) return;
 		const trimmed = question.trim();
 		if (trimmed === "/new") {
 			setQuestion("");
 			void actions.startNewSession();
 			return;
 		}
+		if (status === "streaming") return;
 		actions.submit(trimmed);
 		setQuestion("");
 	};
@@ -108,12 +109,6 @@ export function AgentPanel({
 						<kbd>Enter</kbd> sends. <kbd>Shift+Enter</kbd> adds a line.
 					</p>
 				</aside>
-			)}
-			{modelSelection && (
-				<AgentModelPicker
-					{...modelSelection}
-					disabled={status === "streaming"}
-				/>
 			)}
 			{disabled && (
 				<p className="agent-disabled-note" id="agent-disabled-reason">
@@ -171,20 +166,28 @@ export function AgentPanel({
 					submit();
 				}}
 			>
-				<textarea
-					aria-label="Message agent"
-					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
-					disabled={disabled}
-					className="agent-input"
-					placeholder={disabled ? disabledReason : undefined}
-					rows={1}
-					value={question}
-					onChange={(event) => {
-						setQuestion(event.currentTarget.value);
-						resizeInput(event.currentTarget);
-					}}
-					onKeyDown={handleInputKeyDown}
-				/>
+				<div className="agent-composer-content">
+					<textarea
+						aria-label="Message agent"
+						aria-describedby={disabled ? "agent-disabled-reason" : undefined}
+						disabled={disabled}
+						className="agent-input"
+						placeholder={disabled ? disabledReason : undefined}
+						rows={1}
+						value={question}
+						onChange={(event) => {
+							setQuestion(event.currentTarget.value);
+							resizeInput(event.currentTarget);
+						}}
+						onKeyDown={handleInputKeyDown}
+					/>
+					{modelSelection && (
+						<AgentModelPicker
+							{...modelSelection}
+							disabled={status === "streaming"}
+						/>
+					)}
+				</div>
 				<Button
 					aria-label={status === "streaming" ? "Stop agent" : "Send message"}
 					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
