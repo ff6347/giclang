@@ -79,9 +79,7 @@ export function agentModelProvider(model: OpencodeModel): string {
 }
 
 export function agentModelLabel(model: OpencodeModel): string {
-	const verification =
-		model.referenceToolsVerified === true ? "" : " · Not verified";
-	return `${agentModelProvider(model)} · ${model.name}${verification}`;
+	return `${agentModelProvider(model)} · ${model.name} · Effort: default`;
 }
 
 export function filterModels(

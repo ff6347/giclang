@@ -690,6 +690,7 @@ canvas {
 .agent-model-popup {
 	display: flex;
 	flex-direction: column;
+	font-size: smaller;
 	max-height: min(22rem, var(--available-height));
 	max-width: min(30rem, var(--available-width));
 	min-width: min(20rem, var(--available-width));
@@ -698,15 +699,47 @@ canvas {
 }
 
 .agent-model-search {
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid currentColor;
 	box-sizing: border-box;
+	color: inherit;
 	flex: none;
+	font: inherit;
+	padding: var(--s2);
 	width: 100%;
+}
+
+.agent-model-search:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
 }
 
 .agent-model-list {
 	flex: 0 1 auto;
 	min-height: 0;
 	overflow: auto;
+}
+
+.agent-model-item {
+	align-items: center;
+	display: flex;
+	gap: var(--s1);
+}
+
+.agent-model-option-label {
+	flex: 1;
+	min-width: 0;
+}
+
+.agent-model-item svg {
+	height: 1em;
+	width: 1em;
+}
+
+.agent-model-selection-indicator {
+	display: inline-flex;
+	flex: none;
 }
 
 .settings-picker-item {

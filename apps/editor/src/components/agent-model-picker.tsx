@@ -6,19 +6,13 @@ import { Check, ChevronDown, WarningDiamond } from "pixelarticons/react";
 import type { OpencodeModel } from "../lib/desktop-host.ts";
 import {
 	agentModelLabel,
-	agentModelProvider,
 	deriveVisibleModels,
 } from "../lib/model-preferences.ts";
 
-function modelLabel(model: OpencodeModel): string {
-	const selected = agentModelLabel(model);
-	if (model.id.startsWith("openai-codex/")) {
-		return `${selected} — Subscription access; availability checked on send`;
-	}
-	const cost = model.pricing ?? "Price unavailable";
-	const charges =
-		model.otherCharges === true ? " · Additional charges may apply" : "";
-	return `${selected} — ${model.isFree === true ? "Free · " : ""}${cost}${charges}`;
+function verificationLabel(model: OpencodeModel): string {
+	return model.referenceToolsVerified === true
+		? "Reference tools verified"
+		: "Reference tools not verified";
 }
 
 export interface ModelSelection {
@@ -36,15 +30,10 @@ export function AgentModelPicker({
 	disabled = false,
 }: ModelSelection & { readonly disabled?: boolean }) {
 	const choices = deriveVisibleModels(models, enabledModelIds);
-	const labels = new Map(choices.map((model) => [model.id, modelLabel(model)]));
-	const selectedLabels = new Map(
+	const labels = new Map(
 		choices.map((model) => [model.id, agentModelLabel(model)]),
 	);
 	const selected = choices.find((model) => model.id === selectedModel);
-	const verification =
-		selected?.referenceToolsVerified === true
-			? "Reference tools verified"
-			: "Reference tools not verified";
 	return (
 		<div className="agent-model-picker">
 			{choices.length === 0 ? (
@@ -56,7 +45,7 @@ export function AgentModelPicker({
 			) : (
 				<Combobox.Root
 					items={choices.map((model) => model.id)}
-					itemToStringLabel={(id) => selectedLabels.get(id) ?? id}
+					itemToStringLabel={(id) => labels.get(id) ?? id}
 					filter={(id, query) =>
 						`${labels.get(id) ?? id} ${id}`
 							.toLowerCase()
@@ -70,7 +59,7 @@ export function AgentModelPicker({
 						aria-label={
 							selected === undefined
 								? "Select tutor model"
-								: `Select tutor model. ${agentModelProvider(selected)} · ${selected.name} · Effort: provider default. ${verification}`
+								: `Select tutor model. ${agentModelLabel(selected)}. ${verificationLabel(selected)}`
 						}
 						className="agent-model-trigger"
 						type="button"
@@ -86,16 +75,11 @@ export function AgentModelPicker({
 								) : (
 									<>
 										<span className="agent-model-summary">
-											{agentModelProvider(model)} · {model.name} · Effort:
-											default
+											{labels.get(value)}
 										</span>
 										<span
 											className="agent-model-verification"
-											title={
-												model.referenceToolsVerified === true
-													? "Reference tools verified"
-													: "Reference tools not verified"
-											}
+											title={verificationLabel(model)}
 										>
 											{model.referenceToolsVerified === true ? (
 												<Check aria-hidden="true" />
@@ -124,22 +108,38 @@ export function AgentModelPicker({
 							>
 								<Combobox.Input
 									aria-label="Search tutor models"
-									className="application-input agent-model-search"
+									className="agent-model-search"
 									placeholder="Search models"
 								/>
 								<Combobox.List className="agent-model-list">
-									{(item) => (
-										<Combobox.Item
-											key={item}
-											value={item}
-											className="settings-picker-item"
-										>
-											{labels.get(item) ?? item}
-											<Combobox.ItemIndicator>
-												<Check aria-hidden="true" />
-											</Combobox.ItemIndicator>
-										</Combobox.Item>
-									)}
+									{(item) => {
+										const model = choices.find((choice) => choice.id === item)!;
+										return (
+											<Combobox.Item
+												aria-label={`${labels.get(item)}. ${verificationLabel(model)}`}
+												key={item}
+												value={item}
+												className="settings-picker-item agent-model-item"
+											>
+												<span className="agent-model-option-label">
+													{labels.get(item)}
+												</span>
+												<span
+													className="agent-model-verification"
+													title={verificationLabel(model)}
+												>
+													{model.referenceToolsVerified === true ? (
+														<Check aria-hidden="true" />
+													) : (
+														<WarningDiamond aria-hidden="true" />
+													)}
+												</span>
+												<Combobox.ItemIndicator className="agent-model-selection-indicator">
+													<Check aria-hidden="true" />
+												</Combobox.ItemIndicator>
+											</Combobox.Item>
+										);
+									}}
 								</Combobox.List>
 								<Combobox.Empty>No matching models.</Combobox.Empty>
 							</Combobox.Popup>
