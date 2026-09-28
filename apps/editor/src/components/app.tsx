@@ -11,16 +11,18 @@ import { Field } from "@base-ui/react/field";
 import {
 	Actions,
 	Layout,
+	TabNode,
 	type ITabRenderValues,
 	type Model,
-	type TabNode,
 } from "flexlayout-react";
 import "flexlayout-react/style/combined.scss";
 import {
 	ABOUT_ID,
 	CODE_ID,
 	createDefaultWorkspace,
+	DOC_COMPONENT,
 	DOCS_ID,
+	documentTabId,
 	EDITOR_ID,
 	EXAMPLES_ID,
 	loadWorkspace,
@@ -83,6 +85,10 @@ const CANVAS_FRAME_STORAGE_KEY = "gic.canvasFrame";
 const DARK_THEME_STORAGE_KEY = "gic.darkTheme";
 const FORMAT_ON_SAVE_STORAGE_KEY = "gic.formatOnSave";
 const LIGHT_THEME_STORAGE_KEY = "gic.lightTheme";
+const docsByTabId = new Map(
+	productContent.docs.map((doc) => [documentTabId(doc.id), doc]),
+);
+const docIds = new Set(productContent.docs.map((doc) => doc.id));
 
 function initialAgentResponseCopying(settings: ApplicationSettings): boolean {
 	return settings.getItem(AGENT_RESPONSE_COPYING_STORAGE_KEY) === "true";
@@ -149,7 +155,9 @@ export function App({
 		parseDarkTheme(settings.getItem(DARK_THEME_STORAGE_KEY)),
 	);
 	const theme = useTheme(appearance, lightTheme, darkTheme);
-	const [model, setModel] = useState(() => loadWorkspace(settings));
+	const [model, setModel] = useState(() =>
+		loadWorkspace(settings, productContent.docs),
+	);
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const editorRef = useRef<GicEditor | null>(null);
@@ -160,6 +168,26 @@ export function App({
 	const preview = usePreview(canvasRef);
 	const selectGestalten = () => {
 		model.doAction(Actions.selectTab(CODE_ID));
+		saveWorkspace(model, settings);
+		setLayoutRevision((revision) => revision + 1);
+	};
+	const openDocumentation = (id: string) => {
+		const tab = model.getNodeById(documentTabId(id));
+		if (tab === undefined) {
+			window.alert("This documentation page is unavailable.");
+			return;
+		}
+		for (const parentId of [DOCS_ID, CODE_ID]) {
+			const parent = model.getNodeById(parentId);
+			if (
+				parent instanceof TabNode &&
+				parent.getSubLayoutId() === tab.getLayoutId()
+			) {
+				model.doAction(Actions.selectTab(parentId));
+				break;
+			}
+		}
+		model.doAction(Actions.selectTab(tab.getId()));
 		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
@@ -390,7 +418,7 @@ export function App({
 	};
 
 	const resetLayout = () => {
-		const defaultModel = createDefaultWorkspace();
+		const defaultModel = createDefaultWorkspace(productContent.docs);
 		saveWorkspace(defaultModel, settings);
 		setModel(defaultModel);
 	};
@@ -585,8 +613,16 @@ export function App({
 						onOpen={documents.requestExample}
 					/>
 				);
-			case DOCS_ID:
-				return <DocsPanel docs={productContent.docs} />;
+			case DOC_COMPONENT: {
+				const doc = docsByTabId.get(node.getId());
+				return doc === undefined ? (
+					<div className="workspace-panel padded-panel">
+						This documentation page is unavailable.
+					</div>
+				) : (
+					<DocsPanel doc={doc} docIds={docIds} onOpen={openDocumentation} />
+				);
+			}
 			case ABOUT_ID:
 				return <AboutPanel content={productContent.about} />;
 			default:
