@@ -687,7 +687,7 @@ canvas {
 	min-width: var(--anchor-width);
 }
 
-.settings-model-popup {
+.agent-model-popup {
 	max-width: var(--available-width);
 	width: var(--anchor-width);
 }
@@ -829,8 +829,23 @@ canvas {
 	margin: 0;
 }
 
-.agent-current-model {
-	margin: var(--s0);
+.agent-model-picker {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s2);
+	margin-right: var(--s6);
+	min-width: 0;
+}
+
+.agent-model-control {
+	flex: 1 1 16rem;
+	min-width: 0;
+}
+
+.agent-model-control > .application-input {
+	box-sizing: border-box;
+	width: 100%;
 }
 
 .agent-messages {

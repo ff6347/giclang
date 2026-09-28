@@ -22,7 +22,6 @@ import type {
 } from "../lib/desktop-host.ts";
 import { filterModels } from "../lib/model-preferences.ts";
 import { CodexSignIn } from "./codex-sign-in.tsx";
-import { SettingsModelPicker } from "./settings-model-picker.tsx";
 
 function SettingsSelect<Value extends string>({
 	label,
@@ -227,10 +226,8 @@ export function SettingsPanel({
 	providerStatus,
 	models,
 	enabledModelIds,
-	selectedModel,
 	modelError,
 	onRetryModels,
-	onModelChange,
 	onModelVisibilityChange,
 	onProviderAuthenticated,
 }: {
@@ -252,10 +249,8 @@ export function SettingsPanel({
 	readonly providerStatus: ProviderCredentialStatus | null;
 	readonly models: readonly OpencodeModel[];
 	readonly enabledModelIds: readonly string[];
-	readonly selectedModel: string;
 	readonly modelError: string | null;
 	readonly onRetryModels: () => void;
-	readonly onModelChange: (model: string) => void;
 	readonly onModelVisibilityChange: (id: string, enabled: boolean) => void;
 	readonly onProviderAuthenticated: (status: ProviderCredentialStatus) => void;
 }) {
@@ -305,12 +300,6 @@ export function SettingsPanel({
 						providerStatus?.openrouterAuthenticated === true ||
 						providerStatus?.codexAuthenticated === true) && (
 						<>
-							<SettingsModelPicker
-								models={models}
-								enabledModelIds={enabledModelIds}
-								selectedModel={selectedModel}
-								onModelChange={onModelChange}
-							/>
 							{modelError !== null ? (
 								<p role="alert">{modelError}</p>
 							) : models.length === 0 ? (

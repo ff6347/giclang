@@ -69,7 +69,6 @@ import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 import { modelDiscoveryError } from "../lib/model-discovery.ts";
 import {
-	agentModelLabel,
 	deriveVisibleModels,
 	loadEnabledModelIds,
 	loadSelectedModelId,
@@ -431,25 +430,27 @@ export function App({
 		preview.onSourceChange(nextSource);
 	};
 
-	const activeAgentModel = deriveVisibleModels(
+	const visibleAgentModels = deriveVisibleModels(
 		opencodeModels,
 		enabledModelIds,
-	).find((candidate) => candidate.id === opencodeModel);
-	const selectedAgentModelLabel =
-		activeAgentModel === undefined
-			? undefined
-			: agentModelLabel(activeAgentModel);
+	);
+	const activeAgentModel = visibleAgentModels.find(
+		(candidate) => candidate.id === opencodeModel,
+	);
 	let agentDisabledReason: string | undefined;
 	if (desktop !== undefined) {
 		const needsSave = documents.documentState.kind === "untitled";
 		const needsModel = activeAgentModel === undefined;
 		if (needsSave && needsModel) {
 			agentDisabledReason =
-				"Save this sketch and choose an Agent model in Settings.";
+				"Save this sketch and choose an Agent model above, or enable one in Settings.";
 		} else if (needsSave) {
 			agentDisabledReason = "Save this sketch before using the Agent.";
 		} else if (needsModel) {
-			agentDisabledReason = "No Agent model selected. Choose one in Settings.";
+			agentDisabledReason =
+				visibleAgentModels.length === 0
+					? "No Agent model enabled. Enable one in Settings."
+					: "No Agent model selected. Choose one above.";
 		}
 	}
 
@@ -533,7 +534,16 @@ export function App({
 						disabled={agentDisabledReason !== undefined}
 						disabledReason={agentDisabledReason}
 						messages={agent.messages}
-						modelLabel={selectedAgentModelLabel}
+						modelSelection={
+							desktop === undefined
+								? undefined
+								: {
+										models: opencodeModels,
+										enabledModelIds,
+										selectedModel: opencodeModel,
+										onModelChange: changeSelectedModel,
+									}
+						}
 						status={agent.status}
 						errorMessage={agent.errorMessage}
 					/>
@@ -559,10 +569,8 @@ export function App({
 						providerStatus={providerStatus}
 						models={opencodeModels}
 						enabledModelIds={enabledModelIds}
-						selectedModel={opencodeModel}
 						modelError={opencodeModelError}
 						onRetryModels={() => loadOpencodeModels(providerStatus)}
-						onModelChange={changeSelectedModel}
 						onModelVisibilityChange={changeModelVisibility}
 						onProviderAuthenticated={(status) => {
 							setProviderStatus(status);

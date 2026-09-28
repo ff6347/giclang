@@ -3,50 +3,55 @@
 
 import { Combobox, Field } from "@base-ui/react";
 import type { OpencodeModel } from "../lib/desktop-host.ts";
-import { deriveVisibleModels } from "../lib/model-preferences.ts";
+import {
+	agentModelLabel,
+	deriveVisibleModels,
+} from "../lib/model-preferences.ts";
 
 function modelLabel(model: OpencodeModel): string {
+	const selected = agentModelLabel(model);
 	if (model.id.startsWith("openai-codex/")) {
-		return `Codex · ${model.name} — Subscription access; availability checked on send`;
+		return `${selected} — Subscription access; availability checked on send`;
 	}
-	const provider = model.id.startsWith("opencode-zen/")
-		? "OpenCode Zen"
-		: model.id.startsWith("opencode-go/")
-			? "OpenCode Go"
-			: "OpenRouter";
 	const cost = model.pricing ?? "Price unavailable";
 	const charges =
 		model.otherCharges === true ? " · Additional charges may apply" : "";
-	return `${provider} · ${model.name} — ${model.isFree === true ? "Free · " : ""}${cost}${charges}`;
+	return `${selected} — ${model.isFree === true ? "Free · " : ""}${cost}${charges}`;
 }
 
-export function SettingsModelPicker({
+export interface ModelSelection {
+	readonly models: readonly OpencodeModel[];
+	readonly enabledModelIds: readonly string[];
+	readonly selectedModel: string;
+	readonly onModelChange: (id: string) => void;
+}
+
+export function AgentModelPicker({
 	models,
 	enabledModelIds,
 	selectedModel,
 	onModelChange,
-}: {
-	models: readonly OpencodeModel[];
-	enabledModelIds: readonly string[];
-	selectedModel: string;
-	onModelChange: (id: string) => void;
-}) {
+	disabled = false,
+}: ModelSelection & { readonly disabled?: boolean }) {
 	const choices = deriveVisibleModels(models, enabledModelIds);
 	const labels = new Map(choices.map((model) => [model.id, modelLabel(model)]));
+	const selectedLabels = new Map(
+		choices.map((model) => [model.id, agentModelLabel(model)]),
+	);
 	return (
-		<Field.Root className="settings-row">
-			<Field.Label>Agent model</Field.Label>
-			<div className="settings-control">
+		<Field.Root className="agent-model-picker">
+			<Field.Label>Model</Field.Label>
+			<div className="agent-model-control">
 				{choices.length === 0 ? (
 					<p role="status">
-						{models.some((model) => model.referenceToolsVerified === true)
-							? "No models enabled. Expand a provider’s advanced settings to enable one."
-							: "No models verified for reference tools yet."}
+						{models.length === 0
+							? "No models available. Check provider connections in Settings."
+							: "No models enabled. Enable a model in Settings."}
 					</p>
 				) : (
 					<Combobox.Root
 						items={choices.map((model) => model.id)}
-						itemToStringLabel={(id) => labels.get(id) ?? id}
+						itemToStringLabel={(id) => selectedLabels.get(id) ?? id}
 						filter={(id, query) =>
 							`${labels.get(id) ?? id} ${id}`
 								.toLowerCase()
@@ -58,6 +63,7 @@ export function SettingsModelPicker({
 								: null
 						}
 						onValueChange={(value) => onModelChange(value ?? "")}
+						disabled={disabled}
 					>
 						<Combobox.Input
 							aria-label="Search tutor models"
@@ -66,7 +72,7 @@ export function SettingsModelPicker({
 						/>
 						<Combobox.Portal>
 							<Combobox.Positioner className="settings-picker-positioner">
-								<Combobox.Popup className="settings-picker-popup settings-model-popup">
+								<Combobox.Popup className="settings-picker-popup agent-model-popup">
 									<Combobox.List>
 										{(item) => (
 											<Combobox.Item
