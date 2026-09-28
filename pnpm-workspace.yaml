@@ -5,6 +5,7 @@ packages:
   - "apps/*"
 allowBuilds:
   "@parcel/watcher": false
+  esbuild: true
 minimumReleaseAgeExclude:
   - "@tauri-apps/cli-darwin-arm64@2.11.5"
   - "@tauri-apps/cli-darwin-x64@2.11.5"
