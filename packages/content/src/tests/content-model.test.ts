@@ -124,6 +124,31 @@ Builds a regular rectangle grid.
 		assert.equal("enabled" in content && content.enabled, true);
 	});
 
+	it("recognizes example descriptions by their package-relative path", () => {
+		const content = compileMarkdown(
+			"examples/repeat/description.md",
+			`---
+title: Repeated grid
+order: 20
+categories: [grid]
+tags: [rectangles]
+enabled: false
+---
+
+Builds a regular rectangle grid.
+`,
+		);
+
+		assert.deepEqual(content, {
+			categories: ["grid"],
+			html: "<p>Builds a regular rectangle grid.</p>",
+			order: 20,
+			tags: ["rectangles"],
+			title: "Repeated grid",
+			enabled: false,
+		});
+	});
+
 	it("requires example enablement metadata", () => {
 		for (const enabled of ["", "enabled: no\n"]) {
 			assert.throws(
