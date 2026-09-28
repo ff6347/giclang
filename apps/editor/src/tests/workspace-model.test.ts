@@ -190,6 +190,18 @@ test("keeps an empty Docs tabset when every document is moved", () => {
 			"editor-tabset",
 		);
 	}
+	loaded.doAction(
+		Actions.moveNode(
+			documentTabId("colors"),
+			"documentation-tabset",
+			DockLocation.CENTER,
+			-1,
+		),
+	);
+	assert.equal(
+		loaded.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
+		"documentation-tabset",
+	);
 });
 
 for (const version of [6, 7]) {
