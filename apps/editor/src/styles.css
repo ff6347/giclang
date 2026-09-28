@@ -1,25 +1,6 @@
 /* ABOUTME: Sizes the nested FlexLayout application and Code workspace panels. */
 /* ABOUTME: Keeps editor, preview, status, and agent content usable across window sizes. */
 
-:root {
-	--s0: 0px;
-	--s1: 4px;
-	--s2: 8px;
-	--s3: 16px;
-	--s4: 24px;
-	--s5: 32px;
-	--s6: 64px;
-	--s7: 72px;
-	--s8: 96px;
-	--s9: 128px;
-	--s10: 256px;
-	--color-background: #ffffff;
-	--color-chrome: #f0f0f0;
-	--color-control: #cccccc;
-	--color-text: #000000;
-	color-scheme: light;
-}
-
 :root[data-theme="macos-classic"] {
 	--color-background: #ffffff;
 	--color-chrome: #eaeaea;
@@ -81,52 +62,6 @@ body,
 #app {
 	height: 100%;
 	margin: var(--s0);
-}
-
-body {
-	background-color: var(--color-background);
-	color: var(--color-text);
-	font-family: "IBM Plex Mono", monospace;
-}
-
-h1 {
-	font-size: 1.953rem;
-	font-weight: 500;
-}
-
-h2 {
-	font-size: 1.563rem;
-	font-weight: 500;
-}
-
-h3 {
-	font-size: 1.25rem;
-	font-weight: 500;
-}
-
-h4 {
-	font-size: 1rem;
-	font-weight: 600;
-}
-
-h5 {
-	font-size: 0.8rem;
-	font-weight: 600;
-}
-
-h6 {
-	font-size: 0.64rem;
-	font-weight: 600;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	margin: var(--s0);
-	padding: 1.33em var(--s0) 0.33em;
 }
 
 button,

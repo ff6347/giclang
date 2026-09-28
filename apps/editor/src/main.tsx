@@ -4,6 +4,7 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./components/app.tsx";
 import { createApplicationHost } from "./lib/application-host.ts";
+import "@giclang/styles/tokens.css";
 import "./styles.css";
 
 const root = document.querySelector("#app");
