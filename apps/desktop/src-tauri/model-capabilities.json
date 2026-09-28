@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"metadata": {
-		"purpose": "Static native tutor capabilities. Live provider catalogs, account eligibility, pricing, and effort options remain dynamic.",
+		"purpose": "Static native tutor capabilities. Live provider catalogs, account eligibility, and pricing remain dynamic. Effort levels are omitted until verified for exact provider-qualified models.",
 		"sources": [
 			{
 				"name": "OpenCode Zen endpoint table",
@@ -22,6 +22,7 @@
 			"A documented route does not establish model access, price, or tutor-tool capability.",
 			"A provider-qualified ID is required for tutor-tool verification; similarly named models on another provider need separate evidence.",
 			"Zen and Go catalogs are checked at runtime. OpenRouter obtains its eligible text models and prices from the current account catalog.",
+			"Future supported effort levels belong in this manifest after model-specific provider verification; do not infer them from a live model list.",
 			"Gemini has a documented Zen route and a direct smoke check, but remains outside the callable native picker until a credential-safe adapter is verified."
 		]
 	},
