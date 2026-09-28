@@ -101,6 +101,63 @@ test("desktop provider forwards ordered native events and cancellation", async (
 	assert.equal(sessionId, "conversation-1");
 });
 
+test("desktop provider sends bounded-candidate search data only with the request", async () => {
+	let received: unknown;
+	let emit:
+		| ((event: import("../lib/desktop-host.ts").OpencodeAgentEvent) => void)
+		| undefined;
+	const desktop = {
+		async onOpencodeAgentEvent(handler: typeof emit) {
+			emit = handler;
+			return () => undefined;
+		},
+		async sendOpencodeRequest(request: {
+			requestId: string;
+			examples: unknown;
+		}) {
+			received = request.examples;
+			emit?.({ requestId: request.requestId, kind: "complete" });
+		},
+		async cancelOpencodeRequest() {},
+	} as never;
+	const examples = [
+		{
+			id: "orbit",
+			title: "Orbit",
+			categories: ["Shapes"],
+			tags: ["circle"],
+			html: "An <em>orbit</em> pattern &amp; variations.",
+			source: "circle(50, 50, 20);",
+			enabled: true,
+			fileName: "orbit.gic",
+			order: 1,
+			thumbnailUrl: "orbit.png",
+		},
+	];
+	for await (const _chunk of createDesktopAgent(desktop, {
+		model: "gpt-5.5",
+	}).stream(
+		{
+			question: "Show examples",
+			context: buildAgentContext("", [], []),
+			examples,
+		},
+		new AbortController().signal,
+	)) {
+		// The request completes without yielding text.
+	}
+	assert.deepEqual(received, [
+		{
+			id: "orbit",
+			title: "Orbit",
+			categories: ["Shapes"],
+			tags: ["circle"],
+			description: "An orbit pattern & variations.",
+			source: "circle(50, 50, 20);",
+		},
+	]);
+});
+
 test("desktop provider yields text before the native request completes", async () => {
 	let emit:
 		| ((event: import("../lib/desktop-host.ts").OpencodeAgentEvent) => void)

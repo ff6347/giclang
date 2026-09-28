@@ -687,9 +687,59 @@ canvas {
 	min-width: var(--anchor-width);
 }
 
-.settings-model-popup {
-	max-width: var(--available-width);
-	width: var(--anchor-width);
+.agent-model-popup {
+	display: flex;
+	flex-direction: column;
+	font-size: smaller;
+	max-height: min(22rem, var(--available-height));
+	max-width: min(30rem, var(--available-width));
+	min-width: min(20rem, var(--available-width));
+	overflow: hidden;
+	width: max-content;
+}
+
+.agent-model-search {
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid currentColor;
+	box-sizing: border-box;
+	color: inherit;
+	flex: none;
+	font: inherit;
+	padding: var(--s2);
+	width: 100%;
+}
+
+.agent-model-search:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: -2px;
+}
+
+.agent-model-list {
+	flex: 0 1 auto;
+	min-height: 0;
+	overflow: auto;
+}
+
+.agent-model-item {
+	align-items: center;
+	display: flex;
+	gap: var(--s1);
+}
+
+.agent-model-option-label {
+	flex: 1;
+	min-width: 0;
+}
+
+.agent-model-item svg {
+	height: 1em;
+	width: 1em;
+}
+
+.agent-model-selection-indicator {
+	display: inline-flex;
+	flex: none;
 }
 
 .settings-picker-item {
@@ -829,8 +879,56 @@ canvas {
 	margin: 0;
 }
 
-.agent-current-model {
-	margin: var(--s0);
+.agent-model-picker {
+	font-size: smaller;
+	min-width: 0;
+}
+
+.agent-model-picker p {
+	margin: 0;
+}
+
+.agent-model-trigger {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid currentColor;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	gap: var(--s1);
+	max-width: 100%;
+	min-width: 0;
+	padding: var(--s1) 0;
+	text-align: left;
+}
+
+.agent-model-trigger:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.agent-model-trigger:disabled {
+	cursor: not-allowed;
+}
+
+.agent-model-trigger svg {
+	height: 1em;
+	width: 1em;
+}
+
+.agent-model-summary {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.agent-model-verification,
+.agent-model-caret {
+	display: inline-flex;
+	flex: none;
 }
 
 .agent-messages {
@@ -927,6 +1025,13 @@ canvas {
 	width: 100%;
 }
 
+.agent-composer-content {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .agent-composer-disabled {
 	opacity: 0.5;
 }
@@ -939,8 +1044,9 @@ canvas {
 .agent-input {
 	background: transparent;
 	border: 0;
+	box-sizing: border-box;
 	color: inherit;
-	flex: 1;
+	flex: none;
 	font: inherit;
 	max-height: 12rem;
 	min-height: 1.5rem;
@@ -948,6 +1054,7 @@ canvas {
 	overflow-y: auto;
 	padding: var(--s1);
 	resize: none;
+	width: 100%;
 }
 
 .agent-send {

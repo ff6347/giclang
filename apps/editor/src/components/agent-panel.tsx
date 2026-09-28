@@ -8,6 +8,10 @@ import { Streamdown, type Components } from "streamdown";
 import "streamdown/styles.css";
 import type { AgentMessage } from "../lib/agent.ts";
 import type { AgentStatus } from "../hooks/use-agent.ts";
+import {
+	AgentModelPicker,
+	type ModelSelection,
+} from "./agent-model-picker.tsx";
 
 const markdownComponents: Components = {
 	a: ({ children, node: _node, ...props }) => (
@@ -39,7 +43,7 @@ export function AgentPanel({
 	allowCopying,
 	disabled = false,
 	disabledReason,
-	modelLabel,
+	modelSelection,
 	messages,
 	status,
 	errorMessage = null,
@@ -48,7 +52,7 @@ export function AgentPanel({
 	readonly allowCopying: boolean;
 	readonly disabled?: boolean;
 	readonly disabledReason?: string | undefined;
-	readonly modelLabel?: string | undefined;
+	readonly modelSelection?: ModelSelection | undefined;
 	readonly messages: readonly AgentMessage[];
 	readonly status: AgentStatus;
 	readonly errorMessage?: string | null;
@@ -61,12 +65,14 @@ export function AgentPanel({
 		if (transcript !== null) transcript.scrollTop = transcript.scrollHeight;
 	}, [messages, status, errorMessage]);
 	const submit = () => {
+		if (disabled) return;
 		const trimmed = question.trim();
 		if (trimmed === "/new") {
 			setQuestion("");
 			void actions.startNewSession();
 			return;
 		}
+		if (status === "streaming") return;
 		actions.submit(trimmed);
 		setQuestion("");
 	};
@@ -104,7 +110,6 @@ export function AgentPanel({
 					</p>
 				</aside>
 			)}
-			{modelLabel && <p className="agent-current-model">Model: {modelLabel}</p>}
 			{disabled && (
 				<p className="agent-disabled-note" id="agent-disabled-reason">
 					{disabledReason ?? "The Agent is unavailable."}
@@ -158,23 +163,31 @@ export function AgentPanel({
 				}
 				onSubmit={(event) => {
 					event.preventDefault();
-					if (status !== "streaming") submit();
+					submit();
 				}}
 			>
-				<textarea
-					aria-label="Message agent"
-					aria-describedby={disabled ? "agent-disabled-reason" : undefined}
-					disabled={disabled}
-					className="agent-input"
-					placeholder={disabled ? disabledReason : undefined}
-					rows={1}
-					value={question}
-					onChange={(event) => {
-						setQuestion(event.currentTarget.value);
-						resizeInput(event.currentTarget);
-					}}
-					onKeyDown={handleInputKeyDown}
-				/>
+				<div className="agent-composer-content">
+					<textarea
+						aria-label="Message agent"
+						aria-describedby={disabled ? "agent-disabled-reason" : undefined}
+						disabled={disabled}
+						className="agent-input"
+						placeholder={disabled ? disabledReason : undefined}
+						rows={1}
+						value={question}
+						onChange={(event) => {
+							setQuestion(event.currentTarget.value);
+							resizeInput(event.currentTarget);
+						}}
+						onKeyDown={handleInputKeyDown}
+					/>
+					{modelSelection && (
+						<AgentModelPicker
+							{...modelSelection}
+							disabled={status === "streaming"}
+						/>
+					)}
+				</div>
 				<Button
 					aria-label={status === "streaming" ? "Stop agent" : "Send message"}
 					aria-describedby={disabled ? "agent-disabled-reason" : undefined}

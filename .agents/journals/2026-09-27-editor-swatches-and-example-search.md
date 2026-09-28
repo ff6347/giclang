@@ -1,0 +1,13 @@
+<!-- ABOUTME: Records implementation and verification of named-color swatches and tutor example lookup. -->
+<!-- ABOUTME: Preserves provider-tool constraints and follow-up validation limits. -->
+
+# Editor swatches and tutor example search
+
+- [decision] Monaco color swatches decorate only complete direct named-color string arguments to `background`, `fill`, and `stroke`; the accepted CSS names come from the core registry. Picker edit presentations are empty because an unchanged named-color label would replace only the inner string range and could insert duplicate quotes.
+- [decision] The desktop tutor receives the editor's already enabled-filtered example catalogue through local IPC; example source is not included in a provider prompt until a model-requested lookup returns bounded matches. The PWA's deterministic tutor remains unaffected.
+- [lesson] Rig 0.42 cannot force a choice between two specific named tools on all providers: OpenAI and Anthropic accept exactly one `ToolChoice::Specific` name. `ToolChoice::Required` with both `search_reference` and `search_examples` gives the model a first-lookup choice, while reference-only turns retain the existing specific-tool constraint.
+- [decision] Example-only inspiration can be answered after a successful example search; reference-search and section-read paths remain available for GIC syntax and signature explanations. The tutor policy instructs the model not to infer language rules from example code alone.
+- [risk] The language-reference requirement for syntax explanations on an example-first answer is policy-level, not a semantic validator of generated prose. The packaged application built and deterministic provider-flow tests passed, but no live logged-in provider was available for a smoke test.
+- [lesson] A subagent that had reported standing down later completed an overlapping implementation, creating conflict markers against a local prototype. After operator approval, the prototype was discarded and the subagent's tested commit was applied as the base; the example-first lookup contract was then enforced with a failing native wire test before the correction.
+- [decision] Fabian approved a soft policy gate for syntax after example-only search; the bundled tutor policy now explicitly restricts example-only answers to inspiration and requires a language-reference lookup before syntax or signature claims. Model-generated prose is not semantically validated.
+- [technique] The existing cross-provider wire test exercises `ToolChoice::Required` with both first-turn tools over Chat Completions, Responses, Anthropic Messages, OpenRouter, and Codex; all five routes continue through a reference search/read and complete normally.

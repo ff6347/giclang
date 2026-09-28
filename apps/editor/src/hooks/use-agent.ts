@@ -13,6 +13,7 @@ import {
 	type AgentMessage,
 	type AgentSessionRecord,
 } from "../lib/agent.ts";
+import { productContent } from "../lib/content.ts";
 
 const SESSION_KEY_PREFIX = "gic.agentSession:";
 
@@ -203,6 +204,9 @@ export function useAgent(
 							question: trimmed,
 							context,
 							messages: messages.map(({ role, text }) => ({ role, text })),
+							...(desktop === undefined
+								? {}
+								: { examples: productContent.examples }),
 							sessionId: activeSessionId,
 						},
 						controller.signal,

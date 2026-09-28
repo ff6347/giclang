@@ -8,7 +8,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
 import type { DesktopHost, OpencodeModel } from "../lib/desktop-host.ts";
-import { agentModelLabel } from "../lib/model-preferences.ts";
 
 const vite = await createServer({
 	configFile: false,
@@ -68,6 +67,33 @@ function renderModels(
 	);
 }
 
+function renderAgentModels(
+	models: readonly OpencodeModel[],
+	enabledModelIds: readonly string[],
+	selectedModel: string,
+	status: "ready" | "streaming" = "ready",
+): string {
+	return renderToStaticMarkup(
+		createElement(AgentPanel, {
+			actions: {
+				cancel: () => {},
+				retry: () => {},
+				submit: () => {},
+				startNewSession: async () => {},
+			},
+			allowCopying: false,
+			modelSelection: {
+				models,
+				enabledModelIds,
+				selectedModel,
+				onModelChange: () => {},
+			},
+			messages: [],
+			status,
+		}),
+	);
+}
+
 function modelRows(html: string): string[] {
 	return [
 		...html.matchAll(
@@ -111,7 +137,7 @@ test("Go models and its connection appear independently from Zen", () => {
 			{
 				id: "opencode-go/kimi-k3",
 				name: "Kimi K3",
-				referenceToolsVerified: true,
+				referenceToolsVerified: false,
 			},
 		],
 		false,
@@ -121,7 +147,20 @@ test("Go models and its connection appear independently from Zen", () => {
 	);
 	assert.match(html, /OpenCode Go with an API key/);
 	assert.match(html, /Search OpenCode Go models/);
-	assert.match(html, /OpenCode Go · Kimi K3/);
+	assert.match(
+		renderAgentModels(
+			[
+				{
+					id: "opencode-go/kimi-k3",
+					name: "Kimi K3",
+					referenceToolsVerified: false,
+				},
+			],
+			["opencode-go/kimi-k3"],
+			"opencode-go/kimi-k3",
+		),
+		/OpenCode Go · Kimi K3 · Effort: default/,
+	);
 	assert.doesNotMatch(html, /API key saved; it has not been verified/);
 });
 
@@ -137,6 +176,81 @@ test("an empty supported catalog is distinct from a discovery failure", () => {
 	assert.match(html, /No eligible models/);
 	assert.match(html, /Retry models/);
 	assert.doesNotMatch(html, /role="alert"/);
+});
+
+test("Settings enables models while the Agent header selects the active model", () => {
+	const models: readonly OpencodeModel[] = [
+		{
+			id: "opencode-zen/first",
+			name: "First",
+			referenceToolsVerified: true,
+		},
+		{ id: "opencode-go/kimi-k3", name: "Kimi K3" },
+	];
+	const settings = renderModels(
+		true,
+		null,
+		models,
+		false,
+		["opencode-go/kimi-k3"],
+		true,
+		true,
+	);
+	const agent = renderAgentModels(
+		models,
+		["opencode-go/kimi-k3"],
+		"opencode-go/kimi-k3",
+	);
+	assert.doesNotMatch(settings, /Search tutor models|Agent model/);
+	assert.match(settings, /Enable First/);
+	assert.match(settings, /Enable Kimi K3/);
+	assert.match(agent, /Select tutor model/);
+	assert.match(agent, /OpenCode Go · Kimi K3 · Effort: default/);
+	assert.match(agent, /title="Reference tools not verified"/);
+	assert.doesNotMatch(agent, /OpenCode Zen · First/);
+});
+
+test("compact model selection follows the message field and names effort and verification", () => {
+	const agent = renderAgentModels(
+		[
+			{
+				id: "opencode-zen/gpt-6-luna",
+				name: "GPT-6 Luna",
+				referenceToolsVerified: true,
+			},
+		],
+		["opencode-zen/gpt-6-luna"],
+		"opencode-zen/gpt-6-luna",
+	);
+	const message = agent.indexOf('aria-label="Message agent"');
+	const selection = agent.indexOf('aria-label="Select tutor model');
+	const send = agent.indexOf('aria-label="Send message"');
+	assert.ok(message >= 0 && message < selection && selection < send);
+	assert.match(agent, /OpenCode Zen · GPT-6 Luna · Effort: default/);
+	assert.match(agent, /title="Reference tools verified"/);
+	assert.match(agent, /class="agent-model-trigger"/);
+	assert.doesNotMatch(agent, /class="application-input"/);
+});
+
+test("Agent picker explains missing enabled models and locks switching during a response", () => {
+	const models: readonly OpencodeModel[] = [
+		{ id: "opencode-zen/first", name: "First", referenceToolsVerified: true },
+	];
+	assert.match(
+		renderAgentModels(models, [], ""),
+		/No models enabled\. Enable a model in Settings\./,
+	);
+	const streaming = renderAgentModels(
+		models,
+		["opencode-zen/first"],
+		"opencode-zen/first",
+		"streaming",
+	);
+	assert.match(streaming, /Select tutor model/);
+	assert.match(
+		streaming,
+		/<button(?=[^>]*class="agent-model-trigger")(?=[^>]*disabled)[^>]*>/,
+	);
 });
 
 test("OpenRouter models show pricing before the student chooses one", () => {
@@ -155,15 +269,24 @@ test("OpenRouter models show pricing before the student chooses one", () => {
 		true,
 	);
 	assert.match(html, /third-party providers/);
-	assert.match(html, /Agent model/);
-	assert.ok(html.indexOf("Agent model") < html.indexOf("OpenCode Zen</h3>"));
-	assert.match(html, /Choose a model/);
+	assert.doesNotMatch(html, /Search tutor models/);
 	assert.match(html, /0\.10\/1M input tokens/);
 	assert.match(html, /0\.20\/1M output tokens/);
 	assert.match(html, /Account remaining \$5 of \$10/);
 	assert.match(
-		html,
-		/value="OpenRouter · Model[^"]*0\.10\/1M input tokens[^"]*0\.20\/1M output tokens"/,
+		renderAgentModels(
+			[
+				{
+					id: "openrouter/author/model",
+					name: "Model",
+					referenceToolsVerified: true,
+					pricing: "$0.10/1M input tokens, $0.20/1M output tokens",
+				},
+			],
+			["openrouter/author/model"],
+			"openrouter/author/model",
+		),
+		/OpenRouter · Model · Effort: default/,
 	);
 });
 
@@ -186,7 +309,18 @@ test("picker only offers enabled models while advanced switches include every mo
 		false,
 		["opencode-zen/second"],
 	);
-	assert.match(html, /Search tutor models/);
+	assert.doesNotMatch(html, /Search tutor models/);
+	assert.match(
+		renderAgentModels(
+			[
+				{ id: "opencode-zen/first", name: "First" },
+				{ id: "opencode-zen/second", name: "Second" },
+			],
+			["opencode-zen/second"],
+			"opencode-zen/second",
+		),
+		/OpenCode Zen · Second · Effort: default/,
+	);
 	assert.match(html, /Search OpenCode Zen models/);
 	assert.match(html, /<svg[^>]*class="settings-collapse-indicator"/);
 	assert.match(html, /Second/);
@@ -272,7 +406,14 @@ test("unverified models can be enabled and selected with a verification mark", (
 	assert.match(bigPickle, /class="settings-model settings-model-unverified"/);
 	assert.doesNotMatch(bigPickle, /data-disabled/);
 	assert.match(bigPickle, />Not verified<\/td>/);
-	assert.match(html, /value="OpenCode Zen · Big Pickle/);
+	assert.match(
+		renderAgentModels(
+			[{ id: "opencode-zen/big-pickle", name: "Big Pickle" }],
+			["opencode-zen/big-pickle"],
+			"opencode-zen/big-pickle",
+		),
+		/title="Reference tools not verified"/,
+	);
 });
 
 test("an unverified-only catalog still offers enabled models", () => {
@@ -283,9 +424,15 @@ test("an unverified-only catalog still offers enabled models", () => {
 		false,
 		["opencode-zen/big-pickle"],
 	);
-	assert.doesNotMatch(html, /No models verified for reference tools yet/);
-	assert.match(html, /Search tutor models/);
-	assert.match(html, /value="OpenCode Zen · Big Pickle/);
+	assert.doesNotMatch(html, /Search tutor models/);
+	const agent = renderAgentModels(
+		[{ id: "opencode-zen/big-pickle", name: "Big Pickle" }],
+		["opencode-zen/big-pickle"],
+		"opencode-zen/big-pickle",
+	);
+	assert.match(agent, /Select tutor model/);
+	assert.match(agent, /OpenCode Zen · Big Pickle · Effort: default/);
+	assert.match(agent, /title="Reference tools not verified"/);
 });
 
 test("no enabled models has an explicit instruction without calling discovery empty", () => {
@@ -302,7 +449,11 @@ test("no enabled models has an explicit instruction without calling discovery em
 		false,
 		[],
 	);
-	assert.match(html, /No models enabled/);
+	assert.doesNotMatch(html, /No models enabled/);
+	assert.match(
+		renderAgentModels([{ id: "opencode-zen/first", name: "First" }], [], ""),
+		/No models enabled/,
+	);
 	assert.doesNotMatch(html, /No eligible models/);
 });
 
@@ -407,12 +558,19 @@ test("Agent panel explains a missing model and marks the composer disabled", () 
 			},
 			allowCopying: false,
 			disabled: true,
-			disabledReason: "No Agent model selected. Choose one in Settings.",
+			disabledReason: "No Agent model selected. Choose one above.",
+			modelSelection: {
+				models: [{ id: "opencode-zen/first", name: "First" }],
+				enabledModelIds: ["opencode-zen/first"],
+				selectedModel: "",
+				onModelChange: () => {},
+			},
 			messages: [],
 			status: "ready",
 		}),
 	);
-	assert.match(html, /No Agent model selected\. Choose one in Settings\./);
+	assert.match(html, /No Agent model selected\. Choose one above\./);
+	assert.match(html, /Select tutor model/);
 	assert.doesNotMatch(html, /Save this sketch before using the Agent/);
 	assert.match(html, /class="agent-composer agent-composer-disabled"/);
 	assert.match(html, /<textarea[^>]*disabled/);
@@ -424,43 +582,23 @@ test("Agent panel explains a missing model and marks the composer disabled", () 
 });
 
 test("Agent panel shows the selected provider and model without disabling input", () => {
-	const html = renderToStaticMarkup(
-		createElement(AgentPanel, {
-			actions: {
-				cancel: () => {},
-				retry: () => {},
-				submit: () => {},
-				startNewSession: async () => {},
-			},
-			allowCopying: false,
-			modelLabel: "OpenRouter · GLM-5.3",
-			messages: [],
-			status: "ready",
-		}),
+	const html = renderAgentModels(
+		[{ id: "openrouter/z-ai/glm-5.3", name: "GLM-5.3" }],
+		["openrouter/z-ai/glm-5.3"],
+		"openrouter/z-ai/glm-5.3",
 	);
-	assert.match(html, /Model: OpenRouter · GLM-5\.3/);
+	assert.match(html, /OpenRouter · GLM-5\.3 · Effort: default/);
 	assert.doesNotMatch(html, /agent-composer-disabled/);
 	assert.doesNotMatch(html, /<textarea[^>]*disabled/);
 });
 
-test("Agent header marks an unverified selected model without disabling input", () => {
-	const html = renderToStaticMarkup(
-		createElement(AgentPanel, {
-			actions: {
-				cancel: () => {},
-				retry: () => {},
-				submit: () => {},
-				startNewSession: async () => {},
-			},
-			allowCopying: false,
-			modelLabel: agentModelLabel({
-				id: "openrouter/author/experimental",
-				name: "Experimental",
-			}),
-			messages: [],
-			status: "ready",
-		}),
+test("Agent picker marks an unverified selected model without disabling input", () => {
+	const html = renderAgentModels(
+		[{ id: "openrouter/author/experimental", name: "Experimental" }],
+		["openrouter/author/experimental"],
+		"openrouter/author/experimental",
 	);
-	assert.match(html, /Model: OpenRouter · Experimental · Not verified/);
+	assert.match(html, /OpenRouter · Experimental · Effort: default/);
+	assert.match(html, /title="Reference tools not verified"/);
 	assert.doesNotMatch(html, /agent-composer-disabled/);
 });

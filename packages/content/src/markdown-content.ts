@@ -90,8 +90,9 @@ export function compileMarkdown(
 		throw new Error(`Content '${path}' requires a numeric 'order'.`);
 	}
 	const normalizedPath = path.replaceAll("\\", "/");
-	const isExampleDescription =
-		/(?:^|\/)content\/examples\/[^/]+\/description\.md$/.test(normalizedPath);
+	const isExampleDescription = /(?:^|\/)examples\/[^/]+\/description\.md$/.test(
+		normalizedPath,
+	);
 
 	const content: MarkdownContent = {
 		categories: metadataList(
