@@ -1,0 +1,161 @@
+/* reset.css derived from https://www.joshwcomeau.com/css/custom-css-reset/ */
+/* on using layers in reset https://www.mayank.co/blog/css-reset-layer */
+@layer reset {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+	* {
+		margin: 0;
+	}
+	body {
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+		-webkit-text-size-adjust: 100%;
+	}
+	img,
+	picture,
+	video,
+	canvas,
+	svg {
+		display: block;
+		max-width: 100%;
+	}
+	input,
+	button,
+	textarea,
+	select {
+		font: inherit;
+	}
+	p,
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		overflow-wrap: break-word;
+	}
+}
+
+html {
+	font: 120%;
+}
+
+html,
+body {
+	height: 100%;
+
+	height: 100%;
+}
+body {
+	font-family: var(--font-body);
+	background-color: var(--color-background);
+	width: 100%;
+	padding: 0;
+
+	margin: 0;
+	font-weight: normal;
+	line-height: 1.5;
+}
+
+main {
+	max-width: 66ch;
+	margin: 0 auto;
+	padding-top: var(--s4);
+}
+pre {
+	font-weight: normal;
+	line-height: 1.5;
+	padding: var(--s1);
+	border-left: var(--s1) solid var(--color-chrome);
+	background-color: white;
+	margin-bottom: var(--s2);
+}
+
+pre,
+code {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	tab-size: 2;
+}
+
+code {
+	font-family:
+		ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+		"DejaVu Sans Mono", monospace;
+	font-size: 0.89em;
+	background-color: var(--color-chrome);
+}
+pre > code {
+	background-color: transparent;
+}
+
+article,
+section,
+p {
+	/* padding-top: var(--s1); */
+	/* padding-bottom: var(--s2); */
+	margin-bottom: var(--s2);
+}
+
+header {
+	/*background-color: var(--color-chrome);*/
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-bottom: 3px solid black;
+	box-shadow: var(--box-shadow);
+}
+
+nav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	ul {
+		margin-top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		li {
+			list-style: none;
+			background-color: var(--color-background);
+			box-shadow: var(--box-shadow);
+			padding: var(--s1) 1rlh;
+			border-left: 3px solid black;
+			border-bottom: 3px solid black;
+			border-right: 3px solid black;
+			a {
+				color: var(--color-text);
+				text-decoration: none;
+			}
+			a:hover {
+				text-decoration: underline;
+			}
+		}
+		li:hover {
+			background-color: var(--color-chrome);
+			/*box-shadow: var(--box-shadow-hover);*/
+		}
+	}
+}
+
+li {
+	list-style-type: square;
+	padding-left: var(--s1);
+
+	padding-bottom: var(--s0);
+	p {
+		margin: 0;
+	}
+}
+
+footer {
+	border-top: 3px solid black;
+	max-width: 66ch;
+	margin: 0 auto;
+	padding-bottom: 1rlh;
+}
