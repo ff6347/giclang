@@ -11,6 +11,10 @@
 		"./markdown": {
 			"types": "./dist/markdown-content.d.ts",
 			"default": "./dist/markdown-content.js"
+		},
+		"./node": {
+			"types": "./dist/content-files.d.ts",
+			"default": "./dist/content-files.js"
 		}
 	},
 	"scripts": {
