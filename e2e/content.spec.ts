@@ -20,7 +20,7 @@ test("presents bundled About and documentation content without navigation", asyn
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
 	await expect(docs.getByRole("button")).toHaveCount(0);
-	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
+	await expect(docs.getByRole("tab")).toHaveText([
 		"Language reference",
 		"Conditionals",
 		"Colors",
@@ -33,12 +33,17 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(
 		page.getByText("Language reference and help for writing GIC programs."),
 	).toBeVisible();
+	await docs.getByRole("tab", { name: "Named Colors" }).click();
+	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
+		"Named Colors",
+	]);
 	await expect(page).toHaveURL("/");
 });
 
 test("loads images authored beside a Markdown document", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Docs" }).click();
+	await page.getByRole("tab", { name: "Drawing" }).click();
 	const image = page.getByRole("tabpanel", { name: "Docs" }).getByRole("img", {
 		name: "Point",
 	});
