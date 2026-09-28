@@ -81,18 +81,31 @@ test("enabled provider models enter the picker without reference verification", 
 	assert.deepEqual(loadEnabledModelIds(new MemorySettings()), []);
 });
 
-test("the selected Agent model names its provider and marks unverified choices", () => {
+test("Agent model labels show provider, name, and effort without pricing", () => {
 	assert.equal(
 		agentModelLabel(zenModel),
-		"OpenCode Zen · Big Pickle · Not verified",
+		"OpenCode Zen · Big Pickle · Effort: default",
 	);
-	assert.equal(agentModelLabel(verifiedZenModel), "OpenCode Zen · GPT-6 Luna");
-	assert.equal(agentModelLabel(goModel), "OpenCode Go · Kimi K3");
+	assert.equal(
+		agentModelLabel(verifiedZenModel),
+		"OpenCode Zen · GPT-6 Luna · Effort: default",
+	);
+	assert.equal(
+		agentModelLabel(goModel),
+		"OpenCode Go · Kimi K3 · Effort: default",
+	);
 	assert.equal(
 		agentModelLabel(openRouterFreeModel),
-		"OpenRouter · Free Model · Not verified",
+		"OpenRouter · Free Model · Effort: default",
 	);
-	assert.equal(agentModelLabel(codexModel), "Codex · GPT-5.6 Luna");
+	assert.equal(
+		agentModelLabel(openRouterPaidModel),
+		"OpenRouter · Paid Model · Effort: default",
+	);
+	assert.equal(
+		agentModelLabel(codexModel),
+		"Codex · GPT-5.6 Luna · Effort: default",
+	);
 });
 
 test("fresh settings do not preselect an unverified or paid model", () => {

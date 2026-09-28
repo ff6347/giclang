@@ -194,6 +194,42 @@ test("stopping a streamed answer removes its unfinished text", async ({
 	).toHaveCount(0);
 });
 
+test("Enter does not replace an answer while the agent is streaming", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Agent" }).click();
+	const tutor = page.getByRole("region", { name: "Agent" });
+	const input = tutor.getByRole("textbox", { name: "Message agent" });
+	await input.fill("How might I explore symmetry in a repeating grid?");
+	await input.press("Enter");
+	await expect(tutor.getByRole("button", { name: "Stop agent" })).toBeVisible();
+
+	await input.fill("A follow-up after this answer");
+	await input.press("Enter");
+	await expect(tutor.locator(".agent-message-student")).toHaveCount(1);
+	await expect(input).toHaveValue("A follow-up after this answer");
+});
+
+test("/new resets the conversation while an answer is streaming", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Agent" }).click();
+	const tutor = page.getByRole("region", { name: "Agent" });
+	const input = tutor.getByRole("textbox", { name: "Message agent" });
+	await input.fill("How can I make a more varied repeating pattern?");
+	await input.press("Enter");
+	await expect(tutor.getByRole("button", { name: "Stop agent" })).toBeVisible();
+
+	await input.fill("/new");
+	await input.press("Enter");
+	await expect(tutor.locator(".agent-message")).toHaveCount(0);
+	await expect(
+		tutor.getByRole("button", { name: "Send message" }),
+	).toBeVisible();
+});
+
 test("renders safe agent markdown without executing raw HTML", async ({
 	page,
 }) => {
