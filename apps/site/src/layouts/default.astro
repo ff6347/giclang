@@ -1,0 +1,48 @@
+---
+import "@giclang/styles/tokens.css";
+import "../styles/global.css";
+
+const title =
+	Astro.props.title ?? "GiC (Gestalten in Code) Lang";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<header>
+			<h1>{title}</h1>
+		</header>
+		<nav>
+			<ul>
+				<li>
+					<a href="/downloads">downloads</a>
+				</li>
+				<li>
+					<a href="https://editor.giclang.cc">editor</a>
+				</li>
+				<li>
+					<a href="https://github.com/ff6347/gic-lang">github</a>
+				</li>
+			</ul>
+		</nav>
+		<main>
+			<slot />
+		</main>
+		<footer>
+			<p>
+				GiC is a research artifact by
+				<a href="https://fabianmoronzirfas.me">
+					[#ff6347](https://fabianmoronzirfas.me)
+				</a>{" "}
+				built with ❤︎ (HEAVY BLACK HEART)
+			</p>
+		</footer>
+	</body>
+</html>
