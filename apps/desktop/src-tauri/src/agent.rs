@@ -3,6 +3,10 @@
 
 use crate::codex_session::CodexSession;
 use crate::credentials::CredentialStore;
+use crate::model_capabilities::{
+    codex_models as manifest_codex_models, reference_tools_verified as manifest_verified,
+    route_for, Route as ZenRoute,
+};
 use crate::reference::{read_reference, reference_headings, search_reference};
 use futures_util::StreamExt;
 use rig_core::{
@@ -34,13 +38,6 @@ const TUTOR_DEADLINE: Duration = Duration::from_secs(90);
 const MAX_REFERENCE_CALLS: usize = 2;
 const MAX_REFERENCE_TOOL_TURNS: usize = 2;
 const TOOL_FAILURE: &str = "Tutor could not complete a safe reference lookup.";
-const CODEX_MODELS: [(&str, &str); 5] = [
-    ("gpt-5.6-luna", "GPT-5.6 Luna"),
-    ("gpt-6-luna", "GPT-6 Luna"),
-    ("gpt-6-sol", "GPT-6 Sol"),
-    ("gpt-5.6-sol", "GPT-5.6 Sol"),
-    ("gpt-5.6-terra", "GPT-5.6 Terra"),
-];
 
 #[derive(Clone, Serialize)]
 #[serde(
@@ -384,7 +381,9 @@ async fn stream_opencode_request(
             )
             .await
         }
-        None => Err("Choose a supported OpenCode model.".to_owned()),
+        Some(ZenRoute::GeminiStreamGenerateContent) | None => {
+            Err("Choose a supported OpenCode model.".to_owned())
+        }
     }
 }
 
@@ -711,29 +710,7 @@ fn validate_go_model(model: &str) -> Result<&str, String> {
 }
 
 fn reference_tools_verified(model: &str) -> bool {
-    matches!(
-        model,
-        "opencode-zen/gpt-6-luna"
-            | "opencode-zen/claude-sonnet-5"
-            | "opencode-zen/deepseek-v4-flash"
-            | "opencode-zen/deepseek-v4.1-flash"
-            | "opencode-zen/glm-5.3"
-            | "opencode-zen/gpt-5.6-luna"
-            | "opencode-zen/gpt-5.6-terra"
-            | "opencode-zen/gpt-5.6-sol"
-            | "opencode-zen/gpt-6-sol"
-            | "opencode-zen/minimax-m3"
-            | "opencode-zen/qwen3.8-max"
-            | "opencode-zen/space-bunny-free"
-            | "openrouter/z-ai/glm-5.3"
-            | "openrouter/z-ai/glm-5.3-flash"
-            | "openrouter/moonshotai/kimi-k3"
-            | "openrouter/moonshotai/kimi-k2.7-code"
-            | "openrouter/xiaomi/mimo-v2.6-flash"
-            | "openrouter/deepseek/deepseek-v4.1-flash"
-            | "openrouter/deepseek/deepseek-v4-pro"
-            | "openrouter/deepseek/deepseek-v4-flash"
-    )
+    manifest_verified(model)
 }
 
 fn validate_tutor_model(model: &str) -> Result<String, String> {
@@ -753,112 +730,21 @@ fn validate_tutor_model(model: &str) -> Result<String, String> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-enum ZenRoute {
-    ChatCompletions,
-    Responses,
-    Messages,
-}
-
 fn go_route(model: &str) -> Option<ZenRoute> {
-    match model {
-        "grok-4.7"
-        | "grok-4.6"
-        | "gpt-6-luna"
-        | "gpt-5.6-luna"
-        | "muse-spark-1.3-contributor"
-        | "muse-spark-1.2-contributor" => Some(ZenRoute::Responses),
-        "minimax-m3" | "minimax-m2.7" | "minimax-m2.5" | "qwen3.8-max" | "qwen3.8-flash"
-        | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.6-plus" => Some(ZenRoute::Messages),
-        "glm-5.3-flash"
-        | "glm-5.3"
-        | "glm-5.2"
-        | "glm-5.1"
-        | "kimi-k3"
-        | "kimi-k2.7-code"
-        | "kimi-k2.6"
-        | "longcat-2.0"
-        | "deepseek-v4.1-flash"
-        | "deepseek-v4-pro"
-        | "deepseek-v4-flash"
-        | "deepseek-v4-flash-vision-exp"
-        | "mimo-v2.6-flash"
-        | "mimo-v2.6-pro"
-        | "mimo-v2.5"
-        | "mimo-v2.5-pro"
-        | "hy4-preview"
-        | "hy3"
-        | "space-bunny-free"
-        | "longcat-2.5-preview-free" => Some(ZenRoute::ChatCompletions),
-        _ => None,
-    }
+    route_for(&format!("opencode-go/{model}"))
 }
 
 fn zen_route(model: &str) -> Option<ZenRoute> {
-    match model {
-        "big-pickle"
-        | "space-bunny-free"
-        | "deepseek-v4-flash"
-        | "deepseek-v4-flash-vision-exp"
-        | "deepseek-v4-pro"
-        | "deepseek-v4.1-flash"
-        | "glm-5.2"
-        | "glm-5.3"
-        | "glm-5.3-flash"
-        | "kimi-k2.7-code"
-        | "kimi-k3"
-        | "ling-3.0-flash-fin-free"
-        | "minimax-m2.7"
-        | "minimax-m3"
-        | "mimo-v2.5-free"
-        | "mimo-v2.6-flash-free"
-        | "nemotron-3-ultra-free"
-        | "nemotron-3.5-lightning-free"
-        | "qwen3.8-max" => Some(ZenRoute::ChatCompletions),
-        "gpt-6-astra"
-        | "gpt-6-sol"
-        | "gpt-6-luna"
-        | "gpt-5.6-sol"
-        | "gpt-5.6-terra"
-        | "gpt-5.6-luna"
-        | "gpt-5.5"
-        | "gpt-5.5-pro"
-        | "gpt-5.4"
-        | "gpt-5.4-pro"
-        | "gpt-5.4-mini"
-        | "gpt-5.4-nano"
-        | "gpt-5.3-codex"
-        | "gpt-5.3-codex-spark"
-        | "gpt-5.2"
-        | "gpt-5.2-codex"
-        | "gpt-5.1"
-        | "gpt-5.1-codex"
-        | "gpt-5.1-codex-max"
-        | "gpt-5.1-codex-mini"
-        | "gpt-5"
-        | "gpt-5-codex"
-        | "gpt-5-nano"
-        | "grok-4.5"
-        | "grok-4.6"
-        | "grok-4.7"
-        | "muse-spark-1.2"
-        | "muse-spark-1.3"
-        | "muse-spark-1.3-contributor-free" => Some(ZenRoute::Responses),
-        "claude-fable-5-1" | "claude-fable-5" | "claude-opus-5-5" | "claude-opus-5"
-        | "claude-opus-4-8" | "claude-opus-4-7" | "claude-opus-4-6" | "claude-opus-4-5"
-        | "claude-sonnet-5" | "claude-sonnet-4-6" | "claude-sonnet-4-5" | "claude-haiku-4-5"
-        | "qwen3.6-plus" | "qwen3.8-flash" => Some(ZenRoute::Messages),
-        _ => None,
-    }
+    route_for(&format!("opencode-zen/{model}"))
 }
 
 fn validate_codex_model(model: &str) -> Result<&str, String> {
     let selected = model
         .strip_prefix("openai-codex/")
         .ok_or_else(|| "Choose a Codex model.".to_owned())?;
-    CODEX_MODELS
+    manifest_codex_models()
         .iter()
-        .any(|(id, _)| *id == selected)
+        .any(|model| model.id == selected)
         .then_some(selected)
         .ok_or_else(|| "Choose a supported Codex model.".to_owned())
 }
@@ -877,7 +763,10 @@ fn validate_openrouter_model(model: &str) -> Result<&str, String> {
     {
         return Err("Choose a supported OpenRouter model.".to_owned());
     }
-    Ok(model_id)
+    route_for(model)
+        .is_some()
+        .then_some(model_id)
+        .ok_or_else(|| "Choose a supported OpenRouter model.".to_owned())
 }
 
 fn openrouter_status_error(status: reqwest::StatusCode) -> String {
@@ -1063,14 +952,13 @@ pub(crate) fn codex_models(
 }
 
 fn bundled_codex_models() -> Vec<TutorModel> {
-    CODEX_MODELS
+    manifest_codex_models()
         .iter()
-        .enumerate()
-        .map(|(index, (id, name))| TutorModel {
-            id: format!("openai-codex/{id}"),
-            name: (*name).to_owned(),
-            reference_tools_verified: true,
-            beginner_default: Some(index == 0),
+        .map(|model| TutorModel {
+            id: format!("openai-codex/{}", model.id),
+            name: model.name.clone(),
+            reference_tools_verified: model.reference_tools_verified,
+            beginner_default: Some(model.beginner_default),
             pricing: None,
             is_free: None,
             other_charges: None,
@@ -1359,6 +1247,43 @@ mod tests {
         }
         assert!(validate_tutor_model("openai-codex/gpt-5.3-instant").is_err());
         assert!(validate_tutor_model("openai-codex/").is_err());
+    }
+
+    #[test]
+    fn model_capabilities_control_native_routes_verification_and_codex_catalog() {
+        use crate::model_capabilities::{
+            codex_models as manifest_codex_models_for_test,
+            reference_tools_verified as manifest_verified_for_test,
+            route_for as manifest_route_for, Route as ManifestRoute,
+        };
+
+        assert_eq!(
+            manifest_route_for("opencode-zen/gpt-5.6-terra"),
+            Some(ManifestRoute::Responses)
+        );
+        assert_eq!(
+            manifest_route_for("opencode-go/minimax-m3"),
+            Some(ManifestRoute::Messages)
+        );
+        assert_eq!(
+            manifest_route_for("openrouter/z-ai/glm-5.3"),
+            Some(ManifestRoute::ChatCompletions)
+        );
+        assert_eq!(manifest_route_for("opencode-zen/jev-1.13"), None);
+        assert_eq!(manifest_route_for("opencode-zen/gemini-3.7-flash"), None);
+        assert_eq!(manifest_route_for("opencode-go/not-supported"), None);
+
+        assert!(manifest_verified_for_test("opencode-zen/gpt-6-luna"));
+        assert!(manifest_verified_for_test("openrouter/z-ai/glm-5.3"));
+        assert!(!manifest_verified_for_test("opencode-go/minimax-m3"));
+        assert!(!manifest_verified_for_test("opencode-zen/big-pickle"));
+
+        let codex = manifest_codex_models_for_test();
+        assert_eq!(codex[0].id, "gpt-5.6-luna");
+        assert_eq!(codex[0].name, "GPT-5.6 Luna");
+        assert!(codex[0].beginner_default);
+        assert!(!codex.iter().skip(1).any(|model| model.beginner_default));
+        assert!(!codex.iter().any(|model| model.id == "gpt-5.3-instant"));
     }
 
     #[test]

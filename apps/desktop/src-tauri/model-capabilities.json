@@ -1,0 +1,376 @@
+{
+	"schemaVersion": 1,
+	"metadata": {
+		"purpose": "Static native tutor capabilities. Live provider catalogs, account eligibility, pricing, and effort options remain dynamic.",
+		"sources": [
+			{
+				"name": "OpenCode Zen endpoint table",
+				"url": "https://opencode.ai/docs/zen/#endpoints",
+				"status": "Documented route families"
+			},
+			{
+				"name": "OpenCode Go documentation",
+				"url": "https://opencode.ai/v2/docs/console/go",
+				"status": "Separate subscription and API"
+			},
+			{
+				"name": "Native route map before this manifest",
+				"status": "Go routes and the bundled Codex catalog were retained without adding probe evidence"
+			}
+		],
+		"notes": [
+			"A documented route does not establish model access, price, or tutor-tool capability.",
+			"A provider-qualified ID is required for tutor-tool verification; similarly named models on another provider need separate evidence.",
+			"Zen and Go catalogs are checked at runtime. OpenRouter obtains its eligible text models and prices from the current account catalog.",
+			"Gemini has a documented Zen route and a direct smoke check, but remains outside the callable native picker until a credential-safe adapter is verified."
+		]
+	},
+	"routes": [
+		{
+			"provider": "opencode-zen",
+			"family": "chatCompletions",
+			"path": "/chat/completions",
+			"catalogStatus": "observed",
+			"modelIds": [
+				"big-pickle",
+				"deepseek-v4-flash",
+				"deepseek-v4-flash-vision-exp",
+				"deepseek-v4-pro",
+				"deepseek-v4.1-flash",
+				"glm-5.2",
+				"glm-5.3",
+				"glm-5.3-flash",
+				"kimi-k2.7-code",
+				"kimi-k3",
+				"ling-3.0-flash-fin-free",
+				"minimax-m2.7",
+				"minimax-m3",
+				"mimo-v2.5-free",
+				"mimo-v2.6-flash-free",
+				"nemotron-3-ultra-free",
+				"nemotron-3.5-lightning-free",
+				"qwen3.8-max",
+				"space-bunny-free"
+			]
+		},
+		{
+			"provider": "opencode-zen",
+			"family": "responses",
+			"path": "/responses",
+			"catalogStatus": "observed",
+			"modelIds": [
+				"gpt-5.5-pro",
+				"gpt-5.6-luna",
+				"gpt-5.6-sol",
+				"gpt-5.6-terra",
+				"gpt-6-astra",
+				"gpt-6-luna",
+				"gpt-6-sol",
+				"grok-4.5",
+				"grok-4.6",
+				"grok-4.7",
+				"muse-spark-1.2",
+				"muse-spark-1.3",
+				"muse-spark-1.3-contributor-free"
+			]
+		},
+		{
+			"provider": "opencode-zen",
+			"family": "messages",
+			"path": "/messages",
+			"catalogStatus": "observed",
+			"modelIds": [
+				"claude-fable-5",
+				"claude-fable-5-1",
+				"claude-opus-4-6",
+				"claude-opus-4-7",
+				"claude-opus-4-8",
+				"claude-opus-5",
+				"claude-opus-5-5",
+				"claude-sonnet-4-6",
+				"claude-sonnet-5",
+				"qwen3.6-plus",
+				"qwen3.8-flash"
+			]
+		},
+		{
+			"provider": "opencode-zen",
+			"family": "geminiStreamGenerateContent",
+			"path": "/models/{id}:streamGenerateContent?alt=sse",
+			"catalogStatus": "observedButNotCallable",
+			"callable": false,
+			"modelIds": ["gemini-3.7-flash", "gemini-3.8-flash"]
+		},
+		{
+			"provider": "opencode-zen",
+			"family": "responses",
+			"path": "/responses",
+			"catalogStatus": "documentedNotObserved",
+			"modelIds": [
+				"gpt-5.5",
+				"gpt-5.4",
+				"gpt-5.4-pro",
+				"gpt-5.4-mini",
+				"gpt-5.4-nano",
+				"gpt-5.3-codex",
+				"gpt-5.3-codex-spark",
+				"gpt-5.2",
+				"gpt-5.2-codex",
+				"gpt-5.1",
+				"gpt-5.1-codex",
+				"gpt-5.1-codex-max",
+				"gpt-5.1-codex-mini",
+				"gpt-5",
+				"gpt-5-codex",
+				"gpt-5-nano"
+			]
+		},
+		{
+			"provider": "opencode-zen",
+			"family": "messages",
+			"path": "/messages",
+			"catalogStatus": "documentedNotObserved",
+			"modelIds": ["claude-opus-4-5", "claude-sonnet-4-5", "claude-haiku-4-5"]
+		},
+		{
+			"provider": "opencode-go",
+			"family": "responses",
+			"path": "/responses",
+			"catalogStatus": "nativeRouteRetained",
+			"modelIds": [
+				"grok-4.7",
+				"grok-4.6",
+				"gpt-6-luna",
+				"gpt-5.6-luna",
+				"muse-spark-1.3-contributor",
+				"muse-spark-1.2-contributor"
+			]
+		},
+		{
+			"provider": "opencode-go",
+			"family": "messages",
+			"path": "/messages",
+			"catalogStatus": "nativeRouteRetained",
+			"modelIds": [
+				"minimax-m3",
+				"minimax-m2.7",
+				"minimax-m2.5",
+				"qwen3.8-max",
+				"qwen3.8-flash",
+				"qwen3.7-max",
+				"qwen3.7-plus",
+				"qwen3.6-plus"
+			]
+		},
+		{
+			"provider": "opencode-go",
+			"family": "chatCompletions",
+			"path": "/chat/completions",
+			"catalogStatus": "nativeRouteRetained",
+			"modelIds": [
+				"glm-5.3-flash",
+				"glm-5.3",
+				"glm-5.2",
+				"glm-5.1",
+				"kimi-k3",
+				"kimi-k2.7-code",
+				"kimi-k2.6",
+				"longcat-2.0",
+				"deepseek-v4.1-flash",
+				"deepseek-v4-pro",
+				"deepseek-v4-flash",
+				"deepseek-v4-flash-vision-exp",
+				"mimo-v2.6-flash",
+				"mimo-v2.6-pro",
+				"mimo-v2.5",
+				"mimo-v2.5-pro",
+				"hy4-preview",
+				"hy3",
+				"space-bunny-free",
+				"longcat-2.5-preview-free"
+			]
+		},
+		{
+			"provider": "openrouter",
+			"family": "chatCompletions",
+			"path": "/chat/completions",
+			"catalogStatus": "accountCatalogDynamic",
+			"matchesAllModelIds": true,
+			"modelIds": []
+		}
+	],
+	"observedUnsupported": [
+		{
+			"provider": "opencode-zen",
+			"id": "jev-1.13",
+			"status": "nonChat",
+			"note": "The provider documents Jev on /systemone, not a chat endpoint."
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "jev-1.13-free",
+			"status": "nonChat",
+			"note": "The provider documents Jev on /systemone, not a chat endpoint."
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "muse-spark-1.2-contributor-free",
+			"status": "unverified",
+			"note": "The provider endpoint table does not list this catalog ID."
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "test",
+			"status": "unverified",
+			"note": "No route is documented."
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "test-novita-dsf4.1",
+			"status": "unverified",
+			"note": "No route is documented."
+		}
+	],
+	"routeSmokeChecks": [
+		{
+			"provider": "opencode-zen",
+			"id": "space-bunny-free",
+			"path": "/chat/completions",
+			"result": "Passed"
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "gpt-5.6-terra",
+			"path": "/responses",
+			"result": "Passed"
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "claude-sonnet-4-6",
+			"path": "/messages",
+			"result": "Passed"
+		},
+		{
+			"provider": "opencode-zen",
+			"id": "gemini-3.7-flash",
+			"path": "/models/{id}:streamGenerateContent?alt=sse",
+			"result": "Passed with a small text output"
+		}
+	],
+	"referenceToolVerification": {
+		"verifiedModelIds": [
+			"opencode-zen/gpt-6-luna",
+			"opencode-zen/claude-sonnet-5",
+			"opencode-zen/deepseek-v4-flash",
+			"opencode-zen/deepseek-v4.1-flash",
+			"opencode-zen/glm-5.3",
+			"opencode-zen/gpt-5.6-luna",
+			"opencode-zen/gpt-5.6-terra",
+			"opencode-zen/gpt-5.6-sol",
+			"opencode-zen/gpt-6-sol",
+			"opencode-zen/minimax-m3",
+			"opencode-zen/qwen3.8-max",
+			"opencode-zen/space-bunny-free",
+			"openrouter/z-ai/glm-5.3",
+			"openrouter/z-ai/glm-5.3-flash",
+			"openrouter/moonshotai/kimi-k3",
+			"openrouter/moonshotai/kimi-k2.7-code",
+			"openrouter/xiaomi/mimo-v2.6-flash",
+			"openrouter/deepseek/deepseek-v4.1-flash",
+			"openrouter/deepseek/deepseek-v4-pro",
+			"openrouter/deepseek/deepseek-v4-flash"
+		],
+		"notSelectableDespiteSuccessfulEarlierProbe": [
+			"opencode-zen/glm-5.3-flash",
+			"opencode-zen/kimi-k3"
+		],
+		"unverifiedProbeResults": [
+			{
+				"provider": "opencode-zen",
+				"id": "big-pickle",
+				"result": "Plain text and tool requests returned HTTP 403, including with a conversation-specific session header."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "claude-opus-5-5",
+				"result": "HTTP 400 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "qwen3.8-flash",
+				"result": "HTTP 400 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "kimi-k2.7-code",
+				"result": "HTTP 404 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "deepseek-v4-pro",
+				"result": "HTTP 404 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "mimo-v2.6-flash-free",
+				"result": "HTTP 403 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "muse-spark-1.3-contributor-free",
+				"result": "HTTP 403 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "nemotron-3.5-lightning-free",
+				"result": "HTTP 403 on the initial request."
+			},
+			{
+				"provider": "opencode-zen",
+				"id": "mimo-v2.6-pro",
+				"result": "Not in the Zen catalog or documented Zen routes; not requested."
+			},
+			{
+				"provider": "openrouter",
+				"id": "xiaomi/mimo-v2.6-pro",
+				"result": "HTTP 200 on the initial request, but no reference tool call or completed answer was observed."
+			}
+		],
+		"goStatus": "No Go model has Zen reference-tool verification. Zen probes do not certify Go access or tool behavior."
+	},
+	"codex": {
+		"catalogStatus": "Bundled native catalog; account access is checked when a question is sent.",
+		"models": [
+			{
+				"id": "gpt-5.6-luna",
+				"name": "GPT-5.6 Luna",
+				"beginnerDefault": true,
+				"referenceToolsVerified": true
+			},
+			{
+				"id": "gpt-6-luna",
+				"name": "GPT-6 Luna",
+				"beginnerDefault": false,
+				"referenceToolsVerified": true
+			},
+			{
+				"id": "gpt-6-sol",
+				"name": "GPT-6 Sol",
+				"beginnerDefault": false,
+				"referenceToolsVerified": true
+			},
+			{
+				"id": "gpt-5.6-sol",
+				"name": "GPT-5.6 Sol",
+				"beginnerDefault": false,
+				"referenceToolsVerified": true
+			},
+			{
+				"id": "gpt-5.6-terra",
+				"name": "GPT-5.6 Terra",
+				"beginnerDefault": false,
+				"referenceToolsVerified": true
+			}
+		]
+	}
+}

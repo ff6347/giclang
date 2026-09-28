@@ -10,6 +10,7 @@ mod documents;
 mod exports;
 mod external_tools;
 mod managed_files;
+mod model_capabilities;
 mod reference;
 mod sessions;
 mod workspace;
