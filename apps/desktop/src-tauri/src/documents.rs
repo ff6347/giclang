@@ -1127,6 +1127,44 @@ mod tests {
     }
 
     #[test]
+    fn accepting_pending_save_as_switches_the_active_real_file() {
+        let directory = test_directory("accept-pending-save-as");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let active_path = directory.join("active.gic");
+        let copy_path = sketchbook.join("copy/copy.gic");
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(&active_path, "active source").expect("write active source");
+        let store = DocumentStore::default();
+        let active = open_accepted(&store, active_path.clone());
+        let copy = store
+            .save_path_pending(copy_path.clone(), "copy source", None, &sketchbook)
+            .expect("prepare copy");
+
+        assert_eq!(store.active_path(), Some(active_path.clone()));
+        store
+            .accept_open(&copy.document_id)
+            .expect("activate saved copy");
+        assert_eq!(store.active_path(), Some(copy_path.clone()));
+        assert_eq!(
+            store.save(&active.document_id, "stale write", None),
+            Err("Unknown document ID.".to_owned()),
+        );
+        store
+            .save(&copy.document_id, "edited copy", None)
+            .expect("save active copy");
+        assert_eq!(
+            std::fs::read_to_string(&copy_path).expect("read saved copy"),
+            "edited copy"
+        );
+        assert_eq!(
+            std::fs::read_to_string(&active_path).expect("read original"),
+            "active source"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn save_path_creates_the_sketch_folder() {
         let directory = test_directory("sketch-folder");
         remove_test_directory(&directory);

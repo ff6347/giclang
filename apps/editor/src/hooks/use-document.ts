@@ -60,6 +60,8 @@ export function useDocument(
 	const documentGeneration = useRef(0);
 	const documentRevision = useRef(0);
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
+	const [activationPending, setActivationPending] = useState(false);
+	const activationPendingRef = useRef(false);
 	const [discardOpen, setDiscardOpen] = useState(false);
 	const [recoveryOpen, setRecoveryOpen] = useState(
 		initialRecovery !== undefined,
@@ -100,6 +102,22 @@ export function useDocument(
 	const discardRecovery = () => {
 		adapter.clearRecovery(knownRecoveryUpdatedAt.current);
 		knownRecoveryUpdatedAt.current = 0;
+	};
+
+	const beginActivation = () => {
+		activationPendingRef.current = true;
+		setActivationPending(true);
+	};
+
+	const endActivation = () => {
+		activationPendingRef.current = false;
+		setActivationPending(false);
+	};
+
+	const rejectWhileActivating = () => {
+		if (!activationPendingRef.current) return false;
+		window.alert("Wait for the sketch to finish opening before continuing.");
+		return true;
 	};
 
 	const sourceForSave = (document = documentStateRef.current) =>
@@ -177,28 +195,28 @@ export function useDocument(
 			await desktop.cancelOpenDocument(saved.documentId);
 			return;
 		}
-		await desktop.acceptOpenDocument(saved.documentId);
-		if (generation !== documentGeneration.current) return;
-		const savedDocument = openDocument(
-			sketchBaseName(saved.name),
-			saved.source,
-			descriptionFromSidecar(saved.name, saved.description),
-		);
-		const current = documentStateRef.current;
-		const advanced = completeDocumentSave(
-			{
-				...savedDocument,
-				source: current.source,
-				description: current.description,
-			},
-			savedDocument,
-			String(documentGeneration.current),
-			String(generation),
-		);
-		if (advanced === undefined) return;
-		replaceDocument(advanced, saved.documentId, saved.sketchId);
-		if (advanced.isDirty) persistRecovery(advanced);
-		else discardRecovery();
+		beginActivation();
+		try {
+			await desktop.acceptOpenDocument(saved.documentId);
+			if (generation !== documentGeneration.current) return;
+			const savedDocument = openDocument(
+				sketchBaseName(saved.name),
+				saved.source,
+				descriptionFromSidecar(saved.name, saved.description),
+			);
+			const advanced = completeDocumentSave(
+				documentStateRef.current,
+				savedDocument,
+				String(documentGeneration.current),
+				String(generation),
+			);
+			if (advanced === undefined) return;
+			replaceDocument(advanced, saved.documentId, saved.sketchId);
+			if (advanced.isDirty) persistRecovery(advanced);
+			else discardRecovery();
+		} finally {
+			endActivation();
+		}
 	};
 
 	useEffect(() => {
@@ -277,17 +295,20 @@ export function useDocument(
 		documentState,
 		documentId,
 		sketchId,
+		activationPending,
 		discardOpen,
 		recoveryOpen,
 		recentFiles: adapter.listRecent(),
 		saveAsOpen,
 		updateSource(source: string) {
+			if (rejectWhileActivating()) return;
 			const nextDocument = updateDocumentSource(documentState, source);
 			if (nextDocument !== documentState) documentRevision.current += 1;
 			replace(nextDocument);
 			persistRecovery(nextDocument);
 		},
 		updateDescription(description: SketchDescription) {
+			if (rejectWhileActivating()) return;
 			const nextDocument = updateDocumentDescription(
 				documentState,
 				description,
@@ -297,6 +318,7 @@ export function useDocument(
 			persistRecovery(nextDocument);
 		},
 		requestNew() {
+			if (rejectWhileActivating()) return;
 			const generation = documentGeneration.current;
 			const open = async (discardConfirmed = false) => {
 				const revision = documentRevision.current;
@@ -334,6 +356,7 @@ export function useDocument(
 			});
 		},
 		requestSave() {
+			if (rejectWhileActivating()) return;
 			if (desktop !== undefined) {
 				runDesktopOperation(saveDesktopDocument);
 				return;
@@ -345,6 +368,7 @@ export function useDocument(
 			setSaveAsOpen(true);
 		},
 		openSaveAs() {
+			if (rejectWhileActivating()) return;
 			if (desktop !== undefined) {
 				runDesktopOperation(saveDesktopDocumentAs);
 				return;
@@ -352,12 +376,15 @@ export function useDocument(
 			setSaveAsOpen(true);
 		},
 		saveAs(name: string) {
+			if (rejectWhileActivating()) return;
 			saveBrowserDocument(name);
 		},
 		cancelSaveAs() {
+			if (rejectWhileActivating()) return;
 			setSaveAsOpen(false);
 		},
 		requestOpen(file: File) {
+			if (rejectWhileActivating()) return;
 			const generation = documentGeneration.current;
 			const open = async (discardConfirmed = false) => {
 				const revision = documentRevision.current;
@@ -388,6 +415,7 @@ export function useDocument(
 			void open();
 		},
 		requestDesktopOpen() {
+			if (rejectWhileActivating()) return;
 			if (desktop === undefined) return;
 			const generation = documentGeneration.current;
 			const chooseDocument = async () => {
@@ -416,14 +444,19 @@ export function useDocument(
 						await desktop.cancelOpenDocument(openedDocument.documentId);
 						return;
 					}
-					await desktop.acceptOpenDocument(openedDocument.documentId);
-					if (generation !== documentGeneration.current) return;
-					discardRecovery();
-					replaceDocument(
-						nextDocument,
-						openedDocument.documentId,
-						openedDocument.sketchId,
-					);
+					beginActivation();
+					try {
+						await desktop.acceptOpenDocument(openedDocument.documentId);
+						if (generation !== documentGeneration.current) return;
+						discardRecovery();
+						replaceDocument(
+							nextDocument,
+							openedDocument.documentId,
+							openedDocument.sketchId,
+						);
+					} finally {
+						endActivation();
+					}
 				};
 				if (documentStateRef.current.isDirty) {
 					pendingReplacement.current = open;
@@ -438,6 +471,7 @@ export function useDocument(
 			runDesktopOperation(chooseDocument);
 		},
 		requestExample(id: string) {
+			if (rejectWhileActivating()) return;
 			const example = productContent.examples.find(
 				(candidate) => candidate.id === id,
 			);
@@ -459,6 +493,7 @@ export function useDocument(
 			open();
 		},
 		confirmDiscard() {
+			if (rejectWhileActivating()) return;
 			setDiscardOpen(false);
 			pendingCancellation.current = undefined;
 			const replacement = pendingReplacement.current;
@@ -470,18 +505,21 @@ export function useDocument(
 			}
 		},
 		cancelDiscard() {
+			if (rejectWhileActivating()) return;
 			pendingReplacement.current = undefined;
 			pendingCancellation.current?.();
 			pendingCancellation.current = undefined;
 			setDiscardOpen(false);
 		},
 		restoreRecovery() {
+			if (rejectWhileActivating()) return;
 			if (initialRecovery !== undefined) {
 				replaceDocument(createRecoveredDocument(initialRecovery.document));
 			}
 			setRecoveryOpen(false);
 		},
 		dismissRecovery() {
+			if (rejectWhileActivating()) return;
 			discardRecovery();
 			setRecoveryOpen(false);
 		},

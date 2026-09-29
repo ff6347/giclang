@@ -14,6 +14,7 @@ export interface EditorPanelProps {
 	onSave: () => void;
 	onRevealSketchFolder: (() => void) | undefined;
 	onSourceChange: (source: string) => void;
+	readOnly: boolean;
 	source: string;
 	theme: ResolvedTheme;
 }
@@ -23,6 +24,7 @@ export function EditorPanel({
 	onSave,
 	onRevealSketchFolder,
 	onSourceChange,
+	readOnly,
 	source,
 	theme,
 }: EditorPanelProps) {
@@ -66,6 +68,10 @@ export function EditorPanel({
 	useEffect(() => {
 		setEditorTheme(theme);
 	}, [theme]);
+
+	useEffect(() => {
+		editorRef.current?.updateOptions({ readOnly });
+	}, [readOnly]);
 
 	return (
 		<section aria-label="Editor" className="workspace-panel">

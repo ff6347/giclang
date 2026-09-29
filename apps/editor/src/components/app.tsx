@@ -522,6 +522,7 @@ export function App({
 									}
 						}
 						onSourceChange={updateSource}
+						readOnly={documents.activationPending}
 						source={documents.documentState.source}
 						theme={theme}
 					/>
@@ -531,6 +532,7 @@ export function App({
 					<DescriptionPanel
 						description={documents.documentState.description}
 						desktop={desktop !== undefined}
+						disabled={documents.activationPending}
 						onChange={documents.updateDescription}
 					/>
 				);
@@ -663,19 +665,24 @@ export function App({
 									>
 										<Menu.Item
 											className="application-menu-item"
+											disabled={documents.activationPending}
 											onClick={() => openFile.current?.click()}
 										>
 											Open
 										</Menu.Item>
 										<Menu.Item
 											className="application-menu-item"
-											disabled={!documents.documentState.canSave}
+											disabled={
+												documents.activationPending ||
+												!documents.documentState.canSave
+											}
 											onClick={documents.requestSave}
 										>
 											Save
 										</Menu.Item>
 										<Menu.Item
 											className="application-menu-item"
+											disabled={documents.activationPending}
 											onClick={documents.openSaveAs}
 										>
 											Save As
@@ -707,6 +714,11 @@ export function App({
 						}}
 					/>
 				</header>
+			)}
+			{documents.activationPending && (
+				<p role="status">
+					Opening sketch… Editing and file actions are paused.
+				</p>
 			)}
 			<div className="application-layout">
 				<Layout

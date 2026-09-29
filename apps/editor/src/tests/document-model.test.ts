@@ -10,7 +10,6 @@ import {
 	createRecoveredDocument,
 	createUntitledDocument,
 	openDocument,
-	markDocumentSaved,
 	readRecovery,
 	updateDocumentDescription,
 	updateDocumentSource,
@@ -114,8 +113,21 @@ describe("document model", () => {
 			"edited while saving",
 		);
 
-		const advanced = markDocumentSaved(editedDuringSave, saveSnapshot);
+		const savedCopy = openDocument(
+			"copy.gic",
+			"original",
+			saveSnapshot.description,
+		);
+		const advanced = completeDocumentSave(
+			editedDuringSave,
+			savedCopy,
+			"document-A",
+			"document-A",
+		);
+		assert.ok(advanced);
 
+		assert.equal(advanced.kind, "file");
+		assert.equal(advanced.displayName, "copy.gic");
 		assert.equal(advanced.baselineSource, "original");
 		assert.equal(advanced.source, "edited while saving");
 		assert.equal(advanced.baselineDescription.body, "Saved description");

@@ -9,6 +9,7 @@ export interface DescriptionPanelProps {
 	readonly description: SketchDescription;
 	readonly onChange: (description: SketchDescription) => void;
 	readonly desktop: boolean;
+	readonly disabled: boolean;
 }
 
 function parseList(value: string): string[] {
@@ -19,6 +20,7 @@ export function DescriptionPanel({
 	description,
 	onChange,
 	desktop,
+	disabled,
 }: DescriptionPanelProps) {
 	const [orderInput, setOrderInput] = useState({
 		metadataOrder: description.metadata.order,
@@ -56,6 +58,7 @@ export function DescriptionPanel({
 				<Field.Root className="description-field">
 					<Field.Label>title</Field.Label>
 					<Field.Control
+						disabled={disabled}
 						aria-label="title"
 						required
 						value={description.metadata.title}
@@ -67,6 +70,7 @@ export function DescriptionPanel({
 				<Field.Root className="description-field">
 					<Field.Label>order</Field.Label>
 					<Field.Control
+						disabled={disabled}
 						aria-label="order"
 						type="number"
 						step="any"
@@ -86,6 +90,7 @@ export function DescriptionPanel({
 				</Field.Root>
 				<label className="settings-option">
 					<Checkbox.Root
+						disabled={disabled}
 						aria-label="enabled"
 						checked={description.metadata.enabled}
 						className="settings-checkbox"
@@ -100,6 +105,7 @@ export function DescriptionPanel({
 				<Field.Root className="description-field">
 					<Field.Label>categories</Field.Label>
 					<textarea
+						disabled={disabled}
 						aria-label="categories"
 						value={description.metadata.categories.join("\n")}
 						onChange={(event) =>
@@ -112,6 +118,7 @@ export function DescriptionPanel({
 				<Field.Root className="description-field">
 					<Field.Label>tags</Field.Label>
 					<textarea
+						disabled={disabled}
 						aria-label="tags"
 						value={description.metadata.tags.join("\n")}
 						onChange={(event) =>
@@ -122,6 +129,7 @@ export function DescriptionPanel({
 				<Field.Root className="description-field">
 					<Field.Label>Markdown</Field.Label>
 					<textarea
+						disabled={disabled}
 						aria-label="Markdown"
 						className="description-markdown"
 						value={description.body}

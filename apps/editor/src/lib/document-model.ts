@@ -91,7 +91,10 @@ export function completeDocumentSave(
 	operationIdentity: string,
 ): DocumentState | undefined {
 	if (currentIdentity !== operationIdentity) return undefined;
-	return markDocumentSaved(current, saved);
+	return markDocumentSaved(
+		{ ...saved, source: current.source, description: current.description },
+		saved,
+	);
 }
 
 export function markDocumentSaved(
