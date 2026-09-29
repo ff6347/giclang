@@ -205,8 +205,8 @@ canvas {
 .content-document:not([data-document-id="colors-named"])
 	.content-table-scroll
 	tbody
-	tr:nth-child(even) {
-	background-color: var(--color-chrome);
+	tr:nth-child(odd) {
+	background-color: var(--color-chrome-light);
 }
 
 .content-table-scroll:focus-visible {

@@ -111,6 +111,11 @@
 	--s10: 256px;
 	--color-background: #ffffff;
 	--color-chrome: #f0f0f0;
+	--color-chrome-light: color-mix(
+		in srgb,
+		var(--color-chrome) 50%,
+		var(--color-background)
+	);
 	--color-control: #cccccc;
 	--color-text: #000000;
 	color-scheme: light;

@@ -114,8 +114,17 @@ test("styles documentation tables without striping named colors", async ({
 	const drawingStyles = await drawingTable.evaluate((element) => {
 		const cells = element.querySelectorAll("tbody tr:first-child > *");
 		const rows = element.querySelectorAll("tbody tr");
+		const probe = document.createElement("div");
+		probe.style.backgroundColor = "var(--color-chrome-light)";
+		document.body.append(probe);
+		const chromeLightBackground = getComputedStyle(probe).backgroundColor;
+		probe.remove();
 		return {
 			borderTopWidth: getComputedStyle(cells[0]!).borderTopWidth,
+			chromeLightBackground,
+			chromeLightToken: getComputedStyle(document.documentElement)
+				.getPropertyValue("--color-chrome-light")
+				.trim(),
 			firstRowBackground: getComputedStyle(rows[0]!).backgroundColor,
 			marginBottom: getComputedStyle(element).marginBottom,
 			paddingBottom: getComputedStyle(cells[0]!).paddingBottom,
@@ -129,8 +138,12 @@ test("styles documentation tables without striping named colors", async ({
 		paddingBottom: "8px",
 		paddingTop: "8px",
 	});
-	expect(drawingStyles.secondRowBackground).not.toBe(
-		drawingStyles.firstRowBackground,
+	expect(drawingStyles.chromeLightToken).not.toBe("");
+	expect(drawingStyles.firstRowBackground).toBe(
+		drawingStyles.chromeLightBackground,
+	);
+	expect(drawingStyles.firstRowBackground).not.toBe(
+		drawingStyles.secondRowBackground,
 	);
 
 	await docs.getByRole("tab", { name: "Named Colors", exact: true }).click();
@@ -143,6 +156,7 @@ test("styles documentation tables without striping named colors", async ({
 		rows.slice(0, 2).map((row) => getComputedStyle(row).backgroundColor),
 	);
 	expect(new Set(namedColorBackgrounds).size).toBe(1);
+	expect(drawingStyles.secondRowBackground).toBe(namedColorBackgrounds[0]);
 });
 
 test("loads images authored beside a Markdown document", async ({ page }) => {
