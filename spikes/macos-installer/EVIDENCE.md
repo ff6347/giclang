@@ -6,7 +6,7 @@
 ## Verified
 
 - A locally built Apple Silicon DMG and embedded `GiC.app` pass Developer ID signature verification for team `WB5CKL86MX`. Without notarization, Gatekeeper rejects the app as `Unnotarized Developer ID`. A local, unquarantined install, launch, replacement, and uninstall passed with private GiC configuration isolated and restored; this does not establish downloaded-app acceptance.
-- The [Apple Silicon CI probe](https://github.com/ff6347/giclang/actions/runs/36612319863) passed desktop tests and built an unsigned DMG on `macos-15`. The downloaded artifact from [run 36610797471](https://github.com/ff6347/giclang/actions/runs/36610797471) matched its SHA-256 manifest (`b1e2bc3946df3d56f05792ace7361d0c0e323b2da53a6b111f57536e44bc7b9b`) and passed `hdiutil verify`. Its embedded executable is arm64 with an ad-hoc signature and no team ID. Neither run tested notarization or CI signing.
+- The [Mac-only PR CI probe](https://github.com/ff6347/giclang/actions/runs/36614784323) passed desktop tests and built an unsigned DMG on `macos-15`. The downloaded DMG matched its SHA-256 manifest (`8e294adf8a987e43df5eafbcc70de2c4883361c8bcca0f18646eba67d3be2280`) and passed `hdiutil verify`. Its embedded executable is arm64 with an ad-hoc signature and no team ID. This run did not test notarization or CI signing.
 
 ## Signed candidate
 
