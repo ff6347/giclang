@@ -7,7 +7,7 @@
 
 The macOS arm64 DMG can be signed with the locally installed Developer ID Application identity. Its embedded app passes strict signature verification, but Gatekeeper rejects it as `Unnotarized Developer ID`. A local install, launch, replacement, and uninstall passed without altering the existing private GiC configuration. This does **not** establish that a downloaded workshop installer is ready.
 
-The Windows 0.1.0 and 0.1.1 installer builds passed in CI; manual Windows 10 smoke checks remain. Linux Mint is best-effort. No signed release workflow or in-app updater exists.
+The Windows 0.1.0 and 0.1.1 installer builds passed in CI; manual Windows 10 smoke checks remain. An x64 Linux `.deb` also built in CI, but Mint installation has not been checked. Linux remains best-effort. No signed release workflow or in-app updater exists.
 
 ## Proposed package matrix
 
@@ -15,7 +15,7 @@ The Windows 0.1.0 and 0.1.1 installer builds passed in CI; manual Windows 10 smo
 | --- | --- | --- | --- | --- |
 | macOS | Signed and notarized DMG containing `GiC.app` | Apple Silicon; Intel pending approval | Native macOS runner per architecture | arm64 signed locally; notarization unavailable |
 | Windows 10 | Signed NSIS setup executable | x64 | Native Windows runner with MSVC and Windows SDK | Unsigned 0.1.0 and 0.1.1 CI builds passed; manual smoke pending |
-| Linux Mint | Native package to be selected after build attempt | Machine architecture to be confirmed | Native Linux machine or Ubuntu runner | `ssh x220` returned `No route to host`; not attempted and not a v0.9 release gate |
+| Linux Mint | Unsigned `.deb` test package | x64; machine architecture pending confirmation | `ubuntu-24.04` runner | CI build passed; Mint install/launch pending and not a v0.9 release gate |
 
 NSIS is the first Windows installer to test for student installation. MSI is an alternative if deployment policy requires it; it also requires a Windows host. Tauri's [Windows installer guide](https://v2.tauri.app/distribute/windows-installer/) discourages cross-compilation except as a last resort. The default WebView2 bootstrapper may need network access on a clean Windows 10 installation; an offline installer adds about 127 MB and should be selected only if clean-machine testing establishes a need. The static editor must work offline after installation.
 
@@ -46,6 +46,8 @@ The repository has no configured GitHub Actions secrets and no release workflow.
 
 This is packaging evidence, not a Windows launch or signature check. The replacement build overrides only the Tauri bundle version; a real release must synchronize all three desktop version sources.
 
+The [Linux CI job](https://github.com/ff6347/giclang/actions/runs/36606040897) built `GiC_0.1.0_amd64.deb`. Its Debian control metadata names the package `gi-c` and declares dependencies on `libwebkit2gtk-4.1-0` and `libgtk-3-0`. The downloaded package's SHA-256, `53689460371370ce3761d8dac210163720e935c83f878c2611cb7845205517f9`, matched the CI manifest. Neither dependency availability nor installation on Linux Mint has been verified. SSH to `x220` and `x220.local` failed before authentication; a Magic Wormhole transfer is proposed for the manual Mint check.
+
 - **macOS release:** Run a native macOS job with a protected Developer ID Application signing certificate and its import password. Apple notarization additionally needs either an App Store Connect API key, issuer, and private-key file supplied to the runner, or an Apple ID, app-specific password, and team ID. Submit, staple, and verify the distributed artifact; require `codesign` and Gatekeeper checks to pass. Human approval is needed to export and provision the certificate and choose the notarization credential route. See [Tauri's macOS signing guide](https://v2.tauri.app/distribute/sign/macos/).
 - **Windows release:** Run a native Windows job with MSVC, Windows SDK, Rust's `x86_64-pc-windows-msvc` target, and NSIS. A code-signing identity and provider have not been identified or approved; no Windows certificate or signing secret has been configured in this repository. Protect the signing key, timestamp the installer, and verify its signature before treating it as distributable. Signing does not guarantee the absence of SmartScreen warnings for a certificate without reputation. See [Tauri's Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
 - **Linux best-effort:** Try a native Linux package on Linux Mint or an Ubuntu runner, record system-library requirements and install/launch behavior, but do not block the macOS and Windows release on it.
@@ -58,4 +60,4 @@ No certificate, token, password, or private key belongs in Git, an Actions artif
 2. Provision Apple notarization credentials through an approved secret path, then record notarization, stapling, and Gatekeeper results on a downloaded DMG.
 3. Download the CI Windows x64 artifacts and manifest on the Windows 10 machine, compare their hashes, record any SmartScreen or policy warning, then test install, launch, higher-version replacement, and uninstall. Do not silently bypass policy failures.
 4. Choose and provision a Windows signing provider before a release build; repeat signature and installation checks with the signed artifact.
-5. Restore network reachability to `x220` or obtain another approved access path. Confirm Linux Mint architecture, attempt a package, and record the non-blocking result.
+5. Confirm the Linux Mint machine is x64 and has Magic Wormhole, transfer the verified `.deb`, and record install/launch/uninstall behavior as a non-blocking check.

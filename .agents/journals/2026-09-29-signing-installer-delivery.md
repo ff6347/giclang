@@ -10,3 +10,5 @@
 - [blocked] Fabian is performing Windows 10 installer and warning/policy checks manually. The final Intel Mac support decision and Windows signing provider remain open.
 - [blocked] SSH to Linux Mint host `x220` returned `No route to host`; no commands changed that machine. A reachable private address or restored LAN/VPN route is needed before a native Linux package attempt.
 - [lesson] A local lifecycle test with the same macOS bundle identifier can access the user's credentials and workspace. Temporarily isolate configuration and use a disposable workspace, then restore the user's original app and private configuration.
+- [technique] An Ubuntu 24.04 runner built the `amd64` `.deb` and published a matching SHA-256 manifest; the package declares `libwebkit2gtk-4.1-0` and `libgtk-3-0`. The native Linux build no longer depends on direct access to `x220`.
+- [blocked] SSH to `x220.local` also times out before authentication. Fabian chose Magic Wormhole for the Mint smoke check; confirm machine architecture and receiver availability before transferring the CI artifact.
