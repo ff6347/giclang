@@ -28,6 +28,18 @@ describe("sketch descriptions", () => {
 		);
 	});
 
+	it("rejects unsupported YAML tags, invalid field types, and non-finite order", () => {
+		for (const frontmatter of [
+			"title: !js/function 'function () {}'\norder: 0\nenabled: true\ncategories: []\ntags: []",
+			"title: Sketch\norder: .inf\nenabled: true\ncategories: []\ntags: []",
+			"title: Sketch\norder: 0\nenabled: true\ncategories: invalid\ntags: []",
+		]) {
+			assert.throws(() =>
+				parseSketchDescription(`---\n${frontmatter}\n---\nBody`),
+			);
+		}
+	});
+
 	it("defaults order, enabled, and list values while requiring a title", () => {
 		assert.deepEqual(defaultSketchDescription("Orbit"), {
 			metadata: {

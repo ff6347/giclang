@@ -2,6 +2,12 @@
 // ABOUTME: Keeps editable metadata typed without granting bundled-content trust.
 
 import { dump, load } from "js-yaml";
+import {
+	isBooleanField,
+	isFiniteOrder,
+	isNonEmptyTitle,
+	isStringList,
+} from "./metadata-validation.ts";
 
 export interface SketchDescriptionMetadata {
 	readonly title: string;
@@ -16,23 +22,15 @@ export interface SketchDescription {
 	readonly body: string;
 }
 
-function isStringList(value: unknown): value is string[] {
-	return (
-		Array.isArray(value) && value.every((entry) => typeof entry === "string")
-	);
-}
-
 export function isSketchDescriptionMetadata(
 	value: unknown,
 ): value is SketchDescriptionMetadata {
 	if (typeof value !== "object" || value === null) return false;
 	const metadata = value as Record<string, unknown>;
 	return (
-		typeof metadata.title === "string" &&
-		metadata.title.trim() !== "" &&
-		typeof metadata.order === "number" &&
-		Number.isFinite(metadata.order) &&
-		typeof metadata.enabled === "boolean" &&
+		isNonEmptyTitle(metadata.title) &&
+		isFiniteOrder(metadata.order) &&
+		isBooleanField(metadata.enabled) &&
 		isStringList(metadata.categories) &&
 		isStringList(metadata.tags)
 	);

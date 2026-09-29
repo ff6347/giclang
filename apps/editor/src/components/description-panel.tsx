@@ -2,11 +2,13 @@
 // ABOUTME: Keeps user-authored text separate from bundled trusted Markdown content.
 
 import { Checkbox, Field } from "@base-ui/react";
+import { useEffect, useState } from "react";
 import type { SketchDescription } from "@giclang/content/sketch-description";
 
 export interface DescriptionPanelProps {
 	readonly description: SketchDescription;
 	readonly onChange: (description: SketchDescription) => void;
+	readonly desktop: boolean;
 }
 
 function parseList(value: string): string[] {
@@ -16,7 +18,20 @@ function parseList(value: string): string[] {
 export function DescriptionPanel({
 	description,
 	onChange,
+	desktop,
 }: DescriptionPanelProps) {
+	const [orderInput, setOrderInput] = useState({
+		metadataOrder: description.metadata.order,
+		value: String(description.metadata.order),
+	});
+	useEffect(() => {
+		if (orderInput.metadataOrder !== description.metadata.order) {
+			setOrderInput({
+				metadataOrder: description.metadata.order,
+				value: String(description.metadata.order),
+			});
+		}
+	}, [description.metadata.order, orderInput.metadataOrder]);
 	const updateMetadata = (patch: Partial<SketchDescription["metadata"]>) => {
 		onChange({
 			...description,
@@ -26,6 +41,17 @@ export function DescriptionPanel({
 
 	return (
 		<section aria-label="Description" className="workspace-panel padded-panel">
+			<p>
+				{desktop
+					? "Populated descriptions are saved with the sketch on desktop."
+					: "In the browser, descriptions are not saved with the source download."}
+			</p>
+			{description.body.trim() !== "" &&
+				description.metadata.title.trim() === "" && (
+					<p role="alert">
+						Enter a title before saving a populated description.
+					</p>
+				)}
 			<div className="description-form">
 				<Field.Root className="description-field">
 					<Field.Label>title</Field.Label>
@@ -44,9 +70,16 @@ export function DescriptionPanel({
 						aria-label="order"
 						type="number"
 						step="any"
-						value={description.metadata.order}
+						value={orderInput.value}
 						onChange={(event) => {
+							const rawValue = event.currentTarget.value;
 							const value = event.currentTarget.valueAsNumber;
+							setOrderInput({
+								metadataOrder: Number.isFinite(value)
+									? value
+									: description.metadata.order,
+								value: rawValue,
+							});
 							if (Number.isFinite(value)) updateMetadata({ order: value });
 						}}
 					/>

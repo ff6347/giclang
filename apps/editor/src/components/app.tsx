@@ -530,6 +530,7 @@ export function App({
 				return (
 					<DescriptionPanel
 						description={documents.documentState.description}
+						desktop={desktop !== undefined}
 						onChange={documents.updateDescription}
 					/>
 				);

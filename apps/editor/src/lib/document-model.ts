@@ -3,7 +3,6 @@
 
 import {
 	defaultSketchDescription,
-	isSketchDescriptionMetadata,
 	type SketchDescription,
 } from "@giclang/content/sketch-description";
 
@@ -119,12 +118,25 @@ export function updateDocumentDescription(
 	};
 }
 
-function isSketchDescription(value: unknown): value is SketchDescription {
+function isRecoveryDescription(value: unknown): value is SketchDescription {
+	if (typeof value !== "object" || value === null) return false;
+	if (
+		!("metadata" in value) ||
+		typeof value.metadata !== "object" ||
+		value.metadata === null
+	) {
+		return false;
+	}
+	const metadata = value.metadata as Record<string, unknown>;
 	return (
-		typeof value === "object" &&
-		value !== null &&
-		"metadata" in value &&
-		isSketchDescriptionMetadata(value.metadata) &&
+		typeof metadata.title === "string" &&
+		typeof metadata.order === "number" &&
+		Number.isFinite(metadata.order) &&
+		typeof metadata.enabled === "boolean" &&
+		Array.isArray(metadata.categories) &&
+		metadata.categories.every((entry) => typeof entry === "string") &&
+		Array.isArray(metadata.tags) &&
+		metadata.tags.every((entry) => typeof entry === "string") &&
 		"body" in value &&
 		typeof value.body === "string"
 	);
@@ -161,10 +173,10 @@ function parseSnapshot(value: string | null): RecoverySnapshot | undefined {
 				? legacyDocument.displayName.replace(/\.gic$/i, "")
 				: "Recovered sketch";
 		const fallback = defaultSketchDescription(title);
-		const description = isSketchDescription(legacyDocument.description)
+		const description = isRecoveryDescription(legacyDocument.description)
 			? legacyDocument.description
 			: fallback;
-		const baselineDescription = isSketchDescription(
+		const baselineDescription = isRecoveryDescription(
 			legacyDocument.baselineDescription,
 		)
 			? legacyDocument.baselineDescription

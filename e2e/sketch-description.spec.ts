@@ -16,6 +16,11 @@ test("edits description metadata and protects description-only changes", async (
 }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Description", exact: true }).click();
+	await expect(
+		page.getByText(
+			"In the browser, descriptions are not saved with the source download.",
+		),
+	).toBeVisible();
 
 	const defaultTitle = await page
 		.getByRole("textbox", { name: "title" })
@@ -33,7 +38,13 @@ test("edits description metadata and protects description-only changes", async (
 	await expect(page.getByRole("textbox", { name: "Markdown" })).toBeVisible();
 
 	await page.getByRole("textbox", { name: "title" }).fill("A described sketch");
-	await page.getByRole("spinbutton", { name: "order" }).fill("2.5");
+	const orderField = page.getByRole("spinbutton", { name: "order" });
+	await orderField.fill("");
+	await orderField.press("-");
+	await orderField.press("2");
+	await orderField.press(".");
+	await orderField.press("5");
+	await expect(orderField).toHaveValue("-2.5");
 	await page.getByRole("checkbox", { name: "enabled" }).uncheck();
 	await page
 		.getByRole("textbox", { name: "categories" })
@@ -42,6 +53,10 @@ test("edits description metadata and protects description-only changes", async (
 	await page
 		.getByRole("textbox", { name: "Markdown" })
 		.fill("A transient description.");
+	await page.getByRole("textbox", { name: "title" }).fill("");
+	await expect(
+		page.getByText("Enter a title before saving a populated description."),
+	).toBeVisible();
 
 	await page.getByRole("tab", { name: "Examples", exact: true }).click();
 	await page.getByRole("button", { name: "Load this example" }).first().click();
@@ -61,11 +76,13 @@ test("edits description metadata and protects description-only changes", async (
 	await expect(recovery).toBeVisible();
 	await recovery.getByRole("button", { name: "Restore" }).click();
 	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await expect(page.getByRole("textbox", { name: "title" })).toHaveValue(
-		"A described sketch",
-	);
+	await expect(page.getByRole("textbox", { name: "title" })).toHaveValue("");
+	await expect(
+		page.getByText("Enter a title before saving a populated description."),
+	).toBeVisible();
+	await page.getByRole("textbox", { name: "title" }).fill("A described sketch");
 	await expect(page.getByRole("spinbutton", { name: "order" })).toHaveValue(
-		"2.5",
+		"-2.5",
 	);
 	await expect(
 		page.getByRole("checkbox", { name: "enabled" }),
@@ -134,5 +151,9 @@ test("source download retains the transient description without a persistence cl
 		"Browser-only note.",
 	);
 	await expect(page.getByRole("tab", { name: "repeat.gic *" })).toBeVisible();
-	await expect(page.getByText(/description.*saved/i)).toHaveCount(0);
+	await expect(
+		page.getByText(
+			"In the browser, descriptions are not saved with the source download.",
+		),
+	).toBeVisible();
 });

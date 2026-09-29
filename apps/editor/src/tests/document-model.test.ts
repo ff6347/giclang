@@ -177,6 +177,30 @@ describe("recovery snapshots", () => {
 		assert.equal(storage.getItem(key), null);
 	});
 
+	it("preserves structurally valid recovery drafts with temporarily invalid metadata", () => {
+		const storage = new MemoryStorage();
+		const document = openDocument("motif.gic", "point(10, 10);");
+		storage.setItem(
+			key,
+			JSON.stringify({
+				document: {
+					...document,
+					description: {
+						...document.description,
+						metadata: { ...document.description.metadata, title: "" },
+						body: "Draft body",
+					},
+				},
+				updatedAt: 200,
+			}),
+		);
+
+		const snapshot = readRecovery(storage, key, 201, sevenDaysInMilliseconds);
+
+		assert.equal(snapshot?.document.description.metadata.title, "");
+		assert.equal(snapshot?.document.description.body, "Draft body");
+	});
+
 	it("fills description defaults when reading a recovery snapshot without metadata", () => {
 		const storage = new MemoryStorage();
 		storage.setItem(
