@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   windows-installer:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'spike/signing-installer-delivery')
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -36,6 +37,13 @@ jobs:
       - name: Build Windows x64 installer
         run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
 
+      - name: Record first installer hash
+        shell: pwsh
+        run: |
+          $file = 'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.0_x64-setup.exe'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $file -Leaf)" | Set-Content -Encoding ascii "${{ runner.temp }}/gic-installers.sha256"
+
       - name: Retain first installer for manual checks
         uses: actions/upload-artifact@v7
         with:
@@ -46,9 +54,23 @@ jobs:
       - name: Build replacement installer
         run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc --config '{"version":"0.1.1"}'
 
+      - name: Record replacement installer hash
+        shell: pwsh
+        run: |
+          $file = 'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.1_x64-setup.exe'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $file -Leaf)" | Add-Content -Encoding ascii "${{ runner.temp }}/gic-installers.sha256"
+
       - name: Retain replacement installer for manual checks
         uses: actions/upload-artifact@v7
         with:
           name: gic-windows-x64-0.1.1-unsigned-spike
           path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.1_x64-setup.exe
+          if-no-files-found: error
+
+      - name: Retain hashes for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-windows-x64-sha256-spike
+          path: ${{ runner.temp }}/gic-installers.sha256
           if-no-files-found: error
