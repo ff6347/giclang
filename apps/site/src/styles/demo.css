@@ -1,0 +1,42 @@
+section#demo {
+	display: flex;
+	gap: var(--s4);
+
+	.preview {
+		canvas {
+			border-right: 1px solid var(--color-text);
+			border-bottom: 1px solid var(--color-text);
+			box-shadow: var(--box-shadow);
+		}
+	}
+	.editor {
+		flex: 1;
+		min-width: 0;
+	}
+	.editor textarea {
+		box-sizing: border-box;
+		width: 100%;
+		max-height: fit-content;
+		tab-size: 2;
+		border-radius: 0;
+		scrollbar-width: none;
+		border: 0;
+		padding: var(--s1);
+		font-weight: 600;
+		font-size: 0.9rem;
+		field-sizing: content;
+		min-height: 2lh;
+
+		&::-webkit-scrollbar {
+			display: none;
+		}
+	}
+	.editor textarea:focus-visible {
+		outline: 3px dashed var(--color-text);
+		outline-offset: 2px;
+	}
+}
+
+.hidden {
+	display: none;
+}
