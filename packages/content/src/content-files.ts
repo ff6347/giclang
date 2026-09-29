@@ -57,6 +57,12 @@ export async function listContentFiles(
 		}
 	}
 
-	await visit(new URL(`../content/${section}/`, import.meta.url), section);
+	await visit(
+		new URL(
+			`../content/${section}/`,
+			import.meta.resolve("@giclang/content/node"),
+		),
+		section,
+	);
 	return files.sort((left, right) => left.path.localeCompare(right.path));
 }
