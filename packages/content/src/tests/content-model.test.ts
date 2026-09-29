@@ -56,6 +56,27 @@ Use **repeat** for a pattern.
 		});
 	});
 
+	it("wraps tables in a keyboard-focusable scrolling region", () => {
+		const content = compileMarkdown(
+			"content/docs/drawing.md",
+			`---
+title: Drawing
+order: 2
+---
+
+| Function | Description |
+| --- | --- |
+| \`circle(x, y, radius);\` | Draw a circle |
+`,
+		);
+
+		assert.match(
+			content.html,
+			/<div class="content-table-scroll" role="region" aria-label="Scrollable table" tabindex="0"><table>/,
+		);
+		assert.match(content.html, /<\/table>\s*<\/div>/);
+	});
+
 	it("resolves relative Markdown images while preserving external image URLs", () => {
 		const images: string[] = [];
 		const content = compileMarkdown(

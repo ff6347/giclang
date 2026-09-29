@@ -3,7 +3,7 @@ import { Markdown } from "./markdown";
 
 export function AboutPanel({ content }: { content: MarkdownContent }) {
 	return (
-		<section className="workspace-panel padded-panel">
+		<section className="workspace-panel padded-panel bounded-panel">
 			<h2>{content.title}</h2>
 			<Markdown content={content} />
 		</section>

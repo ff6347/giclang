@@ -11,6 +11,8 @@ const markdown = new MarkdownIt({
 });
 const defaultLinkOpen = markdown.renderer.rules.link_open;
 const defaultImage = markdown.renderer.rules.image;
+const defaultTableOpen = markdown.renderer.rules.table_open;
+const defaultTableClose = markdown.renderer.rules.table_close;
 
 markdown.renderer.rules.image = (tokens, idx, options, env, self) => {
 	const token = tokens[idx];
@@ -40,6 +42,20 @@ markdown.renderer.rules.link_open = (tokens, idx, options, env, self) => {
 	return defaultLinkOpen
 		? defaultLinkOpen(tokens, idx, options, env, self)
 		: self.renderToken(tokens, idx, options);
+};
+
+markdown.renderer.rules.table_open = (tokens, idx, options, env, self) => {
+	const table = defaultTableOpen
+		? defaultTableOpen(tokens, idx, options, env, self)
+		: self.renderToken(tokens, idx, options);
+	return `<div class="content-table-scroll" role="region" aria-label="Scrollable table" tabindex="0">${table}`;
+};
+
+markdown.renderer.rules.table_close = (tokens, idx, options, env, self) => {
+	const table = defaultTableClose
+		? defaultTableClose(tokens, idx, options, env, self)
+		: self.renderToken(tokens, idx, options);
+	return `${table}</div>`;
 };
 
 function metadataList(

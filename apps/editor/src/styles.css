@@ -159,6 +159,50 @@ canvas {
 	padding-top: var(--s0);
 }
 
+.workspace-panel.bounded-panel {
+	align-content: start;
+	container-name: bounded-panel;
+	container-type: inline-size;
+	display: grid;
+	grid-template-columns: minmax(0, 66ch);
+	justify-content: center;
+}
+
+.content-markdown {
+	min-width: 0;
+	width: 100%;
+}
+
+.content-markdown img {
+	height: auto;
+	max-width: 100%;
+}
+
+.content-markdown pre {
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.content-table-scroll {
+	max-width: 100%;
+}
+
+.content-table-scroll:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+@container bounded-panel (max-width: 44rem) {
+	.content-table-scroll {
+		overflow-x: auto;
+	}
+
+	.content-table-scroll table {
+		min-width: 40rem;
+	}
+}
+
 .example-thumbnail {
 	border: 2px solid var(--color-text);
 	flex: none;
@@ -496,9 +540,8 @@ canvas {
 	gap: var(--s2);
 }
 
-.settings-panel > * {
-	box-sizing: border-box;
-	max-width: 800px;
+.settings-panel > .application-button {
+	justify-self: start;
 }
 
 .settings-row {
@@ -619,7 +662,7 @@ canvas {
 
 .settings-select-popup {
 	max-width: var(--available-width);
-	min-width: var(--anchor-width);
+	min-width: calc(var(--anchor-width) + 4px);
 }
 
 .agent-model-popup {

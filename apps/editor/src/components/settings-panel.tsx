@@ -290,7 +290,7 @@ export function SettingsPanel({
 	return (
 		<section
 			aria-label="Settings"
-			className="workspace-panel padded-panel settings-panel"
+			className="workspace-panel padded-panel bounded-panel settings-panel"
 		>
 			{desktop !== undefined && (
 				<>
