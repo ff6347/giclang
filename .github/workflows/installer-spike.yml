@@ -1,0 +1,44 @@
+# ABOUTME: Builds an unsigned Windows installer for the native package spike.
+# ABOUTME: Retains the artifact for manual installation and policy checks.
+
+name: Build Windows installer spike
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up tools
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Windows icon
+        run: pnpm --filter @giclang/desktop exec tauri icon ../editor/public/icons/gic-icon-512.png
+
+      - name: Build Windows x64 installer
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
+
+      - name: Retain unsigned installer for manual checks
+        uses: actions/upload-artifact@v4
+        with:
+          name: gic-windows-x64-unsigned-spike
+          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
