@@ -4,10 +4,13 @@ document.addEventListener("DOMContentLoaded", () => {
 	const diagnosticsHeading = document.getElementById("diagnostics-heading");
 	const outputHeading = document.getElementById("output-heading");
 
-	function watchResults(element, heading) {
+	if (!diagnostics || !output || !diagnosticsHeading || !outputHeading) {
+		return;
+	}
+
+	function watchResults(element: HTMLElement, heading: HTMLElement): void {
 		function update() {
 			const hasContent = element.textContent.trim().length > 0;
-			const wasHidden = heading.classList.contains("hidden");
 
 			heading.classList.toggle("hidden", !hasContent);
 
