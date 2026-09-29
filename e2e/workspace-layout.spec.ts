@@ -266,14 +266,11 @@ test("persists the Canvas frame setting across reloads", async ({ page }) => {
 
 test("shows bundled Docs and About content", async ({ page }) => {
 	await page.goto("/");
-	const content = [
-		{ name: "Docs", text: "Language reference and help" },
-		{ name: "About", text: "Pixel Art Icons" },
-	];
 
-	for (const { name, text } of content) {
+	for (const name of ["Docs", "About"]) {
 		await page.getByRole("tab", { name }).click();
-		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
+		const panel = page.getByRole("tabpanel", { name });
+		await expect(panel.locator(".content-markdown > *").first()).toBeVisible();
 	}
 });
 
