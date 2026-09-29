@@ -34,6 +34,9 @@ jobs:
       - name: Generate Windows icon
         run: pnpm --filter @giclang/desktop exec tauri icon ../editor/public/icons/gic-icon-512.png
 
+      - name: Test Windows desktop bridge
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
+
       - name: Build Windows x64 installer
         run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
 
