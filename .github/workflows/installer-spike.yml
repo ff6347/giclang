@@ -1,7 +1,7 @@
-# ABOUTME: Builds unsigned Windows installers for the native package spike.
-# ABOUTME: Retains both versions for manual installation and replacement checks.
+# ABOUTME: Builds unsigned desktop installers for the package-delivery spike.
+# ABOUTME: Retains installers and hashes for manual platform checks.
 
-name: Build Windows installer spike
+name: Build installer spikes
 
 on:
   pull_request:
@@ -73,4 +73,48 @@ jobs:
         with:
           name: gic-windows-x64-sha256-spike
           path: ${{ runner.temp }}/gic-installers.sha256
+          if-no-files-found: error
+
+  linux-installer:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'spike/signing-installer-delivery')
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Set up tools
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Linux x64 package
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles deb
+
+      - name: Record package hash
+        run: (cd apps/desktop/src-tauri/target/release/bundle/deb && sha256sum *.deb) > "$RUNNER_TEMP/gic-linux-installer.sha256"
+
+      - name: Retain Linux package for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-linux-x64-unsigned-spike
+          path: apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+      - name: Retain Linux hash for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-linux-x64-sha256-spike
+          path: ${{ runner.temp }}/gic-linux-installer.sha256
           if-no-files-found: error
