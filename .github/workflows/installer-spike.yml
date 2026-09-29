@@ -1,0 +1,123 @@
+# ABOUTME: Builds unsigned desktop installers for the package-delivery spike.
+# ABOUTME: Retains installers and hashes for manual platform checks.
+
+name: Build installer spikes
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'spike/signing-installer-delivery')
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up tools
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Windows icon
+        run: pnpm --filter @giclang/desktop exec tauri icon ../editor/public/icons/gic-icon-512.png
+
+      - name: Test Windows desktop bridge
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib -- --test-threads=1 --nocapture
+
+      - name: Build Windows x64 installer
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
+
+      - name: Record first installer hash
+        shell: pwsh
+        run: |
+          $file = 'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.0_x64-setup.exe'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $file -Leaf)" | Set-Content -Encoding ascii "${{ runner.temp }}/gic-installers.sha256"
+
+      - name: Retain first installer for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-windows-x64-0.1.0-unsigned-spike
+          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.0_x64-setup.exe
+          if-no-files-found: error
+
+      - name: Build replacement installer
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc --config '{"version":"0.1.1"}'
+
+      - name: Record replacement installer hash
+        shell: pwsh
+        run: |
+          $file = 'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.1_x64-setup.exe'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $file -Leaf)" | Add-Content -Encoding ascii "${{ runner.temp }}/gic-installers.sha256"
+
+      - name: Retain replacement installer for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-windows-x64-0.1.1-unsigned-spike
+          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.1_x64-setup.exe
+          if-no-files-found: error
+
+      - name: Retain hashes for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-windows-x64-sha256-spike
+          path: ${{ runner.temp }}/gic-installers.sha256
+          if-no-files-found: error
+
+  linux-installer:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'spike/signing-installer-delivery')
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Set up tools
+        uses: jdx/mise-action@v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Linux x64 package
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles deb
+
+      - name: Record package hash
+        run: (cd apps/desktop/src-tauri/target/release/bundle/deb && sha256sum *.deb) > "$RUNNER_TEMP/gic-linux-installer.sha256"
+
+      - name: Retain Linux package for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-linux-x64-unsigned-spike
+          path: apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+      - name: Retain Linux hash for manual checks
+        uses: actions/upload-artifact@v7
+        with:
+          name: gic-linux-x64-sha256-spike
+          path: ${{ runner.temp }}/gic-linux-installer.sha256
+          if-no-files-found: error
