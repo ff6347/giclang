@@ -14,6 +14,7 @@ mod managed_files;
 mod model_capabilities;
 mod reference;
 mod sessions;
+mod sketch_bundle;
 mod workspace;
 
 use agent::{
@@ -57,6 +58,20 @@ const ALLOWED_SETTING_KEYS: [&str; 9] = [
 ];
 
 const DEFAULT_WORKSPACE_DIR: &str = "gestalten-in-code";
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveDocumentRequest {
+    source: String,
+    description: Option<String>,
+    thumbnail: Option<String>,
+}
+
+struct SaveDocumentContent<'a> {
+    source: &'a str,
+    description: Option<&'a str>,
+    thumbnail: Option<&'a [u8]>,
+}
 
 struct SettingsStore {
     access: Mutex<()>,
@@ -266,11 +281,35 @@ fn cancel_open_gic(document_id: &str, store: State<'_, DocumentStore>) -> Result
 #[tauri::command]
 fn save_gic(
     document_id: &str,
-    source: &str,
-    description: Option<&str>,
+    document: SaveDocumentRequest,
     store: State<'_, DocumentStore>,
 ) -> Result<(), String> {
-    store.save(document_id, source, description)
+    let thumbnail = decode_thumbnail(document.thumbnail.as_deref())?;
+    store.save_with_thumbnail(
+        document_id,
+        &document.source,
+        document.description.as_deref(),
+        thumbnail.as_deref(),
+    )
+}
+
+fn decode_thumbnail(encoded: Option<&str>) -> Result<Option<Vec<u8>>, String> {
+    use base64::Engine;
+
+    encoded
+        .map(|value| {
+            if value.len() > 1_398_104 {
+                return Err("The captured sketch thumbnail exceeds 1 MiB.".to_owned());
+            }
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(value)
+                .map_err(|_| "The captured sketch thumbnail is not valid PNG data.".to_owned())?;
+            if bytes.len() > 1024 * 1024 {
+                return Err("The captured sketch thumbnail exceeds 1 MiB.".to_owned());
+            }
+            Ok(bytes)
+        })
+        .transpose()
 }
 
 fn save_document_copy(
@@ -278,8 +317,7 @@ fn save_document_copy(
     sessions: &SessionStore,
     source_directory: Option<&Path>,
     target_path: PathBuf,
-    source: &str,
-    description: Option<&str>,
+    content: SaveDocumentContent<'_>,
     sketchbook: &Path,
 ) -> Result<OpenedDocument, String> {
     let target_directory = target_path
@@ -290,7 +328,13 @@ fn save_document_copy(
         .map(|source| sessions.clone_latest_between(source, &target_directory))
         .transpose()?
         .flatten();
-    match store.save_path_pending(target_path, source, description, sketchbook) {
+    match store.save_path_pending_with_thumbnail(
+        target_path,
+        content.source,
+        content.description,
+        content.thumbnail,
+        sketchbook,
+    ) {
         Ok(saved) => Ok(saved),
         Err(error) => {
             if let Some(session_id) = copied_session {
@@ -304,13 +348,18 @@ fn save_document_copy(
 #[tauri::command]
 async fn save_gic_as(
     app: AppHandle,
-    source: &str,
+    document: SaveDocumentRequest,
     suggested_name: &str,
-    description: Option<&str>,
     store: State<'_, DocumentStore>,
     manager: State<'_, WorkspaceManager>,
     sessions: State<'_, SessionStore>,
 ) -> Result<Option<OpenedDocument>, String> {
+    let thumbnail = decode_thumbnail(document.thumbnail.as_deref())?;
+    let content = SaveDocumentContent {
+        source: &document.source,
+        description: document.description.as_deref(),
+        thumbnail: thumbnail.as_deref(),
+    };
     let source_sketch_dir = store
         .active_path()
         .and_then(|path| path.parent().map(Path::to_path_buf));
@@ -334,8 +383,7 @@ async fn save_gic_as(
                         &sessions,
                         source_sketch_dir.as_deref(),
                         path,
-                        source,
-                        description,
+                        content,
                         &sketchbook,
                     )
                 })
@@ -785,7 +833,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        codex_auth::CodexAuth, credentials::CredentialStore, save_document_copy, SettingsStore,
+        codex_auth::CodexAuth, credentials::CredentialStore, save_document_copy,
+        SaveDocumentContent, SettingsStore,
     };
     use crate::{documents::DocumentStore, sessions::SessionStore};
     use std::path::{Path, PathBuf};
@@ -826,8 +875,11 @@ mod tests {
             &sessions,
             Some(&source_directory),
             target_directory.join("copy.gic"),
-            "replacement target",
-            Some("description"),
+            SaveDocumentContent {
+                source: "replacement target",
+                description: Some("description"),
+                thumbnail: None,
+            },
             &directory.join("sketches"),
         );
 

@@ -168,19 +168,23 @@ export class DesktopHost {
 		documentId: string,
 		source: string,
 		description: string | null,
+		thumbnail: string | undefined,
 	): Promise<void> {
-		return invoke<void>("save_gic", { documentId, source, description });
+		return invoke<void>("save_gic", {
+			documentId,
+			document: { source, description, thumbnail: thumbnail ?? null },
+		});
 	}
 
 	saveDocumentAs(
 		source: string,
 		suggestedName: string,
 		description: string | null,
+		thumbnail: string | undefined,
 	): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("save_gic_as", {
-			source,
+			document: { source, description, thumbnail: thumbnail ?? null },
 			suggestedName,
-			description,
 		});
 	}
 

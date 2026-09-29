@@ -193,7 +193,13 @@ export function App({
 		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
-	const documents = useDocument(formatOnSave, selectGestalten, desktop);
+	const documents = useDocument(
+		formatOnSave,
+		selectGestalten,
+		desktop,
+		preview.captureThumbnail,
+		preview.onSourceChange,
+	);
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
 	const workspace = useWorkspace(desktop);
@@ -541,7 +547,9 @@ export function App({
 					<PreviewPanel
 						canvasFrame={canvasFrame}
 						canvasRef={canvasRef}
+						capturePng={preview.captureThumbnail}
 						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
+						source={documents.documentState.source}
 						onDownloadStandalone={() => {
 							const source = documents.documentState.source;
 							if (desktop === undefined) {

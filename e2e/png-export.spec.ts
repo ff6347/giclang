@@ -126,6 +126,48 @@ test("exports only the current successful preview as a native-size PNG", async (
 	await expect(downloadButton).toBeDisabled();
 });
 
+test("refreshes capture ownership when opening a different document with identical source", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const source = "background(50, 50, random(0, 360));";
+	await setEditorSource(page, source);
+	const downloadButton = page.getByRole("button", { name: "Download PNG" });
+	await expect(downloadButton).toBeEnabled();
+	const firstPixels = await canvasPixels(page);
+
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
+	await page
+		.getByRole("menu", { name: "File" })
+		.getByRole("menuitem", { name: "Open", exact: true })
+		.click();
+	await page.locator("#open-file").setInputFiles({
+		name: "same-source.gic",
+		mimeType: "text/plain",
+		buffer: Buffer.from(source),
+	});
+	await page
+		.getByRole("alertdialog", { name: "Discard changes?" })
+		.getByRole("button", { name: "Discard changes" })
+		.click();
+	await expect(downloadButton).toBeDisabled();
+	await expect(downloadButton).toBeEnabled();
+	await expect.poll(() => canvasPixels(page)).not.toEqual(firstPixels);
+
+	const downloadPromise = page.waitForEvent("download");
+	await downloadButton.click();
+	const download = await downloadPromise;
+	const stream = await download.createReadStream();
+	if (stream === null) throw new Error("Expected a PNG download stream.");
+	const chunks: Buffer[] = [];
+	for await (const chunk of stream) chunks.push(chunk);
+	const png = readPng(Buffer.concat(chunks));
+	const expectedPixels = await canvasPixels(page);
+	expect([
+		...png.pixels.subarray((50 * 100 + 50) * 4, (50 * 100 + 51) * 4),
+	]).toEqual(expectedPixels.center);
+});
+
 test("places PNG export in the Preview panel's lower-right corner", async ({
 	page,
 }) => {

@@ -40,6 +40,7 @@ tokio-util = { version = "0.7", features = ["rt"] }
 http = "1"
 base64 = "0.22.1"
 tauri-plugin-opener = "2"
+png = "=0.18.1"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

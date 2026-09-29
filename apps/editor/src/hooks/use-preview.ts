@@ -12,6 +12,7 @@ import Worker from "../worker.ts?worker";
 import type { RunResult } from "@giclang/core";
 import { setEditorDiagnostics, type GicEditor } from "../lib/gic-editor.ts";
 import { clearCanvas, renderToCanvas } from "../lib/render-to-canvas.ts";
+import { capturePreviewPng } from "../lib/preview-capture.ts";
 
 const TIMEOUT_IN_MS = 500;
 
@@ -30,6 +31,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 	const activeWorker = useRef<Worker | null>(null);
 	const debounceTimer = useRef<number | null>(null);
 	const editor = useRef<GicEditor | null>(null);
+	const renderedSource = useRef<string | undefined>(undefined);
 
 	const clearCurrentCanvas = useCallback(() => {
 		const canvas = canvasRef.current;
@@ -58,6 +60,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 						`The preview took too long and was terminated after ${TIMEOUT_IN_MS}ms.`,
 					],
 				});
+				renderedSource.current = undefined;
 				clearCurrentCanvas();
 			}, TIMEOUT_IN_MS);
 
@@ -67,6 +70,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				worker.terminate();
 				activeWorker.current = null;
 
+				renderedSource.current = undefined;
 				console.error("Worker error:", error);
 				if (editor.current) {
 					setEditorDiagnostics(editor.current, []);
@@ -97,6 +101,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					if (canvas) {
 						renderToCanvas(canvas, event.data.commands);
 					}
+					renderedSource.current = canvas === null ? undefined : source;
 					console.info("Result:", event.data.commands);
 					if (editor.current) {
 						setEditorDiagnostics(editor.current, []);
@@ -109,6 +114,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					return;
 				}
 
+				renderedSource.current = undefined;
 				clearCurrentCanvas();
 				const problems = editor.current
 					? setEditorDiagnostics(editor.current, event.data.diagnostics)
@@ -130,6 +136,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 			if (editor.current) {
 				setEditorDiagnostics(editor.current, []);
 			}
+			renderedSource.current = undefined;
 			setState({ isCurrentSourceRendered: false, output: [], problems: [] });
 			debounceTimer.current = window.setTimeout(() => {
 				runPreview(source);
@@ -151,5 +158,11 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 		};
 	}, []);
 
-	return { onSourceChange, setEditor, state };
+	const captureThumbnail = useCallback(
+		(source: string) =>
+			capturePreviewPng(canvasRef.current, renderedSource.current, source),
+		[canvasRef],
+	);
+
+	return { captureThumbnail, onSourceChange, setEditor, state };
 }

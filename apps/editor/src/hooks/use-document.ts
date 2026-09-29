@@ -40,6 +40,8 @@ export function useDocument(
 	formatOnSave: boolean,
 	onExampleOpened: () => void,
 	desktop: DesktopHost | undefined,
+	captureThumbnail: (source: string) => string | undefined,
+	onDocumentActivated: (source: string) => void,
 ) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
 	const desktopDocumentId = useRef<string | undefined>(undefined);
@@ -96,6 +98,7 @@ export function useDocument(
 		nextDocument: DocumentState,
 		documentId?: string,
 		nextSketchId?: string,
+		preservePreview = false,
 	) => {
 		documentGeneration.current += 1;
 		documentStateRef.current = nextDocument;
@@ -103,6 +106,7 @@ export function useDocument(
 		setDocumentId(documentId);
 		setSketchId(nextSketchId ?? nextDocument.displayName);
 		replace(nextDocument);
+		if (!preservePreview) onDocumentActivated(nextDocument.source);
 	};
 
 	const discardRecovery = () => {
@@ -165,7 +169,7 @@ export function useDocument(
 			openDocument(savedName, source),
 			documentState.description,
 		);
-		replaceDocument(savedDocument, undefined, savedName);
+		replaceDocument(savedDocument, undefined, savedName, true);
 		if (savedDocument.isDirty) persistRecovery(savedDocument);
 		else discardRecovery();
 		setSaveAsOpen(false);
@@ -176,6 +180,7 @@ export function useDocument(
 		const snapshot = documentStateRef.current;
 		const generation = documentGeneration.current;
 		const source = sourceForSave(snapshot);
+		const thumbnail = captureThumbnail(snapshot.source);
 		let suggestedName = snapshot.displayName.endsWith(".gic")
 			? snapshot.displayName.slice(0, -".gic".length)
 			: snapshot.displayName;
@@ -203,6 +208,7 @@ export function useDocument(
 			source,
 			suggestedName,
 			descriptionForSave(snapshot),
+			thumbnail,
 		);
 		if (saved === null) return;
 		if (generation !== documentGeneration.current) {
@@ -233,7 +239,7 @@ export function useDocument(
 				String(generation),
 			);
 			if (advanced === undefined) return;
-			replaceDocument(advanced, saved.documentId, saved.sketchId);
+			replaceDocument(advanced, saved.documentId, saved.sketchId, true);
 			if (advanced.isDirty) persistRecovery(advanced);
 			else discardRecovery();
 		} finally {
@@ -282,10 +288,12 @@ export function useDocument(
 			return;
 		}
 		const source = sourceForSave(snapshot);
+		const thumbnail = captureThumbnail(snapshot.source);
 		await desktop.saveDocument(
 			documentId,
 			source,
 			descriptionForSave(snapshot),
+			thumbnail,
 		);
 		if (generation !== documentGeneration.current) return;
 		const current = documentStateRef.current;

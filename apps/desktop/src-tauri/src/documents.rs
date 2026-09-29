@@ -1,6 +1,7 @@
 // ABOUTME: Owns native GIC document paths behind opaque webview identifiers.
 // ABOUTME: Reads and writes only files selected through desktop document workflows.
 
+use crate::sketch_bundle::{replace_sketch_files, stage_bytes, validate_thumbnail};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
@@ -120,7 +121,7 @@ impl DocumentStore {
         fs::create_dir_all(parent)
             .map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
         let owns_description = is_sketch_bundle(&path, sketchbook);
-        write_bundle(&path, source, description, owns_description)?;
+        write_bundle(&path, source, description, None, owns_description)?;
         self.remember(
             path,
             source.to_owned(),
@@ -133,11 +134,23 @@ impl DocumentStore {
         )
     }
 
+    #[cfg(test)]
     pub(crate) fn save_path_pending(
         &self,
         path: PathBuf,
         source: &str,
         description: Option<&str>,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
+        self.save_path_pending_with_thumbnail(path, source, description, None, sketchbook)
+    }
+
+    pub(crate) fn save_path_pending_with_thumbnail(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+        thumbnail: Option<&[u8]>,
         sketchbook: &Path,
     ) -> Result<OpenedDocument, String> {
         let path = with_gic_extension(path);
@@ -148,7 +161,7 @@ impl DocumentStore {
         fs::create_dir_all(parent)
             .map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
         let owns_description = is_sketch_bundle(&path, sketchbook);
-        write_bundle(&path, source, description, owns_description)?;
+        write_bundle(&path, source, description, thumbnail, owns_description)?;
         self.prepare_pending(
             path,
             source.to_owned(),
@@ -161,11 +174,22 @@ impl DocumentStore {
         )
     }
 
+    #[cfg(test)]
     pub(crate) fn save(
         &self,
         document_id: &str,
         source: &str,
         description: Option<&str>,
+    ) -> Result<(), String> {
+        self.save_with_thumbnail(document_id, source, description, None)
+    }
+
+    pub(crate) fn save_with_thumbnail(
+        &self,
+        document_id: &str,
+        source: &str,
+        description: Option<&str>,
+        thumbnail: Option<&[u8]>,
     ) -> Result<(), String> {
         let active = self
             .active
@@ -179,6 +203,7 @@ impl DocumentStore {
             &document.path,
             source,
             description,
+            thumbnail,
             document.owns_description,
         )
     }
@@ -369,6 +394,7 @@ fn write_bundle(
     path: &Path,
     source: &str,
     description: Option<&str>,
+    thumbnail: Option<&[u8]>,
     has_sidecar: bool,
 ) -> Result<(), String> {
     if description.is_some() && !has_sidecar {
@@ -377,18 +403,35 @@ fn write_bundle(
     if !has_sidecar {
         return write_source(path, source);
     }
+    if let Some(bytes) = thumbnail {
+        validate_thumbnail(bytes)?;
+    }
     let parent = path
         .parent()
         .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
     fs::create_dir_all(parent).map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
     let sidecar = parent.join("description.md");
+    let thumbnail_path = parent.join("thumbnail.png");
     validate_replaceable(path, "Unable to replace the sketch file.")?;
     validate_replaceable(&sidecar, "Unable to write the sketch description.")?;
+    if thumbnail.is_some() {
+        validate_replaceable(&thumbnail_path, "Unable to write the sketch thumbnail.")?;
+    }
     let source_stage = stage_file(parent, source, "Unable to write the sketch file.")?;
     let description_stage = description
         .map(|contents| stage_file(parent, contents, "Unable to write the sketch description."))
         .transpose()?;
-    replace_bundle_files(path, source_stage, &sidecar, description_stage)
+    let thumbnail_stage = thumbnail
+        .map(|contents| stage_bytes(parent, contents, "Unable to write the sketch thumbnail."))
+        .transpose()?;
+    replace_sketch_files(
+        path,
+        source_stage,
+        &sidecar,
+        description_stage,
+        &thumbnail_path,
+        thumbnail_stage,
+    )
 }
 
 fn validate_replaceable(path: &Path, message: &str) -> Result<(), String> {
@@ -401,39 +444,10 @@ fn validate_replaceable(path: &Path, message: &str) -> Result<(), String> {
 }
 
 fn stage_file(parent: &Path, contents: &str, message: &str) -> Result<NamedTempFile, String> {
-    let mut file = NamedTempFile::new_in(parent).map_err(|_| message.to_owned())?;
-    file.write_all(contents.as_bytes())
-        .and_then(|()| file.as_file().sync_all())
-        .map_err(|_| message.to_owned())?;
-    Ok(file)
+    stage_bytes(parent, contents.as_bytes(), message)
 }
 
-fn replace_bundle_files(
-    source_path: &Path,
-    source_stage: NamedTempFile,
-    description_path: &Path,
-    description_stage: Option<NamedTempFile>,
-) -> Result<(), String> {
-    let backups = move_bundle_backups(source_path, description_path)?;
-    if let Err(error) = install_bundle_stages(
-        source_path,
-        description_path,
-        source_stage,
-        description_stage,
-    ) {
-        return Err(rollback_bundle_files(
-            source_path,
-            description_path,
-            &backups,
-            error,
-        ));
-    }
-    for (_, backup) in backups {
-        let _ = fs::remove_file(backup);
-    }
-    Ok(())
-}
-
+#[cfg(test)]
 fn move_bundle_backups(
     source_path: &Path,
     description_path: &Path,
@@ -470,6 +484,7 @@ fn move_bundle_backups(
     Ok(backups)
 }
 
+#[cfg(test)]
 fn install_bundle_stages(
     source_path: &Path,
     description_path: &Path,
@@ -488,6 +503,7 @@ fn install_bundle_stages(
         })
 }
 
+#[cfg(test)]
 fn rollback_bundle_files(
     source_path: &Path,
     description_path: &Path,
@@ -499,6 +515,7 @@ fn rollback_bundle_files(
     restore_backups(backups).unwrap_or(error)
 }
 
+#[cfg(test)]
 fn restore_backups(backups: &[(PathBuf, PathBuf)]) -> Option<String> {
     let mut failures = Vec::new();
     for (target, backup) in backups.iter().rev() {
@@ -700,6 +717,120 @@ mod tests {
             "session",
         );
         remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn thumbnail_saves_replace_real_pngs_transactionally_and_save_as_copies_them() {
+        let directory = test_directory("thumbnail-save");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let sketch = sketchbook.join("orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "previous source").expect("write source");
+        let original_png = test_png([255, 0, 0, 255]);
+        let replacement_png = test_png([0, 255, 0, 255]);
+        std::fs::write(sketch.join("thumbnail.png"), &original_png).expect("write original PNG");
+        std::fs::write(sketch.join("unrelated.txt"), "keep").expect("write unrelated file");
+        let store = DocumentStore::default();
+        let opened = open_accepted(&store, source_path.clone());
+
+        store
+            .save_with_thumbnail(
+                &opened.document_id,
+                "saved source",
+                Some("description"),
+                Some(&replacement_png),
+            )
+            .expect("save source, description, and PNG");
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("unrelated.txt")).unwrap(),
+            "keep"
+        );
+
+        let invalid = store.save_with_thumbnail(
+            &opened.document_id,
+            "must not replace saved data",
+            None,
+            Some(b"not a PNG"),
+        );
+        assert!(invalid.is_err());
+        assert_eq!(
+            std::fs::read_to_string(&source_path).unwrap(),
+            "saved source"
+        );
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+
+        store
+            .save_with_thumbnail(&opened.document_id, "saved without capture", None, None)
+            .expect("save without a current preview");
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+
+        let copy_directory = sketchbook.join("orbit-copy");
+        let copy = store
+            .save_path_pending_with_thumbnail(
+                copy_directory.join("orbit-copy.gic"),
+                "copy source",
+                None,
+                Some(&replacement_png),
+                &sketchbook,
+            )
+            .expect("save copy with captured PNG");
+        assert_eq!(
+            std::fs::read(copy_directory.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "saved without capture"
+        );
+
+        let blocked = sketchbook.join("blocked");
+        std::fs::create_dir_all(&blocked).expect("create failure fixture");
+        std::fs::write(blocked.join("blocked.gic"), "original").expect("write original source");
+        std::fs::write(blocked.join("thumbnail.png"), &original_png).expect("write original PNG");
+        std::fs::create_dir(blocked.join("description.md")).expect("block description replacement");
+        let failed = DocumentStore::default().save_path_pending_with_thumbnail(
+            blocked.join("blocked.gic"),
+            "must roll back",
+            Some("description"),
+            Some(&replacement_png),
+            &sketchbook,
+        );
+        assert!(failed.is_err());
+        assert_eq!(
+            std::fs::read(blocked.join("blocked.gic")).unwrap(),
+            b"original"
+        );
+        assert_eq!(
+            std::fs::read(blocked.join("thumbnail.png")).unwrap(),
+            original_png
+        );
+        assert_eq!(copy.source, "copy source");
+        remove_test_directory(&directory);
+    }
+
+    fn test_png(rgba: [u8; 4]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut bytes, 100, 100);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().expect("write PNG header");
+            let pixels = rgba.repeat(100 * 100);
+            writer.write_image_data(&pixels).expect("write PNG pixels");
+        }
+        bytes
     }
 
     #[test]
