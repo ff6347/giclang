@@ -13,6 +13,7 @@ export function DocsPanel({ doc, docIds, onOpen }: DocsPanelProps) {
 		<article
 			aria-label={doc.title}
 			className="workspace-panel padded-panel bounded-panel content-document"
+			data-document-id={doc.id}
 			onClick={(event) => {
 				const target = event.target;
 				if (!(target instanceof Element)) return;

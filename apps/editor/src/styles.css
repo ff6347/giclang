@@ -185,7 +185,28 @@ canvas {
 }
 
 .content-table-scroll {
+	margin-block-end: var(--s3);
 	max-width: 100%;
+}
+
+.content-table-scroll table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.content-table-scroll th,
+.content-table-scroll td {
+	border-top: 1px solid currentColor;
+	padding: var(--s2);
+	text-align: left;
+	vertical-align: top;
+}
+
+.content-document:not([data-document-id="colors-named"])
+	.content-table-scroll
+	tbody
+	tr:nth-child(even) {
+	background-color: var(--color-chrome);
 }
 
 .content-table-scroll:focus-visible {

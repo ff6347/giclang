@@ -98,6 +98,53 @@ test("keeps Drawing tables scrollable within a narrow Docs panel", async ({
 	).toBeLessThanOrEqual(1);
 });
 
+test("styles documentation tables without striping named colors", async ({
+	page,
+}) => {
+	await page.setViewportSize({ height: 800, width: 1024 });
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Docs" }).click();
+	const docs = page.getByRole("tabpanel", { name: "Docs" });
+
+	await docs.getByRole("tab", { name: "Drawing", exact: true }).click();
+	const drawingTable = docs
+		.getByRole("article", { name: "Drawing" })
+		.locator(".content-table-scroll")
+		.first();
+	const drawingStyles = await drawingTable.evaluate((element) => {
+		const cells = element.querySelectorAll("tbody tr:first-child > *");
+		const rows = element.querySelectorAll("tbody tr");
+		return {
+			borderTopWidth: getComputedStyle(cells[0]!).borderTopWidth,
+			firstRowBackground: getComputedStyle(rows[0]!).backgroundColor,
+			marginBottom: getComputedStyle(element).marginBottom,
+			paddingBottom: getComputedStyle(cells[0]!).paddingBottom,
+			paddingTop: getComputedStyle(cells[0]!).paddingTop,
+			secondRowBackground: getComputedStyle(rows[1]!).backgroundColor,
+		};
+	});
+	expect(drawingStyles).toMatchObject({
+		borderTopWidth: "1px",
+		marginBottom: "16px",
+		paddingBottom: "8px",
+		paddingTop: "8px",
+	});
+	expect(drawingStyles.secondRowBackground).not.toBe(
+		drawingStyles.firstRowBackground,
+	);
+
+	await docs.getByRole("tab", { name: "Named Colors", exact: true }).click();
+	const namedColorRows = docs
+		.getByRole("article", { name: "Named Colors" })
+		.locator("tbody")
+		.first()
+		.locator(":scope > tr");
+	const namedColorBackgrounds = await namedColorRows.evaluateAll((rows) =>
+		rows.slice(0, 2).map((row) => getComputedStyle(row).backgroundColor),
+	);
+	expect(new Set(namedColorBackgrounds).size).toBe(1);
+});
+
 test("loads images authored beside a Markdown document", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Docs" }).click();
