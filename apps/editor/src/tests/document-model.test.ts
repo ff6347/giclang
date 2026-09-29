@@ -5,10 +5,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	clearRecovery,
+	completeDocumentSave,
 	createExampleDocument,
 	createRecoveredDocument,
 	createUntitledDocument,
 	openDocument,
+	markDocumentSaved,
 	readRecovery,
 	updateDocumentDescription,
 	updateDocumentSource,
@@ -95,6 +97,38 @@ describe("document model", () => {
 				categories: ["a, b"],
 				tags: ["café"],
 			},
+		);
+	});
+
+	it("advances the saved baseline without losing edits made during the save", () => {
+		const initial = openDocument("motif.gic", "original");
+		const saveSnapshot = updateDocumentDescription(initial, {
+			...initial.description,
+			body: "Saved description",
+		});
+		const editedDuringSave = updateDocumentSource(
+			updateDocumentDescription(saveSnapshot, {
+				...saveSnapshot.description,
+				body: "Newest description",
+			}),
+			"edited while saving",
+		);
+
+		const advanced = markDocumentSaved(editedDuringSave, saveSnapshot);
+
+		assert.equal(advanced.baselineSource, "original");
+		assert.equal(advanced.source, "edited while saving");
+		assert.equal(advanced.baselineDescription.body, "Saved description");
+		assert.equal(advanced.description.body, "Newest description");
+		assert.equal(advanced.isDirty, true);
+		assert.equal(
+			completeDocumentSave(
+				editedDuringSave,
+				saveSnapshot,
+				"document-C",
+				"document-A",
+			),
+			undefined,
 		);
 	});
 

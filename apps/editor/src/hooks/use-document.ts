@@ -18,6 +18,7 @@ import {
 	createNewSketchDocument,
 	createRecoveredDocument,
 	openDocument,
+	completeDocumentSave,
 	updateDocumentDescription,
 	updateDocumentSource,
 	type DocumentState,
@@ -56,6 +57,8 @@ export function useDocument(
 	const initialSketchName = useRef(documentState.displayName).current;
 	const documentStateRef = useRef(documentState);
 	documentStateRef.current = documentState;
+	const documentGeneration = useRef(0);
+	const documentRevision = useRef(0);
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [discardOpen, setDiscardOpen] = useState(false);
 	const [recoveryOpen, setRecoveryOpen] = useState(
@@ -77,6 +80,7 @@ export function useDocument(
 	};
 
 	const replace = (nextDocument: DocumentState) => {
+		documentStateRef.current = nextDocument;
 		setDocumentState(nextDocument);
 	};
 
@@ -85,6 +89,8 @@ export function useDocument(
 		documentId?: string,
 		nextSketchId?: string,
 	) => {
+		documentGeneration.current += 1;
+		documentStateRef.current = nextDocument;
 		desktopDocumentId.current = documentId;
 		setDocumentId(documentId);
 		setSketchId(nextSketchId ?? nextDocument.displayName);
@@ -96,12 +102,14 @@ export function useDocument(
 		knownRecoveryUpdatedAt.current = 0;
 	};
 
-	const sourceForSave = () =>
-		applySaveFormatting(documentState.source, { formatOnSave });
-	const descriptionForSave = (): string | null =>
-		documentState.description.body.trim() === ""
+	const sourceForSave = (document = documentStateRef.current) =>
+		applySaveFormatting(document.source, { formatOnSave });
+	const descriptionForSave = (
+		document = documentStateRef.current,
+	): string | null =>
+		document.description.body.trim() === ""
 			? null
-			: serializeSketchDescription(documentState.description);
+			: serializeSketchDescription(document.description);
 	const descriptionFromSidecar = (
 		name: string,
 		sidecar: string | null | undefined,
@@ -139,39 +147,58 @@ export function useDocument(
 
 	const saveDesktopDocumentAs = async () => {
 		if (desktop === undefined) return;
-		const source = sourceForSave();
-		let suggestedName = documentState.displayName.endsWith(".gic")
-			? documentState.displayName.slice(0, -".gic".length)
-			: documentState.displayName;
-		if (documentState.kind === "untitled") {
+		const snapshot = documentStateRef.current;
+		const generation = documentGeneration.current;
+		const source = sourceForSave(snapshot);
+		let suggestedName = snapshot.displayName.endsWith(".gic")
+			? snapshot.displayName.slice(0, -".gic".length)
+			: snapshot.displayName;
+		if (snapshot.kind === "untitled") {
 			const existingNames = await desktop.existingSketchNames();
+			if (generation !== documentGeneration.current) return;
 			if (existingNames.includes(suggestedName)) {
 				const takenNames = new Set(existingNames);
 				for (const name of newSketchNames) {
 					if (name !== suggestedName) takenNames.add(name);
 				}
 				suggestedName = nextSketchName(takenNames, new Date());
-				newSketchNames.delete(documentState.displayName);
+				newSketchNames.delete(snapshot.displayName);
 				newSketchNames.add(suggestedName);
-				setDocumentState({ ...documentState, displayName: suggestedName });
+				setDocumentState({ ...snapshot, displayName: suggestedName });
 			}
 		}
 		const saved = await desktop.saveDocumentAs(
 			source,
 			suggestedName,
-			descriptionForSave(),
+			descriptionForSave(snapshot),
 		);
 		if (saved === null) return;
-		discardRecovery();
-		replaceDocument(
-			openDocument(
-				sketchBaseName(saved.name),
-				saved.source,
-				descriptionFromSidecar(saved.name, saved.description),
-			),
-			saved.documentId,
-			saved.sketchId,
+		if (generation !== documentGeneration.current) {
+			await desktop.cancelOpenDocument(saved.documentId);
+			return;
+		}
+		await desktop.acceptOpenDocument(saved.documentId);
+		if (generation !== documentGeneration.current) return;
+		const savedDocument = openDocument(
+			sketchBaseName(saved.name),
+			saved.source,
+			descriptionFromSidecar(saved.name, saved.description),
 		);
+		const current = documentStateRef.current;
+		const advanced = completeDocumentSave(
+			{
+				...savedDocument,
+				source: current.source,
+				description: current.description,
+			},
+			savedDocument,
+			String(documentGeneration.current),
+			String(generation),
+		);
+		if (advanced === undefined) return;
+		replaceDocument(advanced, saved.documentId, saved.sketchId);
+		if (advanced.isDirty) persistRecovery(advanced);
+		else discardRecovery();
 	};
 
 	useEffect(() => {
@@ -206,23 +233,38 @@ export function useDocument(
 
 	const saveDesktopDocument = async () => {
 		if (desktop === undefined) return;
+		const snapshot = documentStateRef.current;
+		const generation = documentGeneration.current;
 		const documentId = desktopDocumentId.current;
-		if (!documentState.canSave || documentId === undefined) {
+		if (!snapshot.canSave || documentId === undefined) {
 			await saveDesktopDocumentAs();
 			return;
 		}
-		const source = sourceForSave();
-		await desktop.saveDocument(documentId, source, descriptionForSave());
-		discardRecovery();
-		replace(
-			openDocument(
-				documentState.displayName,
-				source,
-				documentState.description.body.trim() === ""
-					? defaultSketchDescription(sketchBaseName(documentState.displayName))
-					: documentState.description,
-			),
+		const source = sourceForSave(snapshot);
+		await desktop.saveDocument(
+			documentId,
+			source,
+			descriptionForSave(snapshot),
 		);
+		if (generation !== documentGeneration.current) return;
+		const current = documentStateRef.current;
+		const savedDocument = openDocument(
+			snapshot.displayName,
+			source,
+			snapshot.description.body.trim() === ""
+				? defaultSketchDescription(sketchBaseName(snapshot.displayName))
+				: snapshot.description,
+		);
+		const advanced = completeDocumentSave(
+			current,
+			savedDocument,
+			String(documentGeneration.current),
+			String(generation),
+		);
+		if (advanced === undefined) return;
+		replace(advanced);
+		if (advanced.isDirty) persistRecovery(advanced);
+		else discardRecovery();
 	};
 
 	const runDesktopOperation = (operation: () => Promise<void>) => {
@@ -241,6 +283,7 @@ export function useDocument(
 		saveAsOpen,
 		updateSource(source: string) {
 			const nextDocument = updateDocumentSource(documentState, source);
+			if (nextDocument !== documentState) documentRevision.current += 1;
 			replace(nextDocument);
 			persistRecovery(nextDocument);
 		},
@@ -249,11 +292,14 @@ export function useDocument(
 				documentState,
 				description,
 			);
+			if (nextDocument !== documentState) documentRevision.current += 1;
 			replace(nextDocument);
 			persistRecovery(nextDocument);
 		},
 		requestNew() {
-			const open = async () => {
+			const generation = documentGeneration.current;
+			const open = async (discardConfirmed = false) => {
+				const revision = documentRevision.current;
 				let name: string;
 				try {
 					name = await nextAvailableSketchName();
@@ -261,11 +307,25 @@ export function useDocument(
 					window.alert("GIC could not choose a unique sketch name.");
 					return;
 				}
+				if (generation !== documentGeneration.current) return;
+				if (
+					documentRevision.current !== revision &&
+					documentStateRef.current.isDirty
+				) {
+					pendingReplacement.current = () => open(true);
+					setDiscardOpen(true);
+					return;
+				}
+				if (documentStateRef.current.isDirty && !discardConfirmed) {
+					pendingReplacement.current = () => open(true);
+					setDiscardOpen(true);
+					return;
+				}
 				discardRecovery();
 				replaceDocument(createNewSketchDocument(name));
 			};
-			if (documentState.isDirty) {
-				pendingReplacement.current = open;
+			if (documentStateRef.current.isDirty) {
+				pendingReplacement.current = () => open(true);
 				setDiscardOpen(true);
 				return;
 			}
@@ -298,14 +358,30 @@ export function useDocument(
 			setSaveAsOpen(false);
 		},
 		requestOpen(file: File) {
-			const open = async () => {
+			const generation = documentGeneration.current;
+			const open = async (discardConfirmed = false) => {
+				const revision = documentRevision.current;
 				const openedFile = await adapter.readFile(file);
+				if (generation !== documentGeneration.current) return;
+				if (
+					documentRevision.current !== revision &&
+					documentStateRef.current.isDirty
+				) {
+					pendingReplacement.current = () => open(true);
+					setDiscardOpen(true);
+					return;
+				}
+				if (documentStateRef.current.isDirty && !discardConfirmed) {
+					pendingReplacement.current = () => open(true);
+					setDiscardOpen(true);
+					return;
+				}
 				discardRecovery();
 				adapter.recordRecent(openedFile.name);
 				replaceDocument(openDocument(openedFile.name, openedFile.source));
 			};
-			if (documentState.isDirty) {
-				pendingReplacement.current = open;
+			if (documentStateRef.current.isDirty) {
+				pendingReplacement.current = () => open(true);
 				setDiscardOpen(true);
 				return;
 			}
@@ -313,9 +389,14 @@ export function useDocument(
 		},
 		requestDesktopOpen() {
 			if (desktop === undefined) return;
+			const generation = documentGeneration.current;
 			const chooseDocument = async () => {
 				const openedDocument = await desktop.openDocument();
 				if (openedDocument === null) return;
+				if (generation !== documentGeneration.current) {
+					await desktop.cancelOpenDocument(openedDocument.documentId);
+					return;
+				}
 				let nextDocument: DocumentState;
 				try {
 					nextDocument = openDocument(
@@ -331,7 +412,12 @@ export function useDocument(
 					throw error;
 				}
 				const open = async () => {
+					if (generation !== documentGeneration.current) {
+						await desktop.cancelOpenDocument(openedDocument.documentId);
+						return;
+					}
 					await desktop.acceptOpenDocument(openedDocument.documentId);
+					if (generation !== documentGeneration.current) return;
 					discardRecovery();
 					replaceDocument(
 						nextDocument,
@@ -339,7 +425,7 @@ export function useDocument(
 						openedDocument.sketchId,
 					);
 				};
-				if (documentState.isDirty) {
+				if (documentStateRef.current.isDirty) {
 					pendingReplacement.current = open;
 					pendingCancellation.current = () => {
 						void desktop.cancelOpenDocument(openedDocument.documentId);

@@ -84,6 +84,31 @@ export function createRecoveredDocument(
 	);
 }
 
+export function completeDocumentSave(
+	current: DocumentState,
+	saved: DocumentState,
+	currentIdentity: string,
+	operationIdentity: string,
+): DocumentState | undefined {
+	if (currentIdentity !== operationIdentity) return undefined;
+	return markDocumentSaved(current, saved);
+}
+
+export function markDocumentSaved(
+	current: DocumentState,
+	saved: DocumentState,
+): DocumentState {
+	const isDirty =
+		current.source !== saved.source ||
+		JSON.stringify(current.description) !== JSON.stringify(saved.description);
+	return {
+		...current,
+		baselineSource: saved.source,
+		baselineDescription: saved.description,
+		isDirty,
+	};
+}
+
 export function updateDocumentSource(
 	document: DocumentState,
 	source: string,
