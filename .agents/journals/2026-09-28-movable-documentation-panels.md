@@ -9,3 +9,4 @@
 - [technique] The bundled Colors → Named Colors Markdown link selects the existing target wherever it was docked. Relative path resolution stays within the bundled docs and leaves external links with their browser behavior.
 - [verification] Focused model and link tests, compact/core tests, typechecks, scoped lint and formatting, the browser build, browser drag/link acceptance, and offline PWA drag/link acceptance in Chrome, Firefox, and WebKit passed.
 - [risk] Full Firefox acceptance exposed intermittent Monaco completion-details visibility and example-card hover geometry; the Monaco reproduction was added to git-bug `be27ae0`. The unrelated Astro site still fails repository-wide lint, formatting, and prerendering under git-bug `fff2a5f`.
+- [verification] Fabian ran `pnpm build:desktop` on the feature branch; Tauri produced the macOS `GiC.app` and arm64 `.dmg`. A successful package build does not itself prove the two-step drag inside the installed desktop webview.
