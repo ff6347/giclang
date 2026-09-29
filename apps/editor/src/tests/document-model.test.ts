@@ -11,6 +11,7 @@ import {
 	createUntitledDocument,
 	openDocument,
 	readRecovery,
+	renameDocument,
 	updateDocumentDescription,
 	updateDocumentSource,
 	writeRecovery,
@@ -99,36 +100,49 @@ describe("document model", () => {
 		);
 	});
 
-	it("advances the saved baseline without losing edits made during the save", () => {
+	it("adopts formatted source when it was not edited after the save snapshot", () => {
+		const snapshot = openDocument("motif.gic", "point(1,2);");
+		const saved = openDocument(
+			"motif.gic",
+			"point(1, 2);",
+			snapshot.description,
+		);
+		const advanced = completeDocumentSave(snapshot, saved, snapshot, "A", "A");
+
+		assert.equal(advanced?.source, "point(1, 2);");
+		assert.equal(advanced?.isDirty, false);
+	});
+
+	it("preserves source and description edits made after the save snapshot independently", () => {
 		const initial = openDocument("motif.gic", "original");
-		const saveSnapshot = updateDocumentDescription(initial, {
+		const snapshot = updateDocumentDescription(initial, {
 			...initial.description,
 			body: "Saved description",
 		});
 		const editedDuringSave = updateDocumentSource(
-			updateDocumentDescription(saveSnapshot, {
-				...saveSnapshot.description,
+			updateDocumentDescription(snapshot, {
+				...snapshot.description,
 				body: "Newest description",
 			}),
 			"edited while saving",
 		);
-
 		const savedCopy = openDocument(
 			"copy.gic",
-			"original",
-			saveSnapshot.description,
+			"formatted original",
+			snapshot.description,
 		);
 		const advanced = completeDocumentSave(
 			editedDuringSave,
 			savedCopy,
+			snapshot,
 			"document-A",
 			"document-A",
 		);
-		assert.ok(advanced);
 
+		assert.ok(advanced);
 		assert.equal(advanced.kind, "file");
 		assert.equal(advanced.displayName, "copy.gic");
-		assert.equal(advanced.baselineSource, "original");
+		assert.equal(advanced.baselineSource, "formatted original");
 		assert.equal(advanced.source, "edited while saving");
 		assert.equal(advanced.baselineDescription.body, "Saved description");
 		assert.equal(advanced.description.body, "Newest description");
@@ -136,12 +150,95 @@ describe("document model", () => {
 		assert.equal(
 			completeDocumentSave(
 				editedDuringSave,
-				saveSnapshot,
+				savedCopy,
+				snapshot,
 				"document-C",
 				"document-A",
 			),
 			undefined,
 		);
+	});
+
+	it("adopts formatted source while preserving a description edit made after snapshot", () => {
+		const initial = openDocument("motif.gic", "point(1,2);");
+		const snapshot = updateDocumentDescription(initial, {
+			...initial.description,
+			body: "snapshot description",
+		});
+		const current = updateDocumentDescription(snapshot, {
+			...snapshot.description,
+			body: "later description",
+		});
+		const saved = openDocument(
+			"motif.gic",
+			"point(1, 2);",
+			snapshot.description,
+		);
+		const advanced = completeDocumentSave(current, saved, snapshot, "A", "A");
+
+		assert.equal(advanced?.source, "point(1, 2);");
+		assert.equal(advanced?.description.body, "later description");
+		assert.equal(advanced?.isDirty, true);
+	});
+
+	it("preserves a source edit while adopting saved description defaults", () => {
+		const initial = openDocument("motif.gic", "source", {
+			metadata: {
+				title: "Custom title",
+				order: 3,
+				enabled: false,
+				categories: ["custom"],
+				tags: ["tag"],
+			},
+			body: "body",
+		});
+		const snapshot = updateDocumentDescription(initial, {
+			...initial.description,
+			body: "",
+		});
+		const current = updateDocumentSource(snapshot, "edited during save");
+		const saved = openDocument("motif.gic", "source");
+		const advanced = completeDocumentSave(current, saved, snapshot, "A", "A");
+
+		assert.deepEqual(advanced?.description, saved.description);
+		assert.equal(advanced?.source, "edited during save");
+		assert.equal(advanced?.isDirty, true);
+	});
+
+	it("adopts saved description defaults when a blank body removed its sidecar", () => {
+		const initial = openDocument("motif.gic", "source", {
+			metadata: {
+				title: "Custom title",
+				order: 3,
+				enabled: false,
+				categories: ["custom"],
+				tags: ["tag"],
+			},
+			body: "body",
+		});
+		const snapshot = updateDocumentDescription(initial, {
+			...initial.description,
+			body: "",
+		});
+		const saved = openDocument("motif.gic", "source");
+		const advanced = completeDocumentSave(snapshot, saved, snapshot, "A", "A");
+
+		assert.deepEqual(advanced?.description, saved.description);
+		assert.equal(advanced?.isDirty, false);
+	});
+
+	it("renames the current document without discarding edits made during name lookup", () => {
+		const snapshot = createUntitledDocument();
+		const latest = updateDocumentDescription(
+			updateDocumentSource(snapshot, "latest source"),
+			{ ...snapshot.description, body: "latest description" },
+		);
+		const renamed = renameDocument(latest, "Untitled sketch 2");
+
+		assert.equal(renamed.displayName, "Untitled sketch 2");
+		assert.equal(renamed.source, "latest source");
+		assert.equal(renamed.description.body, "latest description");
+		assert.equal(renamed.isDirty, true);
 	});
 
 	it("opens a named file as a clean document", () => {

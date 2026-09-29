@@ -12,6 +12,8 @@ import {
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
 import { nextSketchName } from "../lib/sketch-naming.ts";
+import { DocumentActivation } from "../lib/document-activation.ts";
+import { desktopOperationMessage } from "../lib/desktop-operation-message.ts";
 import type { DesktopHost } from "../lib/desktop-host.ts";
 import {
 	createExampleDocument,
@@ -19,6 +21,7 @@ import {
 	createRecoveredDocument,
 	openDocument,
 	completeDocumentSave,
+	renameDocument,
 	updateDocumentDescription,
 	updateDocumentSource,
 	type DocumentState,
@@ -59,9 +62,12 @@ export function useDocument(
 	documentStateRef.current = documentState;
 	const documentGeneration = useRef(0);
 	const documentRevision = useRef(0);
+	const activation = useRef(new DocumentActivation()).current;
 	const [saveAsOpen, setSaveAsOpen] = useState(false);
 	const [activationPending, setActivationPending] = useState(false);
-	const activationPendingRef = useRef(false);
+	const [operationMessage, setOperationMessage] = useState<
+		string | undefined
+	>();
 	const [discardOpen, setDiscardOpen] = useState(false);
 	const [recoveryOpen, setRecoveryOpen] = useState(
 		initialRecovery !== undefined,
@@ -104,19 +110,21 @@ export function useDocument(
 		knownRecoveryUpdatedAt.current = 0;
 	};
 
-	const beginActivation = () => {
-		activationPendingRef.current = true;
-		setActivationPending(true);
+	const acquireActivation = () => {
+		const lease = activation.acquire();
+		if (lease !== undefined) setActivationPending(true);
+		return lease;
 	};
 
-	const endActivation = () => {
-		activationPendingRef.current = false;
-		setActivationPending(false);
+	const releaseActivation = (lease: symbol) => {
+		if (activation.release(lease)) setActivationPending(false);
 	};
 
 	const rejectWhileActivating = () => {
-		if (!activationPendingRef.current) return false;
-		window.alert("Wait for the sketch to finish opening before continuing.");
+		if (!activation.isPending) return false;
+		setOperationMessage(
+			"Wait for the sketch to finish opening before continuing.",
+		);
 		return true;
 	};
 
@@ -180,9 +188,15 @@ export function useDocument(
 					if (name !== suggestedName) takenNames.add(name);
 				}
 				suggestedName = nextSketchName(takenNames, new Date());
-				newSketchNames.delete(snapshot.displayName);
-				newSketchNames.add(suggestedName);
-				setDocumentState({ ...snapshot, displayName: suggestedName });
+				const current = documentStateRef.current;
+				if (
+					current.kind === "untitled" &&
+					current.displayName === snapshot.displayName
+				) {
+					newSketchNames.delete(snapshot.displayName);
+					newSketchNames.add(suggestedName);
+					replace(renameDocument(current, suggestedName));
+				}
 			}
 		}
 		const saved = await desktop.saveDocumentAs(
@@ -195,7 +209,14 @@ export function useDocument(
 			await desktop.cancelOpenDocument(saved.documentId);
 			return;
 		}
-		beginActivation();
+		const lease = acquireActivation();
+		if (lease === undefined) {
+			await desktop.cancelOpenDocument(saved.documentId);
+			setOperationMessage(
+				"The saved sketch was not activated because another sketch is opening.",
+			);
+			return;
+		}
 		try {
 			await desktop.acceptOpenDocument(saved.documentId);
 			if (generation !== documentGeneration.current) return;
@@ -207,6 +228,7 @@ export function useDocument(
 			const advanced = completeDocumentSave(
 				documentStateRef.current,
 				savedDocument,
+				snapshot,
 				String(documentGeneration.current),
 				String(generation),
 			);
@@ -215,7 +237,7 @@ export function useDocument(
 			if (advanced.isDirty) persistRecovery(advanced);
 			else discardRecovery();
 		} finally {
-			endActivation();
+			releaseActivation(lease);
 		}
 	};
 
@@ -239,9 +261,10 @@ export function useDocument(
 				}
 				const name = nextSketchName(takenNames, new Date());
 				if (name === initialSketchName) return;
+				if (activation.isPending) return;
 				newSketchNames.delete(initialSketchName);
 				newSketchNames.add(name);
-				setDocumentState({ ...current, displayName: name });
+				replace(renameDocument(current, name));
 			})
 			.catch(() => {});
 		return () => {
@@ -276,6 +299,7 @@ export function useDocument(
 		const advanced = completeDocumentSave(
 			current,
 			savedDocument,
+			snapshot,
 			String(documentGeneration.current),
 			String(generation),
 		);
@@ -286,8 +310,9 @@ export function useDocument(
 	};
 
 	const runDesktopOperation = (operation: () => Promise<void>) => {
-		void operation().catch(() => {
-			window.alert("GIC could not complete the desktop file operation.");
+		setOperationMessage(undefined);
+		void operation().catch((error: unknown) => {
+			setOperationMessage(desktopOperationMessage(error));
 		});
 	};
 
@@ -296,6 +321,7 @@ export function useDocument(
 		documentId,
 		sketchId,
 		activationPending,
+		operationMessage,
 		discardOpen,
 		recoveryOpen,
 		recentFiles: adapter.listRecent(),
@@ -330,6 +356,7 @@ export function useDocument(
 					return;
 				}
 				if (generation !== documentGeneration.current) return;
+				if (rejectWhileActivating()) return;
 				if (
 					documentRevision.current !== revision &&
 					documentStateRef.current.isDirty
@@ -390,6 +417,7 @@ export function useDocument(
 				const revision = documentRevision.current;
 				const openedFile = await adapter.readFile(file);
 				if (generation !== documentGeneration.current) return;
+				if (rejectWhileActivating()) return;
 				if (
 					documentRevision.current !== revision &&
 					documentStateRef.current.isDirty
@@ -425,6 +453,10 @@ export function useDocument(
 					await desktop.cancelOpenDocument(openedDocument.documentId);
 					return;
 				}
+				if (rejectWhileActivating()) {
+					await desktop.cancelOpenDocument(openedDocument.documentId);
+					return;
+				}
 				let nextDocument: DocumentState;
 				try {
 					nextDocument = openDocument(
@@ -444,7 +476,14 @@ export function useDocument(
 						await desktop.cancelOpenDocument(openedDocument.documentId);
 						return;
 					}
-					beginActivation();
+					const lease = acquireActivation();
+					if (lease === undefined) {
+						await desktop.cancelOpenDocument(openedDocument.documentId);
+						setOperationMessage(
+							"The selected sketch was not opened because another sketch is opening.",
+						);
+						return;
+					}
 					try {
 						await desktop.acceptOpenDocument(openedDocument.documentId);
 						if (generation !== documentGeneration.current) return;
@@ -455,7 +494,7 @@ export function useDocument(
 							openedDocument.sketchId,
 						);
 					} finally {
-						endActivation();
+						releaseActivation(lease);
 					}
 				};
 				if (documentStateRef.current.isDirty) {
@@ -499,8 +538,8 @@ export function useDocument(
 			const replacement = pendingReplacement.current;
 			pendingReplacement.current = undefined;
 			if (replacement !== undefined) {
-				void Promise.resolve(replacement()).catch(() => {
-					window.alert("GIC could not complete the desktop file operation.");
+				void Promise.resolve(replacement()).catch((error: unknown) => {
+					setOperationMessage(desktopOperationMessage(error));
 				});
 			}
 		},

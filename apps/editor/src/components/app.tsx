@@ -720,6 +720,9 @@ export function App({
 					Opening sketch… Editing and file actions are paused.
 				</p>
 			)}
+			{documents.operationMessage !== undefined && (
+				<p role="alert">{documents.operationMessage}</p>
+			)}
 			<div className="application-layout">
 				<Layout
 					factory={panelFactory}

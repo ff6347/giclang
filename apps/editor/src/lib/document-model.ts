@@ -87,14 +87,31 @@ export function createRecoveredDocument(
 export function completeDocumentSave(
 	current: DocumentState,
 	saved: DocumentState,
+	snapshot: DocumentState,
 	currentIdentity: string,
 	operationIdentity: string,
 ): DocumentState | undefined {
 	if (currentIdentity !== operationIdentity) return undefined;
 	return markDocumentSaved(
-		{ ...saved, source: current.source, description: current.description },
+		{
+			...saved,
+			source:
+				current.source === snapshot.source ? saved.source : current.source,
+			description:
+				JSON.stringify(current.description) ===
+				JSON.stringify(snapshot.description)
+					? saved.description
+					: current.description,
+		},
 		saved,
 	);
+}
+
+export function renameDocument(
+	document: DocumentState,
+	displayName: string,
+): DocumentState {
+	return { ...document, displayName };
 }
 
 export function markDocumentSaved(
