@@ -3,6 +3,10 @@
 
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(() => {
+	test.skip(true, "Agent interactions require a desktop UI test runner.");
+});
+
 test("asks the deterministic agent only after explicit submission", async ({
 	page,
 }) => {

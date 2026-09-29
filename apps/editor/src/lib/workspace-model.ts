@@ -37,7 +37,7 @@ interface StoredWorkspace {
 	version: typeof STORAGE_VERSION;
 }
 
-function defaultLayout(): IJsonModel {
+function defaultLayout(includeAgent: boolean): IJsonModel {
 	return {
 		global: {
 			tabEnableClose: false,
@@ -91,12 +91,16 @@ function defaultLayout(): IJsonModel {
 											name: "Output",
 											component: OUTPUT_ID,
 										},
-										{
-											type: "tab",
-											id: AGENT_ID,
-											name: "Agent",
-											component: AGENT_ID,
-										},
+										...(includeAgent
+											? [
+													{
+														type: "tab" as const,
+														id: AGENT_ID,
+														name: "Agent",
+														component: AGENT_ID,
+													},
+												]
+											: []),
 									],
 								},
 								{
@@ -164,16 +168,17 @@ function defaultLayout(): IJsonModel {
 	};
 }
 
-export function createDefaultWorkspace(): Model {
-	return Model.fromJson(defaultLayout());
+export function createDefaultWorkspace(includeAgent: boolean): Model {
+	return Model.fromJson(defaultLayout(includeAgent));
 }
 
 export function loadWorkspace(
+	includeAgent: boolean,
 	settings: ApplicationSettings = localStorage,
 ): Model {
 	const stored = settings.getItem(STORAGE_KEY);
 	if (stored === null) {
-		return createDefaultWorkspace();
+		return createDefaultWorkspace(includeAgent);
 	}
 	try {
 		const parsed: unknown = JSON.parse(stored);
@@ -185,7 +190,7 @@ export function loadWorkspace(
 				parsed.version !== STORAGE_VERSION - 1) ||
 			!("layout" in parsed)
 		) {
-			return createDefaultWorkspace();
+			return createDefaultWorkspace(includeAgent);
 		}
 		const layout = (parsed as StoredWorkspace).layout;
 		layout.global = {
@@ -193,12 +198,12 @@ export function loadWorkspace(
 			tabSetEnableClose: true,
 		};
 		const model = Model.fromJson(layout);
-		ensureAgent(model);
-		validateWorkspace(model);
+		reconcileAgent(model, includeAgent);
+		validateWorkspace(model, includeAgent);
 		saveWorkspace(model, settings);
 		return model;
 	} catch {
-		return createDefaultWorkspace();
+		return createDefaultWorkspace(includeAgent);
 	}
 }
 
@@ -233,16 +238,22 @@ function validatePanel(model: Model, panelId: string, tabsetId: string): void {
 	}
 }
 
-function ensureAgent(model: Model): void {
-	const legacyTabs: TabNode[] = [];
+function reconcileAgent(model: Model, includeAgent: boolean): void {
+	const unavailableTabs: TabNode[] = [];
 	model.visitNodes((node) => {
-		if (node instanceof TabNode && node.getComponent() === LEGACY_TUTOR_ID) {
-			legacyTabs.push(node);
+		if (
+			node instanceof TabNode &&
+			(node.getComponent() === LEGACY_TUTOR_ID ||
+				(!includeAgent &&
+					(node.getComponent() === AGENT_ID || node.getId() === AGENT_ID)))
+		) {
+			unavailableTabs.push(node);
 		}
 	});
-	for (const legacyTab of legacyTabs) {
-		model.doAction(Actions.deleteTab(legacyTab.getId()));
+	for (const tab of unavailableTabs) {
+		model.doAction(Actions.deleteTab(tab.getId()));
 	}
+	if (!includeAgent) return;
 	const existing = model.getNodeById(AGENT_ID);
 	if (
 		existing instanceof TabNode &&
@@ -261,7 +272,7 @@ function ensureAgent(model: Model): void {
 	);
 }
 
-function validateWorkspace(model: Model): void {
+function validateWorkspace(model: Model, includeAgent: boolean): void {
 	const applicationTabset = model.getNodeById(APPLICATION_TABSET_ID);
 	const code = requireTab(model, CODE_ID);
 	if (
@@ -278,5 +289,5 @@ function validateWorkspace(model: Model): void {
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);
-	validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
+	if (includeAgent) validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
 }
