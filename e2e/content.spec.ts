@@ -19,22 +19,27 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(docs.getByRole("tab").first()).toBeVisible();
 	await expect(docs.locator("h2").first()).toBeVisible();
 	await expect(docs.locator(".content-markdown > *").first()).toBeVisible();
-	await docs.getByRole("tab", { name: "Named Colors" }).click();
-	await expect(
-		docs.getByRole("heading", { name: "Named Colors", level: 2 }),
-	).toBeVisible();
+	const nextPage = docs.getByRole("tab").nth(1);
+	await nextPage.click();
+	await expect(nextPage).toHaveAttribute("aria-selected", "true");
+	await expect(docs.getByRole("heading", { level: 2 })).toHaveText(
+		(await nextPage.innerText()).trim(),
+	);
 	await expect(page).toHaveURL("/");
 });
 
 test("loads images authored beside a Markdown document", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Docs" }).click();
-	await page.getByRole("tab", { name: "Drawing" }).click();
-	const image = page
-		.getByRole("tabpanel", { name: "Docs" })
-		.getByRole("article", { name: "Drawing" })
+	const docs = page.getByRole("tabpanel", { name: "Docs" });
+	const image = docs
+		.getByRole("article")
 		.locator(".content-markdown img")
 		.first();
+	for (const tab of await docs.getByRole("tab").all()) {
+		await tab.click();
+		if ((await image.count()) > 0) break;
+	}
 	await expect(image).toBeVisible();
 	await expect
 		.poll(() =>

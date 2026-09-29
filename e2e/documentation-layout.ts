@@ -23,6 +23,25 @@ export async function showBothWorkspaces(page: Page) {
 	return docs;
 }
 
+export async function followBundledDocumentationLink(page: Page) {
+	const docs = page.getByRole("tabpanel", { name: "Docs" });
+	const tabs = docs.getByRole("tab");
+	for (let index = 0; index < (await tabs.count()); index++) {
+		const source = tabs.nth(index);
+		await source.click();
+		const link = docs.getByRole("article").locator('a[href$=".md"]').first();
+		if ((await link.count()) === 0) continue;
+		const sourceName = (await source.innerText()).trim();
+		await link.click();
+		const target = docs.getByRole("tab", { selected: true });
+		await expect(target).toBeVisible();
+		const targetName = (await target.innerText()).trim();
+		expect(targetName).not.toBe(sourceName);
+		return { sourceName, targetName };
+	}
+	throw new Error("Bundled documentation contains no relative Markdown link.");
+}
+
 export async function moveDocumentationBesideEditor(page: Page, title: string) {
 	const source = await page.getByRole("tab", { name: title }).boundingBox();
 	const target = await page

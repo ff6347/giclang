@@ -4,6 +4,7 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 import {
+	followBundledDocumentationLink,
 	moveDocumentationBesideEditor,
 	showBothWorkspaces,
 } from "../../../e2e/documentation-layout.ts";
@@ -152,18 +153,25 @@ test("reopens a moved documentation page from a relative link offline", async ({
 	await page.goto("/");
 	await waitForServiceWorker(page);
 	const docs = await showBothWorkspaces(page);
-	await moveDocumentationBesideEditor(page, "Named Colors");
-	await expect(docs.getByRole("tab", { name: "Named Colors" })).toHaveCount(0);
+	const { sourceName, targetName } = await followBundledDocumentationLink(page);
+	await moveDocumentationBesideEditor(page, targetName);
+	await expect(
+		docs.getByRole("tab", { name: targetName, exact: true }),
+	).toHaveCount(0);
 
 	const offlinePage = await restartOffline(context, page);
 	const offlineDocs = offlinePage.getByRole("tabpanel", { name: "Docs" });
-	await offlineDocs.getByRole("tab", { name: "Colors", exact: true }).click();
-	await offlineDocs.getByRole("link", { name: "distinct tab" }).click();
+	await offlineDocs.getByRole("tab", { name: sourceName, exact: true }).click();
+	await offlineDocs
+		.getByRole("article", { name: sourceName })
+		.locator('a[href$=".md"]')
+		.first()
+		.click();
 	await expect(
-		offlinePage.getByRole("tab", { name: "Named Colors" }),
+		offlinePage.getByRole("tab", { name: targetName, exact: true }),
 	).toHaveAttribute("aria-selected", "true");
 	await expect(
-		offlinePage.getByRole("article", { name: "Named Colors" }),
+		offlinePage.getByRole("article", { name: targetName }),
 	).toBeVisible();
 });
 
