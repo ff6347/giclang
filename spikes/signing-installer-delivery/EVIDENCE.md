@@ -7,14 +7,14 @@
 
 The macOS arm64 DMG can be signed with the locally installed Developer ID Application identity. Its embedded app passes strict signature verification, but Gatekeeper rejects it as `Unnotarized Developer ID`. A local install, launch, replacement, and uninstall passed without altering the existing private GiC configuration. This does **not** establish that a downloaded workshop installer is ready.
 
-The Windows 0.1.0 and 0.1.1 installer builds passed in CI; manual Windows 10 smoke checks remain. An x64 Linux `.deb` also built in CI, but Mint installation has not been checked. Linux remains best-effort. No signed release workflow or in-app updater exists.
+The Windows 0.1.0 and 0.1.1 installer builds passed in CI. On Windows 10, the unsigned 0.1.1 installer triggered a SmartScreen unknown-publisher warning, then completed setup and launched GiC with a visible sketch preview. Codex login and OpenCode API-key connection each reportedly crashed the app; their causes and the replacement/uninstall checks remain unverified. An x64 Linux `.deb` also built in CI, but Mint installation has not been checked. Linux remains best-effort. No signed release workflow or in-app updater exists.
 
 ## Proposed package matrix
 
 | Platform | Candidate artifact | Architecture | Build runner | Status |
 | --- | --- | --- | --- | --- |
 | macOS | Signed and notarized DMG containing `GiC.app` | Apple Silicon; Intel pending approval | Native macOS runner per architecture | arm64 signed locally; notarization unavailable |
-| Windows 10 | Signed NSIS setup executable | x64 | Native Windows runner with MSVC and Windows SDK | Unsigned 0.1.0 and 0.1.1 CI builds passed; manual smoke pending |
+| Windows 10 | Signed NSIS setup executable | x64 | Native Windows runner with MSVC and Windows SDK | Unsigned 0.1.0 and 0.1.1 CI builds passed; 0.1.1 installed and launched, but provider crashes and lifecycle checks remain |
 | Linux Mint | Unsigned `.deb` test package | x64; machine architecture pending confirmation | `ubuntu-24.04` runner | CI build passed; Mint install/launch pending and not a v0.9 release gate |
 
 NSIS is the first Windows installer to test for student installation. MSI is an alternative if deployment policy requires it; it also requires a Windows host. Tauri's [Windows installer guide](https://v2.tauri.app/distribute/windows-installer/) discourages cross-compilation except as a last resort. The default WebView2 bootstrapper may need network access on a clean Windows 10 installation; an offline installer adds about 127 MB and should be selected only if clean-machine testing establishes a need. The static editor must work offline after installation.
@@ -44,7 +44,13 @@ The repository has no configured GitHub Actions secrets and no release workflow.
 | `GiC_0.1.0_x64-setup.exe` | `d9994a171edf790161ede00a5b8ed5810df225f9e9b3ad460af40cefd6276ee3` |
 | `GiC_0.1.1_x64-setup.exe` | `0baae2840e7b28f8527265e41d03c7c755fb7232e46f93716771f973d74a0b7e` |
 
-This is packaging evidence, not a Windows launch or signature check. The replacement build overrides only the Tauri bundle version; a real release must synchronize all three desktop version sources.
+The CI build and hash checks do not verify Windows launch or signatures; the manual launch observation below is separate evidence. The replacement build overrides only the Tauri bundle version; a real release must synchronize all three desktop version sources.
+
+## Windows 10 manual observations
+
+Fabian's photographs show Windows Defender SmartScreen blocking first launch of the unsigned `GiC_0.1.1_x64-setup.exe` with an unknown publisher. After he chose to run it, the NSIS setup completed, and GiC opened with a sketch and its preview visible. This is evidence of installation and static authoring launch on that machine, **not** of a signed installer passing Windows policy without intervention.
+
+Fabian also reports that Codex sign-in failed and crashed the app, and that connecting an OpenCode API key crashed it. The photographs do not show either crash or its diagnostic output, so the failure mode and root cause are not established. Optional tutor failures must not disable the editor. The record does not yet establish that 0.1.0 was installed first, that 0.1.1 replaced it while preserving user data, or that the app was uninstalled.
 
 The [Linux CI job](https://github.com/ff6347/giclang/actions/runs/36606040897) built `GiC_0.1.0_amd64.deb`. Its Debian control metadata names the package `gi-c` and declares dependencies on `libwebkit2gtk-4.1-0` and `libgtk-3-0`. The downloaded package's SHA-256, `53689460371370ce3761d8dac210163720e935c83f878c2611cb7845205517f9`, matched the CI manifest. Neither dependency availability nor installation on Linux Mint has been verified. SSH to `x220` and `x220.local` failed before authentication; a Magic Wormhole transfer is proposed for the manual Mint check.
 
@@ -58,6 +64,6 @@ No certificate, token, password, or private key belongs in Git, an Actions artif
 
 1. Confirm Intel Mac support and the final Windows installer format and WebView2 installation mode.
 2. Provision Apple notarization credentials through an approved secret path, then record notarization, stapling, and Gatekeeper results on a downloaded DMG.
-3. Download the CI Windows x64 artifacts and manifest on the Windows 10 machine, compare their hashes, record any SmartScreen or policy warning, then test install, launch, higher-version replacement, and uninstall. Do not silently bypass policy failures.
+3. Compare the CI Windows x64 installers against their SHA-256 manifest on the Windows 10 machine; verify 0.1.0 installation, higher-version replacement with user-data preservation, and uninstall. Preserve the observed unsigned SmartScreen warning. Collect redacted crash diagnostics for Codex login and OpenCode key connection without sharing credentials.
 4. Choose and provision a Windows signing provider before a release build; repeat signature and installation checks with the signed artifact.
 5. Confirm the Linux Mint machine is x64 and has Magic Wormhole, transfer the verified `.deb`, and record install/launch/uninstall behavior as a non-blocking check.
