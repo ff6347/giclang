@@ -159,10 +159,6 @@ canvas {
 	padding-top: var(--s0);
 }
 
-.content-document > section + section {
-	margin-top: var(--s5);
-}
-
 .example-thumbnail {
 	border: 2px solid var(--color-text);
 	flex: none;

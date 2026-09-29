@@ -9,6 +9,7 @@ import {
 	TabSetNode,
 	type IJsonModel,
 } from "flexlayout-react";
+import type { DocumentationContent } from "@giclang/content/model";
 import type { ApplicationSettings } from "./application-settings.ts";
 
 export const CODE_ID = "code";
@@ -20,9 +21,12 @@ export const EDITOR_ID = "editor";
 export const PREVIEW_ID = "preview";
 export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
+export const DOC_COMPONENT = "documentation";
 
 const APPLICATION_TABSET_ID = "application-tabs";
 const CODE_SUBLAYOUT_ID = "code-workspace";
+const DOCS_SUBLAYOUT_ID = "docs-workspace";
+const DOCUMENTATION_TABSET_ID = "documentation-tabset";
 const EDITOR_TABSET_ID = "editor-tabset";
 const PREVIEW_TABSET_ID = "preview-tabset";
 const PROBLEMS_TABSET_ID = "problems-tabset";
@@ -30,14 +34,32 @@ const OUTPUT_TABSET_ID = "output-tabset";
 export const AGENT_ID = "agent";
 const LEGACY_TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 7;
+const STORAGE_VERSION = 9;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
-	version: typeof STORAGE_VERSION;
+	version: number;
 }
 
-function defaultLayout(includeAgent: boolean): IJsonModel {
+export function documentTabId(id: string): string {
+	return `documentation:${id}`;
+}
+
+function documentationTabs(
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+) {
+	return docs.map((doc) => ({
+		type: "tab" as const,
+		id: documentTabId(doc.id),
+		name: doc.title,
+		component: DOC_COMPONENT,
+	}));
+}
+
+function defaultLayout(
+	includeAgent: boolean,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): IJsonModel {
 	return {
 		global: {
 			tabEnableClose: false,
@@ -121,6 +143,20 @@ function defaultLayout(includeAgent: boolean): IJsonModel {
 					],
 				},
 			},
+			[DOCS_SUBLAYOUT_ID]: {
+				type: "tab",
+				layout: {
+					type: "row",
+					children: [
+						{
+							type: "tabset",
+							id: DOCUMENTATION_TABSET_ID,
+							enableDeleteWhenEmpty: false,
+							children: documentationTabs(docs),
+						},
+					],
+				},
+			},
 		},
 		borders: [],
 		layout: {
@@ -153,7 +189,7 @@ function defaultLayout(includeAgent: boolean): IJsonModel {
 							type: "tab",
 							id: DOCS_ID,
 							name: "Docs",
-							component: DOCS_ID,
+							subLayoutId: DOCS_SUBLAYOUT_ID,
 						},
 						{
 							type: "tab",
@@ -168,17 +204,21 @@ function defaultLayout(includeAgent: boolean): IJsonModel {
 	};
 }
 
-export function createDefaultWorkspace(includeAgent: boolean): Model {
-	return Model.fromJson(defaultLayout(includeAgent));
+export function createDefaultWorkspace(
+	includeAgent: boolean,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): Model {
+	return Model.fromJson(defaultLayout(includeAgent, docs));
 }
 
 export function loadWorkspace(
 	includeAgent: boolean,
 	settings: ApplicationSettings = localStorage,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
 ): Model {
 	const stored = settings.getItem(STORAGE_KEY);
 	if (stored === null) {
-		return createDefaultWorkspace(includeAgent);
+		return createDefaultWorkspace(includeAgent, docs);
 	}
 	try {
 		const parsed: unknown = JSON.parse(stored);
@@ -186,24 +226,32 @@ export function loadWorkspace(
 			typeof parsed !== "object" ||
 			parsed === null ||
 			!("version" in parsed) ||
-			(parsed.version !== STORAGE_VERSION &&
-				parsed.version !== STORAGE_VERSION - 1) ||
+			(parsed.version !== 6 &&
+				parsed.version !== 7 &&
+				parsed.version !== 8 &&
+				parsed.version !== STORAGE_VERSION) ||
 			!("layout" in parsed)
 		) {
-			return createDefaultWorkspace(includeAgent);
+			return createDefaultWorkspace(includeAgent, docs);
 		}
-		const layout = (parsed as StoredWorkspace).layout;
+		const storedWorkspace = parsed as StoredWorkspace;
+		const layout =
+			storedWorkspace.version < STORAGE_VERSION
+				? migrateDocumentationLayout(storedWorkspace.layout, docs)
+				: storedWorkspace.layout;
 		layout.global = {
 			...layout.global,
 			tabSetEnableClose: true,
 		};
+		ensureDocumentationTabset(layout, docs);
 		const model = Model.fromJson(layout);
 		reconcileAgent(model, includeAgent);
-		validateWorkspace(model, includeAgent);
+		reconcileDocumentationTabs(model, docs);
+		validateWorkspace(model, includeAgent, docs);
 		saveWorkspace(model, settings);
 		return model;
 	} catch {
-		return createDefaultWorkspace(includeAgent);
+		return createDefaultWorkspace(includeAgent, docs);
 	}
 }
 
@@ -216,6 +264,145 @@ export function saveWorkspace(
 		version: STORAGE_VERSION,
 	};
 	settings.setItem(STORAGE_KEY, JSON.stringify(stored));
+}
+
+function migrateDocumentationLayout(
+	layout: IJsonModel,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): IJsonModel {
+	const migrated = structuredClone(layout);
+	const docsTab = findTabJson(migrated.layout, DOCS_ID);
+	if (
+		docsTab?.subLayoutId === DOCS_SUBLAYOUT_ID &&
+		docsTab.component === undefined &&
+		migrated.subLayouts?.[DOCS_SUBLAYOUT_ID] !== undefined
+	) {
+		return migrated;
+	}
+	if (docsTab === undefined || docsTab.component !== DOCS_ID) {
+		throw new Error("Legacy Docs panel is invalid.");
+	}
+	delete docsTab.component;
+	docsTab.subLayoutId = DOCS_SUBLAYOUT_ID;
+	migrated.subLayouts = {
+		...migrated.subLayouts,
+		[DOCS_SUBLAYOUT_ID]: {
+			type: "tab",
+			layout: {
+				type: "row",
+				children: [
+					{
+						type: "tabset",
+						id: DOCUMENTATION_TABSET_ID,
+						enableDeleteWhenEmpty: false,
+						children: documentationTabs(docs),
+					},
+				],
+			},
+		},
+	};
+	return migrated;
+}
+
+function findTabJson(
+	node: IJsonModel["layout"],
+	id: string,
+): Record<string, unknown> | undefined {
+	if (node.id === id) return node as Record<string, unknown>;
+	for (const child of node.children ?? []) {
+		const found = findTabJson(child, id);
+		if (found !== undefined) return found;
+	}
+	return undefined;
+}
+
+function ensureDocumentationTabset(
+	layout: IJsonModel,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): void {
+	const docsLayout = layout.subLayouts?.[DOCS_SUBLAYOUT_ID]?.layout;
+	if (docsLayout === undefined) {
+		throw new Error("Docs sublayout is invalid.");
+	}
+	if (findTabJson(docsLayout, DOCUMENTATION_TABSET_ID) !== undefined) return;
+	const missingDocs = docs.filter(
+		(doc) =>
+			findTabJson(layout.layout, documentTabId(doc.id)) === undefined &&
+			!Object.values(layout.subLayouts ?? {}).some(
+				(subLayout) =>
+					findTabJson(subLayout.layout, documentTabId(doc.id)) !== undefined,
+			),
+	);
+	if (missingDocs.length === 0) return;
+	(docsLayout.children ??= []).push({
+		type: "tabset",
+		id: DOCUMENTATION_TABSET_ID,
+		enableDeleteWhenEmpty: false,
+		children: documentationTabs(missingDocs),
+	});
+}
+
+function reconcileDocumentationTabs(
+	model: Model,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): void {
+	const documents = new Map(docs.map((doc) => [documentTabId(doc.id), doc]));
+	if (documents.size !== docs.length) {
+		throw new Error("Documentation identifiers are not unique.");
+	}
+	const tabs: TabNode[] = [];
+	model.visitNodes((node) => {
+		if (node instanceof TabNode && node.getComponent() === DOC_COMPONENT) {
+			tabs.push(node);
+		}
+	});
+	const documentationTabset = model.getNodeById(DOCUMENTATION_TABSET_ID);
+	const hasDocumentationTabset = documentationTabset instanceof TabSetNode;
+	if (hasDocumentationTabset) {
+		model.doAction(
+			Actions.updateNodeAttributes(DOCUMENTATION_TABSET_ID, {
+				enableDeleteWhenEmpty: false,
+			}),
+		);
+	}
+	for (const tab of tabs) {
+		if (!tab.getId().startsWith("documentation:")) {
+			throw new Error("Documentation tab identifier is invalid.");
+		}
+	}
+	for (const [tabId, doc] of documents) {
+		const tab = model.getNodeById(tabId);
+		if (tab === undefined) {
+			if (!hasDocumentationTabset) {
+				throw new Error("Docs sublayout is invalid.");
+			}
+			model.doAction(
+				Actions.addTab(
+					{
+						id: tabId,
+						name: doc.title,
+						component: DOC_COMPONENT,
+					},
+					DOCUMENTATION_TABSET_ID,
+					DockLocation.CENTER,
+					-1,
+					false,
+				),
+			);
+		} else if (
+			!(tab instanceof TabNode) ||
+			tab.getComponent() !== DOC_COMPONENT
+		) {
+			throw new Error(`Documentation tab '${tabId}' is invalid.`);
+		} else if (tab.getName() !== doc.title) {
+			model.doAction(Actions.renameTab(tabId, doc.title));
+		}
+	}
+	for (const tab of tabs) {
+		if (!documents.has(tab.getId())) {
+			model.doAction(Actions.deleteTab(tab.getId()));
+		}
+	}
 }
 
 function requireTab(model: Model, tabId: string): TabNode {
@@ -272,17 +459,26 @@ function reconcileAgent(model: Model, includeAgent: boolean): void {
 	);
 }
 
-function validateWorkspace(model: Model, includeAgent: boolean): void {
+function validateWorkspace(
+	model: Model,
+	includeAgent: boolean,
+	docs: readonly Pick<DocumentationContent, "id" | "title">[],
+): void {
 	const applicationTabset = model.getNodeById(APPLICATION_TABSET_ID);
 	const code = requireTab(model, CODE_ID);
+	const docsTab = requireTab(model, DOCS_ID);
 	if (
 		!(applicationTabset instanceof TabSetNode) ||
-		code.getParent() !== applicationTabset ||
-		code.getSubLayoutId() !== CODE_SUBLAYOUT_ID
+		!(code.getParent() instanceof TabSetNode) ||
+		code.getLayoutId() !== Model.MAIN_LAYOUT_ID ||
+		code.getSubLayoutId() !== CODE_SUBLAYOUT_ID ||
+		!(docsTab.getParent() instanceof TabSetNode) ||
+		docsTab.getLayoutId() !== Model.MAIN_LAYOUT_ID ||
+		docsTab.getSubLayoutId() !== DOCS_SUBLAYOUT_ID
 	) {
-		throw new Error("Code sublayout is invalid.");
+		throw new Error("Workspace sublayout is invalid.");
 	}
-	for (const panelId of [SETTINGS_ID, EXAMPLES_ID, DOCS_ID, ABOUT_ID]) {
+	for (const panelId of [SETTINGS_ID, EXAMPLES_ID, ABOUT_ID]) {
 		validatePanel(model, panelId, APPLICATION_TABSET_ID);
 	}
 	validatePanel(model, EDITOR_ID, EDITOR_TABSET_ID);
@@ -290,4 +486,11 @@ function validateWorkspace(model: Model, includeAgent: boolean): void {
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);
 	if (includeAgent) validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
+
+	for (const doc of docs) {
+		const tab = requireTab(model, documentTabId(doc.id));
+		if (tab.getComponent() !== DOC_COMPONENT) {
+			throw new Error(`Documentation tab '${doc.id}' is invalid.`);
+		}
+	}
 }

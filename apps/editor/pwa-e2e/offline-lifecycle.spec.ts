@@ -3,6 +3,10 @@
 
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
+import {
+	moveDocumentationBesideEditor,
+	showBothWorkspaces,
+} from "../../../e2e/documentation-layout.ts";
 import { setEditorSource } from "../../../e2e/editor.ts";
 
 const repeatExamplePath = fileURLToPath(
@@ -136,6 +140,31 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 	const sketchDownload = offlinePage.waitForEvent("download");
 	await chooseFileCommand(offlinePage, "Save");
 	expect((await sketchDownload).suggestedFilename()).toBe("repeat.gic");
+});
+
+test("reopens a moved documentation page from a relative link offline", async ({
+	context,
+	page,
+}) => {
+	test.setTimeout(60_000);
+	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await page.goto("/");
+	await waitForServiceWorker(page);
+	const docs = await showBothWorkspaces(page);
+	await moveDocumentationBesideEditor(page, "Named Colors");
+	await expect(docs.getByRole("tab", { name: "Named Colors" })).toHaveCount(0);
+
+	const offlinePage = await restartOffline(context, page);
+	const offlineDocs = offlinePage.getByRole("tabpanel", { name: "Docs" });
+	await offlineDocs.getByRole("tab", { name: "Colors", exact: true }).click();
+	await offlineDocs.getByRole("link", { name: "distinct tab" }).click();
+	await expect(
+		offlinePage.getByRole("tab", { name: "Named Colors" }),
+	).toHaveAttribute("aria-selected", "true");
+	await expect(
+		offlinePage.getByRole("article", { name: "Named Colors" }),
+	).toBeVisible();
 });
 
 test.afterEach(async () => {

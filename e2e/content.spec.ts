@@ -16,16 +16,23 @@ test("presents bundled About and documentation content without navigation", asyn
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
 	await expect(docs.getByRole("button")).toHaveCount(0);
-	await expect(docs.locator("section h2").first()).toBeVisible();
+	await expect(docs.getByRole("tab").first()).toBeVisible();
+	await expect(docs.locator("h2").first()).toBeVisible();
 	await expect(docs.locator(".content-markdown > *").first()).toBeVisible();
+	await docs.getByRole("tab", { name: "Named Colors" }).click();
+	await expect(
+		docs.getByRole("heading", { name: "Named Colors", level: 2 }),
+	).toBeVisible();
 	await expect(page).toHaveURL("/");
 });
 
 test("loads images authored beside a Markdown document", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Docs" }).click();
+	await page.getByRole("tab", { name: "Drawing" }).click();
 	const image = page
 		.getByRole("tabpanel", { name: "Docs" })
+		.getByRole("article", { name: "Drawing" })
 		.locator(".content-markdown img")
 		.first();
 	await expect(image).toBeVisible();
