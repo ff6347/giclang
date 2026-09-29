@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   package-probe:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'release/macos-installer'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'release/v0.9.0-beta.1'
     runs-on: macos-15
     steps:
       - name: Check out repository
@@ -38,17 +38,22 @@ jobs:
         run: pnpm --filter @giclang/desktop exec tauri build --bundles dmg --target aarch64-apple-darwin
 
       - name: Record package hash
+        id: package
         run: |
-          dmg=apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg
+          version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
+          dmg="apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_${version}_aarch64.dmg"
+          test -f "$dmg"
           (cd "$(dirname "$dmg")" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256")
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'dmg=%s\n' "$dmg" >> "$GITHUB_OUTPUT"
 
       - name: Retain unsigned probe
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: gic-macos-arm64-0.1.0-unsigned-spike
+          name: gic-macos-arm64-${{ steps.package.outputs.version }}-unsigned-spike
           path: |
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg.sha256
+            ${{ steps.package.outputs.dmg }}
+            ${{ steps.package.outputs.dmg }}.sha256
           if-no-files-found: error
 
   release-candidate:
@@ -110,6 +115,7 @@ jobs:
         run: pnpm --filter @giclang/desktop exec tauri build --bundles dmg --target aarch64-apple-darwin
 
       - name: Notarize and verify DMG
+        id: candidate
         shell: bash
         env:
           MACOS_API_KEY_P8: ${{ secrets.MACOS_API_KEY_P8 }}
@@ -124,7 +130,9 @@ jobs:
           umask 077
           key="$RUNNER_TEMP/gic-notary.p8"
           printf '%s' "$MACOS_API_KEY_P8" | base64 -D > "$key"
-          dmg=apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg
+          version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
+          dmg="apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_${version}_aarch64.dmg"
+          test -f "$dmg"
           xcrun notarytool submit "$dmg" --key "$key" --key-id "$MACOS_API_KEY_ID" --issuer "$MACOS_API_ISSUER" --wait --output-format json > "$RUNNER_TEMP/gic-notarization.json"
           if [[ "$(jq -r '.status' "$RUNNER_TEMP/gic-notarization.json")" != Accepted ]]; then
             echo "::error::Apple did not accept the DMG for notarization."
@@ -139,18 +147,21 @@ jobs:
           hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$dmg"
           codesign --verify --deep --strict --verbose=2 "$mount/GiC.app"
           codesign -dv --verbose=4 "$mount/GiC.app" 2>&1 | grep -Fq 'TeamIdentifier=WB5CKL86MX'
+          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleShortVersionString)" = "$version"
           spctl --assess --type execute --verbose=2 "$mount/GiC.app"
           hdiutil detach "$mount"
           (cd "$(dirname "$dmg")" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256")
           rm -f "$key" "$RUNNER_TEMP/gic-notarization.json"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'dmg=%s\n' "$dmg" >> "$GITHUB_OUTPUT"
 
       - name: Retain verified release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: gic-macos-arm64-0.1.0-notarized-candidate
+          name: gic-macos-arm64-${{ steps.candidate.outputs.version }}-notarized-candidate
           path: |
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg
-            apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_0.1.0_aarch64.dmg.sha256
+            ${{ steps.candidate.outputs.dmg }}
+            ${{ steps.candidate.outputs.dmg }}.sha256
           if-no-files-found: error
 
       - name: Remove temporary signing material
