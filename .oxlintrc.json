@@ -9,5 +9,13 @@
 	},
 	"env": {
 		"builtin": true
-	}
+	},
+	"overrides": [
+		{
+			"files": ["apps/site/src/pages/index.astro"],
+			"rules": {
+				"no-unused-expressions": "off"
+			}
+		}
+	]
 }
