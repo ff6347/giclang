@@ -64,6 +64,10 @@ body,
 	margin: var(--s0);
 }
 
+body {
+	font-family: var(--font-body);
+}
+
 button,
 input {
 	font: inherit;

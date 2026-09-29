@@ -36,7 +36,7 @@ test("uses Monaco's font stack throughout the application", async ({
 	page,
 }) => {
 	await page.goto("/");
-	const fonts = await page.evaluate(() => {
+	const fonts = await page.evaluate(async () => {
 		const editorLine = document.querySelector(".view-line");
 		const applicationTab = document.querySelector("#flexlayout-tabbutton-code");
 		if (!(editorLine instanceof HTMLElement)) {
@@ -45,14 +45,22 @@ test("uses Monaco's font stack throughout the application", async ({
 		if (!(applicationTab instanceof HTMLElement)) {
 			throw new Error("Application tab not found.");
 		}
+		await document.fonts.load('16px "IBM Plex Mono"');
 		return {
+			body: getComputedStyle(document.body).fontFamily,
 			application: getComputedStyle(applicationTab).fontFamily,
 			editor: getComputedStyle(editorLine).fontFamily,
+			loaded: [...document.fonts].some(
+				(face) =>
+					face.family.includes("IBM Plex Mono") && face.status === "loaded",
+			),
 		};
 	});
 
+	expect(fonts.body).toContain("IBM Plex Mono");
 	expect(fonts.application).toContain("IBM Plex Mono");
 	expect(fonts.editor).toContain("IBM Plex Mono");
+	expect(fonts.loaded).toBe(true);
 });
 
 test("stacks Preview, Output, and Problems beside the editor", async ({
