@@ -37,12 +37,21 @@ jobs:
       - name: Build unsigned DMG
         run: pnpm --filter @giclang/desktop exec tauri build --bundles dmg --target aarch64-apple-darwin
 
-      - name: Record package hash
+      - name: Verify package version and record hash
         id: package
         run: |
+          set -euo pipefail
           version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
           dmg="apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/GiC_${version}_aarch64.dmg"
           test -f "$dmg"
+          mount="$RUNNER_TEMP/gic-probe-mounted"
+          mkdir -p "$mount"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$dmg"
+          trap 'hdiutil detach "$mount"' EXIT
+          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleShortVersionString)" = "${version%%-*}"
+          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleVersion)" = "$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").bundle.macOS.bundleVersion')"
+          hdiutil detach "$mount"
+          trap - EXIT
           (cd "$(dirname "$dmg")" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256")
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
           printf 'dmg=%s\n' "$dmg" >> "$GITHUB_OUTPUT"
