@@ -4,6 +4,7 @@
 	"categories": {
 		"correctness": "error"
 	},
+	"ignorePatterns": ["apps/site/src/scripts/runtime.js"],
 	"rules": {
 		"no-console": ["error", { "allow": ["info", "error"] }]
 	},

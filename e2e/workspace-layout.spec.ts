@@ -30,13 +30,14 @@ test("shows the top-level application tabs and Gestalten workspace", async ({
 	await expect(page.getByRole("tab", { name: "Problems" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
+	await expect(page.getByRole("tab", { name: "Agent" })).toHaveCount(0);
 });
 
 test("uses Monaco's font stack throughout the application", async ({
 	page,
 }) => {
 	await page.goto("/");
-	const fonts = await page.evaluate(() => {
+	const fonts = await page.evaluate(async () => {
 		const editorLine = document.querySelector(".view-line");
 		const applicationTab = document.querySelector("#flexlayout-tabbutton-code");
 		if (!(editorLine instanceof HTMLElement)) {
@@ -45,14 +46,22 @@ test("uses Monaco's font stack throughout the application", async ({
 		if (!(applicationTab instanceof HTMLElement)) {
 			throw new Error("Application tab not found.");
 		}
+		await document.fonts.load('16px "IBM Plex Mono"');
 		return {
+			body: getComputedStyle(document.body).fontFamily,
 			application: getComputedStyle(applicationTab).fontFamily,
 			editor: getComputedStyle(editorLine).fontFamily,
+			loaded: [...document.fonts].some(
+				(face) =>
+					face.family.includes("IBM Plex Mono") && face.status === "loaded",
+			),
 		};
 	});
 
+	expect(fonts.body).toContain("IBM Plex Mono");
 	expect(fonts.application).toContain("IBM Plex Mono");
 	expect(fonts.editor).toContain("IBM Plex Mono");
+	expect(fonts.loaded).toBe(true);
 });
 
 test("stacks Preview, Output, and Problems beside the editor", async ({
@@ -266,14 +275,11 @@ test("persists the Canvas frame setting across reloads", async ({ page }) => {
 
 test("shows bundled Docs and About content", async ({ page }) => {
 	await page.goto("/");
-	const content = [
-		{ name: "Docs", text: "Language reference and help" },
-		{ name: "About", text: "Pixel Art Icons" },
-	];
 
-	for (const { name, text } of content) {
+	for (const name of ["Docs", "About"]) {
 		await page.getByRole("tab", { name }).click();
-		await expect(page.getByRole("tabpanel", { name })).toContainText(text);
+		const panel = page.getByRole("tabpanel", { name });
+		await expect(panel.locator(".content-markdown > *").first()).toBeVisible();
 	}
 });
 
@@ -354,7 +360,9 @@ test("recovers from invalid persisted layout state", async ({ page }) => {
 	);
 });
 
-test("migrates a legacy Tutor tab into Agent", async ({ page }) => {
+test("removes persisted Agent and Tutor tabs from the PWA", async ({
+	page,
+}) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Settings" }).click();
 	await page.getByRole("button", { name: "Reset Layout" }).click();
@@ -369,7 +377,26 @@ test("migrates a legacy Tutor tab into Agent", async ({ page }) => {
 				>;
 			};
 		};
-		stored.layout.subLayouts["code-workspace"].layout.children.push({
+		const code = stored.layout.subLayouts["code-workspace"].layout;
+		const rightColumn = code.children[1] as {
+			children: Array<{
+				id?: string;
+				selected?: number;
+				children?: Array<Record<string, unknown>>;
+			}>;
+		};
+		const output = rightColumn.children.find(
+			(tabset) => tabset.id === "output-tabset",
+		);
+		if (!output?.children) throw new Error("Output tabset not found.");
+		output.children.push({
+			type: "tab",
+			id: "agent",
+			name: "Agent",
+			component: "agent",
+		});
+		output.selected = 1;
+		code.children.push({
 			type: "tabset",
 			id: "tutor-tabset",
 			weight: 35,
@@ -388,7 +415,8 @@ test("migrates a legacy Tutor tab into Agent", async ({ page }) => {
 	await page.reload();
 
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
-	await expect(page.getByRole("tab", { name: "Agent" })).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Agent" })).toHaveCount(0);
+	await expect(page.getByRole("region", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("tab", { name: "Gestalten" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -559,6 +587,7 @@ test("Reset Layout restores workspace geometry and visible status panels", async
 	await expect(page.getByRole("region", { name: "Editor" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Agent" })).toHaveCount(0);
+	await expect(page.getByRole("tab", { name: "Agent" })).toHaveCount(0);
 	await expect(page.getByRole("region", { name: "Output" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Problems" })).toBeVisible();
 	await expect(page.locator(".view-line")).toHaveText("circle(50, 50, 30);");

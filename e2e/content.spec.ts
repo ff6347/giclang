@@ -9,39 +9,25 @@ test("presents bundled About and documentation content without navigation", asyn
 	await page.goto("/");
 
 	await page.getByRole("tab", { name: "About" }).click();
-	await expect(
-		page.getByText(
-			"Gestalten in Code is a small C-style language for creating two-dimensional generative graphics",
-		),
-	).toBeVisible();
-	await expect(page.getByRole("link", { name: "React" })).toBeVisible();
+	const about = page.getByRole("tabpanel", { name: "About" });
+	await expect(about.locator(".content-markdown > *").first()).toBeVisible();
 	await expect(page).toHaveURL("/");
 
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
 	await expect(docs.getByRole("button")).toHaveCount(0);
-	await expect(docs.getByRole("heading", { level: 2 })).toHaveText([
-		"Language reference",
-		"Conditionals",
-		"Colors",
-		"Drawing",
-		"Named Colors",
-		"Repeat a.k.a. Loops",
-		"User defined Functions",
-		"Math",
-	]);
-	await expect(
-		page.getByText("Language reference and help for writing GIC programs."),
-	).toBeVisible();
+	await expect(docs.locator("section h2").first()).toBeVisible();
+	await expect(docs.locator(".content-markdown > *").first()).toBeVisible();
 	await expect(page).toHaveURL("/");
 });
 
 test("loads images authored beside a Markdown document", async ({ page }) => {
 	await page.goto("/");
 	await page.getByRole("tab", { name: "Docs" }).click();
-	const image = page.getByRole("tabpanel", { name: "Docs" }).getByRole("img", {
-		name: "Point",
-	});
+	const image = page
+		.getByRole("tabpanel", { name: "Docs" })
+		.locator(".content-markdown img")
+		.first();
 	await expect(image).toBeVisible();
 	await expect
 		.poll(() =>

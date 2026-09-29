@@ -149,7 +149,9 @@ export function App({
 		parseDarkTheme(settings.getItem(DARK_THEME_STORAGE_KEY)),
 	);
 	const theme = useTheme(appearance, lightTheme, darkTheme);
-	const [model, setModel] = useState(() => loadWorkspace(settings));
+	const [model, setModel] = useState(() =>
+		loadWorkspace(desktop !== undefined, settings),
+	);
 	const [, setLayoutRevision] = useState(0);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const editorRef = useRef<GicEditor | null>(null);
@@ -390,7 +392,7 @@ export function App({
 	};
 
 	const resetLayout = () => {
-		const defaultModel = createDefaultWorkspace();
+		const defaultModel = createDefaultWorkspace(desktop !== undefined);
 		saveWorkspace(defaultModel, settings);
 		setModel(defaultModel);
 	};
