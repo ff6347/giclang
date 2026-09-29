@@ -10,12 +10,14 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/core/package.json ./packages/core/package.json
 COPY packages/cli/package.json ./packages/cli/package.json
 COPY packages/content/package.json ./packages/content/package.json
+COPY packages/styles/package.json ./packages/styles/package.json
 COPY apps/editor/package.json ./apps/editor/package.json
 COPY apps/desktop/package.json ./apps/desktop/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY packages/core ./packages/core
 COPY packages/content ./packages/content
+COPY packages/styles ./packages/styles
 COPY apps/editor ./apps/editor
 
 RUN pnpm run build:browser
