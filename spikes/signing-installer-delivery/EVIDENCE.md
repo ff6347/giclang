@@ -7,7 +7,7 @@
 
 The macOS arm64 DMG can be signed with the locally installed Developer ID Application identity. Its embedded app passes strict signature verification, but Gatekeeper rejects it as `Unnotarized Developer ID`. A local install, launch, replacement, and uninstall passed without altering the existing private GiC configuration. This does **not** establish that a downloaded workshop installer is ready.
 
-The Windows 0.1.0 and 0.1.1 installer builds passed in CI. On Windows 10, the unsigned 0.1.1 installer triggered a SmartScreen unknown-publisher warning, then completed setup and launched GiC with a visible sketch preview. Codex login and OpenCode API-key connection each reportedly crashed the app; their causes and the replacement/uninstall checks remain unverified. An x64 Linux `.deb` also built in CI, but Mint installation has not been checked. Linux remains best-effort. No signed release workflow or in-app updater exists.
+The Windows 0.1.0 and 0.1.1 installer builds passed in CI. On Windows 10, the unsigned 0.1.1 installer triggered a SmartScreen unknown-publisher warning, then completed setup and launched GiC with a visible sketch preview. Codex login and OpenCode API-key connection each reportedly crashed the app; their causes and the replacement/uninstall checks remain unverified. An x64 Linux `.deb` also built in CI, but Mint installation has not been checked. Linux remains best-effort. No signed release artifact or in-app updater exists.
 
 ## Proposed package matrix
 
@@ -38,19 +38,7 @@ The replacement changed only the Tauri bundle version via a command-line configu
 
 ## Signing and CI requirements
 
-The repository has no configured GitHub Actions secrets. The [macOS installer workflow](../../.github/workflows/macos-installer.yml) builds an unsigned Apple Silicon probe on this repository's spike-branch PR. Its signed job requires a manual dispatch from `main` and the `macos-release` GitHub environment; it has not been run. It imports one Developer ID Application identity into a temporary keychain, signs the DMG, notarizes it through an App Store Connect team API key, staples and verifies the DMG, checks the app's team and Gatekeeper assessments of both the DMG and app, and uploads the candidate only after these checks pass. It does not publish a GitHub Release.
-
-Fabian approved the App Store Connect API-key route. Before the signed job can run, create the `macos-release` environment in GitHub Actions with deployment restricted to `main` and human approval, then supply these **environment secrets** privately:
-
-| Secret | Value to provision |
-| --- | --- |
-| `MACOS_CERTIFICATE_P12` | Single-line base64 encoding of the exported Developer ID Application `.p12` containing its private key |
-| `MACOS_CERTIFICATE_PASSWORD` | Password chosen when exporting that `.p12` |
-| `MACOS_API_KEY_P8` | Single-line base64 encoding of the App Store Connect team API-key `.p8` |
-| `MACOS_API_KEY_ID` | Key ID displayed for that team API key |
-| `MACOS_API_ISSUER` | Issuer ID displayed for that team API key |
-
-Export the existing Developer ID Application identity from Keychain Access **My Certificates** with a fresh export password. Create the team API key under App Store Connect **Users and Access → Integrations** with Developer access and download the `.p8` once. Encode each file locally with `openssl base64 -A -in <file>` and enter its output only into the corresponding GitHub environment secret; do not paste it into an issue, chat, runner log, or repository file. After this workflow is reviewed and explicitly landed on `main`, manually dispatch it there. A successful CI run produces a **release candidate**, not approval to publish: download the DMG, check its SHA-256, and perform Gatekeeper and visible install/launch checks on a Mac before release.
+The Mac signing workflow and its credential instructions live in [Mac-only PR #80](https://github.com/ff6347/giclang/pull/80). Fabian chose the App Store Connect team API-key route; the `macos-release` environment has a `main`-only deployment policy and the five required secret names. The signed job cannot run until PR #80 is reviewed and explicitly landed, and a candidate still needs a downloaded-DMG install check.
 
 The [Windows installer spike workflow](../../.github/workflows/installer-spike.yml) runs without secrets, uploads **unsigned test artifacts**, and must not be used as a signed release. Pull-request builds are restricted to this repository's spike branch; after that branch is removed, authorized manual dispatch is the only way to run the workflow. The workflow generates the Windows icon from the committed PNG and records SHA-256 hashes for both installers on the same runner. The [trusted-branch Windows run](https://github.com/ff6347/giclang/actions/runs/36599986183) passed on `windows-latest` with three artifacts: both versioned NSIS installers and their SHA-256 manifest. I downloaded the artifacts, checked both executable hashes against that manifest, and identified both as Nullsoft installers:
 
@@ -71,7 +59,7 @@ The [Windows native-test run](https://github.com/ff6347/giclang/actions/runs/366
 
 The [Linux CI job](https://github.com/ff6347/giclang/actions/runs/36606040897) built `GiC_0.1.0_amd64.deb`. Its Debian control metadata names the package `gi-c` and declares dependencies on `libwebkit2gtk-4.1-0` and `libgtk-3-0`. The downloaded package's SHA-256, `53689460371370ce3761d8dac210163720e935c83f878c2611cb7845205517f9`, matched the CI manifest. Neither dependency availability nor installation on Linux Mint has been verified. SSH to `x220` and `x220.local` failed before authentication; a Magic Wormhole transfer is proposed for the manual Mint check.
 
-- **macOS release:** Use the native Apple Silicon runner and approved App Store Connect team API-key route. The protected `macos-release` environment requires certificate export and provisioning by Fabian. The job verifies `codesign`, notarization, stapling, and Gatekeeper before retaining a candidate; downloaded-artifact installation remains a separate human check. See [Tauri's macOS signing guide](https://v2.tauri.app/distribute/sign/macos/).
+- **macOS release:** [PR #80](https://github.com/ff6347/giclang/pull/80) owns the Apple Silicon runner, App Store Connect team API-key route, notarization, and signed candidate checks. Downloaded-artifact installation remains a separate human check. See [Tauri's macOS signing guide](https://v2.tauri.app/distribute/sign/macos/).
 - **Windows release:** Run a native Windows job with MSVC, Windows SDK, Rust's `x86_64-pc-windows-msvc` target, and NSIS. A code-signing identity and provider have not been identified or approved; no Windows certificate or signing secret has been configured in this repository. Protect the signing key, timestamp the installer, and verify its signature before treating it as distributable. Signing does not guarantee the absence of SmartScreen warnings for a certificate without reputation. See [Tauri's Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
 - **Linux best-effort:** Try a native Linux package on Linux Mint or an Ubuntu runner, record system-library requirements and install/launch behavior, but do not block the macOS and Windows release on it.
 
@@ -80,7 +68,7 @@ No certificate, token, password, or private key belongs in Git, an Actions artif
 ## Checks still needed
 
 1. Confirm Intel Mac support and the final Windows installer format and WebView2 installation mode.
-2. Provision the `macos-release` environment secrets, run the signed job after its workflow is explicitly landed, then record notarization, stapling, Gatekeeper, and install results for the downloaded DMG.
+2. Review and explicitly land PR #80, run its signed job, then record notarization, stapling, Gatekeeper, and install results for the downloaded DMG.
 3. Compare the CI Windows x64 installers against their SHA-256 manifest on the Windows 10 machine; verify 0.1.0 installation, higher-version replacement with user-data preservation, and uninstall. Preserve the observed unsigned SmartScreen warning. Collect redacted crash diagnostics for Codex login and OpenCode key connection without sharing credentials.
 4. Choose and provision a Windows signing provider before a release build; repeat signature and installation checks with the signed artifact.
 5. Confirm the Linux Mint machine is x64 and has Magic Wormhole, transfer the verified `.deb`, and record install/launch/uninstall behavior as a non-blocking check.
