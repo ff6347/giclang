@@ -716,6 +716,43 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn source_only_save_as_preserves_an_unrelated_target_description() {
+        let directory = test_directory("unrelated-target-description");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let target_directory = sketchbook.join("existing-folder");
+        std::fs::create_dir_all(&target_directory).expect("create target folder");
+        let sidecar = target_directory.join("description.md");
+        std::fs::write(&sidecar, "unrelated description").expect("write sidecar");
+        let source_path = target_directory.join("new.gic");
+        let store = DocumentStore::default();
+
+        store
+            .save_path(source_path.clone(), "source", None, &sketchbook)
+            .expect("save standalone source in existing folder");
+
+        assert_eq!(std::fs::read_to_string(&source_path).unwrap(), "source");
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        assert!(store
+            .save_path(
+                source_path.clone(),
+                "replacement",
+                Some("description"),
+                &sketchbook
+            )
+            .is_err());
+        assert_eq!(std::fs::read_to_string(&source_path).unwrap(), "source");
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn reads_sidecars_only_inside_the_approved_sketchbook() {
         let directory = test_directory("unapproved-sketchbook");
         remove_test_directory(&directory);
