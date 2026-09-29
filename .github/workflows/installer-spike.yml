@@ -1,5 +1,5 @@
-# ABOUTME: Builds an unsigned Windows installer for the native package spike.
-# ABOUTME: Retains the artifact for manual installation and policy checks.
+# ABOUTME: Builds unsigned Windows installers for the native package spike.
+# ABOUTME: Retains both versions for manual installation and replacement checks.
 
 name: Build Windows installer spike
 
@@ -36,9 +36,19 @@ jobs:
       - name: Build Windows x64 installer
         run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
 
-      - name: Retain unsigned installer for manual checks
+      - name: Retain first installer for manual checks
         uses: actions/upload-artifact@v4
         with:
-          name: gic-windows-x64-unsigned-spike
-          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          name: gic-windows-x64-0.1.0-unsigned-spike
+          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.0_x64-setup.exe
+          if-no-files-found: error
+
+      - name: Build replacement installer
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc --config '{"version":"0.1.1"}'
+
+      - name: Retain replacement installer for manual checks
+        uses: actions/upload-artifact@v4
+        with:
+          name: gic-windows-x64-0.1.1-unsigned-spike
+          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_0.1.1_x64-setup.exe
           if-no-files-found: error
