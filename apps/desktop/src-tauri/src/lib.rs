@@ -290,7 +290,7 @@ fn save_document_copy(
         .map(|source| sessions.clone_latest_between(source, &target_directory))
         .transpose()?
         .flatten();
-    match store.save_path(target_path, source, description, sketchbook) {
+    match store.save_path_pending(target_path, source, description, sketchbook) {
         Ok(saved) => Ok(saved),
         Err(error) => {
             if let Some(session_id) = copied_session {

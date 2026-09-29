@@ -104,6 +104,7 @@ impl DocumentStore {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(crate) fn save_path(
         &self,
         path: PathBuf,
@@ -121,6 +122,34 @@ impl DocumentStore {
         let owns_description = is_sketch_bundle(&path, sketchbook);
         write_bundle(&path, source, description, owns_description)?;
         self.remember(
+            path,
+            source.to_owned(),
+            if owns_description {
+                description.map(str::to_owned)
+            } else {
+                None
+            },
+            owns_description,
+        )
+    }
+
+    pub(crate) fn save_path_pending(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
+        let path = with_gic_extension(path);
+        validate_gic_path(&path)?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+        fs::create_dir_all(parent)
+            .map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
+        let owns_description = is_sketch_bundle(&path, sketchbook);
+        write_bundle(&path, source, description, owns_description)?;
+        self.prepare_pending(
             path,
             source.to_owned(),
             if owns_description {
@@ -162,7 +191,20 @@ impl DocumentStore {
             .map(|document| document.path.clone())
     }
 
+    #[cfg(test)]
     fn remember(
+        &self,
+        path: PathBuf,
+        source: String,
+        description: Option<String>,
+        owns_description: bool,
+    ) -> Result<OpenedDocument, String> {
+        let opened = self.prepare_pending(path, source, description, owns_description)?;
+        self.accept_open(&opened.document_id)?;
+        Ok(opened)
+    }
+
+    fn prepare_pending(
         &self,
         path: PathBuf,
         source: String,
@@ -176,15 +218,16 @@ impl DocumentStore {
             .and_then(|name| name.to_str())
             .ok_or_else(|| "The selected sketch name is invalid.".to_owned())?
             .to_owned();
-        let mut active = self
-            .active
+        self.pending
             .lock()
-            .map_err(|_| "Desktop documents are unavailable.".to_owned())?;
-        *active = Some(ActiveDocument {
-            document_id: document_id.clone(),
-            path,
-            owns_description,
-        });
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?
+            .insert(
+                document_id.clone(),
+                PendingDocument {
+                    path,
+                    owns_description,
+                },
+            );
         Ok(OpenedDocument {
             document_id,
             sketch_id,
@@ -371,6 +414,30 @@ fn replace_bundle_files(
     description_path: &Path,
     description_stage: Option<NamedTempFile>,
 ) -> Result<(), String> {
+    let backups = move_bundle_backups(source_path, description_path)?;
+    if let Err(error) = install_bundle_stages(
+        source_path,
+        description_path,
+        source_stage,
+        description_stage,
+    ) {
+        return Err(rollback_bundle_files(
+            source_path,
+            description_path,
+            &backups,
+            error,
+        ));
+    }
+    for (_, backup) in backups {
+        let _ = fs::remove_file(backup);
+    }
+    Ok(())
+}
+
+fn move_bundle_backups(
+    source_path: &Path,
+    description_path: &Path,
+) -> Result<Vec<(PathBuf, PathBuf)>, String> {
     let mut backups = Vec::new();
     for target in [source_path, description_path] {
         if target.exists() {
@@ -379,25 +446,37 @@ fn replace_bundle_files(
                 .ok_or_else(|| "Invalid sketch path.".to_owned())?;
             let backup = NamedTempFile::new_in(parent)
                 .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
-            let backup_path = backup.into_temp_path();
+            let backup_path = backup
+                .into_temp_path()
+                .keep()
+                .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
             fs::remove_file(&backup_path)
                 .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
             backups.push((target.to_path_buf(), backup_path));
         }
     }
-    let mut moved_count = 0;
-    for (target, backup) in &backups {
+    for (index, (target, backup)) in backups.iter().enumerate() {
         if fs::rename(target, backup).is_err() {
-            restore_backups(&backups[..moved_count]);
-            return Err(if target == source_path {
-                "Unable to replace the sketch file.".to_owned()
-            } else {
-                "Unable to write the sketch description.".to_owned()
-            });
+            let restore_error = restore_backups(&backups[..index]);
+            return Err(restore_error.unwrap_or_else(|| {
+                if target == source_path {
+                    "Unable to replace the sketch file.".to_owned()
+                } else {
+                    "Unable to write the sketch description.".to_owned()
+                }
+            }));
         }
-        moved_count += 1;
     }
-    let install_result = source_stage
+    Ok(backups)
+}
+
+fn install_bundle_stages(
+    source_path: &Path,
+    description_path: &Path,
+    source_stage: NamedTempFile,
+    description_stage: Option<NamedTempFile>,
+) -> Result<(), String> {
+    source_stage
         .persist(source_path)
         .map_err(|_| "Unable to replace the sketch file.".to_owned())
         .and_then(|_| match description_stage {
@@ -406,23 +485,37 @@ fn replace_bundle_files(
                 .map(|_| ())
                 .map_err(|_| "Unable to write the sketch description.".to_owned()),
             None => Ok(()),
-        });
-    if let Err(error) = install_result {
-        let _ = fs::remove_file(source_path);
-        let _ = fs::remove_file(description_path);
-        restore_backups(&backups[..moved_count]);
-        return Err(error);
-    }
-    for (_, backup) in backups {
-        let _ = fs::remove_file(backup);
-    }
-    Ok(())
+        })
 }
 
-fn restore_backups(backups: &[(PathBuf, tempfile::TempPath)]) {
+fn rollback_bundle_files(
+    source_path: &Path,
+    description_path: &Path,
+    backups: &[(PathBuf, PathBuf)],
+    error: String,
+) -> String {
+    let _ = fs::remove_file(source_path);
+    let _ = fs::remove_file(description_path);
+    restore_backups(backups).unwrap_or(error)
+}
+
+fn restore_backups(backups: &[(PathBuf, PathBuf)]) -> Option<String> {
+    let mut failures = Vec::new();
     for (target, backup) in backups.iter().rev() {
-        let _ = fs::rename(backup, target);
+        if let Err(error) = fs::rename(backup, target) {
+            failures.push(format!(
+                "Could not restore {}: {error}. Original preserved at {}.",
+                target.display(),
+                backup.display(),
+            ));
+        }
     }
+    (!failures.is_empty()).then(|| {
+        format!(
+            "Sketch save failed and rollback was incomplete. Recover the original files manually: {}",
+            failures.join(" "),
+        )
+    })
 }
 
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
@@ -444,7 +537,10 @@ fn write_source(path: &Path, source: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{existing_sketch_names, sketch_path, DocumentStore};
+    use super::{
+        existing_sketch_names, install_bundle_stages, move_bundle_backups, rollback_bundle_files,
+        sketch_path, stage_file, DocumentStore,
+    };
     use std::path::{Path, PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -785,6 +881,7 @@ mod tests {
         remove_test_directory(&directory);
     }
 
+    #[cfg(unix)]
     #[test]
     fn rejects_description_symlinks_before_reading_outside_the_bundle() {
         use std::os::unix::fs::symlink;
@@ -802,6 +899,72 @@ mod tests {
         assert!(DocumentStore::default()
             .open_path(sketch.join("orbit.gic"), &directory.join("sketches"))
             .is_err());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn failed_install_after_moving_originals_restores_the_real_bundle() {
+        let directory = test_directory("post-move-install-failure");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let source_path = directory.join("source.gic");
+        let description_path = directory.join("description.md");
+        std::fs::write(&source_path, "original source").expect("write source");
+        std::fs::write(&description_path, "original description").expect("write sidecar");
+        let source_stage = stage_file(&directory, "replacement source", "stage source")
+            .expect("stage replacement source");
+        let description_stage =
+            stage_file(&directory, "replacement description", "stage description")
+                .expect("stage replacement description");
+
+        let backups = move_bundle_backups(&source_path, &description_path)
+            .expect("move original bundle to backups");
+        assert!(!source_path.exists());
+        assert!(!description_path.exists());
+        std::fs::remove_file(source_stage.path()).expect("remove staged source to fail install");
+        let error = install_bundle_stages(
+            &source_path,
+            &description_path,
+            source_stage,
+            Some(description_stage),
+        )
+        .expect_err("install must fail after originals have moved");
+        let rollback_error =
+            rollback_bundle_files(&source_path, &description_path, &backups, error.clone());
+
+        assert_eq!(error, "Unable to replace the sketch file.");
+        assert_eq!(rollback_error, error);
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "original source"
+        );
+        assert_eq!(
+            std::fs::read_to_string(description_path).unwrap(),
+            "original description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn failed_rollback_preserves_the_original_at_a_recoverable_path() {
+        let directory = test_directory("rollback-preserves-backup");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let target = directory.join("source.gic");
+        let backup = directory.join("source.backup");
+        std::fs::write(&backup, "original source").expect("write backup");
+        std::fs::create_dir(&target).expect("block restoration target");
+
+        let error = rollback_bundle_files(
+            &target,
+            &directory.join("description.md"),
+            &[(target.clone(), backup.clone())],
+            "Unable to replace the sketch file.".to_owned(),
+        );
+
+        assert!(error.contains("rollback was incomplete"));
+        assert!(error.contains(backup.to_string_lossy().as_ref()));
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), "original source");
         remove_test_directory(&directory);
     }
 
@@ -926,6 +1089,41 @@ mod tests {
             sketch_path(sketchbook, PathBuf::from("/tmp/elsewhere/orbit.gic")),
             PathBuf::from("/tmp/elsewhere/orbit.gic"),
         );
+    }
+
+    #[test]
+    fn pending_save_as_preserves_the_active_identity_until_accepted() {
+        let directory = test_directory("pending-save-as");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let active_path = directory.join("active.gic");
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(&active_path, "active source").expect("write active source");
+        let store = DocumentStore::default();
+        let active = open_accepted(&store, active_path.clone());
+
+        let saved = store
+            .save_path_pending(
+                sketchbook.join("copy/copy.gic"),
+                "copy source",
+                None,
+                &sketchbook,
+            )
+            .expect("prepare copy");
+
+        assert_eq!(store.active_path(), Some(active_path));
+        store
+            .cancel_open(&saved.document_id)
+            .expect("cancel pending save-as activation");
+        assert_eq!(store.active_path(), Some(directory.join("active.gic")));
+        store
+            .save(&active.document_id, "still active", None)
+            .expect("save original active document");
+        assert_eq!(
+            std::fs::read_to_string(directory.join("active.gic")).unwrap(),
+            "still active"
+        );
+        remove_test_directory(&directory);
     }
 
     #[test]
