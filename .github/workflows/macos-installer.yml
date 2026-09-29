@@ -147,7 +147,8 @@ jobs:
           hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$dmg"
           codesign --verify --deep --strict --verbose=2 "$mount/GiC.app"
           codesign -dv --verbose=4 "$mount/GiC.app" 2>&1 | grep -Fq 'TeamIdentifier=WB5CKL86MX'
-          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleShortVersionString)" = "$version"
+          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleShortVersionString)" = "${version%%-*}"
+          test "$(defaults read "$mount/GiC.app/Contents/Info" CFBundleVersion)" = "$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").bundle.macOS.bundleVersion')"
           spctl --assess --type execute --verbose=2 "$mount/GiC.app"
           hdiutil detach "$mount"
           (cd "$(dirname "$dmg")" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256")

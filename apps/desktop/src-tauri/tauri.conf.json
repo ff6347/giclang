@@ -31,6 +31,9 @@
 		"active": true,
 		"category": "Education",
 		"icon": ["../../editor/public/icons/gic-icon-512.png"],
+		"macOS": {
+			"bundleVersion": "0.9.0"
+		},
 		"shortDescription": "Create static generative graphics with GIC.",
 		"targets": "all"
 	}
