@@ -20,6 +20,7 @@ pub(crate) struct OpenedDocument {
     pub(crate) sketch_id: String,
     pub(crate) name: String,
     pub(crate) source: String,
+    pub(crate) description: Option<String>,
 }
 
 #[derive(Default)]
@@ -37,17 +38,29 @@ impl DocumentStore {
         validate_gic_path(&path)?;
         let source = fs::read_to_string(&path)
             .map_err(|_| "Unable to read the selected sketch.".to_owned())?;
-        self.remember(path, source)
+        let description = read_description(&path)?;
+        self.remember(path, source, description)
     }
 
-    pub(crate) fn save_path(&self, path: PathBuf, source: &str) -> Result<OpenedDocument, String> {
+    pub(crate) fn save_path(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+    ) -> Result<OpenedDocument, String> {
         let path = with_gic_extension(path);
         validate_gic_path(&path)?;
         write_source(&path, source)?;
-        self.remember(path, source.to_owned())
+        write_description(&path, description)?;
+        self.remember(path, source.to_owned(), description.map(str::to_owned))
     }
 
-    pub(crate) fn save(&self, document_id: &str, source: &str) -> Result<(), String> {
+    pub(crate) fn save(
+        &self,
+        document_id: &str,
+        source: &str,
+        description: Option<&str>,
+    ) -> Result<(), String> {
         let active = self
             .active
             .lock()
@@ -56,7 +69,8 @@ impl DocumentStore {
             .as_ref()
             .filter(|document| document.document_id == document_id)
             .ok_or_else(|| "Unknown document ID.".to_owned())?;
-        write_source(&document.path, source)
+        write_source(&document.path, source)?;
+        write_description(&document.path, description)
     }
 
     pub(crate) fn active_path(&self) -> Option<PathBuf> {
@@ -67,7 +81,12 @@ impl DocumentStore {
             .map(|document| document.path.clone())
     }
 
-    fn remember(&self, path: PathBuf, source: String) -> Result<OpenedDocument, String> {
+    fn remember(
+        &self,
+        path: PathBuf,
+        source: String,
+        description: Option<String>,
+    ) -> Result<OpenedDocument, String> {
         let document_id = Uuid::new_v4().to_string();
         let sketch_id = sketch_id_for_path(&path);
         let name = path
@@ -88,6 +107,7 @@ impl DocumentStore {
             sketch_id,
             name,
             source,
+            description,
         })
     }
 }
@@ -182,6 +202,34 @@ pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, St
     Ok(names.into_iter().collect())
 }
 
+fn read_description(path: &Path) -> Result<Option<String>, String> {
+    let sidecar = path
+        .parent()
+        .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?
+        .join("description.md");
+    match fs::read_to_string(sidecar) {
+        Ok(description) => Ok(Some(description)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(_) => Err("Unable to read the sketch description.".to_owned()),
+    }
+}
+
+fn write_description(path: &Path, description: Option<&str>) -> Result<(), String> {
+    let sidecar = path
+        .parent()
+        .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?
+        .join("description.md");
+    match description {
+        Some(contents) => write_source(&sidecar, contents)
+            .map_err(|_| "Unable to write the sketch description.".to_owned()),
+        None => match fs::remove_file(sidecar) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(_) => Err("Unable to remove the sketch description.".to_owned()),
+        },
+    }
+}
+
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -231,10 +279,11 @@ mod tests {
         assert_eq!(opened.name, "round-trip.gic");
         assert_eq!(opened.sketch_id.len(), 64);
         assert_eq!(opened.source, "circle(1, 2, 3);");
+        assert_eq!(opened.description, None);
         assert!(!opened.document_id.contains(path.to_string_lossy().as_ref()));
 
         store
-            .save(&opened.document_id, "circle(4, 5, 6);")
+            .save(&opened.document_id, "circle(4, 5, 6);", None)
             .expect("save through opaque ID");
         assert_eq!(
             std::fs::read_to_string(&path).expect("read saved fixture"),
@@ -252,7 +301,7 @@ mod tests {
         let store = DocumentStore::default();
 
         let saved = store
-            .save_path(selected_path, "background(\"black\");")
+            .save_path(selected_path, "background(\"black\");", None)
             .expect("save GIC fixture");
 
         assert_eq!(saved.name, "saved-sketch.gic");
@@ -269,11 +318,81 @@ mod tests {
     }
 
     #[test]
+    fn descriptions_round_trip_delete_without_touching_neighbor_files() {
+        let directory = test_directory("description-round-trip");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        let source_path = sketch.join("orbit.gic");
+        let description = "---\ntitle: \"Orbit: café\"\norder: 3\nenabled: true\ncategories:\n  - \"circles, lines\"\ntags:\n  - \"a: b\"\n---\n\nMultiline body.\n最後。\n";
+        let store = DocumentStore::default();
+
+        let saved = store
+            .save_path(
+                source_path.clone(),
+                "not valid GIC source",
+                Some(description),
+            )
+            .expect("save broken source and description");
+        std::fs::write(sketch.join("thumbnail.png"), [1, 2, 3]).expect("write existing thumbnail");
+        std::fs::write(sketch.join("unrelated.txt"), "keep").expect("write unrelated file");
+        std::fs::create_dir_all(sketch.join("sessions")).expect("create sessions folder");
+        std::fs::write(sketch.join("sessions/one.jsonl"), "session").expect("write session file");
+
+        let reopened = DocumentStore::default()
+            .open_path(source_path.clone())
+            .expect("reopen saved sketch");
+        assert_eq!(reopened.source, "not valid GIC source");
+        assert_eq!(reopened.description.as_deref(), Some(description));
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).expect("read description"),
+            description,
+        );
+
+        let copy_path = directory.join("sketches/orbit-copy/orbit-copy.gic");
+        let copy = DocumentStore::default()
+            .save_path(copy_path.clone(), "copied broken source", Some(description))
+            .expect("save copy with description");
+        assert_eq!(copy.source, "copied broken source");
+        assert_eq!(copy.description.as_deref(), Some(description));
+        assert_eq!(
+            std::fs::read_to_string(&source_path).unwrap(),
+            "not valid GIC source"
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).unwrap(),
+            description,
+        );
+
+        store
+            .save(&saved.document_id, "still broken", None)
+            .expect("save after clearing description");
+
+        assert!(!sketch.join("description.md").exists());
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "still broken"
+        );
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            [1, 2, 3]
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("unrelated.txt")).unwrap(),
+            "keep"
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("sessions/one.jsonl")).unwrap(),
+            "session",
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn rejects_unknown_document_identity() {
         let store = DocumentStore::default();
 
         assert_eq!(
-            store.save("missing", "circle(1, 2, 3);"),
+            store.save("missing", "circle(1, 2, 3);", None),
             Err("Unknown document ID.".to_owned()),
         );
     }
@@ -293,11 +412,11 @@ mod tests {
 
         assert_ne!(first.document_id, second.document_id);
         assert_eq!(
-            store.save(&first.document_id, "background(\"red\");"),
+            store.save(&first.document_id, "background(\"red\");", None),
             Err("Unknown document ID.".to_owned()),
         );
         store
-            .save(&second.document_id, "background(\"blue\");")
+            .save(&second.document_id, "background(\"blue\");", None)
             .expect("save active fixture");
         remove_test_directory(&directory);
     }
@@ -340,6 +459,7 @@ mod tests {
             .save_path(
                 sketch_path(&sketches, sketches.join("orbit")),
                 "circle(1, 2, 3);",
+                None,
             )
             .expect("save sketch fixture");
 

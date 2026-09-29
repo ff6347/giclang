@@ -10,6 +10,7 @@ import {
 	createUntitledDocument,
 	openDocument,
 	readRecovery,
+	updateDocumentDescription,
 	updateDocumentSource,
 	writeRecovery,
 } from "../lib/document-model.ts";
@@ -56,7 +57,7 @@ describe("document model", () => {
 		});
 	});
 
-	it("marks an untitled document dirty only after its source changes", () => {
+	it("marks an untitled document dirty after description-only changes", () => {
 		const untitled = createUntitledDocument();
 
 		assert.equal(untitled.isDirty, false);
@@ -65,17 +66,56 @@ describe("document model", () => {
 			updateDocumentSource(untitled, "point(10, 10);").isDirty,
 			true,
 		);
+		const changed = updateDocumentDescription(untitled, {
+			...untitled.description,
+			body: "A sketch description.",
+		});
+		assert.equal(changed.isDirty, true);
+		assert.equal(changed.description.metadata.title, untitled.displayName);
+	});
+
+	it("starts opened sketches with isolated default metadata or loaded content", () => {
+		assert.equal(openDocument("one.gic", "").description.metadata.title, "one");
+		assert.equal(openDocument("one.gic", "").description.body, "");
+		assert.deepEqual(
+			openDocument("two.gic", "", {
+				metadata: {
+					title: "Two sketch",
+					order: 4,
+					enabled: false,
+					categories: ["a, b"],
+					tags: ["café"],
+				},
+				body: "Body",
+			}).description.metadata,
+			{
+				title: "Two sketch",
+				order: 4,
+				enabled: false,
+				categories: ["a, b"],
+				tags: ["café"],
+			},
+		);
 	});
 
 	it("opens a named file as a clean document", () => {
-		assert.deepEqual(openDocument("motif.gic", "point(10, 10);"), {
-			baselineSource: "point(10, 10);",
-			canSave: true,
-			displayName: "motif.gic",
-			isDirty: false,
-			kind: "file",
-			requiresSaveAs: false,
-			source: "point(10, 10);",
+		const document = openDocument("motif.gic", "point(10, 10);");
+		assert.equal(document.baselineSource, "point(10, 10);");
+		assert.equal(document.canSave, true);
+		assert.equal(document.displayName, "motif.gic");
+		assert.equal(document.isDirty, false);
+		assert.equal(document.kind, "file");
+		assert.equal(document.requiresSaveAs, false);
+		assert.equal(document.source, "point(10, 10);");
+		assert.deepEqual(document.description, {
+			metadata: {
+				title: "motif",
+				order: 0,
+				enabled: true,
+				categories: [],
+				tags: [],
+			},
+			body: "",
 		});
 	});
 });
@@ -102,15 +142,15 @@ describe("recovery snapshots", () => {
 
 		const snapshot = readRecovery(storage, key, 101, sevenDaysInMilliseconds);
 		assert.ok(snapshot);
-		assert.deepEqual(createRecoveredDocument(snapshot.document), {
-			baselineSource: source,
-			canSave: false,
-			displayName: "Recovered sketch",
-			isDirty: true,
-			kind: "recovered",
-			requiresSaveAs: true,
-			source,
-		});
+		const recovered = createRecoveredDocument(snapshot.document);
+		assert.equal(recovered.baselineSource, source);
+		assert.equal(recovered.canSave, false);
+		assert.equal(recovered.displayName, "Recovered sketch");
+		assert.equal(recovered.isDirty, true);
+		assert.equal(recovered.kind, "recovered");
+		assert.equal(recovered.requiresSaveAs, true);
+		assert.equal(recovered.source, source);
+		assert.deepEqual(recovered.description, snapshot.document.description);
 	});
 
 	it("discards expired snapshots", () => {
@@ -135,6 +175,30 @@ describe("recovery snapshots", () => {
 			undefined,
 		);
 		assert.equal(storage.getItem(key), null);
+	});
+
+	it("fills description defaults when reading a recovery snapshot without metadata", () => {
+		const storage = new MemoryStorage();
+		storage.setItem(
+			key,
+			JSON.stringify({
+				document: {
+					baselineSource: "point(10, 10);",
+					canSave: false,
+					displayName: "motif.gic",
+					isDirty: true,
+					kind: "untitled",
+					requiresSaveAs: true,
+					source: "point(10, 10);",
+				},
+				updatedAt: 200,
+			}),
+		);
+
+		const snapshot = readRecovery(storage, key, 201, sevenDaysInMilliseconds);
+
+		assert.equal(snapshot?.document.description.metadata.title, "motif");
+		assert.equal(snapshot?.document.description.body, "");
 	});
 
 	it("does not overwrite or clear a newer snapshot from another tab", () => {

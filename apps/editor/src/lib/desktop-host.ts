@@ -57,6 +57,7 @@ export interface DesktopDocument {
 	readonly name: string;
 	readonly sketchId: string;
 	readonly source: string;
+	readonly description: string | null;
 }
 
 export type AgentSessionRecord =
@@ -155,17 +156,23 @@ export class DesktopHost {
 		return invoke<void>("reveal_sketch_folder");
 	}
 
-	saveDocument(documentId: string, source: string): Promise<void> {
-		return invoke<void>("save_gic", { documentId, source });
+	saveDocument(
+		documentId: string,
+		source: string,
+		description: string | null,
+	): Promise<void> {
+		return invoke<void>("save_gic", { documentId, source, description });
 	}
 
 	saveDocumentAs(
 		source: string,
 		suggestedName: string,
+		description: string | null,
 	): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("save_gic_as", {
 			source,
 			suggestedName,
+			description,
 		});
 	}
 

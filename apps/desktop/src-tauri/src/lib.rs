@@ -256,9 +256,10 @@ async fn open_gic(
 fn save_gic(
     document_id: &str,
     source: &str,
+    description: Option<&str>,
     store: State<'_, DocumentStore>,
 ) -> Result<(), String> {
-    store.save(document_id, source)
+    store.save(document_id, source, description)
 }
 
 #[tauri::command]
@@ -266,6 +267,7 @@ async fn save_gic_as(
     app: AppHandle,
     source: &str,
     suggested_name: &str,
+    description: Option<&str>,
     store: State<'_, DocumentStore>,
     manager: State<'_, WorkspaceManager>,
     sessions: State<'_, SessionStore>,
@@ -292,7 +294,7 @@ async fn save_gic_as(
                         let target_dir = path.parent().unwrap_or(&source_dir);
                         sessions.clone_latest_between(&source_dir, target_dir)?;
                     }
-                    store.save_path(path, source)
+                    store.save_path(path, source, description)
                 })
         })
         .transpose()

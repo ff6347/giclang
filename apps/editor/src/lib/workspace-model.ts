@@ -18,6 +18,7 @@ export const EXAMPLES_ID = "examples";
 export const DOCS_ID = "docs";
 export const ABOUT_ID = "about";
 export const EDITOR_ID = "editor";
+export const DESCRIPTION_ID = "description";
 export const PREVIEW_ID = "preview";
 export const PROBLEMS_ID = "problems";
 export const OUTPUT_ID = "output";
@@ -34,7 +35,7 @@ const OUTPUT_TABSET_ID = "output-tabset";
 export const AGENT_ID = "agent";
 const LEGACY_TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 9;
+const STORAGE_VERSION = 10;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -82,6 +83,12 @@ function defaultLayout(
 									id: EDITOR_ID,
 									name: "Untitled sketch",
 									component: EDITOR_ID,
+								},
+								{
+									type: "tab",
+									id: DESCRIPTION_ID,
+									name: "Description",
+									component: DESCRIPTION_ID,
 								},
 							],
 						},
@@ -229,6 +236,7 @@ export function loadWorkspace(
 			(parsed.version !== 6 &&
 				parsed.version !== 7 &&
 				parsed.version !== 8 &&
+				parsed.version !== 9 &&
 				parsed.version !== STORAGE_VERSION) ||
 			!("layout" in parsed)
 		) {
@@ -246,6 +254,7 @@ export function loadWorkspace(
 		ensureDocumentationTabset(layout, docs);
 		const model = Model.fromJson(layout);
 		reconcileAgent(model, includeAgent);
+		reconcileDescriptionPanel(model);
 		reconcileDocumentationTabs(model, docs);
 		validateWorkspace(model, includeAgent, docs);
 		saveWorkspace(model, settings);
@@ -405,6 +414,32 @@ function reconcileDocumentationTabs(
 	}
 }
 
+function reconcileDescriptionPanel(model: Model): void {
+	const description = model.getNodeById(DESCRIPTION_ID);
+	if (description === undefined) {
+		model.doAction(
+			Actions.addTab(
+				{
+					id: DESCRIPTION_ID,
+					name: "Description",
+					component: DESCRIPTION_ID,
+				},
+				EDITOR_TABSET_ID,
+				DockLocation.CENTER,
+				-1,
+				false,
+			),
+		);
+		return;
+	}
+	if (
+		!(description instanceof TabNode) ||
+		description.getComponent() !== DESCRIPTION_ID
+	) {
+		throw new Error("Workspace Description panel is invalid.");
+	}
+}
+
 function requireTab(model: Model, tabId: string): TabNode {
 	const tab = model.getNodeById(tabId);
 	if (!(tab instanceof TabNode)) {
@@ -482,6 +517,10 @@ function validateWorkspace(
 		validatePanel(model, panelId, APPLICATION_TABSET_ID);
 	}
 	validatePanel(model, EDITOR_ID, EDITOR_TABSET_ID);
+	const description = requireTab(model, DESCRIPTION_ID);
+	if (description.getComponent() !== DESCRIPTION_ID) {
+		throw new Error("Workspace Description panel is invalid.");
+	}
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);

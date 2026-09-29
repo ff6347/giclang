@@ -536,6 +536,44 @@ canvas {
 	margin: var(--s0);
 }
 
+.description-form {
+	display: grid;
+	gap: var(--s2);
+	max-width: 66ch;
+	width: 100%;
+}
+
+.description-field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s1);
+}
+
+.description-form input:not([type="checkbox"]),
+.description-form textarea {
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	color: var(--color-text);
+	font: inherit;
+	min-width: 0;
+	padding: var(--s2);
+}
+
+.description-form textarea {
+	min-height: 5rem;
+	resize: vertical;
+}
+
+.description-form textarea.description-markdown {
+	min-height: 12rem;
+}
+
+.description-form .description-checkbox {
+	align-items: center;
+	flex-direction: row;
+}
+
 .application-list {
 	display: flex;
 	flex-direction: column;

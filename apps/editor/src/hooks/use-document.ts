@@ -3,6 +3,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { applySaveFormatting } from "@giclang/core/language-service";
+import {
+	defaultSketchDescription,
+	parseSketchDescription,
+	serializeSketchDescription,
+	type SketchDescription,
+} from "@giclang/content/sketch-description";
 import { BrowserDocumentAdapter } from "../lib/browser-document-adapter.ts";
 import { productContent } from "../lib/content.ts";
 import { nextSketchName } from "../lib/sketch-naming.ts";
@@ -12,6 +18,7 @@ import {
 	createNewSketchDocument,
 	createRecoveredDocument,
 	openDocument,
+	updateDocumentDescription,
 	updateDocumentSource,
 	type DocumentState,
 } from "../lib/document-model.ts";
@@ -90,6 +97,17 @@ export function useDocument(
 
 	const sourceForSave = () =>
 		applySaveFormatting(documentState.source, { formatOnSave });
+	const descriptionForSave = (): string | null =>
+		documentState.description.body.trim() === ""
+			? null
+			: serializeSketchDescription(documentState.description);
+	const descriptionFromSidecar = (
+		name: string,
+		sidecar: string | null | undefined,
+	): SketchDescription =>
+		sidecar === null || sidecar === undefined
+			? defaultSketchDescription(sketchBaseName(name))
+			: parseSketchDescription(sidecar);
 
 	const nextAvailableSketchName = async (): Promise<string> => {
 		const takenNames = new Set(newSketchNames);
@@ -108,8 +126,13 @@ export function useDocument(
 		const savedName = normalizeFileName(name);
 		adapter.download(savedName, source);
 		adapter.recordRecent(savedName);
-		discardRecovery();
-		replaceDocument(openDocument(savedName, source), undefined, savedName);
+		const savedDocument = updateDocumentDescription(
+			openDocument(savedName, source),
+			documentState.description,
+		);
+		replaceDocument(savedDocument, undefined, savedName);
+		if (savedDocument.isDirty) persistRecovery(savedDocument);
+		else discardRecovery();
 		setSaveAsOpen(false);
 	};
 
@@ -132,11 +155,19 @@ export function useDocument(
 				setDocumentState({ ...documentState, displayName: suggestedName });
 			}
 		}
-		const saved = await desktop.saveDocumentAs(source, suggestedName);
+		const saved = await desktop.saveDocumentAs(
+			source,
+			suggestedName,
+			descriptionForSave(),
+		);
 		if (saved === null) return;
 		discardRecovery();
 		replaceDocument(
-			openDocument(sketchBaseName(saved.name), saved.source),
+			openDocument(
+				sketchBaseName(saved.name),
+				saved.source,
+				descriptionFromSidecar(saved.name, saved.description),
+			),
 			saved.documentId,
 			saved.sketchId,
 		);
@@ -180,9 +211,17 @@ export function useDocument(
 			return;
 		}
 		const source = sourceForSave();
-		await desktop.saveDocument(documentId, source);
+		await desktop.saveDocument(documentId, source, descriptionForSave());
 		discardRecovery();
-		replace(openDocument(documentState.displayName, source));
+		replace(
+			openDocument(
+				documentState.displayName,
+				source,
+				documentState.description.body.trim() === ""
+					? defaultSketchDescription(sketchBaseName(documentState.displayName))
+					: documentState.description,
+			),
+		);
 	};
 
 	const runDesktopOperation = (operation: () => Promise<void>) => {
@@ -201,6 +240,14 @@ export function useDocument(
 		saveAsOpen,
 		updateSource(source: string) {
 			const nextDocument = updateDocumentSource(documentState, source);
+			replace(nextDocument);
+			persistRecovery(nextDocument);
+		},
+		updateDescription(description: SketchDescription) {
+			const nextDocument = updateDocumentDescription(
+				documentState,
+				description,
+			);
 			replace(nextDocument);
 			persistRecovery(nextDocument);
 		},
@@ -274,6 +321,10 @@ export function useDocument(
 						openDocument(
 							sketchBaseName(openedDocument.name),
 							openedDocument.source,
+							descriptionFromSidecar(
+								openedDocument.name,
+								openedDocument.description,
+							),
 						),
 						openedDocument.documentId,
 						openedDocument.sketchId,

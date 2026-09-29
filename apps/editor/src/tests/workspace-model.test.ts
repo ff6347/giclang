@@ -10,6 +10,7 @@ import type { ApplicationSettings } from "../lib/application-settings.ts";
 import {
 	AGENT_ID,
 	CODE_ID,
+	DESCRIPTION_ID,
 	DOC_COMPONENT,
 	DOCS_ID,
 	documentTabId,
@@ -283,12 +284,12 @@ for (const includeAgent of [false, true]) {
 		);
 		assert.equal(
 			JSON.parse(settings.getItem("gic.workspaceLayout")!).version,
-			9,
+			10,
 		);
 	});
 }
 
-test("retains moved documents in the feature's version 8 layout across browser and desktop", () => {
+test("retains moved documents and Description in the feature layout across browser and desktop", () => {
 	const settings = new MemorySettings();
 	const model = createDefaultWorkspace(true, docs);
 	model.doAction(
@@ -308,15 +309,33 @@ test("retains moved documents in the feature's version 8 layout across browser a
 
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
+	assert.ok(browser.getNodeById(DESCRIPTION_ID) instanceof TabNode);
 	assert.equal(
 		browser.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
 		"editor-tabset",
 	);
 	const desktop = loadWorkspace(true, settings, docs);
 	assert.ok(desktop.getNodeById(AGENT_ID) instanceof TabNode);
+	assert.ok(desktop.getNodeById(DESCRIPTION_ID) instanceof TabNode);
 	assert.equal(
 		desktop.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
 		"editor-tabset",
+	);
+});
+
+test("retains the moved Description panel across workspace reload", () => {
+	const settings = new MemorySettings();
+	const model = createDefaultWorkspace(false, docs);
+	model.doAction(
+		Actions.moveNode(DESCRIPTION_ID, "output-tabset", DockLocation.CENTER, -1),
+	);
+	saveWorkspace(model, settings);
+
+	const loaded = loadWorkspace(false, settings, docs);
+
+	assert.equal(
+		loaded.getNodeById(DESCRIPTION_ID)?.getParent()?.getId(),
+		"output-tabset",
 	);
 });
 

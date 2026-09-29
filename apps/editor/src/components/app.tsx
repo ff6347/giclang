@@ -21,6 +21,7 @@ import {
 	CODE_ID,
 	createDefaultWorkspace,
 	DOC_COMPONENT,
+	DESCRIPTION_ID,
 	DOCS_ID,
 	documentTabId,
 	EDITOR_ID,
@@ -41,6 +42,7 @@ import { ProblemsPanel } from "./problems-panel.tsx";
 import { OutputPanel } from "./output-panel.tsx";
 import { PreviewPanel } from "./preview-panel.tsx";
 import { EditorPanel } from "./editor-panel.tsx";
+import { DescriptionPanel } from "./description-panel.tsx";
 import { AgentPanel } from "./agent-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
@@ -522,6 +524,13 @@ export function App({
 						onSourceChange={updateSource}
 						source={documents.documentState.source}
 						theme={theme}
+					/>
+				);
+			case DESCRIPTION_ID:
+				return (
+					<DescriptionPanel
+						description={documents.documentState.description}
+						onChange={documents.updateDescription}
 					/>
 				);
 			case PREVIEW_ID:
