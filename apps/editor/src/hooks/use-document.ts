@@ -45,6 +45,7 @@ export function useDocument(
 	const pendingReplacement = useRef<(() => Promise<void> | void) | undefined>(
 		undefined,
 	);
+	const pendingCancellation = useRef<(() => void) | undefined>(undefined);
 	const [documentState, setDocumentState] = useState(() => {
 		const name = nextSketchName(newSketchNames, new Date());
 		newSketchNames.add(name);
@@ -315,27 +316,38 @@ export function useDocument(
 			const chooseDocument = async () => {
 				const openedDocument = await desktop.openDocument();
 				if (openedDocument === null) return;
-				const open = () => {
+				let nextDocument: DocumentState;
+				try {
+					nextDocument = openDocument(
+						sketchBaseName(openedDocument.name),
+						openedDocument.source,
+						descriptionFromSidecar(
+							openedDocument.name,
+							openedDocument.description,
+						),
+					);
+				} catch (error) {
+					await desktop.cancelOpenDocument(openedDocument.documentId);
+					throw error;
+				}
+				const open = async () => {
+					await desktop.acceptOpenDocument(openedDocument.documentId);
 					discardRecovery();
 					replaceDocument(
-						openDocument(
-							sketchBaseName(openedDocument.name),
-							openedDocument.source,
-							descriptionFromSidecar(
-								openedDocument.name,
-								openedDocument.description,
-							),
-						),
+						nextDocument,
 						openedDocument.documentId,
 						openedDocument.sketchId,
 					);
 				};
 				if (documentState.isDirty) {
 					pendingReplacement.current = open;
+					pendingCancellation.current = () => {
+						void desktop.cancelOpenDocument(openedDocument.documentId);
+					};
 					setDiscardOpen(true);
 					return;
 				}
-				open();
+				await open();
 			};
 			runDesktopOperation(chooseDocument);
 		},
@@ -362,12 +374,19 @@ export function useDocument(
 		},
 		confirmDiscard() {
 			setDiscardOpen(false);
+			pendingCancellation.current = undefined;
 			const replacement = pendingReplacement.current;
 			pendingReplacement.current = undefined;
-			if (replacement !== undefined) void replacement();
+			if (replacement !== undefined) {
+				void Promise.resolve(replacement()).catch(() => {
+					window.alert("GIC could not complete the desktop file operation.");
+				});
+			}
 		},
 		cancelDiscard() {
 			pendingReplacement.current = undefined;
+			pendingCancellation.current?.();
+			pendingCancellation.current = undefined;
 			setDiscardOpen(false);
 		},
 		restoreRecovery() {

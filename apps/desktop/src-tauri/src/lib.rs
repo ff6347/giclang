@@ -237,6 +237,7 @@ fn write_setting(key: &str, value: &str, store: State<'_, SettingsStore>) -> Res
 async fn open_gic(
     app: AppHandle,
     store: State<'_, DocumentStore>,
+    manager: State<'_, WorkspaceManager>,
 ) -> Result<Option<OpenedDocument>, String> {
     let selected = app
         .dialog()
@@ -247,9 +248,19 @@ async fn open_gic(
         .map(|path| {
             path.into_path()
                 .map_err(|_| "Unable to use the selected sketch.".to_owned())
-                .and_then(|path| store.open_path(path))
+                .and_then(|path| store.open_path(path, &manager.workspace_root().join("sketches")))
         })
         .transpose()
+}
+
+#[tauri::command]
+fn accept_open_gic(document_id: &str, store: State<'_, DocumentStore>) -> Result<(), String> {
+    store.accept_open(document_id)
+}
+
+#[tauri::command]
+fn cancel_open_gic(document_id: &str, store: State<'_, DocumentStore>) -> Result<(), String> {
+    store.cancel_open(document_id)
 }
 
 #[tauri::command]
@@ -260,6 +271,34 @@ fn save_gic(
     store: State<'_, DocumentStore>,
 ) -> Result<(), String> {
     store.save(document_id, source, description)
+}
+
+fn save_document_copy(
+    store: &DocumentStore,
+    sessions: &SessionStore,
+    source_directory: Option<&Path>,
+    target_path: PathBuf,
+    source: &str,
+    description: Option<&str>,
+    sketchbook: &Path,
+) -> Result<OpenedDocument, String> {
+    let target_directory = target_path
+        .parent()
+        .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?
+        .to_path_buf();
+    let copied_session = source_directory
+        .map(|source| sessions.clone_latest_between(source, &target_directory))
+        .transpose()?
+        .flatten();
+    match store.save_path(target_path, source, description, sketchbook) {
+        Ok(saved) => Ok(saved),
+        Err(error) => {
+            if let Some(session_id) = copied_session {
+                sessions.remove_in(&target_directory, &session_id)?;
+            }
+            Err(error)
+        }
+    }
 }
 
 #[tauri::command]
@@ -290,11 +329,15 @@ async fn save_gic_as(
                 .map_err(|_| "Unable to use the selected sketch location.".to_owned())
                 .map(|path| sketch_path(&sketchbook, path))
                 .and_then(|path| {
-                    if let Some(source_dir) = source_sketch_dir.clone() {
-                        let target_dir = path.parent().unwrap_or(&source_dir);
-                        sessions.clone_latest_between(&source_dir, target_dir)?;
-                    }
-                    store.save_path(path, source, description)
+                    save_document_copy(
+                        &store,
+                        &sessions,
+                        source_sketch_dir.as_deref(),
+                        path,
+                        source,
+                        description,
+                        &sketchbook,
+                    )
                 })
         })
         .transpose()
@@ -713,6 +756,8 @@ pub fn run() {
             choose_projects_directory,
             launch_assistant,
             open_gic,
+            accept_open_gic,
+            cancel_open_gic,
             projects_directory,
             existing_sketch_names,
             create_agent_session,
@@ -739,7 +784,10 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{codex_auth::CodexAuth, credentials::CredentialStore, SettingsStore};
+    use super::{
+        codex_auth::CodexAuth, credentials::CredentialStore, save_document_copy, SettingsStore,
+    };
+    use crate::{documents::DocumentStore, sessions::SessionStore};
     use std::path::{Path, PathBuf};
 
     fn remove_test_directory(path: &Path) {
@@ -753,6 +801,54 @@ mod tests {
             "gic-desktop-settings-{}-{name}",
             std::process::id(),
         ))
+    }
+
+    #[test]
+    fn failed_save_as_cleans_up_the_copied_session_and_preserves_target_source() {
+        let directory = test_directory("save-as-session-failure");
+        remove_test_directory(&directory);
+        let source_directory = directory.join("sketches/source");
+        let target_directory = directory.join("sketches/copy");
+        std::fs::create_dir_all(&source_directory).expect("create source folder");
+        std::fs::create_dir_all(&target_directory).expect("create target folder");
+        std::fs::write(source_directory.join("source.gic"), "source").expect("write source sketch");
+        std::fs::write(target_directory.join("copy.gic"), "previous target")
+            .expect("write existing target");
+        std::fs::create_dir(target_directory.join("description.md"))
+            .expect("block description write");
+        let sessions = SessionStore;
+        sessions
+            .create_in(&source_directory, "A session")
+            .expect("create source session");
+
+        let result = save_document_copy(
+            &DocumentStore::default(),
+            &sessions,
+            Some(&source_directory),
+            target_directory.join("copy.gic"),
+            "replacement target",
+            Some("description"),
+            &directory.join("sketches"),
+        );
+
+        assert!(result.is_err());
+        assert_eq!(
+            std::fs::read_to_string(target_directory.join("copy.gic")).unwrap(),
+            "previous target"
+        );
+        assert_eq!(
+            std::fs::read_dir(target_directory.join("sessions"))
+                .expect("read target sessions")
+                .count(),
+            0
+        );
+        assert_eq!(
+            std::fs::read_dir(source_directory.join("sessions"))
+                .expect("read source sessions")
+                .count(),
+            1
+        );
+        remove_test_directory(&directory);
     }
 
     #[test]

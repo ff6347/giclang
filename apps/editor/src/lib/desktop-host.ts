@@ -110,6 +110,14 @@ export class DesktopHost {
 		return invoke<DesktopDocument | null>("open_gic");
 	}
 
+	acceptOpenDocument(documentId: string): Promise<void> {
+		return invoke<void>("accept_open_gic", { documentId });
+	}
+
+	cancelOpenDocument(documentId: string): Promise<void> {
+		return invoke<void>("cancel_open_gic", { documentId });
+	}
+
 	createAgentSession(name: string, documentId: string): Promise<string> {
 		return invoke<string>("create_agent_session", { name, documentId });
 	}
