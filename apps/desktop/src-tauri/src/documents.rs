@@ -447,94 +447,6 @@ fn stage_file(parent: &Path, contents: &str, message: &str) -> Result<NamedTempF
     stage_bytes(parent, contents.as_bytes(), message)
 }
 
-#[cfg(test)]
-fn move_bundle_backups(
-    source_path: &Path,
-    description_path: &Path,
-) -> Result<Vec<(PathBuf, PathBuf)>, String> {
-    let mut backups = Vec::new();
-    for target in [source_path, description_path] {
-        if target.exists() {
-            let parent = target
-                .parent()
-                .ok_or_else(|| "Invalid sketch path.".to_owned())?;
-            let backup = NamedTempFile::new_in(parent)
-                .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
-            let backup_path = backup
-                .into_temp_path()
-                .keep()
-                .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
-            fs::remove_file(&backup_path)
-                .map_err(|_| "Unable to prepare the sketch file.".to_owned())?;
-            backups.push((target.to_path_buf(), backup_path));
-        }
-    }
-    for (index, (target, backup)) in backups.iter().enumerate() {
-        if fs::rename(target, backup).is_err() {
-            let restore_error = restore_backups(&backups[..index]);
-            return Err(restore_error.unwrap_or_else(|| {
-                if target == source_path {
-                    "Unable to replace the sketch file.".to_owned()
-                } else {
-                    "Unable to write the sketch description.".to_owned()
-                }
-            }));
-        }
-    }
-    Ok(backups)
-}
-
-#[cfg(test)]
-fn install_bundle_stages(
-    source_path: &Path,
-    description_path: &Path,
-    source_stage: NamedTempFile,
-    description_stage: Option<NamedTempFile>,
-) -> Result<(), String> {
-    source_stage
-        .persist(source_path)
-        .map_err(|_| "Unable to replace the sketch file.".to_owned())
-        .and_then(|_| match description_stage {
-            Some(stage) => stage
-                .persist(description_path)
-                .map(|_| ())
-                .map_err(|_| "Unable to write the sketch description.".to_owned()),
-            None => Ok(()),
-        })
-}
-
-#[cfg(test)]
-fn rollback_bundle_files(
-    source_path: &Path,
-    description_path: &Path,
-    backups: &[(PathBuf, PathBuf)],
-    error: String,
-) -> String {
-    let _ = fs::remove_file(source_path);
-    let _ = fs::remove_file(description_path);
-    restore_backups(backups).unwrap_or(error)
-}
-
-#[cfg(test)]
-fn restore_backups(backups: &[(PathBuf, PathBuf)]) -> Option<String> {
-    let mut failures = Vec::new();
-    for (target, backup) in backups.iter().rev() {
-        if let Err(error) = fs::rename(backup, target) {
-            failures.push(format!(
-                "Could not restore {}: {error}. Original preserved at {}.",
-                target.display(),
-                backup.display(),
-            ));
-        }
-    }
-    (!failures.is_empty()).then(|| {
-        format!(
-            "Sketch save failed and rollback was incomplete. Recover the original files manually: {}",
-            failures.join(" "),
-        )
-    })
-}
-
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -554,10 +466,7 @@ fn write_source(path: &Path, source: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        existing_sketch_names, install_bundle_stages, move_bundle_backups, rollback_bundle_files,
-        sketch_path, stage_file, DocumentStore,
-    };
+    use super::{existing_sketch_names, sketch_path, DocumentStore};
     use std::path::{Path, PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -662,7 +571,9 @@ mod tests {
                 &directory.join("sketches"),
             )
             .expect("save broken source and description");
-        std::fs::write(sketch.join("thumbnail.png"), [1, 2, 3]).expect("write existing thumbnail");
+        let retained_thumbnail = test_png([0, 0, 255, 255]);
+        std::fs::write(sketch.join("thumbnail.png"), &retained_thumbnail)
+            .expect("write existing thumbnail");
         std::fs::write(sketch.join("unrelated.txt"), "keep").expect("write unrelated file");
         std::fs::create_dir_all(sketch.join("sessions")).expect("create sessions folder");
         std::fs::write(sketch.join("sessions/one.jsonl"), "session").expect("write session file");
@@ -706,7 +617,7 @@ mod tests {
         );
         assert_eq!(
             std::fs::read(sketch.join("thumbnail.png")).unwrap(),
-            [1, 2, 3]
+            retained_thumbnail
         );
         assert_eq!(
             std::fs::read_to_string(sketch.join("unrelated.txt")).unwrap(),
@@ -752,21 +663,28 @@ mod tests {
             "keep"
         );
 
-        let invalid = store.save_with_thumbnail(
-            &opened.document_id,
-            "must not replace saved data",
-            None,
-            Some(b"not a PNG"),
-        );
-        assert!(invalid.is_err());
-        assert_eq!(
-            std::fs::read_to_string(&source_path).unwrap(),
-            "saved source"
-        );
-        assert_eq!(
-            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
-            replacement_png
-        );
+        let truncated_png = &replacement_png[..replacement_png.len() - 4];
+        let mut corrupt_iend_png = replacement_png.clone();
+        let last_byte = corrupt_iend_png.len() - 1;
+        corrupt_iend_png[last_byte] ^= 0xff;
+        for invalid_png in [truncated_png, corrupt_iend_png.as_slice()] {
+            let invalid = store.save_with_thumbnail(
+                &opened.document_id,
+                "must not replace saved data",
+                Some("replacement description"),
+                Some(invalid_png),
+            );
+            assert!(invalid.is_err());
+            assert_eq!(std::fs::read(&source_path).unwrap(), b"saved source");
+            assert_eq!(
+                std::fs::read(sketch.join("description.md")).unwrap(),
+                b"description",
+            );
+            assert_eq!(
+                std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+                replacement_png,
+            );
+        }
 
         store
             .save_with_thumbnail(&opened.document_id, "saved without capture", None, None)
@@ -1030,72 +948,6 @@ mod tests {
         assert!(DocumentStore::default()
             .open_path(sketch.join("orbit.gic"), &directory.join("sketches"))
             .is_err());
-        remove_test_directory(&directory);
-    }
-
-    #[test]
-    fn failed_install_after_moving_originals_restores_the_real_bundle() {
-        let directory = test_directory("post-move-install-failure");
-        remove_test_directory(&directory);
-        std::fs::create_dir_all(&directory).expect("create test directory");
-        let source_path = directory.join("source.gic");
-        let description_path = directory.join("description.md");
-        std::fs::write(&source_path, "original source").expect("write source");
-        std::fs::write(&description_path, "original description").expect("write sidecar");
-        let source_stage = stage_file(&directory, "replacement source", "stage source")
-            .expect("stage replacement source");
-        let description_stage =
-            stage_file(&directory, "replacement description", "stage description")
-                .expect("stage replacement description");
-
-        let backups = move_bundle_backups(&source_path, &description_path)
-            .expect("move original bundle to backups");
-        assert!(!source_path.exists());
-        assert!(!description_path.exists());
-        std::fs::remove_file(source_stage.path()).expect("remove staged source to fail install");
-        let error = install_bundle_stages(
-            &source_path,
-            &description_path,
-            source_stage,
-            Some(description_stage),
-        )
-        .expect_err("install must fail after originals have moved");
-        let rollback_error =
-            rollback_bundle_files(&source_path, &description_path, &backups, error.clone());
-
-        assert_eq!(error, "Unable to replace the sketch file.");
-        assert_eq!(rollback_error, error);
-        assert_eq!(
-            std::fs::read_to_string(source_path).unwrap(),
-            "original source"
-        );
-        assert_eq!(
-            std::fs::read_to_string(description_path).unwrap(),
-            "original description"
-        );
-        remove_test_directory(&directory);
-    }
-
-    #[test]
-    fn failed_rollback_preserves_the_original_at_a_recoverable_path() {
-        let directory = test_directory("rollback-preserves-backup");
-        remove_test_directory(&directory);
-        std::fs::create_dir_all(&directory).expect("create test directory");
-        let target = directory.join("source.gic");
-        let backup = directory.join("source.backup");
-        std::fs::write(&backup, "original source").expect("write backup");
-        std::fs::create_dir(&target).expect("block restoration target");
-
-        let error = rollback_bundle_files(
-            &target,
-            &directory.join("description.md"),
-            &[(target.clone(), backup.clone())],
-            "Unable to replace the sketch file.".to_owned(),
-        );
-
-        assert!(error.contains("rollback was incomplete"));
-        assert!(error.contains(backup.to_string_lossy().as_ref()));
-        assert_eq!(std::fs::read_to_string(&backup).unwrap(), "original source");
         remove_test_directory(&directory);
     }
 

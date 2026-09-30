@@ -23,6 +23,9 @@ pub(crate) fn validate_thumbnail(bytes: &[u8]) -> Result<(), String> {
     reader
         .next_frame(&mut pixels)
         .map_err(|_| "The captured sketch thumbnail is not a valid PNG.".to_owned())?;
+    reader
+        .finish()
+        .map_err(|_| "The captured sketch thumbnail is not a valid PNG.".to_owned())?;
     Ok(())
 }
 
@@ -145,8 +148,39 @@ fn restore_backups(backups: &[(PathBuf, PathBuf)]) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{install_files, move_file_backups, rollback_files, stage_bytes};
+    use super::{
+        install_files, move_file_backups, replace_sketch_files, rollback_files, stage_bytes,
+        validate_thumbnail,
+    };
     use std::fs;
+
+    #[test]
+    fn rejects_pngs_with_incomplete_or_corrupt_trailing_chunks() {
+        let valid_png = thumbnail_png([255, 0, 0, 255]);
+        validate_thumbnail(&valid_png).expect("accept complete PNG");
+
+        let truncated = &valid_png[..valid_png.len() - 4];
+        assert!(validate_thumbnail(truncated).is_err());
+
+        let mut corrupt_iend = valid_png;
+        let last_byte = corrupt_iend.len() - 1;
+        corrupt_iend[last_byte] ^= 0xff;
+        assert!(validate_thumbnail(&corrupt_iend).is_err());
+    }
+
+    fn thumbnail_png(rgba: [u8; 4]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut bytes, 100, 100);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().expect("write PNG header");
+            writer
+                .write_image_data(&rgba.repeat(100 * 100))
+                .expect("write PNG pixels");
+        }
+        bytes
+    }
 
     #[test]
     fn failed_thumbnail_install_restores_all_original_bundle_files() {
@@ -154,9 +188,46 @@ mod tests {
         let source = directory.path().join("orbit.gic");
         let description = directory.path().join("description.md");
         let thumbnail = directory.path().join("thumbnail.png");
+        let original_png = thumbnail_png([255, 0, 0, 255]);
+        let replacement_png = thumbnail_png([0, 255, 0, 255]);
         fs::write(&source, "original source").expect("write source");
         fs::write(&description, "original description").expect("write description");
-        fs::write(&thumbnail, "original PNG").expect("write thumbnail");
+        fs::write(&thumbnail, &original_png).expect("write thumbnail");
+        let source_stage = stage_bytes(directory.path(), b"replacement source", "source")
+            .expect("stage replacement source");
+        let description_stage =
+            stage_bytes(directory.path(), b"replacement description", "description")
+                .expect("stage replacement description");
+        let thumbnail_stage = stage_bytes(directory.path(), &replacement_png, "thumbnail")
+            .expect("stage replacement thumbnail");
+        fs::remove_file(thumbnail_stage.path()).expect("force actual staged-file install failure");
+
+        assert_eq!(
+            replace_sketch_files(
+                &source,
+                source_stage,
+                &description,
+                Some(description_stage),
+                &thumbnail,
+                Some(thumbnail_stage),
+            ),
+            Err("Unable to write the sketch thumbnail.".to_owned()),
+        );
+        assert_eq!(fs::read(&source).unwrap(), b"original source");
+        assert_eq!(fs::read(&description).unwrap(), b"original description");
+        assert_eq!(fs::read(&thumbnail).unwrap(), original_png);
+    }
+
+    #[test]
+    fn failed_restore_keeps_all_bundle_backups_recoverable() {
+        let directory = tempfile::tempdir().expect("create sketch directory");
+        let source = directory.path().join("orbit.gic");
+        let description = directory.path().join("description.md");
+        let thumbnail = directory.path().join("thumbnail.png");
+        let original_png = thumbnail_png([255, 0, 0, 255]);
+        fs::write(&source, "original source").expect("write source");
+        fs::write(&description, "original description").expect("write description");
+        fs::write(&thumbnail, &original_png).expect("write thumbnail");
         let files = vec![
             (
                 source.as_path(),
@@ -173,19 +244,31 @@ mod tests {
             ),
             (
                 thumbnail.as_path(),
-                Some(stage_bytes(directory.path(), b"replacement PNG", "thumbnail").unwrap()),
+                Some(
+                    stage_bytes(
+                        directory.path(),
+                        &thumbnail_png([0, 255, 0, 255]),
+                        "thumbnail",
+                    )
+                    .unwrap(),
+                ),
                 "Unable to write the sketch thumbnail.",
             ),
         ];
         let targets = [source.as_path(), description.as_path(), thumbnail.as_path()];
-        let backups = move_file_backups(&files).expect("move original files to backups");
+        let backups = move_file_backups(&files).expect("move original bundle to backups");
         let staged_thumbnail = files[2].1.as_ref().expect("staged thumbnail").path();
-        fs::remove_file(staged_thumbnail).expect("force actual staged-file install failure");
-        let error = install_files(files).expect_err("install should fail on the removed file");
+        fs::remove_file(staged_thumbnail).expect("force staged install failure");
+        let error = install_files(files).expect_err("install should fail");
+        fs::create_dir(&thumbnail).expect("block thumbnail restoration");
 
-        assert_eq!(rollback_files(&targets, &backups, error.clone()), error);
+        let rollback_error = rollback_files(&targets, &backups, error);
+
+        assert!(rollback_error.contains("rollback was incomplete"));
+        assert!(rollback_error.contains(backups[2].1.to_string_lossy().as_ref()));
+        assert_eq!(fs::read(&backups[2].1).unwrap(), original_png);
         assert_eq!(fs::read(&source).unwrap(), b"original source");
         assert_eq!(fs::read(&description).unwrap(), b"original description");
-        assert_eq!(fs::read(&thumbnail).unwrap(), b"original PNG");
+        assert!(thumbnail.is_dir());
     }
 }
