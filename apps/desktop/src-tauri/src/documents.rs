@@ -1,10 +1,11 @@
 // ABOUTME: Owns native GIC document paths behind opaque webview identifiers.
 // ABOUTME: Reads and writes only files selected through desktop document workflows.
 
+use crate::sketch_bundle::{replace_sketch_files, stage_bytes, validate_thumbnail};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -20,34 +21,176 @@ pub(crate) struct OpenedDocument {
     pub(crate) sketch_id: String,
     pub(crate) name: String,
     pub(crate) source: String,
+    pub(crate) description: Option<String>,
 }
 
 #[derive(Default)]
 pub(crate) struct DocumentStore {
     active: Mutex<Option<ActiveDocument>>,
+    pending: Mutex<BTreeMap<String, PendingDocument>>,
 }
 
 struct ActiveDocument {
     document_id: String,
     path: PathBuf,
+    owns_description: bool,
+}
+
+struct PendingDocument {
+    path: PathBuf,
+    owns_description: bool,
 }
 
 impl DocumentStore {
-    pub(crate) fn open_path(&self, path: PathBuf) -> Result<OpenedDocument, String> {
+    pub(crate) fn open_path(
+        &self,
+        path: PathBuf,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
         validate_gic_path(&path)?;
         let source = fs::read_to_string(&path)
             .map_err(|_| "Unable to read the selected sketch.".to_owned())?;
-        self.remember(path, source)
+        let owns_description = is_sketch_bundle(&path, sketchbook);
+        let description = read_description(&path, owns_description)?;
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| "The selected sketch name is invalid.".to_owned())?
+            .to_owned();
+        let document_id = Uuid::new_v4().to_string();
+        let mut pending = self
+            .pending
+            .lock()
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?;
+        pending.insert(
+            document_id.clone(),
+            PendingDocument {
+                path: path.clone(),
+                owns_description,
+            },
+        );
+        Ok(OpenedDocument {
+            document_id,
+            sketch_id: sketch_id_for_path(&path),
+            name,
+            source,
+            description,
+        })
     }
 
-    pub(crate) fn save_path(&self, path: PathBuf, source: &str) -> Result<OpenedDocument, String> {
+    pub(crate) fn accept_open(&self, document_id: &str) -> Result<(), String> {
+        let pending = self
+            .pending
+            .lock()
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?
+            .remove(document_id)
+            .ok_or_else(|| "Unknown document ID.".to_owned())?;
+        let mut active = self
+            .active
+            .lock()
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?;
+        *active = Some(ActiveDocument {
+            document_id: document_id.to_owned(),
+            path: pending.path,
+            owns_description: pending.owns_description,
+        });
+        Ok(())
+    }
+
+    pub(crate) fn cancel_open(&self, document_id: &str) -> Result<(), String> {
+        self.pending
+            .lock()
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?
+            .remove(document_id);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn save_path(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
         let path = with_gic_extension(path);
         validate_gic_path(&path)?;
-        write_source(&path, source)?;
-        self.remember(path, source.to_owned())
+        let parent = path
+            .parent()
+            .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+        fs::create_dir_all(parent)
+            .map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
+        let owns_description = is_sketch_bundle(&path, sketchbook);
+        write_bundle(&path, source, description, None, owns_description)?;
+        self.remember(
+            path,
+            source.to_owned(),
+            if owns_description {
+                description.map(str::to_owned)
+            } else {
+                None
+            },
+            owns_description,
+        )
     }
 
-    pub(crate) fn save(&self, document_id: &str, source: &str) -> Result<(), String> {
+    #[cfg(test)]
+    pub(crate) fn save_path_pending(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
+        self.save_path_pending_with_thumbnail(path, source, description, None, sketchbook)
+    }
+
+    pub(crate) fn save_path_pending_with_thumbnail(
+        &self,
+        path: PathBuf,
+        source: &str,
+        description: Option<&str>,
+        thumbnail: Option<&[u8]>,
+        sketchbook: &Path,
+    ) -> Result<OpenedDocument, String> {
+        let path = with_gic_extension(path);
+        validate_gic_path(&path)?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+        fs::create_dir_all(parent)
+            .map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
+        let owns_description = is_sketch_bundle(&path, sketchbook);
+        write_bundle(&path, source, description, thumbnail, owns_description)?;
+        self.prepare_pending(
+            path,
+            source.to_owned(),
+            if owns_description {
+                description.map(str::to_owned)
+            } else {
+                None
+            },
+            owns_description,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn save(
+        &self,
+        document_id: &str,
+        source: &str,
+        description: Option<&str>,
+    ) -> Result<(), String> {
+        self.save_with_thumbnail(document_id, source, description, None)
+    }
+
+    pub(crate) fn save_with_thumbnail(
+        &self,
+        document_id: &str,
+        source: &str,
+        description: Option<&str>,
+        thumbnail: Option<&[u8]>,
+    ) -> Result<(), String> {
         let active = self
             .active
             .lock()
@@ -56,7 +199,13 @@ impl DocumentStore {
             .as_ref()
             .filter(|document| document.document_id == document_id)
             .ok_or_else(|| "Unknown document ID.".to_owned())?;
-        write_source(&document.path, source)
+        write_bundle(
+            &document.path,
+            source,
+            description,
+            thumbnail,
+            document.owns_description,
+        )
     }
 
     pub(crate) fn active_path(&self) -> Option<PathBuf> {
@@ -67,7 +216,26 @@ impl DocumentStore {
             .map(|document| document.path.clone())
     }
 
-    fn remember(&self, path: PathBuf, source: String) -> Result<OpenedDocument, String> {
+    #[cfg(test)]
+    fn remember(
+        &self,
+        path: PathBuf,
+        source: String,
+        description: Option<String>,
+        owns_description: bool,
+    ) -> Result<OpenedDocument, String> {
+        let opened = self.prepare_pending(path, source, description, owns_description)?;
+        self.accept_open(&opened.document_id)?;
+        Ok(opened)
+    }
+
+    fn prepare_pending(
+        &self,
+        path: PathBuf,
+        source: String,
+        description: Option<String>,
+        owns_description: bool,
+    ) -> Result<OpenedDocument, String> {
         let document_id = Uuid::new_v4().to_string();
         let sketch_id = sketch_id_for_path(&path);
         let name = path
@@ -75,19 +243,22 @@ impl DocumentStore {
             .and_then(|name| name.to_str())
             .ok_or_else(|| "The selected sketch name is invalid.".to_owned())?
             .to_owned();
-        let mut active = self
-            .active
+        self.pending
             .lock()
-            .map_err(|_| "Desktop documents are unavailable.".to_owned())?;
-        *active = Some(ActiveDocument {
-            document_id: document_id.clone(),
-            path,
-        });
+            .map_err(|_| "Desktop documents are unavailable.".to_owned())?
+            .insert(
+                document_id.clone(),
+                PendingDocument {
+                    path,
+                    owns_description,
+                },
+            );
         Ok(OpenedDocument {
             document_id,
             sketch_id,
             name,
             source,
+            description,
         })
     }
 }
@@ -145,6 +316,17 @@ fn normalize_sketch_name(name: &str) -> String {
     normalized
 }
 
+pub(crate) fn canonical_sketchbook(sketchbook: &Path) -> std::io::Result<PathBuf> {
+    let metadata = fs::symlink_metadata(sketchbook)?;
+    if !metadata.file_type().is_dir() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "The sketchbook must be a real directory.",
+        ));
+    }
+    sketchbook.canonicalize()
+}
+
 pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, String> {
     let entries = match fs::read_dir(sketchbook) {
         Ok(entries) => entries,
@@ -182,6 +364,101 @@ pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, St
     Ok(names.into_iter().collect())
 }
 
+fn read_description(path: &Path, owns_description: bool) -> Result<Option<String>, String> {
+    let sidecar = path
+        .parent()
+        .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?
+        .join("description.md");
+    if !owns_description {
+        return Ok(None);
+    }
+    match fs::symlink_metadata(&sidecar) {
+        Ok(metadata) if !metadata.file_type().is_file() => {
+            Err("Unable to read the sketch description.".to_owned())
+        }
+        Ok(_) => fs::read_to_string(sidecar)
+            .map(Some)
+            .map_err(|_| "Unable to read the sketch description.".to_owned()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(_) => Err("Unable to read the sketch description.".to_owned()),
+    }
+}
+
+fn is_sketch_bundle(path: &Path, sketchbook: &Path) -> bool {
+    let Some(parent) = path.parent() else {
+        return false;
+    };
+    let Some(sketch_name) = parent.file_name().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    let Some(source_name) = path.file_stem().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    let (Ok(sketchbook), Ok(sketch_directory)) =
+        (canonical_sketchbook(sketchbook), parent.canonicalize())
+    else {
+        return false;
+    };
+    sketch_directory.parent() == Some(sketchbook.as_path()) && sketch_name == source_name
+}
+
+fn write_bundle(
+    path: &Path,
+    source: &str,
+    description: Option<&str>,
+    thumbnail: Option<&[u8]>,
+    has_sidecar: bool,
+) -> Result<(), String> {
+    if description.is_some() && !has_sidecar {
+        return Err("Descriptions can only be saved inside a sketch folder.".to_owned());
+    }
+    if !has_sidecar {
+        return write_source(path, source);
+    }
+    if let Some(bytes) = thumbnail {
+        validate_thumbnail(bytes)?;
+    }
+    let parent = path
+        .parent()
+        .ok_or_else(|| "The selected sketch path has no parent.".to_owned())?;
+    fs::create_dir_all(parent).map_err(|_| "Unable to prepare the sketch folder.".to_owned())?;
+    let sidecar = parent.join("description.md");
+    let thumbnail_path = parent.join("thumbnail.png");
+    validate_replaceable(path, "Unable to replace the sketch file.")?;
+    validate_replaceable(&sidecar, "Unable to write the sketch description.")?;
+    if thumbnail.is_some() {
+        validate_replaceable(&thumbnail_path, "Unable to write the sketch thumbnail.")?;
+    }
+    let source_stage = stage_file(parent, source, "Unable to write the sketch file.")?;
+    let description_stage = description
+        .map(|contents| stage_file(parent, contents, "Unable to write the sketch description."))
+        .transpose()?;
+    let thumbnail_stage = thumbnail
+        .map(|contents| stage_bytes(parent, contents, "Unable to write the sketch thumbnail."))
+        .transpose()?;
+    replace_sketch_files(
+        path,
+        source_stage,
+        &sidecar,
+        description_stage,
+        &thumbnail_path,
+        thumbnail_stage,
+    )
+}
+
+fn validate_replaceable(path: &Path, message: &str) -> Result<(), String> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if !metadata.file_type().is_file() => Err(message.to_owned()),
+        Ok(_) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(message.to_owned()),
+    }
+}
+
+fn stage_file(parent: &Path, contents: &str, message: &str) -> Result<NamedTempFile, String> {
+    stage_bytes(parent, contents.as_bytes(), message)
+}
+
 fn write_source(path: &Path, source: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -217,6 +494,21 @@ mod tests {
         }
     }
 
+    fn test_sketchbook(path: &Path) -> PathBuf {
+        path.parent()
+            .and_then(Path::parent)
+            .filter(|parent| parent.file_name().is_some_and(|name| name == "sketches"))
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| path.parent().unwrap().join("sketches"))
+    }
+
+    fn open_accepted(store: &DocumentStore, path: PathBuf) -> super::OpenedDocument {
+        let sketchbook = test_sketchbook(&path);
+        let opened = store.open_path(path, &sketchbook).expect("prepare open");
+        store.accept_open(&opened.document_id).expect("accept open");
+        opened
+    }
+
     #[test]
     fn selected_gic_path_round_trips_without_exposing_it() {
         let directory = test_directory("round-trip");
@@ -226,15 +518,16 @@ mod tests {
         std::fs::write(&path, "circle(1, 2, 3);").expect("write fixture");
         let store = DocumentStore::default();
 
-        let opened = store.open_path(path.clone()).expect("open GIC fixture");
+        let opened = open_accepted(&store, path.clone());
 
         assert_eq!(opened.name, "round-trip.gic");
         assert_eq!(opened.sketch_id.len(), 64);
         assert_eq!(opened.source, "circle(1, 2, 3);");
+        assert_eq!(opened.description, None);
         assert!(!opened.document_id.contains(path.to_string_lossy().as_ref()));
 
         store
-            .save(&opened.document_id, "circle(4, 5, 6);")
+            .save(&opened.document_id, "circle(4, 5, 6);", None)
             .expect("save through opaque ID");
         assert_eq!(
             std::fs::read_to_string(&path).expect("read saved fixture"),
@@ -252,7 +545,12 @@ mod tests {
         let store = DocumentStore::default();
 
         let saved = store
-            .save_path(selected_path, "background(\"black\");")
+            .save_path(
+                selected_path,
+                "background(\"black\");",
+                None,
+                &directory.join("sketches"),
+            )
             .expect("save GIC fixture");
 
         assert_eq!(saved.name, "saved-sketch.gic");
@@ -269,11 +567,464 @@ mod tests {
     }
 
     #[test]
+    fn descriptions_round_trip_delete_without_touching_neighbor_files() {
+        let directory = test_directory("description-round-trip");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        let source_path = sketch.join("orbit.gic");
+        let description = "---\ntitle: \"Orbit: café\"\norder: 3\nenabled: true\ncategories:\n  - \"circles, lines\"\ntags:\n  - \"a: b\"\n---\n\nMultiline body.\n最後。\n";
+        let store = DocumentStore::default();
+
+        let saved = store
+            .save_path(
+                source_path.clone(),
+                "not valid GIC source",
+                Some(description),
+                &directory.join("sketches"),
+            )
+            .expect("save broken source and description");
+        let retained_thumbnail = test_png([0, 0, 255, 255]);
+        std::fs::write(sketch.join("thumbnail.png"), &retained_thumbnail)
+            .expect("write existing thumbnail");
+        std::fs::write(sketch.join("unrelated.txt"), "keep").expect("write unrelated file");
+        std::fs::create_dir_all(sketch.join("sessions")).expect("create sessions folder");
+        std::fs::write(sketch.join("sessions/one.jsonl"), "session").expect("write session file");
+
+        let reopened = open_accepted(&DocumentStore::default(), source_path.clone());
+        assert_eq!(reopened.source, "not valid GIC source");
+        assert_eq!(reopened.description.as_deref(), Some(description));
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).expect("read description"),
+            description,
+        );
+
+        let copy_path = directory.join("sketches/orbit-copy/orbit-copy.gic");
+        let copy = DocumentStore::default()
+            .save_path(
+                copy_path.clone(),
+                "copied broken source",
+                Some(description),
+                &directory.join("sketches"),
+            )
+            .expect("save copy with description");
+        assert_eq!(copy.source, "copied broken source");
+        assert_eq!(copy.description.as_deref(), Some(description));
+        assert_eq!(
+            std::fs::read_to_string(&source_path).unwrap(),
+            "not valid GIC source"
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).unwrap(),
+            description,
+        );
+
+        store
+            .save(&saved.document_id, "still broken", None)
+            .expect("save after clearing description");
+
+        assert!(!sketch.join("description.md").exists());
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "still broken"
+        );
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            retained_thumbnail
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("unrelated.txt")).unwrap(),
+            "keep"
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("sessions/one.jsonl")).unwrap(),
+            "session",
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn thumbnail_saves_replace_real_pngs_transactionally_and_save_as_copies_them() {
+        let directory = test_directory("thumbnail-save");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let sketch = sketchbook.join("orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "previous source").expect("write source");
+        let original_png = test_png([255, 0, 0, 255]);
+        let replacement_png = test_png([0, 255, 0, 255]);
+        std::fs::write(sketch.join("thumbnail.png"), &original_png).expect("write original PNG");
+        std::fs::write(sketch.join("unrelated.txt"), "keep").expect("write unrelated file");
+        let store = DocumentStore::default();
+        let opened = open_accepted(&store, source_path.clone());
+
+        store
+            .save_with_thumbnail(
+                &opened.document_id,
+                "saved source",
+                Some("description"),
+                Some(&replacement_png),
+            )
+            .expect("save source, description, and PNG");
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("unrelated.txt")).unwrap(),
+            "keep"
+        );
+
+        let truncated_png = &replacement_png[..replacement_png.len() - 4];
+        let mut corrupt_iend_png = replacement_png.clone();
+        let last_byte = corrupt_iend_png.len() - 1;
+        corrupt_iend_png[last_byte] ^= 0xff;
+        for invalid_png in [truncated_png, corrupt_iend_png.as_slice()] {
+            let invalid = store.save_with_thumbnail(
+                &opened.document_id,
+                "must not replace saved data",
+                Some("replacement description"),
+                Some(invalid_png),
+            );
+            assert!(invalid.is_err());
+            assert_eq!(std::fs::read(&source_path).unwrap(), b"saved source");
+            assert_eq!(
+                std::fs::read(sketch.join("description.md")).unwrap(),
+                b"description",
+            );
+            assert_eq!(
+                std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+                replacement_png,
+            );
+        }
+
+        store
+            .save_with_thumbnail(&opened.document_id, "saved without capture", None, None)
+            .expect("save without a current preview");
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+
+        let copy_directory = sketchbook.join("orbit-copy");
+        let copy = store
+            .save_path_pending_with_thumbnail(
+                copy_directory.join("orbit-copy.gic"),
+                "copy source",
+                None,
+                Some(&replacement_png),
+                &sketchbook,
+            )
+            .expect("save copy with captured PNG");
+        assert_eq!(
+            std::fs::read(copy_directory.join("thumbnail.png")).unwrap(),
+            replacement_png
+        );
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "saved without capture"
+        );
+
+        let blocked = sketchbook.join("blocked");
+        std::fs::create_dir_all(&blocked).expect("create failure fixture");
+        std::fs::write(blocked.join("blocked.gic"), "original").expect("write original source");
+        std::fs::write(blocked.join("thumbnail.png"), &original_png).expect("write original PNG");
+        std::fs::create_dir(blocked.join("description.md")).expect("block description replacement");
+        let failed = DocumentStore::default().save_path_pending_with_thumbnail(
+            blocked.join("blocked.gic"),
+            "must roll back",
+            Some("description"),
+            Some(&replacement_png),
+            &sketchbook,
+        );
+        assert!(failed.is_err());
+        assert_eq!(
+            std::fs::read(blocked.join("blocked.gic")).unwrap(),
+            b"original"
+        );
+        assert_eq!(
+            std::fs::read(blocked.join("thumbnail.png")).unwrap(),
+            original_png
+        );
+        assert_eq!(copy.source, "copy source");
+        remove_test_directory(&directory);
+    }
+
+    fn test_png(rgba: [u8; 4]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut bytes, 100, 100);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().expect("write PNG header");
+            let pixels = rgba.repeat(100 * 100);
+            writer.write_image_data(&pixels).expect("write PNG pixels");
+        }
+        bytes
+    }
+
+    #[test]
+    fn failed_description_write_preserves_the_existing_source_bundle() {
+        let directory = test_directory("description-write-failure");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "previous source").expect("write source");
+        let store = DocumentStore::default();
+        let opened = open_accepted(&store, source_path.clone());
+        std::fs::create_dir(sketch.join("description.md")).expect("block description write");
+
+        let result = store.save(
+            &opened.document_id,
+            "replacement source",
+            Some("new description"),
+        );
+
+        assert!(result.is_err());
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "previous source"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn failed_description_delete_preserves_existing_source() {
+        let directory = test_directory("description-delete-failure");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "previous source").expect("write source");
+        let store = DocumentStore::default();
+        let opened = open_accepted(&store, source_path.clone());
+        std::fs::create_dir(sketch.join("description.md")).expect("block description delete");
+
+        let result = store.save(&opened.document_id, "replacement source", None);
+
+        assert!(result.is_err());
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "previous source"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn failed_save_as_keeps_an_existing_target_bundle_usable() {
+        let directory = test_directory("save-as-description-failure");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "previous source").expect("write source");
+        std::fs::create_dir(sketch.join("description.md")).expect("block description write");
+
+        let result = DocumentStore::default().save_path(
+            source_path.clone(),
+            "replacement source",
+            Some("new description"),
+            &directory.join("sketches"),
+        );
+
+        assert!(result.is_err());
+        assert_eq!(
+            std::fs::read_to_string(source_path).unwrap(),
+            "previous source"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn standalone_sources_do_not_read_or_delete_neighbor_descriptions() {
+        let directory = test_directory("standalone-description");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let source_path = directory.join("first.gic");
+        std::fs::write(&source_path, "source").expect("write source");
+        let sidecar = directory.join("description.md");
+        std::fs::write(&sidecar, "unrelated description").expect("write sidecar");
+        let store = DocumentStore::default();
+        let opened = open_accepted(&store, source_path.clone());
+
+        assert_eq!(opened.description, None);
+        assert!(store.save(&opened.document_id, "changed", None).is_ok());
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        assert!(store
+            .save(&opened.document_id, "changed", Some("description"))
+            .is_err());
+        let second_path = directory.join("second.gic");
+        std::fs::write(&second_path, "second source").expect("write second source");
+        let second = open_accepted(&store, second_path);
+        assert_eq!(second.description, None);
+        store
+            .save(&second.document_id, "second changed", None)
+            .expect("save second standalone source");
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn source_only_save_as_preserves_an_unrelated_target_description() {
+        let directory = test_directory("unrelated-target-description");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let target_directory = sketchbook.join("existing-folder");
+        std::fs::create_dir_all(&target_directory).expect("create target folder");
+        let sidecar = target_directory.join("description.md");
+        std::fs::write(&sidecar, "unrelated description").expect("write sidecar");
+        let source_path = target_directory.join("new.gic");
+        let store = DocumentStore::default();
+
+        store
+            .save_path(source_path.clone(), "source", None, &sketchbook)
+            .expect("save standalone source in existing folder");
+
+        assert_eq!(std::fs::read_to_string(&source_path).unwrap(), "source");
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        assert!(store
+            .save_path(
+                source_path.clone(),
+                "replacement",
+                Some("description"),
+                &sketchbook
+            )
+            .is_err());
+        assert_eq!(std::fs::read_to_string(&source_path).unwrap(), "source");
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn reads_sidecars_only_inside_the_approved_sketchbook() {
+        let directory = test_directory("unapproved-sketchbook");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("configured/sketches");
+        let external = directory.join("external/sketches/orbit");
+        std::fs::create_dir_all(&external).expect("create external sketch folder");
+        let source_path = external.join("orbit.gic");
+        std::fs::write(&source_path, "source").expect("write source");
+        let sidecar = external.join("description.md");
+        std::fs::write(&sidecar, "unrelated description").expect("write sidecar");
+        let store = DocumentStore::default();
+        let opened = store
+            .open_path(source_path.clone(), &sketchbook)
+            .expect("open source outside configured sketchbook");
+
+        assert_eq!(opened.description, None);
+        store
+            .accept_open(&opened.document_id)
+            .expect("accept standalone source");
+        store
+            .save(&opened.document_id, "updated source", None)
+            .expect("save standalone source");
+        assert!(store
+            .save(&opened.document_id, "updated source", Some("description"))
+            .is_err());
+        assert_eq!(
+            std::fs::read_to_string(&sidecar).unwrap(),
+            "unrelated description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_sketchbook_symlink_does_not_claim_explicitly_selected_sources() {
+        use std::os::unix::fs::symlink;
+
+        let directory = test_directory("sketchbook-root-symlink");
+        remove_test_directory(&directory);
+        let actual_sketchbook = directory.join("project-a/sketches");
+        let alias_project = directory.join("project-b");
+        let sketch = actual_sketchbook.join("orbit");
+        std::fs::create_dir_all(&sketch).expect("create actual sketch folder");
+        std::fs::create_dir_all(&alias_project).expect("create configured project");
+        symlink(&actual_sketchbook, alias_project.join("sketches"))
+            .expect("link configured sketchbook to another project");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "source").expect("write selected source");
+        let description = "unowned description";
+        std::fs::write(sketch.join("description.md"), description).expect("write sidecar");
+        let thumbnail = b"unowned thumbnail";
+        std::fs::write(sketch.join("thumbnail.png"), thumbnail).expect("write thumbnail");
+
+        let store = DocumentStore::default();
+        let opened = store
+            .open_path(source_path, &alias_project.join("sketches"))
+            .expect("explicitly selected source remains openable");
+        assert_eq!(opened.description, None);
+        store
+            .accept_open(&opened.document_id)
+            .expect("accept standalone source");
+        let captured_thumbnail = test_png([90, 80, 70, 255]);
+        store
+            .save_with_thumbnail(
+                &opened.document_id,
+                "source update",
+                None,
+                Some(&captured_thumbnail),
+            )
+            .expect("save standalone source without claiming sidecars");
+        assert!(store
+            .save(
+                &opened.document_id,
+                "source update",
+                Some("new description")
+            )
+            .is_err());
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).unwrap(),
+            description
+        );
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            thumbnail
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_description_symlinks_before_reading_outside_the_bundle() {
+        use std::os::unix::fs::symlink;
+
+        let directory = test_directory("description-symlink");
+        remove_test_directory(&directory);
+        let sketch = directory.join("sketches/orbit");
+        std::fs::create_dir_all(&sketch).expect("create sketch folder");
+        std::fs::write(sketch.join("orbit.gic"), "source").expect("write source");
+        let fake_auth = directory.join("fake-auth.json");
+        std::fs::write(&fake_auth, r#"{"fixture":"not credentials"}"#)
+            .expect("write non-credential fixture");
+        symlink(fake_auth, sketch.join("description.md")).expect("create link");
+
+        assert!(DocumentStore::default()
+            .open_path(sketch.join("orbit.gic"), &directory.join("sketches"))
+            .is_err());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn rejects_unknown_document_identity() {
         let store = DocumentStore::default();
 
         assert_eq!(
-            store.save("missing", "circle(1, 2, 3);"),
+            store.save("missing", "circle(1, 2, 3);", None),
             Err("Unknown document ID.".to_owned()),
         );
     }
@@ -288,17 +1039,80 @@ mod tests {
         std::fs::write(&first_path, "circle(1, 2, 3);").expect("write first fixture");
         std::fs::write(&second_path, "circle(4, 5, 6);").expect("write second fixture");
         let store = DocumentStore::default();
-        let first = store.open_path(first_path).expect("open first fixture");
-        let second = store.open_path(second_path).expect("open second fixture");
+        let first = open_accepted(&store, first_path);
+        let second = open_accepted(&store, second_path);
 
         assert_ne!(first.document_id, second.document_id);
         assert_eq!(
-            store.save(&first.document_id, "background(\"red\");"),
+            store.save(&first.document_id, "background(\"red\");", None),
             Err("Unknown document ID.".to_owned()),
         );
         store
-            .save(&second.document_id, "background(\"blue\");")
+            .save(&second.document_id, "background(\"blue\");", None)
             .expect("save active fixture");
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn pending_open_keeps_the_active_document_until_accepted() {
+        let directory = test_directory("pending-open");
+        remove_test_directory(&directory);
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        let first_path = directory.join("first.gic");
+        let second_path = directory.join("second.gic");
+        std::fs::write(&first_path, "first").expect("write first fixture");
+        std::fs::write(&second_path, "second").expect("write second fixture");
+        let store = DocumentStore::default();
+        let first = open_accepted(&store, first_path.clone());
+        let pending = store
+            .open_path(second_path.clone(), &test_sketchbook(&second_path))
+            .expect("prepare second open");
+
+        assert_eq!(store.active_path(), Some(first_path.clone()));
+        store
+            .save(&first.document_id, "still active", None)
+            .expect("save active document while replacement is pending");
+        store
+            .cancel_open(&pending.document_id)
+            .expect("cancel pending open");
+        assert_eq!(store.active_path(), Some(first_path));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn malformed_description_candidate_does_not_revoke_the_active_document() {
+        let directory = test_directory("malformed-pending-open");
+        remove_test_directory(&directory);
+        let active_directory = directory.join("sketches/active");
+        let candidate_directory = directory.join("sketches/malformed");
+        std::fs::create_dir_all(&active_directory).expect("create active folder");
+        std::fs::create_dir_all(&candidate_directory).expect("create candidate folder");
+        let active_path = active_directory.join("active.gic");
+        let candidate_path = candidate_directory.join("malformed.gic");
+        std::fs::write(&active_path, "active source").expect("write active source");
+        std::fs::write(&candidate_path, "candidate source").expect("write candidate source");
+        std::fs::write(
+            candidate_directory.join("description.md"),
+            "---\ntitle: [invalid\n---\nBody",
+        )
+        .expect("write malformed description");
+        let store = DocumentStore::default();
+        let active = open_accepted(&store, active_path.clone());
+        let candidate = store
+            .open_path(candidate_path.clone(), &test_sketchbook(&candidate_path))
+            .expect("prepare candidate");
+
+        assert_eq!(
+            candidate.description.as_deref(),
+            Some("---\ntitle: [invalid\n---\nBody")
+        );
+        assert_eq!(store.active_path(), Some(active_path));
+        store
+            .save(&active.document_id, "active remains writable", None)
+            .expect("save active document before accepting candidate");
+        store
+            .cancel_open(&candidate.document_id)
+            .expect("cancel malformed candidate");
         remove_test_directory(&directory);
     }
 
@@ -329,6 +1143,79 @@ mod tests {
     }
 
     #[test]
+    fn pending_save_as_preserves_the_active_identity_until_accepted() {
+        let directory = test_directory("pending-save-as");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let active_path = directory.join("active.gic");
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(&active_path, "active source").expect("write active source");
+        let store = DocumentStore::default();
+        let active = open_accepted(&store, active_path.clone());
+
+        let saved = store
+            .save_path_pending(
+                sketchbook.join("copy/copy.gic"),
+                "copy source",
+                None,
+                &sketchbook,
+            )
+            .expect("prepare copy");
+
+        assert_eq!(store.active_path(), Some(active_path));
+        store
+            .cancel_open(&saved.document_id)
+            .expect("cancel pending save-as activation");
+        assert_eq!(store.active_path(), Some(directory.join("active.gic")));
+        store
+            .save(&active.document_id, "still active", None)
+            .expect("save original active document");
+        assert_eq!(
+            std::fs::read_to_string(directory.join("active.gic")).unwrap(),
+            "still active"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn accepting_pending_save_as_switches_the_active_real_file() {
+        let directory = test_directory("accept-pending-save-as");
+        remove_test_directory(&directory);
+        let sketchbook = directory.join("sketches");
+        let active_path = directory.join("active.gic");
+        let copy_path = sketchbook.join("copy/copy.gic");
+        std::fs::create_dir_all(&directory).expect("create test directory");
+        std::fs::write(&active_path, "active source").expect("write active source");
+        let store = DocumentStore::default();
+        let active = open_accepted(&store, active_path.clone());
+        let copy = store
+            .save_path_pending(copy_path.clone(), "copy source", None, &sketchbook)
+            .expect("prepare copy");
+
+        assert_eq!(store.active_path(), Some(active_path.clone()));
+        store
+            .accept_open(&copy.document_id)
+            .expect("activate saved copy");
+        assert_eq!(store.active_path(), Some(copy_path.clone()));
+        assert_eq!(
+            store.save(&active.document_id, "stale write", None),
+            Err("Unknown document ID.".to_owned()),
+        );
+        store
+            .save(&copy.document_id, "edited copy", None)
+            .expect("save active copy");
+        assert_eq!(
+            std::fs::read_to_string(&copy_path).expect("read saved copy"),
+            "edited copy"
+        );
+        assert_eq!(
+            std::fs::read_to_string(&active_path).expect("read original"),
+            "active source"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[test]
     fn save_path_creates_the_sketch_folder() {
         let directory = test_directory("sketch-folder");
         remove_test_directory(&directory);
@@ -340,6 +1227,8 @@ mod tests {
             .save_path(
                 sketch_path(&sketches, sketches.join("orbit")),
                 "circle(1, 2, 3);",
+                None,
+                &sketches,
             )
             .expect("save sketch fixture");
 

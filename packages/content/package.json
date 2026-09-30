@@ -12,6 +12,14 @@
 			"types": "./dist/markdown-content.d.ts",
 			"default": "./dist/markdown-content.js"
 		},
+		"./sketch-description": {
+			"types": "./dist/sketch-description.d.ts",
+			"default": "./dist/sketch-description.js"
+		},
+		"./user-markdown": {
+			"types": "./dist/user-markdown.d.ts",
+			"default": "./dist/user-markdown.js"
+		},
 		"./node": {
 			"types": "./dist/content-files.d.ts",
 			"default": "./dist/content-files.js"
@@ -24,6 +32,10 @@
 	},
 	"dependencies": {
 		"gray-matter": "4.0.3",
+		"js-yaml": "4.3.2",
 		"markdown-it": "15.0.2"
+	},
+	"devDependencies": {
+		"@types/js-yaml": "4.0.9"
 	}
 }

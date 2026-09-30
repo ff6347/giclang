@@ -63,6 +63,12 @@ test("restarts offline with the complete tutor-less authoring workflow", async (
 		.not.toBeNull();
 
 	const offlinePage = await restartOffline(context, page);
+	await expect(
+		offlinePage.getByRole("tab", { name: "Description" }),
+	).toHaveCount(0);
+	await expect(
+		offlinePage.getByRole("textbox", { name: "Markdown" }),
+	).toHaveCount(0);
 	const recovery = offlinePage.getByRole("alertdialog", {
 		name: "Recover unsaved sketch?",
 	});

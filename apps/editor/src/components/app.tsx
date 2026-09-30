@@ -21,10 +21,12 @@ import {
 	CODE_ID,
 	createDefaultWorkspace,
 	DOC_COMPONENT,
+	DESCRIPTION_ID,
 	DOCS_ID,
 	documentTabId,
 	EDITOR_ID,
 	EXAMPLES_ID,
+	SKETCHES_ID,
 	loadWorkspace,
 	OUTPUT_ID,
 	PREVIEW_ID,
@@ -35,12 +37,14 @@ import {
 } from "../lib/workspace-model.ts";
 import { SettingsPanel } from "./settings-panel.tsx";
 import { ExamplesPanel } from "./examples-panel.tsx";
+import { SketchesPanel } from "./sketches-panel.tsx";
 import { AboutPanel } from "./about-panel.tsx";
 import { DocsPanel } from "./docs-panel.tsx";
 import { ProblemsPanel } from "./problems-panel.tsx";
 import { OutputPanel } from "./output-panel.tsx";
 import { PreviewPanel } from "./preview-panel.tsx";
 import { EditorPanel } from "./editor-panel.tsx";
+import { DescriptionPanel } from "./description-panel.tsx";
 import { AgentPanel } from "./agent-panel.tsx";
 import { productContent } from "../lib/content.ts";
 import { usePreview } from "../hooks/use-preview.ts";
@@ -67,6 +71,7 @@ import {
 } from "../lib/theme.ts";
 import { useTheme } from "../hooks/use-theme.ts";
 import { useWorkspace } from "../hooks/use-workspace.ts";
+import { useSketchGallery } from "../hooks/use-sketch-gallery.ts";
 import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 import { modelDiscoveryError } from "../lib/model-discovery.ts";
@@ -191,10 +196,19 @@ export function App({
 		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
-	const documents = useDocument(formatOnSave, selectGestalten, desktop);
+	const workspace = useWorkspace(desktop);
+	const gallery = useSketchGallery(desktop, workspace.projectsDirectory);
+	const documents = useDocument(
+		formatOnSave,
+		selectGestalten,
+		desktop,
+		preview.captureThumbnail,
+		preview.adoptSavedSource,
+		preview.onSourceChange,
+		gallery.refresh,
+	);
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
-	const workspace = useWorkspace(desktop);
 	const loadOpencodeModels = (status: ProviderCredentialStatus | null) => {
 		const request = ++opencodeModelsRequest.current;
 		if (
@@ -520,8 +534,18 @@ export function App({
 									}
 						}
 						onSourceChange={updateSource}
+						readOnly={documents.activationPending}
 						source={documents.documentState.source}
 						theme={theme}
+					/>
+				);
+			case DESCRIPTION_ID:
+				return (
+					<DescriptionPanel
+						description={documents.documentState.description}
+						desktop={desktop !== undefined}
+						disabled={documents.activationPending}
+						onChange={documents.updateDescription}
 					/>
 				);
 			case PREVIEW_ID:
@@ -529,7 +553,9 @@ export function App({
 					<PreviewPanel
 						canvasFrame={canvasFrame}
 						canvasRef={canvasRef}
+						capturePng={preview.captureThumbnail}
 						isCurrentSourceRendered={preview.state.isCurrentSourceRendered}
+						source={documents.documentState.source}
 						onDownloadStandalone={() => {
 							const source = documents.documentState.source;
 							if (desktop === undefined) {
@@ -616,6 +642,14 @@ export function App({
 						onOpen={documents.requestExample}
 					/>
 				);
+			case SKETCHES_ID:
+				return (
+					<SketchesPanel
+						cards={gallery.cards}
+						error={gallery.error}
+						onOpen={documents.requestDesktopOpen}
+					/>
+				);
 			case DOC_COMPONENT: {
 				const doc = docsByTabId.get(node.getId());
 				return doc === undefined ? (
@@ -653,19 +687,24 @@ export function App({
 									>
 										<Menu.Item
 											className="application-menu-item"
+											disabled={documents.activationPending}
 											onClick={() => openFile.current?.click()}
 										>
 											Open
 										</Menu.Item>
 										<Menu.Item
 											className="application-menu-item"
-											disabled={!documents.documentState.canSave}
+											disabled={
+												documents.activationPending ||
+												!documents.documentState.canSave
+											}
 											onClick={documents.requestSave}
 										>
 											Save
 										</Menu.Item>
 										<Menu.Item
 											className="application-menu-item"
+											disabled={documents.activationPending}
 											onClick={documents.openSaveAs}
 										>
 											Save As
@@ -697,6 +736,14 @@ export function App({
 						}}
 					/>
 				</header>
+			)}
+			{documents.activationPending && (
+				<p role="status">
+					Opening sketch… Editing and file actions are paused.
+				</p>
+			)}
+			{documents.operationMessage !== undefined && (
+				<p role="alert">{documents.operationMessage}</p>
 			)}
 			<div className="application-layout">
 				<Layout

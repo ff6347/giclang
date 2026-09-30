@@ -536,6 +536,105 @@ canvas {
 	margin: var(--s0);
 }
 
+.sketches-panel {
+	padding: var(--s3);
+}
+
+.sketches-grid {
+	display: grid;
+	gap: var(--s3);
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+}
+
+.sketch-card {
+	border: 2px solid var(--color-text);
+	min-width: 0;
+	padding: var(--s2);
+}
+
+.sketch-card-open {
+	align-items: flex-start;
+	background: transparent;
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	font: inherit;
+	gap: var(--s2);
+	padding: 0;
+	text-align: left;
+	width: 100%;
+}
+
+.sketch-card-open:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.sketch-thumbnail,
+.sketch-thumbnail-placeholder {
+	aspect-ratio: 1;
+	height: 100px;
+	object-fit: contain;
+	width: 100px;
+}
+
+.sketch-thumbnail-placeholder {
+	border: 1px dashed currentColor;
+}
+
+.sketch-card-description {
+	margin-top: var(--s2);
+	overflow-wrap: anywhere;
+}
+
+.sketch-card-description > :first-child {
+	margin-top: 0;
+}
+
+.sketch-card-description > :last-child {
+	margin-bottom: 0;
+}
+
+.description-form {
+	display: grid;
+	gap: var(--s2);
+	max-width: 66ch;
+	width: 100%;
+}
+
+.description-field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--s1);
+}
+
+.description-form input:not([type="checkbox"]),
+.description-form textarea {
+	background-color: var(--color-background);
+	border: 2px solid var(--color-text);
+	box-shadow: 3px 3px 0 var(--color-text);
+	color: var(--color-text);
+	font: inherit;
+	min-width: 0;
+	padding: var(--s2);
+}
+
+.description-form textarea {
+	min-height: 5rem;
+	resize: vertical;
+}
+
+.description-form textarea.description-markdown {
+	min-height: 12rem;
+}
+
+.description-form .description-checkbox {
+	align-items: center;
+	flex-direction: row;
+}
+
 .application-list {
 	display: flex;
 	flex-direction: column;

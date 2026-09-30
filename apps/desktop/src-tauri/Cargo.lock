@@ -1474,6 +1474,7 @@ dependencies = [
  "chrono",
  "futures-util",
  "http",
+ "png 0.18.1",
  "reqwest",
  "rig-core",
  "serde",

@@ -10,8 +10,10 @@ import type { ApplicationSettings } from "../lib/application-settings.ts";
 import {
 	AGENT_ID,
 	CODE_ID,
+	DESCRIPTION_ID,
 	DOC_COMPONENT,
 	DOCS_ID,
+	SKETCHES_ID,
 	documentTabId,
 	createDefaultWorkspace,
 	loadWorkspace,
@@ -35,17 +37,32 @@ const docs: readonly Pick<DocumentationContent, "id" | "title">[] = [
 	{ id: "drawing", title: "Drawing" },
 ];
 
-test("desktop retains Agent after loading a browser workspace", () => {
+test("desktop retains Agent and Description after loading a browser workspace", () => {
 	const settings = new MemorySettings();
 	const desktop = createDefaultWorkspace(true, docs);
+	const description = desktop.getNodeById(DESCRIPTION_ID);
+	assert.ok(description instanceof TabNode);
+	assert.equal(description.getName(), "Description");
+	assert.equal(description.getComponent(), DESCRIPTION_ID);
+	assert.equal(description.getParent()?.getId(), "editor-tabset");
 	assert.ok(desktop.getNodeById(AGENT_ID) instanceof TabNode);
+	const sketches = desktop.getNodeById(SKETCHES_ID);
+	assert.ok(sketches instanceof TabNode);
+	assert.equal(sketches.getName(), "Sketches");
 	saveWorkspace(desktop, settings);
 
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
+	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
+	assert.equal(browser.getNodeById(DESCRIPTION_ID), undefined);
 
 	const restoredDesktop = loadWorkspace(true, settings, docs);
 	assert.ok(restoredDesktop.getNodeById(AGENT_ID) instanceof TabNode);
+	assert.ok(restoredDesktop.getNodeById(SKETCHES_ID) instanceof TabNode);
+	const restoredDescription = restoredDesktop.getNodeById(DESCRIPTION_ID);
+	assert.ok(restoredDescription instanceof TabNode);
+	assert.equal(restoredDescription.getName(), "Description");
+	assert.equal(restoredDescription.getParent()?.getId(), "editor-tabset");
 	assert.equal(
 		restoredDesktop.getNodeById(AGENT_ID)?.getParent()?.getId(),
 		"output-tabset",
@@ -283,12 +300,26 @@ for (const includeAgent of [false, true]) {
 		);
 		assert.equal(
 			JSON.parse(settings.getItem("gic.workspaceLayout")!).version,
-			9,
+			11,
 		);
 	});
 }
 
-test("retains moved documents in the feature's version 8 layout across browser and desktop", () => {
+test("adds Sketches when migrating a desktop layout and omits it from the browser", () => {
+	const settings = new MemorySettings();
+	const layout = createDefaultWorkspace(false, docs).toJson();
+	settings.setItem(
+		"gic.workspaceLayout",
+		JSON.stringify({ version: 10, layout }),
+	);
+
+	const desktop = loadWorkspace(true, settings, docs);
+	assert.ok(desktop.getNodeById(SKETCHES_ID) instanceof TabNode);
+	const browser = loadWorkspace(false, settings, docs);
+	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
+});
+
+test("retains moved documents while removing Description from browser layouts", () => {
 	const settings = new MemorySettings();
 	const model = createDefaultWorkspace(true, docs);
 	model.doAction(
@@ -308,16 +339,31 @@ test("retains moved documents in the feature's version 8 layout across browser a
 
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
+	assert.equal(browser.getNodeById(DESCRIPTION_ID), undefined);
 	assert.equal(
 		browser.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
 		"editor-tabset",
 	);
 	const desktop = loadWorkspace(true, settings, docs);
 	assert.ok(desktop.getNodeById(AGENT_ID) instanceof TabNode);
+	assert.ok(desktop.getNodeById(DESCRIPTION_ID) instanceof TabNode);
 	assert.equal(
 		desktop.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
 		"editor-tabset",
 	);
+});
+
+test("removes a stored Description panel from every browser layout location", () => {
+	const settings = new MemorySettings();
+	const model = createDefaultWorkspace(true, docs);
+	model.doAction(
+		Actions.moveNode(DESCRIPTION_ID, "output-tabset", DockLocation.CENTER, -1),
+	);
+	saveWorkspace(model, settings);
+
+	const loaded = loadWorkspace(false, settings, docs);
+
+	assert.equal(loaded.getNodeById(DESCRIPTION_ID), undefined);
 });
 
 test("adds documents to Docs and prunes removed documents without moving retained tabs", () => {

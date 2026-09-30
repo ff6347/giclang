@@ -4,6 +4,12 @@
 import matter from "gray-matter";
 import MarkdownIt from "markdown-it";
 import type { ExampleDescription, MarkdownContent } from "./content-model.ts";
+import {
+	isBooleanField,
+	isFiniteOrder,
+	isNonEmptyTitle,
+	isStringList,
+} from "./metadata-validation.ts";
 
 const markdown = new MarkdownIt({
 	html: true,
@@ -65,10 +71,7 @@ function metadataList(
 	required: boolean,
 ): string[] {
 	const value = metadata[name];
-	if (
-		!Array.isArray(value) ||
-		value.some((entry) => typeof entry !== "string" || entry.trim() === "")
-	) {
+	if (!isStringList(value) || value.some((entry) => entry.trim() === "")) {
 		if (value === undefined && !required) {
 			return [];
 		}
@@ -93,16 +96,11 @@ export function compileMarkdown(
 		typeof metadata !== "object" ||
 		metadata === null ||
 		!("title" in metadata) ||
-		typeof metadata.title !== "string" ||
-		metadata.title.trim() === ""
+		!isNonEmptyTitle(metadata.title)
 	) {
 		throw new Error(`Content '${path}' requires a non-empty 'title'.`);
 	}
-	if (
-		!("order" in metadata) ||
-		typeof metadata.order !== "number" ||
-		!Number.isFinite(metadata.order)
-	) {
+	if (!("order" in metadata) || !isFiniteOrder(metadata.order)) {
 		throw new Error(`Content '${path}' requires a numeric 'order'.`);
 	}
 	const normalizedPath = path.replaceAll("\\", "/");
@@ -125,7 +123,7 @@ export function compileMarkdown(
 	if (!isExampleDescription) {
 		return content;
 	}
-	if (!("enabled" in metadata) || typeof metadata.enabled !== "boolean") {
+	if (!("enabled" in metadata) || !isBooleanField(metadata.enabled)) {
 		throw new Error(`Content '${path}' requires 'enabled' to be a boolean.`);
 	}
 	return {

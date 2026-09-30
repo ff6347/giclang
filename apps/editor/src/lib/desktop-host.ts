@@ -57,6 +57,13 @@ export interface DesktopDocument {
 	readonly name: string;
 	readonly sketchId: string;
 	readonly source: string;
+	readonly description: string | null;
+}
+
+export interface DesktopSketchCandidate {
+	readonly entryId: string;
+	readonly description: string;
+	readonly thumbnailDataUrl: string | null;
 }
 
 export type AgentSessionRecord =
@@ -109,6 +116,22 @@ export class DesktopHost {
 		return invoke<DesktopDocument | null>("open_gic");
 	}
 
+	discoverSketches(): Promise<DesktopSketchCandidate[]> {
+		return invoke<DesktopSketchCandidate[]>("discover_sketches");
+	}
+
+	openGallerySketch(entryId: string): Promise<DesktopDocument> {
+		return invoke<DesktopDocument>("open_gallery_sketch", { entryId });
+	}
+
+	acceptOpenDocument(documentId: string): Promise<void> {
+		return invoke<void>("accept_open_gic", { documentId });
+	}
+
+	cancelOpenDocument(documentId: string): Promise<void> {
+		return invoke<void>("cancel_open_gic", { documentId });
+	}
+
 	createAgentSession(name: string, documentId: string): Promise<string> {
 		return invoke<string>("create_agent_session", { name, documentId });
 	}
@@ -155,16 +178,26 @@ export class DesktopHost {
 		return invoke<void>("reveal_sketch_folder");
 	}
 
-	saveDocument(documentId: string, source: string): Promise<void> {
-		return invoke<void>("save_gic", { documentId, source });
+	saveDocument(
+		documentId: string,
+		source: string,
+		description: string | null,
+		thumbnail: string | undefined,
+	): Promise<void> {
+		return invoke<void>("save_gic", {
+			documentId,
+			document: { source, description, thumbnail: thumbnail ?? null },
+		});
 	}
 
 	saveDocumentAs(
 		source: string,
 		suggestedName: string,
+		description: string | null,
+		thumbnail: string | undefined,
 	): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("save_gic_as", {
-			source,
+			document: { source, description, thumbnail: thumbnail ?? null },
 			suggestedName,
 		});
 	}

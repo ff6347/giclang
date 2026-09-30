@@ -8,6 +8,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
+use tempfile::NamedTempFile;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -168,6 +169,15 @@ impl SessionStore {
         Ok(None)
     }
 
+    pub(crate) fn remove_in(&self, sketch_dir: &Path, session_id: &str) -> Result<(), String> {
+        let path = self.session_path(sketch_dir, session_id)?;
+        match fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(_) => Err("Unable to remove the copied Agent session.".to_owned()),
+        }
+    }
+
     fn write_new(
         &self,
         sketch_dir: &Path,
@@ -188,14 +198,14 @@ impl SessionStore {
             .parent()
             .ok_or_else(|| "Agent session path has no parent.".to_owned())?;
         fs::create_dir_all(parent).map_err(|_| "Unable to prepare Agent sessions.".to_owned())?;
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(path)
-            .map_err(|_| "Unable to create the Agent session.".to_owned())?;
+        let mut file = NamedTempFile::new_in(parent)
+            .map_err(|_| "Unable to prepare Agent sessions.".to_owned())?;
         file.write_all(contents.as_bytes())
-            .and_then(|()| file.sync_data())
-            .map_err(|_| "Unable to write the Agent session.".to_owned())
+            .and_then(|()| file.as_file().sync_all())
+            .map_err(|_| "Unable to write the Agent session.".to_owned())?;
+        file.persist_noclobber(path)
+            .map_err(|_| "Unable to create the Agent session.".to_owned())?;
+        Ok(())
     }
 
     fn session_path(&self, sketch_dir: &Path, session_id: &str) -> Result<PathBuf, String> {

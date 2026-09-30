@@ -5,6 +5,7 @@ import { useRef, useEffect } from "react";
 import {
 	type GicEditor,
 	createGicEditor,
+	setEditorSource,
 	setEditorTheme,
 } from "../lib/gic-editor.ts";
 import type { ResolvedTheme } from "../lib/theme.ts";
@@ -14,6 +15,7 @@ export interface EditorPanelProps {
 	onSave: () => void;
 	onRevealSketchFolder: (() => void) | undefined;
 	onSourceChange: (source: string) => void;
+	readOnly: boolean;
 	source: string;
 	theme: ResolvedTheme;
 }
@@ -23,6 +25,7 @@ export function EditorPanel({
 	onSave,
 	onRevealSketchFolder,
 	onSourceChange,
+	readOnly,
 	source,
 	theme,
 }: EditorPanelProps) {
@@ -59,13 +62,19 @@ export function EditorPanel({
 	}, []);
 
 	useEffect(() => {
-		if (editorRef.current?.getValue() !== source)
-			editorRef.current?.setValue(source);
+		const editor = editorRef.current;
+		if (editor !== null && editor.getValue() !== source) {
+			setEditorSource(editor, source);
+		}
 	}, [source]);
 
 	useEffect(() => {
 		setEditorTheme(theme);
 	}, [theme]);
+
+	useEffect(() => {
+		editorRef.current?.updateOptions({ readOnly });
+	}, [readOnly]);
 
 	return (
 		<section aria-label="Editor" className="workspace-panel">
