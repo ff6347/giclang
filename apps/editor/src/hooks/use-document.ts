@@ -44,9 +44,11 @@ function readHostRecovery(
 	if (snapshot.document.source === snapshot.document.baselineSource) {
 		return undefined;
 	}
-	const description = defaultSketchDescription(
-		sketchBaseName(snapshot.document.displayName),
-	);
+	const displayName =
+		typeof snapshot.document.displayName === "string"
+			? snapshot.document.displayName
+			: "Recovered sketch";
+	const description = defaultSketchDescription(sketchBaseName(displayName));
 	return {
 		...snapshot,
 		document: {

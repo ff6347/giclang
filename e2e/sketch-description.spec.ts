@@ -16,6 +16,34 @@ async function chooseFileCommand(
 		.click();
 }
 
+test("recovers valid snapshots without a string display name", async ({
+	page,
+}) => {
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			"gic.recovery.v1",
+			JSON.stringify({
+				updatedAt: Date.now(),
+				document: {
+					source: "point(1, 1);",
+					baselineSource: "",
+				},
+			}),
+		);
+	});
+	await page.goto("/");
+
+	const recovery = page.getByRole("alertdialog", {
+		name: "Recover unsaved sketch?",
+	});
+	await expect(recovery).toBeVisible();
+	await recovery.getByRole("button", { name: "Restore" }).click();
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		"point(1, 1);",
+	);
+	await expect(page.getByRole("tab", { name: "Description" })).toHaveCount(0);
+});
+
 test("ignores description-only browser recovery snapshots", async ({
 	page,
 }) => {
