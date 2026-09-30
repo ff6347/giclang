@@ -117,6 +117,7 @@ arc(x, y, radius, startAngle, endAngle);
 - `randomSeed(n)` makes `random` reproducible.
 - `floor(n)` `ceil(n)` `round(n)` `abs(n)` `min(a, b)` `max(a, b)`.
 - `sin(degrees)` `cos(degrees)` `sqrt(n)` `pow(base, exp)`.
+- `radians(degrees)` `degrees(radian)`.
 - Trigonometric functions use degrees.
 - Math arguments and results must be finite. `sqrt` rejects negative inputs; `pow` rejects non-finite results.
 - Constants: `PI`, `WIDTH` (100), `HEIGHT` (100).

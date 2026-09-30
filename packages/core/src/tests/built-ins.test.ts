@@ -337,4 +337,24 @@ describe("built-ins", () => {
 		const actual = builtIns["cos"];
 		assert.deepStrictEqual(actual, expected);
 	});
+
+	test("should verify radians function signature", () => {
+		const expected = {
+			kind: "function",
+			signatures: [[{ name: "degrees", kind: "number" }]],
+			returnKind: "value",
+		};
+		const actual = builtIns["radians"];
+		assert.deepStrictEqual(actual, expected);
+	});
+
+	test("should verify degrees function signature", () => {
+		const expected = {
+			kind: "function",
+			signatures: [[{ name: "radians", kind: "number" }]],
+			returnKind: "value",
+		};
+		const actual = builtIns["degrees"];
+		assert.deepStrictEqual(actual, expected);
+	});
 });

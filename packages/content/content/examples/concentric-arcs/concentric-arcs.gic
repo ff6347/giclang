@@ -8,7 +8,7 @@ stroke("#000000");
 
 repeat(i, 0, 31) {
 	let diameter = i * 3.25;
-	let angle = i * 180 / PI;
+	let angle = degrees(i);
 	strokeWidth(2 - diameter * 0.01875);
 	arc(50, 50, diameter / 2, angle, -angle);
 }

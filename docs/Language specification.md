@@ -498,6 +498,8 @@ All coordinates are in pixels from top-left origin (0, 0). Canvas is 100×100 pi
 | `max(a, b)` | Larger of two values |
 | `sin(degrees)` | Sine (input in degrees) |
 | `cos(degrees)` | Cosine (input in degrees) |
+| `radians(degrees)` | Convert degrees to radians |
+| `degrees(radian)` | Convert radians to degrees |
 | `sqrt(n)` | Square root |
 | `pow(base, exp)` | Exponentiation |
 

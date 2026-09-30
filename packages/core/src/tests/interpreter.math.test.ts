@@ -38,6 +38,47 @@ test("runSource evaluates sqrt, pow, sin, and cos in line geometry", () => {
 	});
 });
 
+test("runSource evaluates if degrees returns a finite number", () => {
+	const actual = runSource("print(degrees(pow(10, 308)));");
+
+	assert.deepStrictEqual(actual, {
+		ok: false,
+		diagnostics: [
+			{
+				message: "Function 'degrees' must produce a finite number.",
+				line: 0,
+				start: 6,
+				end: 13,
+			},
+		],
+		output: [],
+	});
+});
+
+test("runSource rejects a dynamically supplied non-number radians value", () => {
+	const actual = runSource(`let angle = "180";
+radians(angle);`);
+
+	assert.equal(actual.ok, false);
+	assert.deepStrictEqual(
+		actual.diagnostics.map(({ message }) => message),
+		["Function 'radians' requires a number for argument 'degrees'."],
+	);
+});
+
+test("runSource evaluates radians and degrees in math geometry", () => {
+	const actual = runSource(
+		"line(radians(180), degrees(PI), radians(0), degrees(0));",
+	);
+
+	assert.deepStrictEqual(actual, {
+		ok: true,
+		commands: [{ type: "line", x1: 3.141592653589793, y1: 180, x2: 0, y2: 0 }],
+		diagnostics: [],
+		output: [],
+	});
+});
+
 test("runSource rejects a dynamically supplied non-number sqrt value", () => {
 	const source = `let value = "not a number";
 sqrt(value);`;

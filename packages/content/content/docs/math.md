@@ -15,6 +15,8 @@ order: 5
 | `max(a, b)` | Larger of two values |
 | `sin(degrees)` | Sine (input in degrees) |
 | `cos(degrees)` | Cosine (input in degrees) |
+| `radians(degrees)` | Convert degrees to radians |
+| `degrees(radians)` | Convert radians to degrees |
 | `sqrt(n)` | Square root |
 | `pow(base, exp)` | Exponentiation |
 
@@ -22,7 +24,7 @@ All math arguments must be finite numbers, and math functions may return only fi
 
 `random(min, max)` requires `min < max`; equal or reversed bounds are errors. Before seeding, it uses ambient randomness. `randomSeed(seed)` converts the seed to an unsigned 32-bit integer and starts the p5.js-compatible 32-bit linear congruential sequence. Reseeding restarts that sequence, and random state belongs to one program run. Generated values are minimum-inclusive and maximum-exclusive.
 
-**Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function.
+**Note:** Trigonometric functions use degrees, not radians. This is more intuitive for beginners and matches the arc function. Since there are many examples in other languages using radians, we have conversion functions `radians(degrees)` and `degrees(radians)`.
 
 ### random(min, max)
 
@@ -124,6 +126,33 @@ repeat(degrees, 0, 360, 12) {
 ### cos(degrees)
 
 Cosine (input in degrees)
+
+```gic
+let degrees = 180;
+let value = cos(degrees);
+print(value);
+```
+
+### radians(degrees)
+
+Convert degrees to radians.
+
+```gic
+let angle = 180;
+let value = radians(angle);
+if(value == PI) {
+	print("value is PI! Yay!");
+}
+```
+
+### degrees(radians)
+
+Convert radians to degrees.
+
+```gic
+let value = degrees(PI);
+print(value); // should print 180
+```
 
 ### sqrt(n)
 

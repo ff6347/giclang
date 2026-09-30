@@ -22,6 +22,9 @@ export const mathCalls: Partial<Record<BuiltInKeys, MathCall>> = {
 
 	sin,
 	cos,
+	radians,
+	degrees,
+
 	sqrt,
 	pow,
 	round,
@@ -152,10 +155,33 @@ export function sin({ values, token }: CallableInput): number {
 	validateFiniteNumber(degrees, token);
 	return Math.sin(degreesToRadians(degrees));
 }
+
+export function radians({ values, token }: CallableInput): number {
+	const degrees = requireArgumentNumber(values[0], "degrees", token);
+	validateFiniteNumber(degrees, token);
+	return degreesToRadians(degrees);
+}
+
 export function cos({ values, token }: CallableInput): number {
 	const degrees = requireArgumentNumber(values[0], "degrees", token);
 	validateFiniteNumber(degrees, token);
 	return Math.cos(degreesToRadians(degrees));
 }
 
+export function degrees({ values, token }: CallableInput): number {
+	const radians = requireArgumentNumber(values[0], "radians", token);
+	validateFiniteNumber(radians, token);
+	const result = radiansToDegrees(radians);
+	if (!Number.isFinite(result)) {
+		throw new GicError(
+			"Function 'degrees' must produce a finite number.",
+			token.line,
+			token.start,
+			token.end,
+		);
+	}
+	return result;
+}
+
 const degreesToRadians = (degrees: number): number => degrees * (Math.PI / 180);
+const radiansToDegrees = (radians: number): number => radians * (180 / Math.PI);

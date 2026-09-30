@@ -30,6 +30,8 @@ export type BuiltInKeys =
 	| "pow"
 	| "sin"
 	| "cos"
+	| "radians"
+	| "degrees"
 	| "print"
 	| "PI"
 	| "WIDTH"
@@ -79,6 +81,8 @@ export const builtInDescriptions: Readonly<Record<BuiltInKeys, string>> = {
 	rect: "Draw a rectangle from its top-left corner.",
 	round: "Round a number to the nearest integer.",
 	sin: "Return the sine of an angle in degrees.",
+	radians: "Convert degrees to radians.",
+	degrees: "Convert radians to degrees.",
 	sqrt: "Return the square root of a number.",
 	stroke: "Set the stroke color for subsequent shapes.",
 	strokeWidth: "Set the stroke thickness in pixels.",
@@ -340,6 +344,16 @@ export const builtIns: BuiltInRegistry = {
 	cos: {
 		kind: "function",
 		signatures: [[{ name: "degrees", kind: "number" }]],
+		returnKind: "value",
+	},
+	radians: {
+		kind: "function",
+		signatures: [[{ name: "degrees", kind: "number" }]],
+		returnKind: "value",
+	},
+	degrees: {
+		kind: "function",
+		signatures: [[{ name: "radians", kind: "number" }]],
 		returnKind: "value",
 	},
 };
