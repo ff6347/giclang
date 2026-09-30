@@ -25,6 +25,7 @@ globalThis.MonacoEnvironment = {
 
 const LANGUAGE_ID = "gic";
 const MARKER_OWNER = "gic";
+const synchronizingEditors = new WeakSet<GicEditor>();
 
 export type GicEditor = monaco.editor.IStandaloneCodeEditor;
 
@@ -256,7 +257,9 @@ export function createGicEditor(
 		cursorBlinking: "blink",
 	});
 	editor.onDidChangeModelContent(() => {
-		onSourceChange(editor.getValue());
+		if (!synchronizingEditors.has(editor)) {
+			onSourceChange(editor.getValue());
+		}
 	});
 	editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
 		onSave();
@@ -268,6 +271,15 @@ export function createGicEditor(
 	}
 	editor.focus();
 	return editor;
+}
+
+export function setEditorSource(editor: GicEditor, source: string): void {
+	synchronizingEditors.add(editor);
+	try {
+		editor.setValue(source);
+	} finally {
+		synchronizingEditors.delete(editor);
+	}
 }
 
 export function setEditorTheme(theme: ResolvedTheme): void {

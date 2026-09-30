@@ -2,6 +2,7 @@
 // ABOUTME: Uses local files and browser downloads without persistent file handles.
 
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { setEditorSource } from "./editor.ts";
 
@@ -65,6 +66,70 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	await expect(
 		page.getByRole("alertdialog", { name: "Recover unsaved sketch?" }),
 	).not.toBeVisible();
+});
+
+test("format-on-save preserves the accepted randomized preview across Save and Save As", async ({
+	page,
+}) => {
+	const workers: string[] = [];
+	page.on("worker", (worker) => workers.push(worker.url()));
+	await page.goto("/");
+	await setEditorSource(page, "background ( 50 , 50 , random ( 0 , 360 ) ) ;");
+	await expect(
+		page.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
+	const renderedPixels = await page.locator("#canvas").evaluate((canvas) => {
+		if (!(canvas instanceof HTMLCanvasElement)) {
+			throw new Error("Expected the preview canvas.");
+		}
+		return Array.from(
+			canvas.getContext("2d")!.getImageData(0, 0, 100, 100).data,
+		);
+	});
+	const workerCount = workers.length;
+
+	await chooseFileCommand(page, "Save As");
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await dialog.getByLabel("File name").fill("random-sketch.gic");
+	const saveAsDownload = page.waitForEvent("download");
+	await dialog.getByRole("button", { name: "Save copy" }).click();
+	const savedCopy = await saveAsDownload;
+	expect(await readFile(await savedCopy.path(), "utf8")).toBe(
+		"background(50, 50, random(0, 360));\n",
+	);
+	await expect(
+		page.getByRole("tab", { name: "random-sketch.gic" }),
+	).toBeVisible();
+	await page.waitForTimeout(250);
+	expect(workers.length).toBe(workerCount);
+	await expect(page.locator("#canvas")).toHaveJSProperty("width", 100);
+	const pixelsAfterSaveAs = await page.locator("#canvas").evaluate((canvas) => {
+		if (!(canvas instanceof HTMLCanvasElement)) {
+			throw new Error("Expected the preview canvas.");
+		}
+		return Array.from(
+			canvas.getContext("2d")!.getImageData(0, 0, 100, 100).data,
+		);
+	});
+	expect(pixelsAfterSaveAs).toEqual(renderedPixels);
+
+	const saveDownload = page.waitForEvent("download");
+	await chooseFileCommand(page, "Save");
+	const saved = await saveDownload;
+	expect(await readFile(await saved.path(), "utf8")).toBe(
+		"background(50, 50, random(0, 360));\n",
+	);
+	await page.waitForTimeout(250);
+	expect(workers.length).toBe(workerCount);
+	const pixelsAfterSave = await page.locator("#canvas").evaluate((canvas) => {
+		if (!(canvas instanceof HTMLCanvasElement)) {
+			throw new Error("Expected the preview canvas.");
+		}
+		return Array.from(
+			canvas.getContext("2d")!.getImageData(0, 0, 100, 100).data,
+		);
+	});
+	expect(pixelsAfterSave).toEqual(renderedPixels);
 });
 
 test("presents Save As with the shared Base UI control styling", async ({

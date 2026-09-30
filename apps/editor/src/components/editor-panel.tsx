@@ -5,6 +5,7 @@ import { useRef, useEffect } from "react";
 import {
 	type GicEditor,
 	createGicEditor,
+	setEditorSource,
 	setEditorTheme,
 } from "../lib/gic-editor.ts";
 import type { ResolvedTheme } from "../lib/theme.ts";
@@ -61,8 +62,10 @@ export function EditorPanel({
 	}, []);
 
 	useEffect(() => {
-		if (editorRef.current?.getValue() !== source)
-			editorRef.current?.setValue(source);
+		const editor = editorRef.current;
+		if (editor !== null && editor.getValue() !== source) {
+			setEditorSource(editor, source);
+		}
 	}, [source]);
 
 	useEffect(() => {
