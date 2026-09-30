@@ -1,0 +1,19 @@
+// adpated from https://jagi.studio/posts/phyllotaxis/
+strokeWidth(0.5);
+stroke(1, 20, 180, 50);
+let numCells = 50;
+let numInner = 30;
+let numOuter = 100;
+let total = numCells + numInner + numOuter;
+let outerRadius = 30;
+let h = 2;
+fill(100, 50, 0, 50);
+repeat(i, 50, total, 2) {
+	let f = i / (total);
+	let a = i * 1.6180339887;
+	let distance = f * outerRadius;
+	let x = -cos(degrees(a)) * distance;
+	let y = sin(degrees(a)) * distance;
+	circle(x + 50, y + 50, h);
+	h = h + cos(degrees(a)) * 5;
+}
