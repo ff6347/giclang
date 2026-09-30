@@ -316,6 +316,17 @@ fn normalize_sketch_name(name: &str) -> String {
     normalized
 }
 
+pub(crate) fn canonical_sketchbook(sketchbook: &Path) -> std::io::Result<PathBuf> {
+    let metadata = fs::symlink_metadata(sketchbook)?;
+    if !metadata.file_type().is_dir() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "The sketchbook must be a real directory.",
+        ));
+    }
+    sketchbook.canonicalize()
+}
+
 pub(crate) fn existing_sketch_names(sketchbook: &Path) -> Result<Vec<String>, String> {
     let entries = match fs::read_dir(sketchbook) {
         Ok(entries) => entries,
@@ -383,7 +394,8 @@ fn is_sketch_bundle(path: &Path, sketchbook: &Path) -> bool {
     let Some(source_name) = path.file_stem().and_then(|name| name.to_str()) else {
         return false;
     };
-    let (Ok(sketchbook), Ok(sketch_directory)) = (sketchbook.canonicalize(), parent.canonicalize())
+    let (Ok(sketchbook), Ok(sketch_directory)) =
+        (canonical_sketchbook(sketchbook), parent.canonicalize())
     else {
         return false;
     };
@@ -926,6 +938,62 @@ mod tests {
         assert_eq!(
             std::fs::read_to_string(&sidecar).unwrap(),
             "unrelated description"
+        );
+        remove_test_directory(&directory);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_sketchbook_symlink_does_not_claim_explicitly_selected_sources() {
+        use std::os::unix::fs::symlink;
+
+        let directory = test_directory("sketchbook-root-symlink");
+        remove_test_directory(&directory);
+        let actual_sketchbook = directory.join("project-a/sketches");
+        let alias_project = directory.join("project-b");
+        let sketch = actual_sketchbook.join("orbit");
+        std::fs::create_dir_all(&sketch).expect("create actual sketch folder");
+        std::fs::create_dir_all(&alias_project).expect("create configured project");
+        symlink(&actual_sketchbook, alias_project.join("sketches"))
+            .expect("link configured sketchbook to another project");
+        let source_path = sketch.join("orbit.gic");
+        std::fs::write(&source_path, "source").expect("write selected source");
+        let description = "unowned description";
+        std::fs::write(sketch.join("description.md"), description).expect("write sidecar");
+        let thumbnail = b"unowned thumbnail";
+        std::fs::write(sketch.join("thumbnail.png"), thumbnail).expect("write thumbnail");
+
+        let store = DocumentStore::default();
+        let opened = store
+            .open_path(source_path, &alias_project.join("sketches"))
+            .expect("explicitly selected source remains openable");
+        assert_eq!(opened.description, None);
+        store
+            .accept_open(&opened.document_id)
+            .expect("accept standalone source");
+        let captured_thumbnail = test_png([90, 80, 70, 255]);
+        store
+            .save_with_thumbnail(
+                &opened.document_id,
+                "source update",
+                None,
+                Some(&captured_thumbnail),
+            )
+            .expect("save standalone source without claiming sidecars");
+        assert!(store
+            .save(
+                &opened.document_id,
+                "source update",
+                Some("new description")
+            )
+            .is_err());
+        assert_eq!(
+            std::fs::read_to_string(sketch.join("description.md")).unwrap(),
+            description
+        );
+        assert_eq!(
+            std::fs::read(sketch.join("thumbnail.png")).unwrap(),
+            thumbnail
         );
         remove_test_directory(&directory);
     }

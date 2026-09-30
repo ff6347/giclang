@@ -24,7 +24,13 @@ function candidate(
 
 test("shows valid enabled sketches with an optional image sorted by order and title", () => {
 	const cards = prepareSketchCards([
-		candidate("later", "Later", 2, true, "data:image/png;base64,AA=="),
+		candidate(
+			"later",
+			"Later",
+			2,
+			true,
+			"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAABAUlEQVR4nO3RMREAIBDAsBeAClTg3xjIoEOG7L3rrH0uHfM7AEPSDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIkxJMaQGENiDIl5k8J8e/Qt310AAAAASUVORK5CYII=",
+		),
 		candidate("zulu", "Zulu", 1),
 		candidate("alpha", "Alpha", 1),
 		candidate("disabled", "Hidden", 0, false),
@@ -40,5 +46,7 @@ test("shows valid enabled sketches with an optional image sorted by order and ti
 		["alpha", "zulu", "later"],
 	);
 	assert.equal(cards[0]?.thumbnailDataUrl, null);
-	assert.equal(cards[2]?.thumbnailDataUrl, "data:image/png;base64,AA==");
+	assert.ok(
+		cards[2]?.thumbnailDataUrl?.startsWith("data:image/png;base64,iVBORw0KGgo"),
+	);
 });

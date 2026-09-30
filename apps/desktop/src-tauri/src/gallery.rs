@@ -1,7 +1,10 @@
 // ABOUTME: Discovers safe, current-project sketch bundle candidates for the gallery.
 // ABOUTME: Opens catalog entries through opaque IDs revalidated against the active root.
 
-use crate::{documents::DocumentStore, sketch_bundle::validate_thumbnail};
+use crate::{
+    documents::{canonical_sketchbook, DocumentStore},
+    sketch_bundle::validate_thumbnail,
+};
 use base64::Engine;
 use serde::Serialize;
 use std::{
@@ -33,7 +36,7 @@ impl GalleryStore {
         self.replace_entries(HashMap::new())?;
         let mut entries = HashMap::new();
         let mut candidates = Vec::new();
-        let root = match fs::canonicalize(sketchbook) {
+        let root = match canonical_sketchbook(sketchbook) {
             Ok(root) => root,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 self.replace_entries(entries)?;
@@ -95,8 +98,7 @@ impl GalleryStore {
             .get(entry_id)
             .cloned()
             .ok_or_else(|| "This sketch is no longer available.".to_owned())?;
-        let root = sketchbook
-            .canonicalize()
+        let root = canonical_sketchbook(sketchbook)
             .map_err(|_| "This sketch is no longer available.".to_owned())?;
         let folder = path
             .parent()
@@ -196,6 +198,95 @@ mod tests {
     }
 
     #[test]
+    fn saved_sketch_discovery_and_reopen_preserve_the_real_png_and_description() {
+        use base64::Engine;
+        use std::io::Cursor;
+
+        let project = TempDir::new().expect("create project");
+        let sketchbook = project.path().join("sketches");
+        let source = "this intentionally remains broken GIC";
+        let description = "---\ntitle: Orbit\norder: 4\nenabled: true\ncategories: []\ntags: []\n---\n\nSaved from the current document.";
+        let bytes = thumbnail_png([12, 34, 56, 255]);
+        let documents = DocumentStore::default();
+        let saved = documents
+            .save_path_pending_with_thumbnail(
+                sketchbook.join("orbit/orbit.gic"),
+                source,
+                Some(description),
+                Some(&bytes),
+                &sketchbook,
+            )
+            .expect("save source, description, and real PNG");
+        documents
+            .accept_open(&saved.document_id)
+            .expect("accept saved document");
+
+        let gallery = GalleryStore::default();
+        let candidate = gallery
+            .discover(&sketchbook)
+            .expect("discover saved sketch")
+            .pop()
+            .expect("include eligible sketch");
+        assert_eq!(candidate.description, description);
+        let data_url = candidate
+            .thumbnail_data_url
+            .as_deref()
+            .expect("include saved thumbnail");
+        let encoded = data_url
+            .strip_prefix("data:image/png;base64,")
+            .expect("return a PNG data URL");
+        let discovered_bytes = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .expect("decode discovered PNG");
+        assert_eq!(discovered_bytes, bytes);
+
+        let mut decoder = png::Decoder::new(Cursor::new(discovered_bytes));
+        decoder.set_transformations(png::Transformations::IDENTITY);
+        let mut reader = decoder.read_info().expect("read PNG dimensions");
+        assert_eq!((reader.info().width, reader.info().height), (100, 100));
+        let mut pixels = vec![0; reader.output_buffer_size().expect("PNG buffer size")];
+        let frame = reader.next_frame(&mut pixels).expect("decode PNG pixels");
+        assert_eq!(
+            &pixels[..frame.buffer_size()],
+            &[12, 34, 56, 255].repeat(100 * 100)
+        );
+
+        let restarted_gallery = GalleryStore::default();
+        let restarted_candidate = restarted_gallery
+            .discover(&sketchbook)
+            .expect("rediscover after store restart")
+            .pop()
+            .expect("restore saved gallery entry");
+        let reopened = restarted_gallery
+            .open(
+                &restarted_candidate.entry_id,
+                &sketchbook,
+                &DocumentStore::default(),
+            )
+            .expect("reopen saved source after store restart");
+        assert_eq!(reopened.source, source);
+        assert_eq!(reopened.description.as_deref(), Some(description));
+        assert_eq!(
+            restarted_candidate.thumbnail_data_url.as_deref(),
+            Some(data_url)
+        );
+    }
+
+    fn thumbnail_png(rgba: [u8; 4]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut bytes, 100, 100);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().expect("write PNG header");
+            writer
+                .write_image_data(&rgba.repeat(100 * 100))
+                .expect("write PNG pixels");
+        }
+        bytes
+    }
+
+    #[test]
     fn malformed_or_unreadable_candidates_are_isolated_and_missing_images_are_optional() {
         let project = TempDir::new().expect("create project");
         let sketchbook = project.path().join("sketches");
@@ -246,7 +337,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn skips_symlinked_files_and_stale_ids_cannot_open_outside_current_root() {
+    fn rejects_a_symlinked_sketchbook_and_stale_ids_when_both_roots_exist() {
         use std::os::unix::fs::symlink;
         let project = TempDir::new().expect("create project");
         let other = TempDir::new().expect("create other project");
@@ -262,18 +353,43 @@ mod tests {
             .is_empty());
 
         fs::remove_file(folder.join("linked.gic")).unwrap();
-        fs::write(folder.join("linked.gic"), "source").unwrap();
+        fs::write(folder.join("linked.gic"), "project A source").unwrap();
         let candidate = store
             .discover(&project.path().join("sketches"))
             .unwrap()
             .remove(0);
+
+        let actual_other_folder = bundle(
+            other.path(),
+            "linked",
+            "other description",
+            "project B source",
+        );
+        let other_sketchbook = other.path().join("sketches");
         assert!(store
             .open(
                 &candidate.entry_id,
-                &other.path().join("sketches"),
+                &other_sketchbook,
                 &DocumentStore::default(),
             )
             .is_err());
+        assert_eq!(
+            fs::read_to_string(actual_other_folder.join("linked.gic")).unwrap(),
+            "project B source"
+        );
+
+        let alias = other.path().join("aliased-project");
+        fs::create_dir(&alias).unwrap();
+        symlink(project.path().join("sketches"), alias.join("sketches"))
+            .expect("link project B sketchbook to project A");
+        assert!(store
+            .open(
+                &candidate.entry_id,
+                &alias.join("sketches"),
+                &DocumentStore::default(),
+            )
+            .is_err());
+        assert!(store.discover(&alias.join("sketches")).is_err());
         assert_eq!(fs::read_to_string(outside).unwrap(), "secret");
     }
 }
