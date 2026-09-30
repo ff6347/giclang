@@ -2,80 +2,8 @@
 // ABOUTME: Covers preview freshness, download dimensions, pixel data, and control placement.
 
 import { expect, test, type Page } from "@playwright/test";
-import { inflateSync } from "node:zlib";
 import { setEditorSource } from "./editor.ts";
-
-const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-
-function readPng(bytes: Buffer): {
-	height: number;
-	pixels: Uint8Array;
-	width: number;
-} {
-	expect(bytes.subarray(0, PNG_SIGNATURE.length)).toEqual(PNG_SIGNATURE);
-
-	let offset = PNG_SIGNATURE.length;
-	let height = 0;
-	const imageData: Buffer[] = [];
-	let width = 0;
-
-	while (offset < bytes.length) {
-		const length = bytes.readUInt32BE(offset);
-		const type = bytes.subarray(offset + 4, offset + 8).toString("ascii");
-		const data = bytes.subarray(offset + 8, offset + 8 + length);
-		offset += length + 12;
-
-		if (type === "IHDR") {
-			width = data.readUInt32BE(0);
-			height = data.readUInt32BE(4);
-			expect(data[8]).toBe(8);
-			expect(data[9]).toBe(6);
-		}
-		if (type === "IDAT") imageData.push(data);
-	}
-
-	const scanlines = inflateSync(Buffer.concat(imageData));
-	const pixels = new Uint8Array(width * height * 4);
-	const rowLength = width * 4;
-	let scanlineOffset = 0;
-
-	for (let y = 0; y < height; y += 1) {
-		const filter = scanlines[scanlineOffset];
-		scanlineOffset += 1;
-		for (let x = 0; x < rowLength; x += 1) {
-			const current = scanlines[scanlineOffset + x];
-			const left = x >= 4 ? pixels[y * rowLength + x - 4] : 0;
-			const above = y > 0 ? pixels[(y - 1) * rowLength + x] : 0;
-			const upperLeft =
-				y > 0 && x >= 4 ? pixels[(y - 1) * rowLength + x - 4] : 0;
-			const index = y * rowLength + x;
-			pixels[index] =
-				filter === 0
-					? current
-					: filter === 1
-						? (current + left) & 255
-						: filter === 2
-							? (current + above) & 255
-							: filter === 3
-								? (current + Math.floor((left + above) / 2)) & 255
-								: (current + paeth(left, above, upperLeft)) & 255;
-		}
-		scanlineOffset += rowLength;
-	}
-
-	return { height, pixels, width };
-}
-
-function paeth(left: number, above: number, upperLeft: number): number {
-	const prediction = left + above - upperLeft;
-	const leftDistance = Math.abs(prediction - left);
-	const aboveDistance = Math.abs(prediction - above);
-	const upperLeftDistance = Math.abs(prediction - upperLeft);
-	if (leftDistance <= aboveDistance && leftDistance <= upperLeftDistance) {
-		return left;
-	}
-	return aboveDistance <= upperLeftDistance ? above : upperLeft;
-}
+import { readPng } from "./png.ts";
 
 async function canvasPixels(page: Page) {
 	return page.locator("#canvas").evaluate((element) => {

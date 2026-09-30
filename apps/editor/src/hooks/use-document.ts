@@ -41,6 +41,7 @@ export function useDocument(
 	onExampleOpened: () => void,
 	desktop: DesktopHost | undefined,
 	captureThumbnail: (source: string) => string | undefined,
+	adoptSavedSource: (sourceBefore: string, sourceAdopted: string) => void,
 	onDocumentActivated: (source: string) => void,
 ) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
@@ -161,15 +162,19 @@ export function useDocument(
 	};
 
 	const saveBrowserDocument = (name: string) => {
-		const source = sourceForSave();
+		const snapshot = documentStateRef.current;
+		const source = sourceForSave(snapshot);
 		const savedName = normalizeFileName(name);
 		adapter.download(savedName, source);
 		adapter.recordRecent(savedName);
 		const savedDocument = updateDocumentDescription(
 			openDocument(savedName, source),
-			documentState.description,
+			snapshot.description,
 		);
 		replaceDocument(savedDocument, undefined, savedName, true);
+		if (savedDocument.source === source) {
+			adoptSavedSource(snapshot.source, savedDocument.source);
+		}
 		if (savedDocument.isDirty) persistRecovery(savedDocument);
 		else discardRecovery();
 		setSaveAsOpen(false);
@@ -240,6 +245,9 @@ export function useDocument(
 			);
 			if (advanced === undefined) return;
 			replaceDocument(advanced, saved.documentId, saved.sketchId, true);
+			if (advanced.source === savedDocument.source) {
+				adoptSavedSource(snapshot.source, advanced.source);
+			}
 			if (advanced.isDirty) persistRecovery(advanced);
 			else discardRecovery();
 		} finally {
@@ -313,6 +321,9 @@ export function useDocument(
 		);
 		if (advanced === undefined) return;
 		replace(advanced);
+		if (advanced.source === source) {
+			adoptSavedSource(snapshot.source, advanced.source);
+		}
 		if (advanced.isDirty) persistRecovery(advanced);
 		else discardRecovery();
 	};

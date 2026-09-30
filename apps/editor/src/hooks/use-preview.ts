@@ -13,6 +13,7 @@ import type { RunResult } from "@giclang/core";
 import { setEditorDiagnostics, type GicEditor } from "../lib/gic-editor.ts";
 import { clearCanvas, renderToCanvas } from "../lib/render-to-canvas.ts";
 import { capturePreviewPng } from "../lib/preview-capture.ts";
+import { PreviewSource } from "../lib/preview-source.ts";
 
 const TIMEOUT_IN_MS = 500;
 
@@ -32,6 +33,9 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 	const debounceTimer = useRef<number | null>(null);
 	const editor = useRef<GicEditor | null>(null);
 	const renderedSource = useRef<string | undefined>(undefined);
+	const previewSource = useRef(new PreviewSource()).current;
+	const debounceRun = useRef<number | undefined>(undefined);
+	const activeWorkerRun = useRef<number | undefined>(undefined);
 
 	const clearCurrentCanvas = useCallback(() => {
 		const canvas = canvasRef.current;
@@ -42,14 +46,17 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 	}, [canvasRef]);
 
 	const runPreview = useCallback(
-		(source: string) => {
+		(source: string, run: number) => {
 			let executionTimer: number | null = null;
 			const worker = new Worker();
 			activeWorker.current = worker;
+			activeWorkerRun.current = run;
 			executionTimer = window.setTimeout(() => {
 				if (worker !== activeWorker.current) return;
 				worker.terminate();
 				activeWorker.current = null;
+				activeWorkerRun.current = undefined;
+				previewSource.fail(run);
 				if (editor.current) {
 					setEditorDiagnostics(editor.current, []);
 				}
@@ -69,6 +76,8 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				if (executionTimer !== null) clearTimeout(executionTimer);
 				worker.terminate();
 				activeWorker.current = null;
+				activeWorkerRun.current = undefined;
+				previewSource.fail(run);
 
 				renderedSource.current = undefined;
 				console.error("Worker error:", error);
@@ -88,6 +97,8 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				if (executionTimer !== null) clearTimeout(executionTimer);
 				worker.terminate();
 				activeWorker.current = null;
+				activeWorkerRun.current = undefined;
+				if (!previewSource.isPending(run, source)) return;
 
 				const output = event.data.output.map(
 					(entry) => `Line ${entry.line + 1}: ${entry.text}`,
@@ -97,6 +108,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				}
 
 				if (event.data.ok) {
+					previewSource.accept(run, source);
 					const canvas = canvasRef.current;
 					if (canvas) {
 						renderToCanvas(canvas, event.data.commands);
@@ -114,6 +126,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 					return;
 				}
 
+				previewSource.fail(run);
 				renderedSource.current = undefined;
 				clearCurrentCanvas();
 				const problems = editor.current
@@ -123,7 +136,7 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 			};
 			worker.postMessage({ source });
 		},
-		[canvasRef, clearCurrentCanvas],
+		[canvasRef, clearCurrentCanvas, previewSource],
 	);
 
 	const onSourceChange = useCallback(
@@ -133,16 +146,21 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 			}
 			activeWorker.current?.terminate();
 			activeWorker.current = null;
+			activeWorkerRun.current = undefined;
 			if (editor.current) {
 				setEditorDiagnostics(editor.current, []);
 			}
 			renderedSource.current = undefined;
+			const run = previewSource.begin(source);
 			setState({ isCurrentSourceRendered: false, output: [], problems: [] });
+			debounceRun.current = run;
 			debounceTimer.current = window.setTimeout(() => {
-				runPreview(source);
+				debounceTimer.current = null;
+				debounceRun.current = undefined;
+				runPreview(source, run);
 			}, 100);
 		},
-		[runPreview],
+		[runPreview, previewSource],
 	);
 
 	const setEditor = useCallback((nextEditor: GicEditor | null) => {
@@ -164,5 +182,36 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 		[canvasRef],
 	);
 
-	return { captureThumbnail, onSourceChange, setEditor, state };
+	const adoptSavedSource = useCallback(
+		(sourceBefore: string, sourceAdopted: string) => {
+			const adoption = previewSource.adoptSavedSource(
+				sourceBefore,
+				sourceAdopted,
+			);
+			if (adoption.invalidatedRun !== undefined) {
+				if (debounceRun.current === adoption.invalidatedRun) {
+					if (debounceTimer.current !== null) {
+						clearTimeout(debounceTimer.current);
+						debounceTimer.current = null;
+					}
+					debounceRun.current = undefined;
+				}
+				if (activeWorkerRun.current === adoption.invalidatedRun) {
+					activeWorker.current?.terminate();
+					activeWorker.current = null;
+					activeWorkerRun.current = undefined;
+				}
+			}
+			if (adoption.accepted) renderedSource.current = sourceAdopted;
+		},
+		[previewSource],
+	);
+
+	return {
+		adoptSavedSource,
+		captureThumbnail,
+		onSourceChange,
+		setEditor,
+		state,
+	};
 }

@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { setEditorSource } from "./editor.ts";
+import { canvasPixels, downloadPng, readPng } from "./png.ts";
 
 const repeatExamplePath = fileURLToPath(
 	new URL(
@@ -130,6 +131,80 @@ test("format-on-save preserves the accepted randomized preview across Save and S
 		);
 	});
 	expect(pixelsAfterSave).toEqual(renderedPixels);
+});
+
+test("exports the accepted random preview after format-on-save Save and Save As", async ({
+	page,
+}) => {
+	test.setTimeout(10_000);
+	const workers: string[] = [];
+	page.on("worker", (worker) => workers.push(worker.url()));
+	await page.goto("/");
+	await setEditorSource(page, "background ( 50 , 50 , random ( 0 , 360 ) ) ;");
+	await expect(
+		page.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
+	const acceptedPixels = await canvasPixels(page);
+	const acceptedWorkerCount = workers.length;
+	const expectAcceptedPng = async () => {
+		const png = readPng(await downloadPng(page));
+		expect({ width: png.width, height: png.height }).toEqual({
+			width: 100,
+			height: 100,
+		});
+		expect(Array.from(png.pixels)).toEqual(
+			Array.from(await canvasPixels(page)),
+		);
+		expect(Array.from(acceptedPixels)).toEqual(
+			Array.from(await canvasPixels(page)),
+		);
+	};
+
+	await chooseFileCommand(page, "Save As");
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await dialog.getByLabel("File name").fill("random-sketch.gic");
+	const firstSaveAs = page.waitForEvent("download");
+	await dialog.getByRole("button", { name: "Save copy" }).click();
+	const firstSavedCopy = await firstSaveAs;
+	expect(await readFile(await firstSavedCopy.path(), "utf8")).toBe(
+		"background(50, 50, random(0, 360));\n",
+	);
+	await expect(
+		page.getByRole("tab", { name: "random-sketch.gic" }),
+	).toBeVisible();
+	await expectAcceptedPng();
+
+	for (const [command, name] of [
+		["Save", "random-sketch.gic"],
+		["Save As", "random-sketch-copy.gic"],
+		["Save", "random-sketch-copy.gic"],
+	] as const) {
+		if (command === "Save As") {
+			await chooseFileCommand(page, command);
+			const saveAsDialog = page.getByRole("dialog", {
+				name: "Save sketch as",
+			});
+			await saveAsDialog.getByLabel("File name").fill(name);
+			const saveAsDownload = page.waitForEvent("download");
+			await saveAsDialog.getByRole("button", { name: "Save copy" }).click();
+			const savedCopy = await saveAsDownload;
+			expect(await readFile(await savedCopy.path(), "utf8")).toBe(
+				"background(50, 50, random(0, 360));\n",
+			);
+		} else {
+			const save = page.waitForEvent("download");
+			await chooseFileCommand(page, command);
+			const saved = await save;
+			expect(await readFile(await saved.path(), "utf8")).toBe(
+				"background(50, 50, random(0, 360));\n",
+			);
+		}
+		await expectAcceptedPng();
+	}
+
+	await page.waitForTimeout(250);
+	expect(workers.length).toBe(acceptedWorkerCount);
+	expect(await canvasPixels(page)).toEqual(acceptedPixels);
 });
 
 test("presents Save As with the shared Base UI control styling", async ({

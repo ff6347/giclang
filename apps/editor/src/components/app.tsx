@@ -198,6 +198,7 @@ export function App({
 		selectGestalten,
 		desktop,
 		preview.captureThumbnail,
+		preview.adoptSavedSource,
 		preview.onSourceChange,
 	);
 	const documentsRef = useRef(documents);
