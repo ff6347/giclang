@@ -43,6 +43,7 @@ export function useDocument(
 	captureThumbnail: (source: string) => string | undefined,
 	adoptSavedSource: (sourceBefore: string, sourceAdopted: string) => void,
 	onDocumentActivated: (source: string) => void,
+	onSaved: () => void,
 ) {
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
 	const desktopDocumentId = useRef<string | undefined>(undefined);
@@ -216,6 +217,7 @@ export function useDocument(
 			thumbnail,
 		);
 		if (saved === null) return;
+		onSaved();
 		if (generation !== documentGeneration.current) {
 			await desktop.cancelOpenDocument(saved.documentId);
 			return;
@@ -303,6 +305,7 @@ export function useDocument(
 			descriptionForSave(snapshot),
 			thumbnail,
 		);
+		onSaved();
 		if (generation !== documentGeneration.current) return;
 		const current = documentStateRef.current;
 		const savedDocument = openDocument(
@@ -461,12 +464,15 @@ export function useDocument(
 			}
 			void open();
 		},
-		requestDesktopOpen() {
+		requestDesktopOpen(entryId?: string) {
 			if (rejectWhileActivating()) return;
 			if (desktop === undefined) return;
 			const generation = documentGeneration.current;
 			const chooseDocument = async () => {
-				const openedDocument = await desktop.openDocument();
+				const openedDocument =
+					entryId === undefined
+						? await desktop.openDocument()
+						: await desktop.openGallerySketch(entryId);
 				if (openedDocument === null) return;
 				if (generation !== documentGeneration.current) {
 					await desktop.cancelOpenDocument(openedDocument.documentId);

@@ -60,6 +60,12 @@ export interface DesktopDocument {
 	readonly description: string | null;
 }
 
+export interface DesktopSketchCandidate {
+	readonly entryId: string;
+	readonly description: string;
+	readonly thumbnailDataUrl: string | null;
+}
+
 export type AgentSessionRecord =
 	| {
 			readonly type: "session";
@@ -108,6 +114,14 @@ function isDesktopMenuAction(value: unknown): value is DesktopMenuAction {
 export class DesktopHost {
 	openDocument(): Promise<DesktopDocument | null> {
 		return invoke<DesktopDocument | null>("open_gic");
+	}
+
+	discoverSketches(): Promise<DesktopSketchCandidate[]> {
+		return invoke<DesktopSketchCandidate[]>("discover_sketches");
+	}
+
+	openGallerySketch(entryId: string): Promise<DesktopDocument> {
+		return invoke<DesktopDocument>("open_gallery_sketch", { entryId });
 	}
 
 	acceptOpenDocument(documentId: string): Promise<void> {

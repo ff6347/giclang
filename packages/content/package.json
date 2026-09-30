@@ -16,6 +16,10 @@
 			"types": "./dist/sketch-description.d.ts",
 			"default": "./dist/sketch-description.js"
 		},
+		"./user-markdown": {
+			"types": "./dist/user-markdown.d.ts",
+			"default": "./dist/user-markdown.js"
+		},
 		"./node": {
 			"types": "./dist/content-files.d.ts",
 			"default": "./dist/content-files.js"

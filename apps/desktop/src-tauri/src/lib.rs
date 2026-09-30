@@ -10,6 +10,7 @@ mod documents;
 mod examples;
 mod exports;
 mod external_tools;
+mod gallery;
 mod managed_files;
 mod model_capabilities;
 mod reference;
@@ -27,6 +28,7 @@ use credentials::{CredentialStatus, CredentialStore};
 use documents::{sketch_path, DocumentStore, OpenedDocument};
 use exports::ExportFormat;
 use external_tools::AssistantStatus;
+use gallery::{GalleryStore, SketchCandidate};
 use sessions::{SessionRecord, SessionStore, SessionSummary};
 use std::{
     collections::BTreeMap,
@@ -454,6 +456,28 @@ fn existing_sketch_names(manager: State<'_, WorkspaceManager>) -> Result<Vec<Str
 }
 
 #[tauri::command]
+fn discover_sketches(
+    manager: State<'_, WorkspaceManager>,
+    gallery: State<'_, GalleryStore>,
+) -> Result<Vec<SketchCandidate>, String> {
+    gallery.discover(&manager.workspace_root().join("sketches"))
+}
+
+#[tauri::command]
+fn open_gallery_sketch(
+    entry_id: &str,
+    manager: State<'_, WorkspaceManager>,
+    gallery: State<'_, GalleryStore>,
+    documents: State<'_, DocumentStore>,
+) -> Result<OpenedDocument, String> {
+    gallery.open(
+        entry_id,
+        &manager.workspace_root().join("sketches"),
+        &documents,
+    )
+}
+
+#[tauri::command]
 fn active_sketch_dir(document_store: &DocumentStore, document_id: &str) -> Result<PathBuf, String> {
     let path = document_store
         .active_path()
@@ -750,6 +774,7 @@ pub fn run() {
             app.manage(CodexSession::default());
             app.manage(TutorState::default());
             app.manage(DocumentStore::default());
+            app.manage(GalleryStore::default());
             app.manage(SessionStore);
             let manifest_path = configuration_directory.join("managed-workspace.json");
             app.manage(WorkspaceManager::new(workspace_root.clone(), manifest_path));
@@ -808,6 +833,8 @@ pub fn run() {
             cancel_open_gic,
             projects_directory,
             existing_sketch_names,
+            discover_sketches,
+            open_gallery_sketch,
             create_agent_session,
             clone_agent_session,
             append_agent_message,

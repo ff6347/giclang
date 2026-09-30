@@ -26,6 +26,7 @@ import {
 	documentTabId,
 	EDITOR_ID,
 	EXAMPLES_ID,
+	SKETCHES_ID,
 	loadWorkspace,
 	OUTPUT_ID,
 	PREVIEW_ID,
@@ -36,6 +37,7 @@ import {
 } from "../lib/workspace-model.ts";
 import { SettingsPanel } from "./settings-panel.tsx";
 import { ExamplesPanel } from "./examples-panel.tsx";
+import { SketchesPanel } from "./sketches-panel.tsx";
 import { AboutPanel } from "./about-panel.tsx";
 import { DocsPanel } from "./docs-panel.tsx";
 import { ProblemsPanel } from "./problems-panel.tsx";
@@ -69,6 +71,7 @@ import {
 } from "../lib/theme.ts";
 import { useTheme } from "../hooks/use-theme.ts";
 import { useWorkspace } from "../hooks/use-workspace.ts";
+import { useSketchGallery } from "../hooks/use-sketch-gallery.ts";
 import { useAgent } from "../hooks/use-agent.ts";
 import { buildAgentContext } from "../lib/agent.ts";
 import { modelDiscoveryError } from "../lib/model-discovery.ts";
@@ -193,6 +196,8 @@ export function App({
 		saveWorkspace(model, settings);
 		setLayoutRevision((revision) => revision + 1);
 	};
+	const workspace = useWorkspace(desktop);
+	const gallery = useSketchGallery(desktop, workspace.projectsDirectory);
 	const documents = useDocument(
 		formatOnSave,
 		selectGestalten,
@@ -200,10 +205,10 @@ export function App({
 		preview.captureThumbnail,
 		preview.adoptSavedSource,
 		preview.onSourceChange,
+		gallery.refresh,
 	);
 	const documentsRef = useRef(documents);
 	documentsRef.current = documents;
-	const workspace = useWorkspace(desktop);
 	const loadOpencodeModels = (status: ProviderCredentialStatus | null) => {
 		const request = ++opencodeModelsRequest.current;
 		if (
@@ -635,6 +640,14 @@ export function App({
 					<ExamplesPanel
 						examples={productContent.examples}
 						onOpen={documents.requestExample}
+					/>
+				);
+			case SKETCHES_ID:
+				return (
+					<SketchesPanel
+						cards={gallery.cards}
+						error={gallery.error}
+						onOpen={documents.requestDesktopOpen}
 					/>
 				);
 			case DOC_COMPONENT: {

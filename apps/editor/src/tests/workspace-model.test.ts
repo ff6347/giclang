@@ -13,6 +13,7 @@ import {
 	DESCRIPTION_ID,
 	DOC_COMPONENT,
 	DOCS_ID,
+	SKETCHES_ID,
 	documentTabId,
 	createDefaultWorkspace,
 	loadWorkspace,
@@ -40,13 +41,18 @@ test("desktop retains Agent after loading a browser workspace", () => {
 	const settings = new MemorySettings();
 	const desktop = createDefaultWorkspace(true, docs);
 	assert.ok(desktop.getNodeById(AGENT_ID) instanceof TabNode);
+	const sketches = desktop.getNodeById(SKETCHES_ID);
+	assert.ok(sketches instanceof TabNode);
+	assert.equal(sketches.getName(), "Sketches");
 	saveWorkspace(desktop, settings);
 
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
+	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
 
 	const restoredDesktop = loadWorkspace(true, settings, docs);
 	assert.ok(restoredDesktop.getNodeById(AGENT_ID) instanceof TabNode);
+	assert.ok(restoredDesktop.getNodeById(SKETCHES_ID) instanceof TabNode);
 	assert.equal(
 		restoredDesktop.getNodeById(AGENT_ID)?.getParent()?.getId(),
 		"output-tabset",
@@ -284,10 +290,24 @@ for (const includeAgent of [false, true]) {
 		);
 		assert.equal(
 			JSON.parse(settings.getItem("gic.workspaceLayout")!).version,
-			10,
+			11,
 		);
 	});
 }
+
+test("adds Sketches when migrating a desktop layout and omits it from the browser", () => {
+	const settings = new MemorySettings();
+	const layout = createDefaultWorkspace(false, docs).toJson();
+	settings.setItem(
+		"gic.workspaceLayout",
+		JSON.stringify({ version: 10, layout }),
+	);
+
+	const desktop = loadWorkspace(true, settings, docs);
+	assert.ok(desktop.getNodeById(SKETCHES_ID) instanceof TabNode);
+	const browser = loadWorkspace(false, settings, docs);
+	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
+});
 
 test("retains moved documents and Description in the feature layout across browser and desktop", () => {
 	const settings = new MemorySettings();

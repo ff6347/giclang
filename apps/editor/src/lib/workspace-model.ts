@@ -15,6 +15,7 @@ import type { ApplicationSettings } from "./application-settings.ts";
 export const CODE_ID = "code";
 export const SETTINGS_ID = "settings";
 export const EXAMPLES_ID = "examples";
+export const SKETCHES_ID = "sketches";
 export const DOCS_ID = "docs";
 export const ABOUT_ID = "about";
 export const EDITOR_ID = "editor";
@@ -35,7 +36,7 @@ const OUTPUT_TABSET_ID = "output-tabset";
 export const AGENT_ID = "agent";
 const LEGACY_TUTOR_ID = "tutor";
 const STORAGE_KEY = "gic.workspaceLayout";
-const STORAGE_VERSION = 10;
+const STORAGE_VERSION = 11;
 
 interface StoredWorkspace {
 	layout: IJsonModel;
@@ -192,6 +193,16 @@ function defaultLayout(
 							name: "Examples",
 							component: EXAMPLES_ID,
 						},
+						...(includeAgent
+							? [
+									{
+										type: "tab" as const,
+										id: SKETCHES_ID,
+										name: "Sketches",
+										component: SKETCHES_ID,
+									},
+								]
+							: []),
 						{
 							type: "tab",
 							id: DOCS_ID,
@@ -237,6 +248,7 @@ export function loadWorkspace(
 				parsed.version !== 7 &&
 				parsed.version !== 8 &&
 				parsed.version !== 9 &&
+				parsed.version !== 10 &&
 				parsed.version !== STORAGE_VERSION) ||
 			!("layout" in parsed)
 		) {
@@ -254,6 +266,7 @@ export function loadWorkspace(
 		ensureDocumentationTabset(layout, docs);
 		const model = Model.fromJson(layout);
 		reconcileAgent(model, includeAgent);
+		reconcileSketches(model, includeAgent);
 		reconcileDescriptionPanel(model);
 		reconcileDocumentationTabs(model, docs);
 		validateWorkspace(model, includeAgent, docs);
@@ -494,6 +507,32 @@ function reconcileAgent(model: Model, includeAgent: boolean): void {
 	);
 }
 
+function reconcileSketches(model: Model, includeSketches: boolean): void {
+	const existing = model.getNodeById(SKETCHES_ID);
+	if (!includeSketches) {
+		if (existing instanceof TabNode)
+			model.doAction(Actions.deleteTab(SKETCHES_ID));
+		return;
+	}
+	if (existing === undefined) {
+		model.doAction(
+			Actions.addTab(
+				{ id: SKETCHES_ID, name: "Sketches", component: SKETCHES_ID },
+				APPLICATION_TABSET_ID,
+				DockLocation.CENTER,
+				-1,
+			),
+		);
+		return;
+	}
+	if (
+		!(existing instanceof TabNode) ||
+		existing.getComponent() !== SKETCHES_ID
+	) {
+		throw new Error("Workspace Sketches panel is invalid.");
+	}
+}
+
 function validateWorkspace(
 	model: Model,
 	includeAgent: boolean,
@@ -524,7 +563,10 @@ function validateWorkspace(
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);
 	validatePanel(model, OUTPUT_ID, OUTPUT_TABSET_ID);
-	if (includeAgent) validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
+	if (includeAgent) {
+		validatePanel(model, AGENT_ID, OUTPUT_TABSET_ID);
+		validatePanel(model, SKETCHES_ID, APPLICATION_TABSET_ID);
+	}
 
 	for (const doc of docs) {
 		const tab = requireTab(model, documentTabId(doc.id));
