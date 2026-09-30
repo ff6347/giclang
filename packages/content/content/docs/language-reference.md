@@ -100,6 +100,8 @@ These are mathematical functions that can be used to perform calculations.
 | `sqrt`         | Square root function                     |
 | `sin`          | Sine function                            |
 | `cos`          | Cosine function                          |
+| `radians`      | Convert degrees to radians               |
+| `degrees`      | Convert radians to degrees               |
 | `random`       | Random float between 0 and 1             |
 | `randomSeed`   | Set random seed for reproducible outputs |
 | `floor`        | Round down to integer                    |

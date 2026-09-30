@@ -39,7 +39,7 @@ The idea of GiC is to create a constrained programming environment. Therefore ma
 - colirize fills and strokes and backgrounds
 - generate random numbers and use random seeds (thank you p5.js totally stolen from you)
 - do arithmetic operations like `+`, `-`, `*`, `/`, `%`
-- do more complex math using `sin`, `cos`, `pow`, `sqrt`, `abs`, `round`, `floor`, `ceil`
+- do more complex math using `sin`, `cos`, `radians`, `degrees`, `pow`, `sqrt`, `abs`, `round`, `floor`, `ceil`
 - create user defined functions
 
 **And also:**
