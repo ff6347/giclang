@@ -8,7 +8,8 @@
 	"author": "ff6347 <hash@ff6347.email> (https://github.com/ff6347)",
 	"type": "module",
 	"scripts": {
-		"build": "pnpm build:cli && pnpm build:browser",
+		"build": "pnpm build:core && pnpm build:cli && pnpm build:standalone && pnpm build:browser && pnpm build:desktop && pnpm build:site",
+		"build:core": "pnpm --filter @giclang/core build",
 		"build:cli": "pnpm --filter @giclang/core build && pnpm --filter @giclang/cli build",
 		"build:desktop": "pnpm --filter @giclang/desktop build",
 		"build:standalone": "pnpm --filter @giclang/core build && pnpm --filter @giclang/editor build:standalone",
