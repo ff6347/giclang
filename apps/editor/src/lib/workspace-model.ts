@@ -85,12 +85,16 @@ function defaultLayout(
 									name: "Untitled sketch",
 									component: EDITOR_ID,
 								},
-								{
-									type: "tab",
-									id: DESCRIPTION_ID,
-									name: "Description",
-									component: DESCRIPTION_ID,
-								},
+								...(includeAgent
+									? [
+											{
+												type: "tab" as const,
+												id: DESCRIPTION_ID,
+												name: "Description",
+												component: DESCRIPTION_ID,
+											},
+										]
+									: []),
 							],
 						},
 						{
@@ -267,7 +271,7 @@ export function loadWorkspace(
 		const model = Model.fromJson(layout);
 		reconcileAgent(model, includeAgent);
 		reconcileSketches(model, includeAgent);
-		reconcileDescriptionPanel(model);
+		reconcileDescriptionPanel(model, includeAgent);
 		reconcileDocumentationTabs(model, docs);
 		validateWorkspace(model, includeAgent, docs);
 		saveWorkspace(model, settings);
@@ -427,8 +431,17 @@ function reconcileDocumentationTabs(
 	}
 }
 
-function reconcileDescriptionPanel(model: Model): void {
+function reconcileDescriptionPanel(
+	model: Model,
+	includeDescription: boolean,
+): void {
 	const description = model.getNodeById(DESCRIPTION_ID);
+	if (!includeDescription) {
+		if (description instanceof TabNode) {
+			model.doAction(Actions.deleteTab(DESCRIPTION_ID));
+		}
+		return;
+	}
 	if (description === undefined) {
 		model.doAction(
 			Actions.addTab(
@@ -556,9 +569,11 @@ function validateWorkspace(
 		validatePanel(model, panelId, APPLICATION_TABSET_ID);
 	}
 	validatePanel(model, EDITOR_ID, EDITOR_TABSET_ID);
-	const description = requireTab(model, DESCRIPTION_ID);
-	if (description.getComponent() !== DESCRIPTION_ID) {
-		throw new Error("Workspace Description panel is invalid.");
+	if (includeAgent) {
+		const description = requireTab(model, DESCRIPTION_ID);
+		if (description.getComponent() !== DESCRIPTION_ID) {
+			throw new Error("Workspace Description panel is invalid.");
+		}
 	}
 	validatePanel(model, PREVIEW_ID, PREVIEW_TABSET_ID);
 	validatePanel(model, PROBLEMS_ID, PROBLEMS_TABSET_ID);

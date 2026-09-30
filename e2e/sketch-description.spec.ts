@@ -1,159 +1,92 @@
-// ABOUTME: Exercises shared Description authoring and browser-only persistence boundaries.
-// ABOUTME: Drives the real editor panels, document replacement, recovery, and downloads.
+// ABOUTME: Verifies the browser workspace omits desktop-only Description UI.
+// ABOUTME: Preserves source-only save and recovery behavior in the PWA.
 
 import { expect, test } from "@playwright/test";
-import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
+import { setEditorSource } from "./editor.ts";
 
-const repeatExamplePath = fileURLToPath(
-	new URL(
-		"../packages/content/content/examples/repeat/repeat.gic",
-		import.meta.url,
-	),
-);
+async function chooseFileCommand(
+	page: import("@playwright/test").Page,
+	name: string,
+) {
+	await page.getByRole("menuitem", { name: "File", exact: true }).click();
+	await page
+		.getByRole("menu", { name: "File" })
+		.getByRole("menuitem", { name, exact: true })
+		.click();
+}
 
-test("edits description metadata and protects description-only changes", async ({
+test("ignores description-only browser recovery snapshots", async ({
+	page,
+}) => {
+	await page.addInitScript(() => {
+		const description = {
+			metadata: {
+				title: "Private title",
+				order: 0,
+				enabled: true,
+				categories: [],
+				tags: [],
+			},
+			body: "Private body",
+		};
+		localStorage.setItem(
+			"gic.recovery.v1",
+			JSON.stringify({
+				updatedAt: Date.now(),
+				document: {
+					kind: "file",
+					displayName: "private.gic",
+					source: "point(1, 1);",
+					baselineSource: "point(1, 1);",
+					canSave: true,
+					requiresSaveAs: false,
+					isDirty: true,
+					description,
+					baselineDescription: {
+						...description,
+						body: "",
+					},
+				},
+			}),
+		);
+	});
+	await page.goto("/");
+	await expect(
+		page.getByRole("alertdialog", { name: "Recover unsaved sketch?" }),
+	).toHaveCount(0);
+	await expect(page.getByRole("tab", { name: "Description" })).toHaveCount(0);
+});
+
+test("omits Description and keeps source-only recovery and downloads", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await expect(
-		page.getByText(
-			"In the browser, descriptions are not saved with the source download.",
-		),
-	).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Description" })).toHaveCount(0);
+	await expect(page.getByLabel("Description")).toHaveCount(0);
+	await expect(page.getByRole("textbox", { name: "Markdown" })).toHaveCount(0);
 
-	const defaultTitle = await page
-		.getByRole("textbox", { name: "title" })
-		.inputValue();
-	expect(defaultTitle).not.toBe("");
-	await expect(
-		page.getByRole("tab", { name: defaultTitle, exact: true }),
-	).toBeVisible();
-	await expect(page.getByRole("spinbutton", { name: "order" })).toHaveValue(
-		"0",
-	);
-	await expect(page.getByRole("checkbox", { name: "enabled" })).toBeChecked();
-	await expect(page.getByRole("textbox", { name: "categories" })).toBeVisible();
-	await expect(page.getByRole("textbox", { name: "tags" })).toBeVisible();
-	await expect(page.getByRole("textbox", { name: "Markdown" })).toBeVisible();
-
-	await page.getByRole("textbox", { name: "title" }).fill("A described sketch");
-	const orderField = page.getByRole("spinbutton", { name: "order" });
-	await orderField.fill("");
-	await orderField.press("-");
-	await orderField.press("2");
-	await orderField.press(".");
-	await orderField.press("5");
-	await expect(orderField).toHaveValue("-2.5");
-	await page.getByRole("checkbox", { name: "enabled" }).uncheck();
-	await page
-		.getByRole("textbox", { name: "categories" })
-		.fill("lines\ngeometry");
-	await page.getByRole("textbox", { name: "tags" }).fill("Unicode: café");
-	await page
-		.getByRole("textbox", { name: "Markdown" })
-		.fill("A transient description.");
-	await page.getByRole("textbox", { name: "title" }).fill("");
-	await expect(
-		page.getByText("Enter a title before saving a populated description."),
-	).toBeVisible();
-
-	await page.getByRole("tab", { name: "Examples", exact: true }).click();
-	await page.getByRole("button", { name: "Load this example" }).first().click();
-	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
-	await expect(discard).toBeVisible();
-	await discard.getByRole("button", { name: "Keep editing" }).click();
-	await page.getByRole("tab", { name: "Gestalten", exact: true }).click();
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await expect(page.getByRole("textbox", { name: "Markdown" })).toHaveValue(
-		"A transient description.",
-	);
-
+	await setEditorSource(page, "point(10, 10);");
 	await page.reload();
 	const recovery = page.getByRole("alertdialog", {
 		name: "Recover unsaved sketch?",
 	});
 	await expect(recovery).toBeVisible();
 	await recovery.getByRole("button", { name: "Restore" }).click();
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await expect(page.getByRole("textbox", { name: "title" })).toHaveValue("");
-	await expect(
-		page.getByText("Enter a title before saving a populated description."),
-	).toBeVisible();
-	await page.getByRole("textbox", { name: "title" }).fill("A described sketch");
-	await expect(page.getByRole("spinbutton", { name: "order" })).toHaveValue(
-		"-2.5",
+	await expect(page.getByRole("textbox", { name: "GiC" })).toHaveValue(
+		"point(10, 10);",
 	);
-	await expect(
-		page.getByRole("checkbox", { name: "enabled" }),
-	).not.toBeChecked();
-	await expect(page.getByRole("textbox", { name: "categories" })).toHaveValue(
-		"lines\ngeometry",
-	);
-	await expect(page.getByRole("textbox", { name: "tags" })).toHaveValue(
-		"Unicode: café",
-	);
-	await expect(page.getByRole("textbox", { name: "Markdown" })).toHaveValue(
-		"A transient description.",
-	);
-});
+	await expect(page.getByRole("tab", { name: "Description" })).toHaveCount(0);
 
-test("opening another browser file starts with isolated description defaults", async ({
-	page,
-}) => {
-	await page.goto("/");
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await page.getByRole("textbox", { name: "title" }).fill("Private title");
-	await page.getByRole("textbox", { name: "Markdown" }).fill("Private body.");
-	await page.getByRole("menuitem", { name: "File", exact: true }).click();
-	await page
-		.getByRole("menu", { name: "File" })
-		.getByRole("menuitem", { name: "Open", exact: true })
-		.click();
-	await page.locator("#open-file").setInputFiles(repeatExamplePath);
-	const discard = page.getByRole("alertdialog", { name: "Discard changes?" });
-	await discard.getByRole("button", { name: "Discard changes" }).click();
-
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await expect(page.getByRole("textbox", { name: "title" })).toHaveValue(
-		"repeat",
-	);
-	await expect(page.getByRole("textbox", { name: "Markdown" })).toHaveValue("");
-	await expect(page.getByRole("textbox", { name: "categories" })).toHaveValue(
-		"",
-	);
-});
-
-test("source download retains the transient description without a persistence claim", async ({
-	page,
-}) => {
-	await page.goto("/");
-	await page.getByRole("menuitem", { name: "File", exact: true }).click();
-	await page
-		.getByRole("menu", { name: "File" })
-		.getByRole("menuitem", { name: "Open", exact: true })
-		.click();
-	await page.locator("#open-file").setInputFiles(repeatExamplePath);
-	await page.getByRole("tab", { name: "Description", exact: true }).click();
-	await page
-		.getByRole("textbox", { name: "Markdown" })
-		.fill("Browser-only note.");
-
-	await page.getByRole("menuitem", { name: "File", exact: true }).click();
 	const download = page.waitForEvent("download");
-	await page
-		.getByRole("menu", { name: "File" })
-		.getByRole("menuitem", { name: "Save", exact: true })
-		.click();
-	expect((await download).suggestedFilename()).toBe("repeat.gic");
-
-	await expect(page.getByRole("textbox", { name: "Markdown" })).toHaveValue(
-		"Browser-only note.",
-	);
-	await expect(page.getByRole("tab", { name: "repeat.gic *" })).toBeVisible();
+	await chooseFileCommand(page, "Save As");
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await dialog.getByLabel("File name").fill("source-only.gic");
+	await dialog.getByRole("button", { name: "Save copy" }).click();
+	const saved = await download;
+	expect(saved.suggestedFilename()).toBe("source-only.gic");
+	expect(await readFile(await saved.path(), "utf8")).toBe("point(10, 10);\n");
 	await expect(
-		page.getByText(
-			"In the browser, descriptions are not saved with the source download.",
-		),
+		page.getByRole("tab", { name: "source-only.gic" }),
 	).toBeVisible();
 });

@@ -37,9 +37,14 @@ const docs: readonly Pick<DocumentationContent, "id" | "title">[] = [
 	{ id: "drawing", title: "Drawing" },
 ];
 
-test("desktop retains Agent after loading a browser workspace", () => {
+test("desktop retains Agent and Description after loading a browser workspace", () => {
 	const settings = new MemorySettings();
 	const desktop = createDefaultWorkspace(true, docs);
+	const description = desktop.getNodeById(DESCRIPTION_ID);
+	assert.ok(description instanceof TabNode);
+	assert.equal(description.getName(), "Description");
+	assert.equal(description.getComponent(), DESCRIPTION_ID);
+	assert.equal(description.getParent()?.getId(), "editor-tabset");
 	assert.ok(desktop.getNodeById(AGENT_ID) instanceof TabNode);
 	const sketches = desktop.getNodeById(SKETCHES_ID);
 	assert.ok(sketches instanceof TabNode);
@@ -49,10 +54,15 @@ test("desktop retains Agent after loading a browser workspace", () => {
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
 	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
+	assert.equal(browser.getNodeById(DESCRIPTION_ID), undefined);
 
 	const restoredDesktop = loadWorkspace(true, settings, docs);
 	assert.ok(restoredDesktop.getNodeById(AGENT_ID) instanceof TabNode);
 	assert.ok(restoredDesktop.getNodeById(SKETCHES_ID) instanceof TabNode);
+	const restoredDescription = restoredDesktop.getNodeById(DESCRIPTION_ID);
+	assert.ok(restoredDescription instanceof TabNode);
+	assert.equal(restoredDescription.getName(), "Description");
+	assert.equal(restoredDescription.getParent()?.getId(), "editor-tabset");
 	assert.equal(
 		restoredDesktop.getNodeById(AGENT_ID)?.getParent()?.getId(),
 		"output-tabset",
@@ -309,7 +319,7 @@ test("adds Sketches when migrating a desktop layout and omits it from the browse
 	assert.equal(browser.getNodeById(SKETCHES_ID), undefined);
 });
 
-test("retains moved documents and Description in the feature layout across browser and desktop", () => {
+test("retains moved documents while removing Description from browser layouts", () => {
 	const settings = new MemorySettings();
 	const model = createDefaultWorkspace(true, docs);
 	model.doAction(
@@ -329,7 +339,7 @@ test("retains moved documents and Description in the feature layout across brows
 
 	const browser = loadWorkspace(false, settings, docs);
 	assert.equal(browser.getNodeById(AGENT_ID), undefined);
-	assert.ok(browser.getNodeById(DESCRIPTION_ID) instanceof TabNode);
+	assert.equal(browser.getNodeById(DESCRIPTION_ID), undefined);
 	assert.equal(
 		browser.getNodeById(documentTabId("colors"))?.getParent()?.getId(),
 		"editor-tabset",
@@ -343,9 +353,9 @@ test("retains moved documents and Description in the feature layout across brows
 	);
 });
 
-test("retains the moved Description panel across workspace reload", () => {
+test("removes a stored Description panel from every browser layout location", () => {
 	const settings = new MemorySettings();
-	const model = createDefaultWorkspace(false, docs);
+	const model = createDefaultWorkspace(true, docs);
 	model.doAction(
 		Actions.moveNode(DESCRIPTION_ID, "output-tabset", DockLocation.CENTER, -1),
 	);
@@ -353,10 +363,7 @@ test("retains the moved Description panel across workspace reload", () => {
 
 	const loaded = loadWorkspace(false, settings, docs);
 
-	assert.equal(
-		loaded.getNodeById(DESCRIPTION_ID)?.getParent()?.getId(),
-		"output-tabset",
-	);
+	assert.equal(loaded.getNodeById(DESCRIPTION_ID), undefined);
 });
 
 test("adds documents to Docs and prunes removed documents without moving retained tabs", () => {

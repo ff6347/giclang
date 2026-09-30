@@ -36,6 +36,27 @@ function sketchBaseName(name: string): string {
 	return name.endsWith(".gic") ? name.slice(0, -".gic".length) : name;
 }
 
+function readHostRecovery(
+	snapshot: ReturnType<BrowserDocumentAdapter["readRecovery"]>,
+	desktop: DesktopHost | undefined,
+) {
+	if (snapshot === undefined || desktop !== undefined) return snapshot;
+	if (snapshot.document.source === snapshot.document.baselineSource) {
+		return undefined;
+	}
+	const description = defaultSketchDescription(
+		sketchBaseName(snapshot.document.displayName),
+	);
+	return {
+		...snapshot,
+		document: {
+			...snapshot.document,
+			description,
+			baselineDescription: description,
+		},
+	};
+}
+
 export function useDocument(
 	formatOnSave: boolean,
 	onExampleOpened: () => void,
@@ -48,8 +69,11 @@ export function useDocument(
 	const adapter = useRef(new BrowserDocumentAdapter()).current;
 	const desktopDocumentId = useRef<string | undefined>(undefined);
 	const newSketchNames = useRef(new Set<string>()).current;
-	const initialRecovery = useRef(adapter.readRecovery()).current;
-	const knownRecoveryUpdatedAt = useRef(initialRecovery?.updatedAt ?? 0);
+	const storedRecovery = useRef(adapter.readRecovery()).current;
+	const initialRecovery = useRef(
+		readHostRecovery(storedRecovery, desktop),
+	).current;
+	const knownRecoveryUpdatedAt = useRef(storedRecovery?.updatedAt ?? 0);
 	const pendingReplacement = useRef<(() => Promise<void> | void) | undefined>(
 		undefined,
 	);
@@ -168,10 +192,7 @@ export function useDocument(
 		const savedName = normalizeFileName(name);
 		adapter.download(savedName, source);
 		adapter.recordRecent(savedName);
-		const savedDocument = updateDocumentDescription(
-			openDocument(savedName, source),
-			snapshot.description,
-		);
+		const savedDocument = openDocument(savedName, source);
 		replaceDocument(savedDocument, undefined, savedName, true);
 		if (savedDocument.source === source) {
 			adoptSavedSource(snapshot.source, savedDocument.source);
