@@ -69,6 +69,92 @@ test("opens a local sketch and saves it with its selected filename", async ({
 	).not.toBeVisible();
 });
 
+test("format-on-save resumes an unfinished preview after immediate Save", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await setEditorSource(page, "background(10, 20, 30);");
+	await expect(
+		page.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
+
+	await chooseFileCommand(page, "Save As");
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await dialog.getByLabel("File name").fill("pending-preview.gic");
+	const firstSave = page.waitForEvent("download");
+	await dialog.getByRole("button", { name: "Save copy" }).click();
+	await firstSave;
+
+	await setEditorSource(page, "background ( 50 , 50 , 120 ) ;");
+	const savedPromise = page.waitForEvent("download");
+	const saveShortcut = await page.evaluate(() =>
+		navigator.platform.startsWith("Mac") &&
+		!navigator.userAgent.includes("Firefox")
+			? "Meta+s"
+			: "Control+s",
+	);
+	await page.getByRole("textbox", { name: "GiC" }).press(saveShortcut);
+	const saved = await savedPromise;
+	expect(await readFile(await saved.path(), "utf8")).toBe(
+		"background(50, 50, 120);\n",
+	);
+
+	await expect(
+		page.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
+	const acceptedPng = readPng(await downloadPng(page));
+	expect(Array.from(acceptedPng.pixels)).toEqual(
+		Array.from(await canvasPixels(page)),
+	);
+	await expect
+		.poll(() =>
+			page.locator("#canvas").evaluate((canvas) => {
+				if (!(canvas instanceof HTMLCanvasElement)) {
+					throw new Error("Expected the preview canvas.");
+				}
+				return Array.from(
+					canvas.getContext("2d")!.getImageData(0, 0, 1, 1).data,
+				);
+			}),
+		)
+		.toEqual([87, 112, 0, 255]);
+});
+
+test("format-on-save refreshes failed diagnostics for the adopted source", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await setEditorSource(page, "background(10, 20, 30);");
+	await expect(
+		page.getByRole("button", { name: "Download PNG" }),
+	).toBeEnabled();
+	await chooseFileCommand(page, "Save As");
+	const dialog = page.getByRole("dialog", { name: "Save sketch as" });
+	await dialog.getByLabel("File name").fill("failed-preview.gic");
+	const firstSave = page.waitForEvent("download");
+	await dialog.getByRole("button", { name: "Save copy" }).click();
+	await firstSave;
+
+	await setEditorSource(page, "point ( missing , 10 ) ;");
+	await expect(page.locator("#problems")).toHaveText(
+		"Line 1, columns 9–16: Cannot find name 'missing'.",
+	);
+	await expect(page.locator(".squiggly-error")).toBeVisible();
+	const savedPromise = page.waitForEvent("download");
+	await chooseFileCommand(page, "Save");
+	const saved = await savedPromise;
+	expect(await readFile(await saved.path(), "utf8")).toBe(
+		"point(missing, 10);\n",
+	);
+	await expect(page.locator(".view-line").first()).toContainText(
+		"point(missing",
+	);
+	await expect(page.locator("#problems")).toContainText(
+		"Line 1, columns 7–14: Cannot find name 'missing'.",
+	);
+	await expect(page.locator(".squiggly-error")).toBeVisible();
+});
+
 test("format-on-save preserves the accepted randomized preview across Save and Save As", async ({
 	page,
 }) => {

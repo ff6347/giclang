@@ -4,17 +4,20 @@
 export interface PreviewSourceAdoption {
 	readonly accepted: boolean;
 	readonly invalidatedRun: number | undefined;
+	readonly previewRequired: boolean;
 }
 
 export class PreviewSource {
 	private nextRun = 0;
 	private pendingRun: { id: number; source: string } | undefined;
 	private acceptedSource: string | undefined;
+	private latestSource: string | undefined;
 
 	begin(source: string): number {
 		const id = ++this.nextRun;
 		this.pendingRun = { id, source };
 		this.acceptedSource = undefined;
+		this.latestSource = source;
 		return id;
 	}
 
@@ -43,6 +46,7 @@ export class PreviewSource {
 			return {
 				accepted: this.acceptedSource === sourceAdopted,
 				invalidatedRun: undefined,
+				previewRequired: false,
 			};
 		}
 		const invalidatedRun =
@@ -53,11 +57,14 @@ export class PreviewSource {
 			this.pendingRun = undefined;
 			this.nextRun += 1;
 		}
-		if (this.acceptedSource !== sourceBeforeSave) {
-			return { accepted: false, invalidatedRun };
+		if (this.acceptedSource === sourceBeforeSave) {
+			this.acceptedSource = sourceAdopted;
+			this.latestSource = sourceAdopted;
+			return { accepted: true, invalidatedRun, previewRequired: false };
 		}
-		this.acceptedSource = sourceAdopted;
-		return { accepted: true, invalidatedRun };
+		const previewRequired = this.latestSource === sourceBeforeSave;
+		if (previewRequired) this.latestSource = sourceAdopted;
+		return { accepted: false, invalidatedRun, previewRequired };
 	}
 
 	isAccepted(source: string): boolean {

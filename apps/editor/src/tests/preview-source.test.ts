@@ -13,6 +13,7 @@ test("adopts formatting only for the accepted preview from the saved run", () =>
 	assert.deepEqual(preview.adoptSavedSource("unformatted", "formatted"), {
 		accepted: true,
 		invalidatedRun: undefined,
+		previewRequired: false,
 	});
 	assert.equal(preview.isAccepted("formatted"), true);
 	assert.equal(preview.isAccepted("unformatted"), false);
@@ -25,6 +26,7 @@ test("invalidates pending source work when a successful save adopts formatting",
 	assert.deepEqual(preview.adoptSavedSource("unformatted", "formatted"), {
 		accepted: false,
 		invalidatedRun: pendingRun,
+		previewRequired: true,
 	});
 	assert.equal(preview.accept(pendingRun, "unformatted"), false);
 	assert.equal(preview.isAccepted("formatted"), false);
@@ -39,9 +41,22 @@ test("does not adopt over a newer draft preview or accept a superseded run", () 
 	assert.deepEqual(preview.adoptSavedSource("unformatted", "formatted"), {
 		accepted: false,
 		invalidatedRun: undefined,
+		previewRequired: false,
 	});
 	assert.equal(preview.accept(newerRun, "newer draft"), true);
 	assert.equal(preview.isAccepted("newer draft"), true);
+});
+
+test("refreshes a completed failed preview after formatting is adopted", () => {
+	const preview = new PreviewSource();
+	const failedRun = preview.begin("unformatted");
+	preview.fail(failedRun);
+
+	assert.deepEqual(preview.adoptSavedSource("unformatted", "formatted"), {
+		accepted: false,
+		invalidatedRun: undefined,
+		previewRequired: true,
+	});
 });
 
 test("keeps a pending same-source preview when saving does not change the source", () => {
@@ -51,6 +66,7 @@ test("keeps a pending same-source preview when saving does not change the source
 	assert.deepEqual(preview.adoptSavedSource("unchanged", "unchanged"), {
 		accepted: false,
 		invalidatedRun: undefined,
+		previewRequired: false,
 	});
 	assert.equal(preview.accept(pendingRun, "unchanged"), true);
 });

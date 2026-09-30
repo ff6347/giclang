@@ -203,8 +203,9 @@ export function usePreview(canvasRef: RefObject<HTMLCanvasElement | null>) {
 				}
 			}
 			if (adoption.accepted) renderedSource.current = sourceAdopted;
+			else if (adoption.previewRequired) onSourceChange(sourceAdopted);
 		},
-		[previewSource],
+		[onSourceChange, previewSource],
 	);
 
 	return {
