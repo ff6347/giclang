@@ -1,4 +1,4 @@
-// ABOUTME: Finds named CSS colors in supported GIC drawing-call arguments.
+// ABOUTME: Finds CSS colors in supported GIC drawing-call arguments.
 // ABOUTME: Returns source ranges suitable for Monaco color decorations.
 
 import { colornames } from "@giclang/core/color-names";
@@ -17,13 +17,13 @@ type SourceToken = {
 	end: number;
 };
 
-export interface NamedColorRange {
+export interface ColorRange {
 	color: string;
 	start: number;
 	end: number;
 }
 
-export function namedColorRanges(source: string): NamedColorRange[] {
+export function colorRanges(source: string): ColorRange[] {
 	const tokens: SourceToken[] = [];
 	for (let index = 0; index < source.length;) {
 		const character = source[index] ?? "";
@@ -82,12 +82,12 @@ export function namedColorRanges(source: string): NamedColorRange[] {
 		index += 1;
 	}
 
-	const ranges: NamedColorRange[] = [];
+	const ranges: ColorRange[] = [];
 	const calls: {
 		colorArgument: boolean;
 		argumentIndex: number;
 		firstArgument: "empty" | "string" | "invalid";
-		color?: NamedColorRange | undefined;
+		color?: ColorRange | undefined;
 	}[] = [];
 	let previous: SourceToken | undefined;
 
@@ -132,7 +132,10 @@ export function namedColorRanges(source: string): NamedColorRange[] {
 				call?.colorArgument &&
 				call.argumentIndex === 0 &&
 				call.firstArgument === "empty" &&
-				colornames.has(token.value.toLowerCase())
+				(colornames.has(token.value.toLowerCase()) ||
+					/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(
+						token.value,
+					))
 			) {
 				call.color = {
 					color: token.value,

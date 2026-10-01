@@ -6,7 +6,7 @@ import "monaco-editor/features/register.all.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
 import type { Diagnostic } from "@giclang/core";
 import { builtIns } from "@giclang/core/built-ins";
-import { namedColorRanges } from "./color-swatches.ts";
+import { colorRanges } from "./color-swatches.ts";
 import {
 	completeSource,
 	formatSourceDocument,
@@ -66,7 +66,7 @@ function registerGicLanguage() {
 			canvas.height = 1;
 			const context = canvas.getContext("2d");
 			if (context === null) return [];
-			return namedColorRanges(model.getValue()).map(({ color, start, end }) => {
+			return colorRanges(model.getValue()).map(({ color, start, end }) => {
 				context.clearRect(0, 0, 1, 1);
 				context.fillStyle = color;
 				context.fillRect(0, 0, 1, 1);

@@ -1,12 +1,12 @@
-// ABOUTME: Verifies named-color source ranges for GIC drawing arguments.
+// ABOUTME: Verifies CSS-color source ranges for GIC drawing arguments.
 // ABOUTME: Covers accepted colors, source edits, and excluded string contexts.
 
 import assert from "node:assert/strict";
 import test from "node:test";
-import { namedColorRanges } from "../lib/color-swatches.ts";
+import { colorRanges } from "../lib/color-swatches.ts";
 
 test("finds accepted names in background, fill, and stroke arguments", () => {
-	const ranges = namedColorRanges(
+	const ranges = colorRanges(
 		'background("red"); fill("Blue"); stroke("rebeccapurple");',
 	);
 
@@ -20,9 +20,52 @@ test("finds accepted names in background, fill, and stroke arguments", () => {
 	);
 });
 
+test("finds supported hex colors alongside names in drawing arguments", () => {
+	const source =
+		'background("#f63"); fill("#F638"); stroke("#ff6347"); ' +
+		'fill("#FF634780"); stroke("blue");';
+	assert.deepEqual(colorRanges(source), [
+		{
+			color: "#f63",
+			start: source.indexOf("#f63"),
+			end: source.indexOf("#f63") + 4,
+		},
+		{
+			color: "#F638",
+			start: source.indexOf("#F638"),
+			end: source.indexOf("#F638") + 5,
+		},
+		{
+			color: "#ff6347",
+			start: source.indexOf("#ff6347"),
+			end: source.indexOf("#ff6347") + 7,
+		},
+		{
+			color: "#FF634780",
+			start: source.indexOf("#FF634780"),
+			end: source.indexOf("#FF634780") + 9,
+		},
+		{
+			color: "blue",
+			start: source.indexOf("blue"),
+			end: source.indexOf("blue") + 4,
+		},
+	]);
+});
+
+test("ignores invalid hex colors and hex strings outside direct color arguments", () => {
+	assert.deepEqual(
+		colorRanges(
+			'print("#f63"); // fill("#f63")\n' +
+				'fill("#ff634"); fill("#ff63xz"); fill("#f63", 1); fill(("#f63"));',
+		),
+		[],
+	);
+});
+
 test("ignores unrelated strings, comments, and invalid names", () => {
 	assert.deepEqual(
-		namedColorRanges(
+		colorRanges(
 			'print("red"); background("notacolor"); // fill("blue")\n' +
 				'fill("greenish");',
 		),
@@ -32,7 +75,7 @@ test("ignores unrelated strings, comments, and invalid names", () => {
 
 test("only decorates a complete direct first string argument", () => {
 	assert.deepEqual(
-		namedColorRanges(
+		colorRanges(
 			'fill("red" 2); fill("red" + suffix); ' +
 				'fill("red", mix("blue")); fill(("red")); ' +
 				'fill(makeColor("red")); fill("red" + "blue");',
@@ -43,7 +86,7 @@ test("only decorates a complete direct first string argument", () => {
 
 test("does not decorate named colors in calls with extra arguments", () => {
 	assert.deepEqual(
-		namedColorRanges('background("blue"); fill("red", 1); stroke("green");'),
+		colorRanges('background("blue"); fill("red", 1); stroke("green");'),
 		[
 			{ color: "blue", start: 12, end: 16 },
 			{ color: "green", start: 44, end: 49 },
@@ -52,17 +95,16 @@ test("does not decorate named colors in calls with extra arguments", () => {
 });
 
 test("ignores malformed and unterminated strings", () => {
-	assert.deepEqual(
-		namedColorRanges('fill("red); fill("blue");\nfill("green");'),
-		[{ color: "green", start: 32, end: 37 }],
-	);
+	assert.deepEqual(colorRanges('fill("red); fill("blue");\nfill("green");'), [
+		{ color: "green", start: 32, end: 37 },
+	]);
 });
 
 test("updates the range and name after source edits", () => {
-	assert.deepEqual(namedColorRanges('background("tomato");'), [
+	assert.deepEqual(colorRanges('background("tomato");'), [
 		{ color: "tomato", start: 12, end: 18 },
 	]);
-	assert.deepEqual(namedColorRanges('background("gold");'), [
+	assert.deepEqual(colorRanges('background("gold");'), [
 		{ color: "gold", start: 12, end: 16 },
 	]);
 });
