@@ -476,11 +476,11 @@ All coordinates are in pixels from top-left origin (0, 0). Canvas is 100×100 pi
 
 ### Console Output
 
-| Function        | Description                             |
-| --------------- | --------------------------------------- |
-| `print(value);` | Output value to console (for debugging) |
+| Function | Description |
+| --- | --- |
+| `print(...value);` | zero or more comma-separated values to output to console (for debugging) |
 
-`print` accepts a Number, Boolean, or String. Calls append output in execution order and retain the source location of the `print` token. The browser developer console presents each entry as `Line N: text`, converting the internal line to 1-based numbering. Output produced before a runtime failure remains available and is presented before the diagnostic. Parser and analyzer failures produce no output.
+`print` accepts zero or more arguments of type Number, Boolean, or String. Calls append output in execution order and retain the source location of the `print` token. The browser developer console presents each entry as `Line N: text`, converting the internal line to 1-based numbering. Output produced before a runtime failure remains available and is presented before the diagnostic. Parser and analyzer failures produce no output.
 
 **Note:** There is no built-in text rendering on the canvas. Users who need text can implement letter-drawing functions using primitives, similar to how Design by Numbers handled typography.
 
