@@ -88,3 +88,18 @@ This lead to the conclusion to do it the other way around and go back to simpler
 One place where all students need is bundled. Like the Processing IDE did for many 20 years ago. Write one line of code and get immediate feedback. Sane defaults. Simplicty. Every concept in expressed in a 100 by 100 image. It should be enough for communicating the concepts of programming.
 
 ## About AI in the Project and Education
+
+This project was built with the assistance of AI. The core is implemented manually with the AI as tutor to prove the system of the socratic method and for the auhor to understand the concepts of programming languages. You can see the commit frequency below.
+
+| Month          | Commits | Average commits / calendar day |
+| -------------- | ------: | -----------------------------: |
+| April 2026     |       1 |                           0.03 |
+| May 2026       |      14 |                           0.45 |
+| June 2026      |       0 |                           0.00 |
+| July 2026      |      54 |                           1.74 |
+| August 2026    |     127 |                           4.10 |
+| September 2026 |     567 |                          18.90 |
+
+Source: full Git history reachable from `main`, including merge commits. History spans 10 April–30 September 2026.
+
+To tooling around it was mostly generated with a human in the loop for guiding the AI (see the September). For every learning endevour using AI is like taking the forklift to the gym. There will be weights moved with no effect. Besides the political, environmental and ethical implications of AI, it still can be used to broaden access to knowledge. We are looking forward to the point where the agent for this project does nmot have to be a subscription but rather a part of the operating system itself. We are not there yet but it is on the horizon.
