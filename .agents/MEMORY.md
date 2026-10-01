@@ -146,6 +146,7 @@
 - [lesson] Prefer explicit, named source programs and result assertions for language-semantics tests. A table-driven operator matrix was shorter but made individual GIC behavior harder for humans to read and learn from.
 - [preference] Keep GIC source programs local to their E2E tests and duplicate short snippets when that keeps setup, action, and assertion readable together.
 - [technique] Playwright drives Monaco through its visible editing surface with `Control+A`, ordinary key events, and Enter between lines. Firefox duplicates the first line when multiline source is sent through bulk `insertText()`.
+- [risk] On a machine where the eight-worker Playwright run aborts the Vite/Node server, the same browser suite can complete with `--workers=1 --retries=0`; report the worker limit rather than treating the initial timeouts as application failures.
 - [lesson] Canvas antialiasing makes exact edge-pixel color assertions brittle. Stroke geometry tests should assert a visible difference from the background while exact colors are sampled from fully covered pixels.
 - [decision] Tests do not pin mutable `content/` inventory, titles, or visual appearance. Canvas and language behavior use test-local GIC source; content views verify structural availability and enabled-example exclusion.
 - [technique] The complete offline PWA authoring workflow has a 60-second test budget for Windows Firefox and waits for the exact current preview before requesting an export.
