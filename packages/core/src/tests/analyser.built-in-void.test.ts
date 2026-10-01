@@ -27,6 +27,12 @@ describe("Analyser built-in void calls", () => {
 		assert.deepStrictEqual(result.diagnostics, []);
 	});
 
+	test("should accept print with mixed arguments", () => {
+		const source = `let val = 1;
+print("cool", 12, true, "whatever", val, "as many args as I want");`;
+		assert.deepStrictEqual(analyseSource(source).diagnostics, []);
+	});
+
 	test("should report randomSeed used as an initializer", () => {
 		const result = analyseSource(`let value=randomSeed(1);`);
 
