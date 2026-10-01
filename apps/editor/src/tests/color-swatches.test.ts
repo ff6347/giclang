@@ -1,5 +1,5 @@
-// ABOUTME: Verifies CSS-color source ranges for GIC drawing arguments.
-// ABOUTME: Covers accepted colors, source edits, and excluded string contexts.
+// ABOUTME: Verifies CSS-color source ranges within GIC string literals.
+// ABOUTME: Covers complete colors, embedded colors, edits, and excluded comments.
 
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -53,50 +53,87 @@ test("finds supported hex colors alongside names in drawing arguments", () => {
 	]);
 });
 
-test("ignores invalid hex colors and hex strings outside direct color arguments", () => {
+test("finds separate swatches for colors in declarations and prose strings", () => {
+	const source = [
+		'background("pink");',
+		'let col = "pink";',
+		'let hex = "#ff6347";',
+		'let nameString = "this is lightgoldenrodyellow color";',
+		'let hexInString = "this is tomato #ff6347 would be nice";',
+	].join("\n");
+	const secondHex = source.indexOf("#ff6347", source.indexOf("#ff6347") + 1);
+
+	assert.deepEqual(colorRanges(source), [
+		{
+			color: "pink",
+			start: source.indexOf("pink"),
+			end: source.indexOf("pink") + 4,
+		},
+		{
+			color: "pink",
+			start: source.indexOf("pink", source.indexOf("pink") + 1),
+			end: source.indexOf("pink", source.indexOf("pink") + 1) + 4,
+		},
+		{
+			color: "#ff6347",
+			start: source.indexOf("#ff6347"),
+			end: source.indexOf("#ff6347") + 7,
+		},
+		{
+			color: "lightgoldenrodyellow",
+			start: source.indexOf("lightgoldenrodyellow"),
+			end: source.indexOf("lightgoldenrodyellow") + 20,
+		},
+		{
+			color: "tomato",
+			start: source.indexOf("tomato"),
+			end: source.indexOf("tomato") + 6,
+		},
+		{ color: "#ff6347", start: secondHex, end: secondHex + 7 },
+	]);
+});
+
+test("ignores comments, invalid colors, and color names inside larger words", () => {
 	assert.deepEqual(
 		colorRanges(
-			'print("#f63"); // fill("#f63")\n' +
-				'fill("#ff634"); fill("#ff63xz"); fill("#f63", 1); fill(("#f63"));',
+			'// print("red")\nprint("notacolor greenish #ff634 #ff63xz"); ' +
+				'let label = "reddish #ff6347suffix bluebird Blue!"; let pink = 1;',
 		),
-		[],
+		[{ color: "Blue", start: 104, end: 108 }],
 	);
 });
 
-test("ignores unrelated strings, comments, and invalid names", () => {
+test("keeps comment markers inside strings and ignores quoted colors in comments", () => {
+	const source = 'let label = "tomato // #ff6347"; // "pink"';
 	assert.deepEqual(
-		colorRanges(
-			'print("red"); background("notacolor"); // fill("blue")\n' +
-				'fill("greenish");',
-		),
-		[],
+		colorRanges(source).map(({ color }) => color),
+		["tomato", "#ff6347"],
 	);
 });
 
-test("only decorates a complete direct first string argument", () => {
+test("decorates color strings within compound and nested expressions", () => {
 	assert.deepEqual(
 		colorRanges(
 			'fill("red" 2); fill("red" + suffix); ' +
 				'fill("red", mix("blue")); fill(("red")); ' +
 				'fill(makeColor("red")); fill("red" + "blue");',
-		),
-		[],
+		).map(({ color }) => color),
+		["red", "red", "red", "blue", "red", "red", "red", "blue"],
 	);
 });
 
-test("does not decorate named colors in calls with extra arguments", () => {
+test("decorates colors in calls with extra arguments", () => {
 	assert.deepEqual(
-		colorRanges('background("blue"); fill("red", 1); stroke("green");'),
-		[
-			{ color: "blue", start: 12, end: 16 },
-			{ color: "green", start: 44, end: 49 },
-		],
+		colorRanges('background("blue"); fill("red", 1); stroke("green");').map(
+			({ color }) => color,
+		),
+		["blue", "red", "green"],
 	);
 });
 
-test("ignores malformed and unterminated strings", () => {
-	assert.deepEqual(colorRanges('fill("red); fill("blue");\nfill("green");'), [
-		{ color: "green", start: 32, end: 37 },
+test("ignores unterminated strings until the next line", () => {
+	assert.deepEqual(colorRanges('fill("red);\nfill("green");'), [
+		{ color: "green", start: 18, end: 23 },
 	]);
 });
 
