@@ -62,9 +62,7 @@ describe("built-ins", () => {
 		const expected = {
 			kind: "function",
 			signatures: [
-				[{ name: "value", kind: "string" }],
-				[{ name: "value", kind: "number" }],
-				[{ name: "value", kind: "boolean" }],
+				[{ name: "value", kind: ["string", "number", "boolean"], rest: true }],
 			],
 			returnKind: "void",
 		};

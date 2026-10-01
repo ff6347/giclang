@@ -501,11 +501,11 @@ export class Interpreter {
 		}
 
 		if (callable.kind === "print") {
-			if (values[0] === undefined) {
+			if (values.some((val) => val === undefined)) {
 				throw new Error(`Argument ${token.lexeme} is undefined`);
 			}
 
-			if (values[0] === VOID) {
+			if (values.some((val) => val === VOID)) {
 				throw new GicError(
 					`Argument must produce a value`,
 					token.line,
@@ -517,7 +517,7 @@ export class Interpreter {
 				line: token.line,
 				start: token.start,
 				end: token.end,
-				text: String(values[0]),
+				text: values.join(" "),
 			});
 			return VOID;
 		}

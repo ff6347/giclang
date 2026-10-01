@@ -90,7 +90,8 @@ print("cool", 12, true, "whatever", val, "as many args as I want");`;
 
 		assert.deepStrictEqual(result.diagnostics, [
 			{
-				message: "Function 'print' expects 1 arguments, but got 0.",
+				message:
+					"Function 'print' does not return a value and cannot be used in an expression.",
 				line: 0,
 				start: 10,
 				end: 15,

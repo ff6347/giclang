@@ -18,7 +18,7 @@ Comments are ignored by gic. They are only for annotating code. Write many comme
 Semi-colons are used to separate statements and are required. Always!
 
 ```gic
-print
+print("Dont forget the semicolon ->");
 ```
 
 ### Output
@@ -27,6 +27,12 @@ The `print` function is used to output values to the on screen console.
 
 ```gic
 print("Hi");
+//or
+print(); // empty print is allowed
+// or
+print("Hello", "World", "!");
+// or
+print(1, 3, true, "Yay!");
 ```
 
 ### Primitives values/ data types

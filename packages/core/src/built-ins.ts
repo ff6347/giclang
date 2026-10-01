@@ -37,7 +37,13 @@ export type BuiltInKeys =
 	| "WIDTH"
 	| "HEIGHT";
 
-type Parameter = { readonly name: string; readonly kind: ValueKind };
+type Parameter =
+	| { readonly name: string; readonly kind: ValueKind }
+	| {
+			readonly name: string;
+			readonly kind: readonly ValueKind[];
+			readonly rest: true;
+	  };
 export type ValueKind = "number" | "boolean" | "string";
 type Signature = readonly Parameter[];
 export type FunctionEntry = {
@@ -156,9 +162,7 @@ export const builtIns: BuiltInRegistry = {
 	print: {
 		kind: "function",
 		signatures: [
-			[{ name: "value", kind: "string" }],
-			[{ name: "value", kind: "number" }],
-			[{ name: "value", kind: "boolean" }],
+			[{ name: "value", kind: ["string", "number", "boolean"], rest: true }],
 		],
 		returnKind: "void",
 	},

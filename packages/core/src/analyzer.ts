@@ -378,7 +378,9 @@ export class Analyser {
 				this.diagnostics.push(notAFunctionDiagnostic(expr.callee.name));
 			} else if (builtIn.kind === "function") {
 				const candidates = builtIn.signatures.filter(
-					(signature) => signature.length === expr.arguments.length,
+					(signature) =>
+						signature.length === expr.arguments.length ||
+						signature.some((param) => "rest" in param && param.rest === true),
 				);
 
 				if (candidates.length === 0) {
@@ -401,6 +403,11 @@ export class Analyser {
 					// Unknown argument kinds are deferred because static checking cannot prove that they conflict with the parameter type.
 					const accepted = candidates.some((signature) => {
 						return signature.every((parameter, index) => {
+							if ("rest" in parameter && parameter.rest) {
+								return kinds.every(
+									(kind) => kind === undefined || parameter.kind.includes(kind),
+								);
+							}
 							return (
 								kinds[index] === undefined || kinds[index] === parameter.kind
 							);
@@ -408,9 +415,11 @@ export class Analyser {
 					});
 					const mismatch = candidates[0]?.find(
 						(parameter, index) =>
-							kinds[index] !== undefined && kinds[index] !== parameter.kind,
+							!("rest" in parameter) &&
+							kinds[index] !== undefined &&
+							kinds[index] !== parameter.kind,
 					);
-					if (!accepted && mismatch) {
+					if (!accepted && mismatch && !("rest" in mismatch)) {
 						this.diagnostics.push(
 							argumentKindDiagnostic(
 								expr.callee.name,
