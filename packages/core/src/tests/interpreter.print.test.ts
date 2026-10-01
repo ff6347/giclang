@@ -16,6 +16,17 @@ test("runSource captures print output", () => {
 	});
 });
 
+test("runSource prints mixed arguments on one line", () => {
+	const actual = runSource('print("a", 1);');
+
+	assert.deepStrictEqual(actual, {
+		ok: true,
+		commands: [],
+		diagnostics: [],
+		output: [{ text: "a 1", line: 0, start: 0, end: 5 }],
+	});
+});
+
 test("runSource formats multiple number and boolean prints in order at their print tokens", () => {
 	const source = `print(12);
 print(true);`;
