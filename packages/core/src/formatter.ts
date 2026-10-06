@@ -7,8 +7,7 @@ import { Parser } from "./parser.ts";
 import { EOF, type Token, type TokenType } from "./tokens.ts";
 
 type FormatItem =
-	| { kind: "comment"; text: string }
-	| { kind: "token"; token: Token };
+	{ kind: "comment"; text: string } | { kind: "token"; token: Token };
 
 const binaryOperators = new Set<TokenType>([
 	"AND",

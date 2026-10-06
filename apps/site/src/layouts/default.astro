@@ -2,8 +2,7 @@
 import "@giclang/styles/tokens.css";
 import "../styles/global.css";
 
-const title =
-	Astro.props.title ?? "GiC (Gestalten in Code) Lang";
+const title = Astro.props.title ?? "GiC (Gestalten in Code) Lang";
 ---
 
 <html lang="en">
@@ -19,10 +18,30 @@ const title =
 		<header>
 			<h1>{title}</h1>
 		</header>
-		<nav>
-			<ul>
+		<nav class="default-nav" aria-label="Main navigation">
+			<button
+				class="nav-toggle"
+				type="button"
+				aria-label="Toggle navigation"
+				aria-expanded="false"
+				aria-controls="default-nav-links"
+				hidden
+			>
+				<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+					<path
+						d="M3 6h18M3 12h18M3 18h18"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+					/>
+				</svg>
+			</button>
+			<ul id="default-nav-links">
 				<li>
 					<a href="/downloads">downloads</a>
+				</li>
+				<li>
+					<a href="/docs/">docs</a>
 				</li>
 				<li>
 					<a href="https://editor.giclang.cc">editor</a>
@@ -32,9 +51,9 @@ const title =
 				</li>
 			</ul>
 		</nav>
-		<main>
-			<slot />
-		</main>
+
+		<slot />
+
 		<footer>
 			<p>
 				GiC is a project by{" "}
@@ -49,3 +68,32 @@ const title =
 		</footer>
 	</body>
 </html>
+
+<script>
+	const navigation = document.querySelector<HTMLElement>(".default-nav");
+	const toggle = navigation?.querySelector<HTMLButtonElement>(".nav-toggle");
+
+	if (navigation && toggle) {
+		toggle.hidden = false;
+		navigation.dataset.expanded = "false";
+
+		const setExpanded = (expanded: boolean) => {
+			toggle.setAttribute("aria-expanded", String(expanded));
+			navigation.dataset.expanded = String(expanded);
+		};
+
+		toggle.addEventListener("click", () => {
+			setExpanded(toggle.getAttribute("aria-expanded") !== "true");
+		});
+
+		navigation.addEventListener("keydown", (event) => {
+			if (
+				event.key === "Escape" &&
+				toggle.getAttribute("aria-expanded") === "true"
+			) {
+				setExpanded(false);
+				toggle.focus();
+			}
+		});
+	}
+</script>

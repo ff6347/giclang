@@ -12,19 +12,19 @@ The first live UI passes exposed client defects rather than credential failures.
 
 The first ChatGPT completion failure was over-redacted for diagnosis. The corrected build adds a selectable in-app log of UI and Rust lifecycle stages, the provider/model/endpoint, account-ID presence as a boolean, HTTP status, and only `code`, `type`, `message`, or `detail` from JSON provider errors. It records prompt length instead of text and never records credentials, tokens, account IDs, request headers, auth-file paths, or raw authentication responses. Non-JSON completion error text is capped at 1,000 characters. That log exposed the unsupported `gpt-5.3-instant` selection without exposing credentials; selecting `gpt-5.6-luna` from the tester's working subscription catalog then produced a successful response.
 
-| Check | Result |
-| --- | --- |
-| `cargo fmt --check` | pass |
-| `cargo fmt --check`, `cargo check` / `cargo test` | pass; five deterministic local HTTP tests cover device request, pending poll, exchange, refresh, redaction, sign-out, and the no-completion-URL invariant |
-| `pnpm --dir ui typecheck` / `build` | pass |
-| Tauri package without Vite | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable (not launched) |
-| packaged app launch without Vite | unrun in this automated session |
-| first live OpenCode and ChatGPT UI pass | fail; no visible OpenCode progress and no ChatGPT device code |
-| first replacement package | fail; provider controls remained disabled during event-listener startup |
-| second replacement package | fail; status exposed that Tauri event registration never completed because its capability was missing |
-| corrected OpenCode Zen UI pass | pass; human observed a streamed response |
-| corrected ChatGPT device authentication | pass; human completed sign-in |
-| first authenticated ChatGPT completion | fail; HTTP 400 reported `gpt-5.3-instant` is unsupported with a ChatGPT account |
-| subscription-catalog `gpt-5.6-luna` ChatGPT completion | pass; human observed a response through the packaged UI |
+| Check                                                  | Result                                                                                                                                                    |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cargo fmt --check`                                    | pass                                                                                                                                                      |
+| `cargo fmt --check`, `cargo check` / `cargo test`      | pass; five deterministic local HTTP tests cover device request, pending poll, exchange, refresh, redaction, sign-out, and the no-completion-URL invariant |
+| `pnpm --dir ui typecheck` / `build`                    | pass                                                                                                                                                      |
+| Tauri package without Vite                             | pass; `target/release/bundle/macos/GIC Tutor Rig Spike.app`, one executable (not launched)                                                                |
+| packaged app launch without Vite                       | unrun in this automated session                                                                                                                           |
+| first live OpenCode and ChatGPT UI pass                | fail; no visible OpenCode progress and no ChatGPT device code                                                                                             |
+| first replacement package                              | fail; provider controls remained disabled during event-listener startup                                                                                   |
+| second replacement package                             | fail; status exposed that Tauri event registration never completed because its capability was missing                                                     |
+| corrected OpenCode Zen UI pass                         | pass; human observed a streamed response                                                                                                                  |
+| corrected ChatGPT device authentication                | pass; human completed sign-in                                                                                                                             |
+| first authenticated ChatGPT completion                 | fail; HTTP 400 reported `gpt-5.3-instant` is unsupported with a ChatGPT account                                                                           |
+| subscription-catalog `gpt-5.6-luna` ChatGPT completion | pass; human observed a response through the packaged UI                                                                                                   |
 
 This revision packaged a 15 MB app at `target/release/bundle/macos/GIC Tutor Rig Spike.app` (not launched). Electron's recorded package was 365 MB.

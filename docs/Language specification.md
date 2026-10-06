@@ -267,11 +267,11 @@ Arguments are evaluated exactly once from left to right before the function body
 
 gic has a simple lexical scoping model:
 
-| Scope | Description |
-| --- | --- |
-| Global | Direct top-level variables and functions; names are reserved program-wide |
-| Function-local | Parameters and variables declared directly in a function body |
-| Block-local | Variables declared in `if`, `else`, `repeat`, and `loop` bodies |
+| Scope          | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| Global         | Direct top-level variables and functions; names are reserved program-wide |
+| Function-local | Parameters and variables declared directly in a function body             |
+| Block-local    | Variables declared in `if`, `else`, `repeat`, and `loop` bodies           |
 
 **Rules:**
 
@@ -394,10 +394,10 @@ loop {
 
 ### Animation Built-ins
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `frameCount` | Constant | Current frame number (starts at 0, increments each frame) |
-| `frameRate(fps)` | Function | Set target frames per second (default: 60) |
+| Name             | Type     | Description                                               |
+| ---------------- | -------- | --------------------------------------------------------- |
+| `frameCount`     | Constant | Current frame number (starts at 0, increments each frame) |
+| `frameRate(fps)` | Function | Set target frames per second (default: 60)                |
 
 **Example using frameCount:**
 
@@ -421,8 +421,8 @@ loop {
 
 The canvas is always 100 pixels wide and 100 pixels high, with its geometric center at (50, 50).
 
-| Function | Description | Default |
-| --- | --- | --- |
+| Function               | Description                                  | Default         |
+| ---------------------- | -------------------------------------------- | --------------- |
 | `background(l, c, h);` | Fill entire canvas with color in OKLCH space | Black (0, 0, 0) |
 
 `background()` can be called multiple times (clears and repaints).
@@ -447,37 +447,37 @@ Color functions are overloaded and accept:
 
 Style functions set the current drawing style. They affect all subsequent shapes until changed.
 
-| Function | Description | Default |
-| --- | --- | --- |
-| `fill(l, c, h);` | Set fill color for shapes | White (100, 0, 0) |
-| `fill(l, c, h, a);` | Set fill color with alpha (0-100) | — |
-| `noFill();` | Disable fill | — |
-| `stroke(l, c, h);` | Set stroke (outline) color | Black (0, 0, 0) |
-| `stroke(l, c, h, a);` | Set stroke color with alpha (0-100) | — |
-| `noStroke();` | Disable stroke | — |
-| `strokeWidth(weight);` | Set stroke thickness in pixels | 1 |
+| Function               | Description                         | Default           |
+| ---------------------- | ----------------------------------- | ----------------- |
+| `fill(l, c, h);`       | Set fill color for shapes           | White (100, 0, 0) |
+| `fill(l, c, h, a);`    | Set fill color with alpha (0-100)   | —                 |
+| `noFill();`            | Disable fill                        | —                 |
+| `stroke(l, c, h);`     | Set stroke (outline) color          | Black (0, 0, 0)   |
+| `stroke(l, c, h, a);`  | Set stroke color with alpha (0-100) | —                 |
+| `noStroke();`          | Disable stroke                      | —                 |
+| `strokeWidth(weight);` | Set stroke thickness in pixels      | 1                 |
 
 ### Shape Drawing
 
 All coordinates are in pixels from top-left origin (0, 0). Canvas is 100×100 pixels.
 
-| Function | Description |
-| --- | --- |
-| `point(x, y);` | Draw a solid round point centered at (x, y) |
-| `line(x1, y1, x2, y2);` | Draw line from (x1, y1) to (x2, y2) |
-| `rect(x, y, width, height);` | Draw rectangle, (x, y) is top-left corner |
-| `circle(x, y, radius);` | Draw circle centered at (x, y) |
-| `ellipse(x, y, width, height);` | Draw ellipse centered at (x, y) |
-| `triangle(x1, y1, x2, y2, x3, y3);` | Draw triangle with three vertices |
-| `quad(x1, y1, x2, y2, x3, y3, x4, y4);` | Draw quadrilateral with four vertices |
+| Function                                   | Description                                   |
+| ------------------------------------------ | --------------------------------------------- |
+| `point(x, y);`                             | Draw a solid round point centered at (x, y)   |
+| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)           |
+| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner     |
+| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                |
+| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)               |
+| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices             |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices         |
 | `arc(x, y, radius, startAngle, endAngle);` | Draw open arc (degrees, 0 = right, clockwise) |
 
 `rect`, `circle`, `ellipse`, `triangle`, and `quad` use the current fill and stroke state. `point`, `line`, and `arc` use only the current stroke state and are not drawn while stroke is disabled. A point's diameter equals the current stroke width. Arc commands remain open and are never filled.
 
 ### Console Output
 
-| Function | Description |
-| --- | --- |
+| Function           | Description                                                              |
+| ------------------ | ------------------------------------------------------------------------ |
 | `print(...value);` | zero or more comma-separated values to output to console (for debugging) |
 
 `print` accepts zero or more arguments of type Number, Boolean, or String. Calls append output in execution order and retain the source location of the `print` token. The browser developer console presents each entry as `Line N: text`, converting the internal line to 1-based numbering. Output produced before a runtime failure remains available and is presented before the diagnostic. Parser and analyzer failures produce no output.
@@ -486,22 +486,22 @@ All coordinates are in pixels from top-left origin (0, 0). Canvas is 100×100 pi
 
 ### Math Functions
 
-| Function | Description |
-| --- | --- |
+| Function           | Description                                              |
+| ------------------ | -------------------------------------------------------- |
 | `random(min, max)` | Random float between min (inclusive) and max (exclusive) |
-| `randomSeed(n)` | Set random seed for reproducible outputs |
-| `floor(n)` | Round down to integer |
-| `ceil(n)` | Round up to integer |
-| `round(n)` | Round to nearest integer |
-| `abs(n)` | Absolute value |
-| `min(a, b)` | Smaller of two values |
-| `max(a, b)` | Larger of two values |
-| `sin(degrees)` | Sine (input in degrees) |
-| `cos(degrees)` | Cosine (input in degrees) |
-| `radians(degrees)` | Convert degrees to radians |
-| `degrees(radian)` | Convert radians to degrees |
-| `sqrt(n)` | Square root |
-| `pow(base, exp)` | Exponentiation |
+| `randomSeed(n)`    | Set random seed for reproducible outputs                 |
+| `floor(n)`         | Round down to integer                                    |
+| `ceil(n)`          | Round up to integer                                      |
+| `round(n)`         | Round to nearest integer                                 |
+| `abs(n)`           | Absolute value                                           |
+| `min(a, b)`        | Smaller of two values                                    |
+| `max(a, b)`        | Larger of two values                                     |
+| `sin(degrees)`     | Sine (input in degrees)                                  |
+| `cos(degrees)`     | Cosine (input in degrees)                                |
+| `radians(degrees)` | Convert degrees to radians                               |
+| `degrees(radian)`  | Convert radians to degrees                               |
+| `sqrt(n)`          | Square root                                              |
+| `pow(base, exp)`   | Exponentiation                                           |
 
 All math arguments must be finite numbers, and math functions may return only finite numbers. `sqrt` rejects negative inputs. `pow` accepts negative bases and exponents when their result is finite and rejects `NaN` or infinite results.
 

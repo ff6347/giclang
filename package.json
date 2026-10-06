@@ -9,6 +9,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "pnpm build:core && pnpm build:cli && pnpm build:standalone && pnpm build:browser && pnpm build:desktop && pnpm build:site",
+		"build:content": "pnpm --filter @giclang/content build",
 		"build:core": "pnpm --filter @giclang/core build",
 		"build:cli": "pnpm --filter @giclang/core build && pnpm --filter @giclang/cli build",
 		"build:desktop": "pnpm --filter @giclang/desktop build",
@@ -28,6 +29,7 @@
 		"typecheck": "pnpm --filter @giclang/core build && pnpm --filter @giclang/core typecheck && pnpm --filter @giclang/cli typecheck && pnpm --filter @giclang/content typecheck",
 		"typecheck:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor typecheck",
 		"dev:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor dev",
+		"dev:content": "pnpm --filter @giclang/content dev",
 		"dev:desktop": "pnpm --filter @giclang/desktop dev",
 		"dev:site": "pnpm --filter @giclang/site dev"
 	},
@@ -36,6 +38,8 @@
 		"@types/node": "25.7.0",
 		"oxfmt": "0.61.0",
 		"oxlint": "1.76.0",
+		"prettier": "3.9.9",
+		"prettier-plugin-astro": "1.1.0",
 		"typescript": "6.0.3"
 	}
 }

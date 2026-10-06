@@ -3,22 +3,22 @@ title: "Math"
 order: 5
 ---
 
-| Function | Description |
-| :-- | :-- |
+| Function           | Description                                              |
+| :----------------- | :------------------------------------------------------- |
 | `random(min, max)` | Random float between min (inclusive) and max (exclusive) |
-| `randomSeed(n)` | Set random seed for reproducible outputs |
-| `floor(n)` | Round down to integer |
-| `ceil(n)` | Round up to integer |
-| `round(n)` | Round to nearest integer |
-| `abs(n)` | Absolute value |
-| `min(a, b)` | Smaller of two values |
-| `max(a, b)` | Larger of two values |
-| `sin(degrees)` | Sine (input in degrees) |
-| `cos(degrees)` | Cosine (input in degrees) |
-| `radians(degrees)` | Convert degrees to radians |
-| `degrees(radians)` | Convert radians to degrees |
-| `sqrt(n)` | Square root |
-| `pow(base, exp)` | Exponentiation |
+| `randomSeed(n)`    | Set random seed for reproducible outputs                 |
+| `floor(n)`         | Round down to integer                                    |
+| `ceil(n)`          | Round up to integer                                      |
+| `round(n)`         | Round to nearest integer                                 |
+| `abs(n)`           | Absolute value                                           |
+| `min(a, b)`        | Smaller of two values                                    |
+| `max(a, b)`        | Larger of two values                                     |
+| `sin(degrees)`     | Sine (input in degrees)                                  |
+| `cos(degrees)`     | Cosine (input in degrees)                                |
+| `radians(degrees)` | Convert degrees to radians                               |
+| `degrees(radians)` | Convert radians to degrees                               |
+| `sqrt(n)`          | Square root                                              |
+| `pow(base, exp)`   | Exponentiation                                           |
 
 All math arguments must be finite numbers, and math functions may return only finite numbers. `sqrt` rejects negative inputs. `pow` accepts negative bases and exponents when their result is finite and rejects infinite results.
 

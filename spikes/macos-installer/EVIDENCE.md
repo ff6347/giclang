@@ -14,13 +14,13 @@ The [macOS installer workflow](../../.github/workflows/macos-installer.yml) keep
 
 Fabian chose the App Store Connect team API-key route. The `macos-release` environment has a `main`-only deployment policy and all five required secret names; its credentials are never read back through GitHub. No required-reviewer rule is configured, so manual dispatch is the current human approval step. The secrets are:
 
-| Environment secret | Supplied privately by Fabian |
-| --- | --- |
-| `MACOS_CERTIFICATE_P12` | Base64-encoded Developer ID Application `.p12` containing its private key |
-| `MACOS_CERTIFICATE_PASSWORD` | Password used to export the `.p12` |
-| `MACOS_API_KEY_P8` | Base64-encoded App Store Connect team API-key `.p8` |
-| `MACOS_API_KEY_ID` | Key ID of that team API key |
-| `MACOS_API_ISSUER` | Issuer ID of that team API key |
+| Environment secret           | Supplied privately by Fabian                                              |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `MACOS_CERTIFICATE_P12`      | Base64-encoded Developer ID Application `.p12` containing its private key |
+| `MACOS_CERTIFICATE_PASSWORD` | Password used to export the `.p12`                                        |
+| `MACOS_API_KEY_P8`           | Base64-encoded App Store Connect team API-key `.p8`                       |
+| `MACOS_API_KEY_ID`           | Key ID of that team API key                                               |
+| `MACOS_API_ISSUER`           | Issuer ID of that team API key                                            |
 
 On this Mac, `base64 -i <file>` encodes either file. Its wrapped output can be supplied as a GitHub environment secret; the workflow decodes it with `base64 -D`. To produce a single line instead, use `base64 -i <file> | tr -d '\n'`. Never put private-key material, passwords, or their base64 representations in Git, an issue, chat, or an Actions artifact.
 

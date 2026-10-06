@@ -12,7 +12,7 @@ This is a content plan, not a proposal to change language semantics. `docs/Langu
 ## Current inventory and intended destination
 
 | Existing page | Current reader experience | Intended treatment |
-| --- | --- | --- |
+| :--- | :--- |:--- |
 | `packages/content/content/docs/00-language-reference.md` | Short facts about comments, semicolons, printing, values, and variables | Reference overview or small language-basics entries, with concise, consistent syntax and examples; keep stable ID unless a tested migration is chosen. |
 | `packages/content/content/docs/colors.md` | Three color formats followed by a long named-color table | Separate a short **Color values** reference from a standalone **Named colors** lookup panel. Preserve the `colors` ID for the general page; assign a new ID to the named-color page. Verify the actual supported list before publishing counts or entries. |
 | `packages/content/content/docs/conditionals.md` | Operator tables plus a progression of explained code examples | Reference for `if`/`else if`/`else`, comparisons, and logical operators; move stepwise learning material to a tutorial only when needed. Verify operator precedence and example output. |

@@ -5,28 +5,19 @@ order: 10
 
 **Gestalten in Code (GiC or giclang or gic)** is a small C-style language for creating two-dimensional generative graphics and teaching programming fundamentals.
 
-It is born as part of research in speculative software design at the University of Applied Science Potsdam. Inspired by the simplicity of Design by Numbers and Processing and the malcontent of the complexity modern software development presents to beginners **giclang** is aimed as a small learning tool in the area of creative coding.
+It is born as part of research in speculative software design at the University of Applied Science Potsdam. Inspired by the simplicity of Design by Numbers and Processing and the malcontent of the complexity modern software development presents to beginners. **giclang** is designed as a learning tool in the area of creative coding. There are other languages that are more powerful and feature-rich. **gic** is not intended to replace these excellent creative coding tools.
 
-It has the deliberately narrow surface and only one way to do things. Features like interactivity, typography, or image loading are left out on purpose. Also animmation and complex structures like objects and arrays are not supported. It should be used as a tool for teaching programming basics without overwhelming students with the shear infinite amount possibilities.
+It is an attempt to answer the question: _"How can we still teach programming in the zeitgeist of vibe code?"_ With the advent of large language models, that became powerful enough to generate high quality code, we need tools methods that rethink our dicatical concepts.  
 
-Therefore we built a full environment where students can dive into code without having to setup a development environment. On the web [editor.giclang.cc](https://editor.giclang.cc/) provides full access fast feedback within the browser and even offlline as a progressive web app. The desktop application goes further and intgrates a LLM agent that is primed to provide help in language syntax and has acccess to examples but, since it is a learning tool it can not write or alter the code. It does though engage in a socratic discussion with the students.
+The environment leaves out features we are accustomed to from traditional coding environments, e.g. edit predictions or full coding agent integrations. The built in agent is primed to provide a socratic discourse rather than a just solving the problem at hand. It asks questions and guides. The agent panel even does not allow copy and paste. It forces students to type out the code.
+
+**GiC** has a deliberately narrow surface and only one way to do things. Features like interactivity, typography, or image loading are left out on purpose. Also animmation and complex structures like objects and arrays are not supported. 
 
 Once students have grasped the basic constructs of programming they are encouraged to move on to more complex tools like p5.js, Processing or even leave the c style languages behind and use VVVV or cables.gl to name a few.
 
 ## What can and can't GiC do?
 
 The idea of GiC is to create a constrained programming environment. Therefore many features where left out intentionally.
-
-**It cannot:**
-
-- do animation _(might come at some point, not sure yet)_
-- read and write files
-- load or draw images
-- Use font files
-- import other files _(i.e. libraries or modules)_
-- change its canvas size (yes everything you do must look good in 100 × 100 pixels)
-- shadow variables
-- even more complex structures like Arrays, Objects, or Classes are not supported _(Arrays might come eventually)_
 
 **It can:**
 
@@ -41,6 +32,19 @@ The idea of GiC is to create a constrained programming environment. Therefore ma
 - do arithmetic operations like `+`, `-`, `*`, `/`, `%`
 - do more complex math using `sin`, `cos`, `radians`, `degrees`, `pow`, `sqrt`, `abs`, `round`, `floor`, `ceil`
 - create user defined functions
+
+
+**It cannot:**
+
+- do animation _(might come at some point, not sure yet)_
+- read and write files
+- load or draw images
+- Use font files
+- import other files _(i.e. libraries or modules)_
+- change its canvas size (yes everything you do must look good in 100 × 100 pixels)
+- shadow variables
+- even more complex structures like Arrays, Objects, or Classes are not supported _(Arrays might come eventually)_
+
 
 **And also:**
 
