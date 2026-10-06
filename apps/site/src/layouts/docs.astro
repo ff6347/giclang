@@ -1,0 +1,68 @@
+---
+import DefaultLayout from "./default.astro";
+import { getCollection } from "astro:content";
+
+const docs = await getCollection("docs");
+---
+
+<DefaultLayout>
+	<div class="docs-layout">
+		<aside>
+			<nav aria-label="Documentation">
+				<ul>
+					{docs.map((doc) => (
+						<li>
+							<a
+								href={`/docs/${doc.id}`}
+
+								aria-current={
+									Astro.url.pathname.replace(/\/$/, "") === `/docs/${doc.id}`
+										? "page"
+										: undefined
+								}
+							>
+								{doc.data.title}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		</aside>
+
+		<div class="docs-content">
+			<slot />
+		</div>
+	</div>
+</DefaultLayout>
+
+<style>
+	.docs-layout {
+		display: flex;
+		align-items: flex-start;
+		gap: 2rem;
+	}
+
+	aside {
+		flex: 0 0 14rem;
+	}
+
+	.docs-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	nav a[aria-current="page"] {
+		font-weight: bold;
+	}
+
+	@media (max-width: 48rem) {
+		.docs-layout {
+			flex-direction: column;
+		}
+
+		aside {
+			flex: none;
+			width: 100%;
+		}
+	}
+</style>
