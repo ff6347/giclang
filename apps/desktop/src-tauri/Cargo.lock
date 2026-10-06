@@ -1468,7 +1468,7 @@ dependencies = [
 
 [[package]]
 name = "gic-desktop"
-version = "0.9.0-beta.3"
+version = "0.9.0-beta.4"
 dependencies = [
  "base64 0.22.1",
  "chrono",
