@@ -24,20 +24,20 @@ The unsigned `.app` is 365 MB. In addition to its main executable, it contains E
 
 ## Observations
 
-| Criterion | Result | Evidence |
-| --- | --- | --- |
-| Packaged assets without a development server | Pass | The verifier launches the packaged executable directly |
-| Sandboxed, context-isolated renderer | Pass | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` |
-| Narrow preload API | Pass | Static checks reject privileged renderer access; preload exposes operation-specific methods |
-| Restricted document round-trip | Pass | Node tests prove opaque document IDs and reject unknown IDs |
-| Native Open/Save dialogs | Unproven manually | Electron dialog calls and `.gic` filters are packaged, but no UI automation clicked them |
-| Minimal Pi libraries in the main process | Pass | Packaged evidence records two Pi module probes without `pi-coding-agent` or a sidecar |
-| Deterministic Pi streaming | Pass | Exact Socratic response chunks cross main-to-renderer IPC |
-| Pi cancellation | Pass | A slow deterministic stream ends with `stopReason: "aborted"` |
-| Close lifecycle | Pass | Packaged evidence records renderer callback and close request |
-| macOS package | Pass | Unsigned arm64 `.app` packaged and launched on the recorded host |
-| Windows package | Not run | Requires a real Windows runner |
-| Real provider authentication | Not run | Requires explicit Codex/OpenCode credentials and provider-specific smoke checks |
+| Criterion                                    | Result            | Evidence                                                                                    |
+| -------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------- |
+| Packaged assets without a development server | Pass              | The verifier launches the packaged executable directly                                      |
+| Sandboxed, context-isolated renderer         | Pass              | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`                         |
+| Narrow preload API                           | Pass              | Static checks reject privileged renderer access; preload exposes operation-specific methods |
+| Restricted document round-trip               | Pass              | Node tests prove opaque document IDs and reject unknown IDs                                 |
+| Native Open/Save dialogs                     | Unproven manually | Electron dialog calls and `.gic` filters are packaged, but no UI automation clicked them    |
+| Minimal Pi libraries in the main process     | Pass              | Packaged evidence records two Pi module probes without `pi-coding-agent` or a sidecar       |
+| Deterministic Pi streaming                   | Pass              | Exact Socratic response chunks cross main-to-renderer IPC                                   |
+| Pi cancellation                              | Pass              | A slow deterministic stream ends with `stopReason: "aborted"`                               |
+| Close lifecycle                              | Pass              | Packaged evidence records renderer callback and close request                               |
+| macOS package                                | Pass              | Unsigned arm64 `.app` packaged and launched on the recorded host                            |
+| Windows package                              | Not run           | Requires a real Windows runner                                                              |
+| Real provider authentication                 | Not run           | Requires explicit Codex/OpenCode credentials and provider-specific smoke checks             |
 
 The spike uses the maintained `@earendil-works` successor packages rather than the deprecated `@mariozechner` package line. The renderer never receives Node.js, Electron IPC, filesystem paths, environment variables, or credentials. Native paths remain in the main process behind opaque IDs.
 

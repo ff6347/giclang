@@ -16,10 +16,7 @@ export type CodexSignInState =
 	| { readonly kind: "error"; readonly attemptId?: number };
 
 export type CodexAccountAction =
-	| "start"
-	| "cancel"
-	| "signOut"
-	| "switchAccount";
+	"start" | "cancel" | "signOut" | "switchAccount";
 
 export function beginCodexSignIn(): CodexSignInState {
 	return { kind: "starting" };

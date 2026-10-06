@@ -26,17 +26,17 @@ The unsigned `.app` is 8.5 MB and contains one executable: `Contents/MacOS/gic-t
 
 ## Observations
 
-| Criterion | Result | Evidence |
-| --- | --- | --- |
-| Built assets launch without a development server | Pass | Direct bundled-binary launch records `rust-setup` and `webview-ready`. |
-| Webview-to-Rust command callback | Pass | Packaged `app.js` records `webview-ready`. |
-| Rust-to-webview event callback | Pass | Rust emits `shell-probe`; packaged JavaScript records `probe-event-received`. |
-| Close lifecycle callback | Pass | Packaged JavaScript requests close and Rust records `close-requested`. |
-| Native Open picker | Manual check remains | `open_gic` uses the packaged Rust dialog plugin; UI automation was unavailable. |
-| Native Save/Save As picker | Manual check remains | `save_gic_as` uses the packaged Rust dialog plugin; UI automation was unavailable. |
-| Restricted document round-trip | Pass | Two Rust tests cover opaque-ID open/save and unknown-ID rejection. |
-| macOS package | Pass | `src-tauri/target/release/bundle/macos/GIC Tauri Spike.app` launches directly. |
-| Windows package | Not run | Requires Windows MSVC, WebView2, and a real package smoke test. |
+| Criterion                                        | Result               | Evidence                                                                           |
+| ------------------------------------------------ | -------------------- | ---------------------------------------------------------------------------------- |
+| Built assets launch without a development server | Pass                 | Direct bundled-binary launch records `rust-setup` and `webview-ready`.             |
+| Webview-to-Rust command callback                 | Pass                 | Packaged `app.js` records `webview-ready`.                                         |
+| Rust-to-webview event callback                   | Pass                 | Rust emits `shell-probe`; packaged JavaScript records `probe-event-received`.      |
+| Close lifecycle callback                         | Pass                 | Packaged JavaScript requests close and Rust records `close-requested`.             |
+| Native Open picker                               | Manual check remains | `open_gic` uses the packaged Rust dialog plugin; UI automation was unavailable.    |
+| Native Save/Save As picker                       | Manual check remains | `save_gic_as` uses the packaged Rust dialog plugin; UI automation was unavailable. |
+| Restricted document round-trip                   | Pass                 | Two Rust tests cover opaque-ID open/save and unknown-ID rejection.                 |
+| macOS package                                    | Pass                 | `src-tauri/target/release/bundle/macos/GIC Tauri Spike.app` launches directly.     |
+| Windows package                                  | Not run              | Requires Windows MSVC, WebView2, and a real package smoke test.                    |
 
 The successful packaged evidence sequence was:
 

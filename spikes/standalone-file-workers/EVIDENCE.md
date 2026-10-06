@@ -18,14 +18,14 @@ The standalone artifact runs directly from `file://` in Chromium, Firefox, and W
 
 ## Observations
 
-| Criterion | Result | Evidence |
-| --- | --- | --- |
-| Direct `file://` artifact | Pass | Each engine navigates directly to `index.html` with no server |
-| Blob worker creation | Pass | Each source run creates a worker from an inline Blob URL |
-| Debounced replacement | Pass | A later blue draw remains visible after an earlier delayed red draw is replaced |
-| Timeout termination | Pass | A runaway worker produces a visible timeout and the next run renders |
-| Plain worker data | Pass | Commands, diagnostics, runtime errors, and output entries render from worker messages |
-| Network isolation | Pass | The verifier records no non-`file:`, non-`blob:`, or non-`data:` request |
+| Criterion                 | Result | Evidence                                                                              |
+| ------------------------- | ------ | ------------------------------------------------------------------------------------- |
+| Direct `file://` artifact | Pass   | Each engine navigates directly to `index.html` with no server                         |
+| Blob worker creation      | Pass   | Each source run creates a worker from an inline Blob URL                              |
+| Debounced replacement     | Pass   | A later blue draw remains visible after an earlier delayed red draw is replaced       |
+| Timeout termination       | Pass   | A runaway worker produces a visible timeout and the next run renders                  |
+| Plain worker data         | Pass   | Commands, diagnostics, runtime errors, and output entries render from worker messages |
+| Network isolation         | Pass   | The verifier records no non-`file:`, non-`blob:`, or non-`data:` request              |
 
 ## Recommendation
 

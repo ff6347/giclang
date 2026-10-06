@@ -1,0 +1,11 @@
+---
+import DocsLayout from "../../layouts/docs.astro";
+
+import { getCollection } from "astro:content";
+
+const docs = await getCollection("docs");
+---
+
+<DocsLayout>
+	<main>Still very WIP but browsable</main>
+</DocsLayout>

@@ -11,29 +11,29 @@ The coordinate system is based on the top-left corner of the sketch and the canv
 
 Below you see a two tables of all color and drawing functions. As you can see the fill and storke functions take different kinds of color definitions.
 
-| Function | Description | Default |
-| :-- | :-- | :-- |
-| `fill("white");` | Set fill color for shapes with named color | White (100, 0, 0) |
-| `fill("#ffffff");` | Set fill color for shapes with hex color | White (100, 0, 0) |
-| `fill(l, c, h);` | Set fill color for shapes | White (100, 0, 0) |
-| `fill(l, c, h, a);` | Set fill color with alpha (0-100) | — |
-| `noFill();` | Disable fill | — |
-| `stroke("black");` | Set stroke (outline) color | Black (0, 0, 0) |
-| `stroke("#000000");` | Set stroke (outline) color | Black (0, 0, 0) |
-| `stroke(l, c, h);` | Set stroke (outline) color | Black (0, 0, 0) |
-| `stroke(l, c, h, a);` | Set stroke color with alpha (0-100) | — |
-| `noStroke();` | Disable stroke | — |
-| `strokeWidth(weight);` | Set stroke thickness in pixels | 1 |
+| Function               | Description                                | Default           |
+| :--------------------- | :----------------------------------------- | :---------------- |
+| `fill("white");`       | Set fill color for shapes with named color | White (100, 0, 0) |
+| `fill("#ffffff");`     | Set fill color for shapes with hex color   | White (100, 0, 0) |
+| `fill(l, c, h);`       | Set fill color for shapes                  | White (100, 0, 0) |
+| `fill(l, c, h, a);`    | Set fill color with alpha (0-100)          | —                 |
+| `noFill();`            | Disable fill                               | —                 |
+| `stroke("black");`     | Set stroke (outline) color                 | Black (0, 0, 0)   |
+| `stroke("#000000");`   | Set stroke (outline) color                 | Black (0, 0, 0)   |
+| `stroke(l, c, h);`     | Set stroke (outline) color                 | Black (0, 0, 0)   |
+| `stroke(l, c, h, a);`  | Set stroke color with alpha (0-100)        | —                 |
+| `noStroke();`          | Disable stroke                             | —                 |
+| `strokeWidth(weight);` | Set stroke thickness in pixels             | 1                 |
 
-| Function | Description |
-| :-- | :-- |
-| `point(x, y);` | Draw a solid round point centered at (x, y) |
-| `line(x1, y1, x2, y2);` | Draw line from (x1, y1) to (x2, y2) |
-| `rect(x, y, width, height);` | Draw rectangle, (x, y) is top-left corner |
-| `circle(x, y, radius);` | Draw circle centered at (x, y) |
-| `ellipse(x, y, width, height);` | Draw ellipse centered at (x, y) |
-| `triangle(x1, y1, x2, y2, x3, y3);` | Draw triangle with three vertices |
-| `quad(x1, y1, x2, y2, x3, y3, x4, y4);` | Draw quadrilateral with four vertices |
+| Function                                   | Description                                   |
+| :----------------------------------------- | :-------------------------------------------- |
+| `point(x, y);`                             | Draw a solid round point centered at (x, y)   |
+| `line(x1, y1, x2, y2);`                    | Draw line from (x1, y1) to (x2, y2)           |
+| `rect(x, y, width, height);`               | Draw rectangle, (x, y) is top-left corner     |
+| `circle(x, y, radius);`                    | Draw circle centered at (x, y)                |
+| `ellipse(x, y, width, height);`            | Draw ellipse centered at (x, y)               |
+| `triangle(x1, y1, x2, y2, x3, y3);`        | Draw triangle with three vertices             |
+| `quad(x1, y1, x2, y2, x3, y3, x4, y4);`    | Draw quadrilateral with four vertices         |
 | `arc(x, y, radius, startAngle, endAngle);` | Draw open arc (degrees, 0 = right, clockwise) |
 
 ### Strokes

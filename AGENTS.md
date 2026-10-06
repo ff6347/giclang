@@ -85,24 +85,24 @@ This is one pnpm workspace with a private root command orchestrator and one lock
 
 Use the Node and pnpm versions declared in `mise.toml`.
 
-| Command | Purpose |
-| --- | --- |
-| `mise install` | Install the declared toolchain. |
-| `pnpm install --frozen-lockfile` | Install locked dependencies. |
-| `pnpm test` | Build and test the core and CLI packages. |
-| `pnpm test:compact` | Discover core, CLI, content, editor-local, and script Node tests with compact output. |
-| `pnpm typecheck` | Type-check the core, CLI, and content packages. |
-| `pnpm typecheck:browser` | Type-check the DOM/Vite editor package. |
-| `pnpm lint` | Run oxlint. |
-| `pnpm fmt:check` | Check formatting with oxfmt. |
-| `pnpm format` | Format supported files. |
-| `pnpm build:browser` | Build browser production assets with Vite. |
-| `pnpm build:desktop` | Build packaged desktop applications with Tauri. |
-| `pnpm dev:browser --host 127.0.0.1` | Start the browser development server. |
-| `pnpm dev:desktop` | Start the shared IDE in the Tauri development shell. |
-| `pnpm test:desktop` | Run native bridge and persistence tests. |
-| `pnpm test:e2e` | Run Playwright acceptance tests in Firefox. |
-| `pnpm test:pwa` | Run production PWA offline and update acceptance in three browser engines. |
+| Command                             | Purpose                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| `mise install`                      | Install the declared toolchain.                                                       |
+| `pnpm install --frozen-lockfile`    | Install locked dependencies.                                                          |
+| `pnpm test`                         | Build and test the core and CLI packages.                                             |
+| `pnpm test:compact`                 | Discover core, CLI, content, editor-local, and script Node tests with compact output. |
+| `pnpm typecheck`                    | Type-check the core, CLI, and content packages.                                       |
+| `pnpm typecheck:browser`            | Type-check the DOM/Vite editor package.                                               |
+| `pnpm lint`                         | Run oxlint.                                                                           |
+| `pnpm fmt:check`                    | Check formatting with oxfmt.                                                          |
+| `pnpm format`                       | Format supported files.                                                               |
+| `pnpm build:browser`                | Build browser production assets with Vite.                                            |
+| `pnpm build:desktop`                | Build packaged desktop applications with Tauri.                                       |
+| `pnpm dev:browser --host 127.0.0.1` | Start the browser development server.                                                 |
+| `pnpm dev:desktop`                  | Start the shared IDE in the Tauri development shell.                                  |
+| `pnpm test:desktop`                 | Run native bridge and persistence tests.                                              |
+| `pnpm test:e2e`                     | Run Playwright acceptance tests in Firefox.                                           |
+| `pnpm test:pwa`                     | Run production PWA offline and update acceptance in three browser engines.            |
 
 ## Project Test Seams
 
