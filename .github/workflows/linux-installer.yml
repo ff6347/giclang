@@ -1,0 +1,76 @@
+# ABOUTME: Builds and verifies the Linux desktop bundles (deb and AppImage).
+# ABOUTME: First CI gate for the Linux Tauri distribution; signing and release remain the macOS path.
+
+name: Build Linux installer
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up tools
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+
+      - name: Install Linux system dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test desktop bridge
+        run: pnpm test:desktop
+
+      - name: Build deb and AppImage bundles
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles deb appimage
+
+      - name: Verify bundles and record hashes
+        id: package
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
+          bundle="apps/desktop/src-tauri/target/release/bundle"
+          deb="$bundle/deb/GiC_${version}_amd64.deb"
+          appimage="$bundle/appimage/GiC_${version}_amd64.AppImage"
+          test -f "$deb"
+          test -f "$appimage"
+          file "$deb" | grep -Fq 'Debian binary package'
+          file "$appimage" | grep -Fq 'ELF'
+          (cd "$(dirname "$deb")" && shasum -a 256 "$(basename "$deb")" > "$(basename "$deb").sha256")
+          (cd "$(dirname "$appimage")" && shasum -a 256 "$(basename "$appimage")" > "$(basename "$appimage").sha256")
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'deb=%s\n' "$deb" >> "$GITHUB_OUTPUT"
+          printf 'appimage=%s\n' "$appimage" >> "$GITHUB_OUTPUT"
+
+      - name: Retain Linux bundles
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: gic-linux-amd64-${{ steps.package.outputs.version }}
+          path: |
+            ${{ steps.package.outputs.deb }}
+            ${{ steps.package.outputs.deb }}.sha256
+            ${{ steps.package.outputs.appimage }}
+            ${{ steps.package.outputs.appimage }}.sha256
+          if-no-files-found: error
