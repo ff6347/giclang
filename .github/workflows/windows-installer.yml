@@ -1,0 +1,91 @@
+# ABOUTME: Builds unsigned Windows x64 NSIS installers for manual desktop testing.
+# ABOUTME: Keeps native test failures visible independently of downloadable test artifacts.
+
+name: Build Windows installer
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-tests:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up tools
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Windows icon
+        run: pnpm --filter @giclang/desktop exec tauri icon ../editor/public/icons/gic-icon-512.png
+
+      - name: Test Windows desktop bridge
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc -- --test-threads=1
+
+  package-probe:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up tools
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+        with:
+          install_args: node pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Windows icon
+        run: pnpm --filter @giclang/desktop exec tauri icon ../editor/public/icons/gic-icon-512.png
+
+      - name: Build unsigned Windows x64 installer
+        run: pnpm --filter @giclang/desktop exec tauri build --bundles nsis --target x86_64-pc-windows-msvc
+
+      - name: Verify installer and record hash
+        id: package
+        shell: pwsh
+        run: |
+          $version = (Get-Content 'apps/desktop/src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).version
+          $installer = "apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/GiC_${version}_x64-setup.exe"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw "Expected Windows installer not found: $installer"
+          }
+          $header = Get-Content -LiteralPath $installer -AsByteStream -TotalCount 2
+          if ($header.Count -ne 2 -or $header[0] -ne 0x4d -or $header[1] -ne 0x5a) {
+            throw "Installer is not a Windows executable: $installer"
+          }
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path -Path $installer -Leaf)" | Set-Content -Encoding ascii "$installer.sha256"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "installer=$installer" >> $env:GITHUB_OUTPUT
+
+      - name: Retain unsigned installer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: gic-windows-x64-${{ steps.package.outputs.version }}-unsigned-probe
+          path: |
+            ${{ steps.package.outputs.installer }}
+            ${{ steps.package.outputs.installer }}.sha256
+          if-no-files-found: error
