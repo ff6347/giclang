@@ -12,3 +12,6 @@
 - [decision] Fabian specified Skill as the documentation label, with a Skill tab within editor Docs and the same content in website documentation. Agent remains the integrated panel label; `gic-agent` remains the skill identity.
 - [decision] Learners should learn standard skill terminology and transferable use with common AI tools for creative coding, not depend on a GIC-only workflow. Both documentation hosts expose the shared instructions, reference, copy action, and download.
 - [decision] Fabian added a Copy to clipboard button for examples. The plan covers copying code and description together from the shared example content in editor and website, with feedback and selectable-text fallback; no implementation was requested.
+- [decision] The plan also covers Copy page for every public documentation page and a generated llms.txt discovery index linking to clean Markdown page exports in editor and site. All derive from shared content; a combined full-text documentation export is a separate follow-up.
+- [technique] Web hosts own public routes and deployment-base URL mapping. Desktop Docs exposes the bundled index and copyable pages without creating an HTTP server.
+- [decision] Fabian asked to leave the untracked `.zed/` directory untouched; only planning files are included in this change.

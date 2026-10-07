@@ -22,6 +22,7 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 5. Use `gic-agent` for the skill frontmatter, containing folder, download identity, and managed workspace skill path. Label its documentation tab/entry **Skill**, and call the artifact the **GIC skill** (`gic-agent`). Keep **Agent** for the existing integrated panel; distinguish the skill's reusable instructions from the agent that uses them.
 6. Make the Skill tab part of the editor's Docs and expose the same Skill content within the website's documentation navigation. Follow each host's navigation conventions; do not make the skill available only through the Agent panel or a separate GIC-only setup experience.
 7. Keep the source host-neutral. Content validation and assembly belong to `@giclang/content`; public URLs, browser controls, and native embedding belong to their hosts.
+8. Make every public documentation page individually copyable in editor and site. Generate an `llms.txt` index covering the complete public documentation catalogue, with links to clean Markdown exports of each page, from the same content rather than a separately maintained AI documentation set.
 
 ## Existing integration points
 
@@ -82,6 +83,20 @@ Use the same package-owned example source and description on both hosts. Preserv
 
 Show success only after copying succeeds. If clipboard access fails or is unavailable, offer the same payload as selectable text for manual copying. The copy action must not open or modify the learner's current sketch.
 
+### Copy a documentation page
+
+Add **Copy page** to every documentation page in the editor and website, including Skill. Copy the page title and complete learner-facing Markdown content, preserving code blocks, lists, tables, and references without YAML frontmatter, navigation chrome, or rendered HTML. Resolve any assembled content from the same sources used to display the page; copying Skill must not omit its canonical instructions or leave an unresolved include.
+
+Resolve relative page and asset links against host-provided public URLs so they remain useful outside GIC. Do not leak build paths, local filesystem locations, or desktop-only URLs. The copied content itself must be usable without browsing; do not copy only the page URL. Reuse clipboard success feedback and selectable-text fallback, and keep editor page copying available from bundled content without a network request.
+
+### Discover the whole documentation with llms.txt
+
+Generate an `llms.txt` index from the complete public documentation catalogue, including Skill. Follow the [llms.txt proposal](https://llmstxt.org/): project heading, concise context, and grouped Markdown links to detailed Markdown pages. Publish directly fetchable Markdown versions of every indexed page, derived from the same content used by Copy page and normal documentation rendering. Preserve stable page identities and existing ordering; keep HTTP routes and absolute public URLs host-owned.
+
+Both website and browser-editor deployments expose the generated index and Markdown pages through static public assets/routes, respecting their deployment base paths. In the desktop editor, expose the bundled index for copying or downloading and retain per-page copying; do not create an HTTP server merely to expose these files. Make the index discoverable from Docs in editor and site, and directly validate every generated link against published output.
+
+`llms.txt` is a compact discovery index, not a full-text export of all docs and not a guarantee that a provider will discover or fetch them. Chats without browsing use Copy page or Copy skill and reference. A combined full-documentation text export such as `llms-full.txt` is a separate possible follow-up, not required for this increment. Do not add an AI service, MCP server, or hand-maintained duplicate documentation.
+
 ### Download a skill
 
 Provide **Download skill (ZIP)** with this structure:
@@ -107,7 +122,8 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 3. **Handle existing workspaces safely.** Before implementing path migration, confirm how existing `.agents/skills/gic-tutor/` files and digest records should be handled. Never discard modified or explicitly kept files. Present any required migration choice to Fabian; do not silently introduce aliases or backward compatibility. Exercise install, repair, update, keep, replace, and uninstall against real temporary files.
 4. **Expose the shared content.** Add package-owned assembly for the copy payload and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
 5. **Enable example copying.** Assemble one text payload from each example's code and description and expose **Copy to clipboard** on existing example surfaces in the editor and website. Reuse the clipboard feedback/fallback behavior where practical; do not introduce another example catalogue.
-6. **Verify learner use.** Exercise copy/paste in real ChatGPT and Claude conversations. Test actual skill uploads where an authorized eligible account is available. Record unsupported or untested combinations honestly and keep copy/paste available as the fallback.
+6. **Make documentation portable.** Add Copy page throughout editor and site Docs. Generate the complete `llms.txt` index and clean Markdown page exports through the shared content assembly, then publish them with each web host's routing/base-path conventions and expose the bundled index in desktop Docs. Validate links against clean production builds.
+7. **Verify learner use.** Exercise copy/paste in real ChatGPT and Claude conversations. Test actual skill uploads where an authorized eligible account is available. Record unsupported or untested combinations honestly and keep copy/paste available as the fallback.
 
 ## Verification
 
@@ -116,6 +132,8 @@ For executable behavior, follow red-green TDD at the narrowest seam:
 - Assemble copy text from fixture instruction/reference inputs and verify neither is omitted or altered; do not assert the wording of production prose.
 - Create and extract a real ZIP, verify its file structure and referenced-file availability, and compare its contents with the package-owned inputs.
 - Assemble example copy payloads from fixture code and Markdown descriptions, verifying exact code preservation, inclusion of the description, and exclusion of frontmatter/rendered HTML without pinning production prose. Exercise the real example buttons on both hosts, checking clipboard contents, success feedback, failure fallback, and preservation of the current sketch.
+- Test fixture-driven documentation serialization and host-provided URL resolution, preserving titles, code blocks, and Markdown while excluding frontmatter and resolving relative links. Exercise Copy page and its feedback/fallback on both hosts, including editor copying without network access.
+- Directly validate built `llms.txt` and Markdown exports for complete public-page coverage, resolvable links, correct content types, deployment base paths, absence of local paths, and inclusion of assembled Skill content. Test executable index/URL assembly with fixtures rather than pinning production prose or declarative file contents.
 - Exercise managed-file provisioning and any approved migration with real temporary files, including modified and kept support files.
 - Preserve deterministic integrated-Agent tests proving reference lookup, enabled-example lookup, context handling, and absence of arbitrary shell/file/web capabilities.
 - Drive the real editor Docs navigation and website documentation navigation to reach Skill and exercise copy, clipboard failure fallback, visible source presentation, and downloads on both hosts. Test browser behavior without provider mocks or test-only DOM state.
@@ -132,6 +150,9 @@ Review declarative frontmatter, links, and prose directly. Run the applicable co
 - Learners can explain what a skill is and use this one with common external AI tools without relying on the integrated GIC Agent.
 - Copy/paste includes the instructions and reference, with an accessible fallback when clipboard access fails.
 - Examples in the editor and website offer **Copy to clipboard** that copies both the complete example code and its description, with success feedback and manual-copy fallback, without changing the current sketch.
+- Every documentation page in editor and site offers Copy page with its title and complete Markdown content, preserved code, portable links, success feedback, and manual-copy fallback. Bundled editor content is copyable without a network request.
+- Both web deployments publish an `llms.txt` index covering all public docs and clean Markdown versions of every indexed page; the desktop editor exposes the bundled index without requiring a server. Docs makes the index discoverable on both hosts.
+- The documentation index, copied pages, and Markdown exports derive from shared content; no independently maintained AI documentation is introduced.
 - The ZIP contains the matching `gic-agent` folder and its reference and works through verified provider upload paths; unverified/unavailable paths are labeled and offer copy/paste.
 - Existing learner files, kept policies, and sketches remain protected during any approved workspace migration.
 - The Agent continues to guide beginners rather than produce complete assignment solutions.
