@@ -58,7 +58,9 @@ function registerIpc() {
 		});
 		await recordEvidence(
 			result.aborted ? "pi-stream-cancelled" : "pi-stream-complete",
-			{ text: result.text },
+			{
+				text: result.text,
+			},
 		);
 		return result;
 	});
