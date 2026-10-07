@@ -77,7 +77,7 @@ jobs:
             throw "Installer is not a Windows executable: $installer"
           }
           $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $(Split-Path -Path $installer -Leaf)" | Set-Content -Encoding ascii "$installer.sha256"
+          "$hash  $(Split-Path -Path $installer -Leaf)`n" | Set-Content -Encoding ascii -NoNewline "$installer.sha256"
           "version=$version" >> $env:GITHUB_OUTPUT
           "installer=$installer" >> $env:GITHUB_OUTPUT
 
