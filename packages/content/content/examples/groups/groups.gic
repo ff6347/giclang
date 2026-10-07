@@ -1,9 +1,9 @@
-// ABOUTME: Fills a regular square grid using one of six seeded cell sizes.
+// ABOUTME: Fills a regular square grid using one of six random cell sizes.
 // ABOUTME: Enlarges four diagonal cells so similarity reveals a distinct group.
 // Adapted from Fabian Morón Zirfas's Groups:
 // https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/grid/processing/groups
 
-randomSeed(820);
+
 background("#ffffff");
 fill("#000000");
 stroke("#000000");
