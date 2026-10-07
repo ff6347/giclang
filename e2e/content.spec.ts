@@ -55,6 +55,12 @@ test("opens the shared Skill from editor Docs", async ({ page }) => {
 		await expect(skillContent).not.toContainText(toolInstruction);
 	}
 	await expect(
+		article.getByRole("button", { name: "Copy skill and reference" }),
+	).toBeVisible();
+	await expect(
+		article.getByRole("button", { name: "Download skill (ZIP)", exact: true }),
+	).toBeVisible();
+	await expect(
 		skillContent.getByRole("heading", {
 			name: "GiC agent skill",
 			exact: true,

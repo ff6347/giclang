@@ -13,11 +13,23 @@ A common portable skill layout has a `SKILL.md` file and a `references/` folder 
 
 You can use the instructions manually with ChatGPT, Claude, or another assistant that accepts text in a conversation:
 
-1. Start a conversation and paste the GiC skill instructions below.
-2. Paste the language reference when you want help with GiC syntax or built-ins.
+1. Choose **Copy skill and reference** to copy both complete texts.
+2. Start a conversation and paste the copied instructions and reference.
 3. Share the relevant sketch or error details, then ask for one next step or an explanation.
 
 A regular chat cannot see the GiC editor or your local files automatically. Include only the sketch and context you choose to share: pasted content is sent to your chosen AI provider.
+
+### Copy the skill and reference
+
+Choose **Copy skill and reference** to copy the complete skill, language reference, and a short instruction for starting a conversation. If clipboard access is unavailable or blocked, a read-only text area appears with the same complete content. Use your normal keyboard copy command to copy it manually, then paste it into the conversation. Copying does not send anything to an assistant or change your sketch. This path needs no API key, paid plugin, browsing, or terminal. Editor copying and downloading use bundled content and work offline; chatting with a provider is a separate step.
+
+### Download and upload the ZIP
+
+Choose **Download skill (ZIP)** to save `gic-agent.zip`. For a filesystem-based assistant, extract the ZIP without renaming its files: `SKILL.md` refers to `references/language.md` inside that folder. The assistant can use these files only if its tools and configuration let it discover or open them; extraction does not install the skill or make it visible to every assistant. A downloaded or extracted copy is not automatically updated when the maintained skill changes.
+
+Anthropic currently documents ZIP uploads for Claude. With code execution and file creation enabled, go to **Customize → Skills → + → Create skill → Upload a skill** and choose the ZIP. Toggle the uploaded skill on in the Skills list. Organization settings can affect availability. This upload path is documented, but this `gic-agent.zip` archive has not been tested with a Claude account. See [Anthropic's current instructions](https://support.claude.com/en/articles/12512180-use-skills-in-claude).
+
+Standalone skill ZIP upload to ChatGPT has not been verified here. Use **Copy skill and reference** as the fallback; see [OpenAI's Skills in ChatGPT documentation](https://help.openai.com/en/articles/20001066-skills-in-chatgpt) for current product information.
 
 ## Use an installed skill
 

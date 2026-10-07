@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { readGicAgentExport } from "@giclang/content/node";
 import DocsLayout from "../../layouts/docs.astro";
 
 export async function getStaticPaths() {
@@ -12,11 +13,100 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+const skillExport =
+	entry.id === "skill" ? await readGicAgentExport() : undefined;
 ---
 
 <DocsLayout>
 	<main>
 		<h1>{entry.data.title}</h1>
+		{skillExport && (
+			<section class="skill-actions" aria-label="Skill actions">
+				<button type="button" data-copy-skill>
+					Copy skill and reference
+				</button>
+				<a href={`${import.meta.env.BASE_URL}skills/gic-agent.zip`} download>
+					Download skill (ZIP)
+				</a>
+				<a href={`${import.meta.env.BASE_URL}skills/gic-agent/SKILL.md`}>
+					Inspect original SKILL.md
+				</a>
+				<a
+					href={`${import.meta.env.BASE_URL}skills/gic-agent/references/language.md`}
+				>
+					Inspect language reference
+				</a>
+				<p data-copy-status role="status" aria-live="polite"></p>
+				<details data-copy-details>
+					<summary>Inspect or copy the complete payload</summary>
+					<label for="skill-copy-payload">
+						Skill and language reference text
+					</label>
+					<textarea
+						id="skill-copy-payload"
+						aria-label="Skill and language reference text"
+						readonly
+					>{skillExport.copyText}</textarea>
+				</details>
+			</section>
+		)}
 		<article set:html={entry.data.html} />
 	</main>
 </DocsLayout>
+
+<script>
+	const copyButton =
+		document.querySelector<HTMLButtonElement>("[data-copy-skill]");
+	const copyStatus = document.querySelector<HTMLElement>("[data-copy-status]");
+	const copyPayload = document.querySelector<HTMLTextAreaElement>(
+		"#skill-copy-payload",
+	);
+	const copyDetails = document.querySelector<HTMLDetailsElement>(
+		"[data-copy-details]",
+	);
+
+	if (copyButton && copyStatus && copyPayload && copyDetails) {
+		copyButton.addEventListener("click", async () => {
+			copyButton.disabled = true;
+			copyStatus.textContent = "";
+
+			try {
+				if (!navigator.clipboard?.writeText) {
+					throw new Error("Clipboard access is unavailable.");
+				}
+				await navigator.clipboard.writeText(copyPayload.value);
+				copyDetails.open = false;
+				copyStatus.textContent = "Skill and reference copied.";
+			} catch {
+				copyDetails.open = true;
+				copyPayload.focus();
+				copyPayload.select();
+				copyStatus.textContent =
+					"Clipboard access is unavailable or was blocked. Copy the complete text below manually.";
+			} finally {
+				copyButton.disabled = false;
+			}
+		});
+	}
+</script>
+
+<style>
+	.skill-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.skill-actions > [data-copy-status],
+	.skill-actions > details {
+		flex-basis: 100%;
+	}
+
+	.skill-actions textarea {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		min-height: 18rem;
+		font: inherit;
+	}
+</style>

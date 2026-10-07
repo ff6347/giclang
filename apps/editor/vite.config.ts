@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { validateExampleFiles } from "@giclang/content/model";
-import { readGicAgentSkill } from "@giclang/content/node";
+import { readGicAgentExport, readGicAgentSkill } from "@giclang/content/node";
 import {
 	compileMarkdown,
 	compileSkillDocumentation,
@@ -110,6 +110,12 @@ function productContent(): Plugin {
 			if (path === SKILL_GUIDE_PATH) {
 				this.addWatchFile(SKILL_SOURCE_PATH);
 				this.addWatchFile(LANGUAGE_REFERENCE_PATH);
+				if (id.endsWith("?skill-export")) {
+					return {
+						code: `export default ${JSON.stringify(await readGicAgentExport())};`,
+						map: null,
+					};
+				}
 			}
 			const images: string[] = [];
 			const resolveImage = (imagePath: string): string => {

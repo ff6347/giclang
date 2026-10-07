@@ -1,6 +1,7 @@
 import type { DocumentationContent } from "@giclang/content/model";
 import { documentationTargetId } from "../lib/documentation-links.ts";
 import { Markdown } from "./markdown";
+import { SkillActions } from "./skill-actions.tsx";
 
 interface DocsPanelProps {
 	readonly doc: DocumentationContent;
@@ -32,6 +33,7 @@ export function DocsPanel({ doc, docIds, onOpen }: DocsPanelProps) {
 			}}
 		>
 			<h2>{doc.title}</h2>
+			{doc.id === "skill" && <SkillActions />}
 			<Markdown content={doc} />
 		</article>
 	);

@@ -9,6 +9,10 @@ import {
 	showBothWorkspaces,
 } from "../../../e2e/documentation-layout.ts";
 import { setEditorSource } from "../../../e2e/editor.ts";
+import {
+	readCanonicalSkillExport,
+	expectDownloadedSkillArchive,
+} from "../../../e2e/skill-export.ts";
 
 const repeatExamplePath = fileURLToPath(
 	new URL(
@@ -179,6 +183,68 @@ test("reopens a moved documentation page from a relative link offline", async ({
 	await expect(
 		offlinePage.getByRole("article", { name: targetName }),
 	).toBeVisible();
+});
+
+test("copies and downloads the canonical Skill after an offline restart", async ({
+	context,
+	page,
+}, testInfo) => {
+	test.setTimeout(60_000);
+	const expected = await readCanonicalSkillExport();
+	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
+	await page.goto("/");
+	await waitForServiceWorker(page);
+	const offlinePage = await restartOffline(context, page);
+	await expect(offlinePage.locator(".monaco-editor")).toBeVisible();
+	const sourceBefore = await offlinePage
+		.locator(".view-line")
+		.allTextContents();
+	await offlinePage.getByRole("tab", { name: "Docs", exact: true }).click();
+	await offlinePage
+		.getByRole("tabpanel", { name: "Docs" })
+		.getByRole("tab", { name: "Skill", exact: true })
+		.click();
+	const article = offlinePage.getByRole("article", { name: "Skill" });
+	const requests: string[] = [];
+	offlinePage.on("request", (request) => requests.push(request.url()));
+	if (testInfo.project.name === "chrome") {
+		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+	}
+	await article
+		.getByRole("button", { name: "Copy skill and reference" })
+		.click();
+	await expect(article.getByRole("status")).toHaveText(
+		/Skill and reference copied\.|Clipboard access is unavailable or was blocked/,
+	);
+	if (testInfo.project.name === "chrome") {
+		await expect(article.getByRole("status")).toHaveText(
+			"Skill and reference copied.",
+		);
+		expect(
+			await offlinePage.evaluate(() => navigator.clipboard.readText()),
+		).toBe(expected.copyText);
+	}
+	const manual = article.locator("details").first();
+	if (
+		!(await manual.evaluate((element) => (element as HTMLDetailsElement).open))
+	) {
+		await manual.locator("summary").click();
+	}
+	await expect(
+		article.getByRole("textbox", { name: "Skill and language reference text" }),
+	).toHaveValue(expected.copyText);
+	const download = offlinePage.waitForEvent("download");
+	await article
+		.getByRole("button", { name: "Download skill (ZIP)", exact: true })
+		.click();
+	await expectDownloadedSkillArchive(await download, expected);
+	expect(requests).toEqual([]);
+	await offlinePage
+		.getByRole("tab", { name: "Gestalten", exact: true })
+		.click();
+	expect(await offlinePage.locator(".view-line").allTextContents()).toEqual(
+		sourceBefore,
+	);
 });
 
 test.afterEach(async () => {

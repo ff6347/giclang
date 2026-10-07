@@ -43,18 +43,31 @@ test(
 			server: { middlewareMode: true, preTransformRequests: false },
 		});
 		const transformSkillGuide = async () => {
-			const result = await server.transformRequest(`/@fs${skillGuidePath}`);
-			assert.ok(result);
-			return result.code;
+			const results = await Promise.all([
+				server.transformRequest(`/@fs${skillGuidePath}`),
+				server.transformRequest(`/@fs${skillGuidePath}?skill-export`),
+			]);
+			assert.ok(results[0]);
+			assert.ok(results[1]);
+			assert.ok(results[1].code.includes('"copyText"'));
+			assert.ok(results[1].code.includes('"archiveBase64"'));
+			return results.map((result) => result!.code);
 		};
 		const waitForFixture = async (fixture: string, present: boolean) => {
 			for (let attempt = 0; attempt < 50; attempt++) {
-				if ((await transformSkillGuide()).includes(fixture) === present) return;
+				if (
+					(await transformSkillGuide()).every(
+						(code) => code.includes(fixture) === present,
+					)
+				)
+					return;
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}
 			assert.strictEqual(
-				(await transformSkillGuide()).includes(fixture),
-				present,
+				(await transformSkillGuide()).every(
+					(code) => code.includes(fixture) === present,
+				),
+				true,
 			);
 		};
 
