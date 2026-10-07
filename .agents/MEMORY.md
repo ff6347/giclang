@@ -122,9 +122,7 @@
 - [technique] Codex refresh is serialized; `auth.json` replaces a rotated token only while its previous refresh token and account still match. Sign-out or account switching prevents a delayed refresh from restoring prior credentials.
 - [decision] Desktop Codex verification opens the fixed OpenAI URL through a native Tauri opener command, not a general webview URL permission. The PWA has no Codex sign-in link.
 - [risk] Codex issue `953796c` remains open until the packaged real-subscription refresh/restart/stream/sign-out smoke and required Windows credential/package validation are evidenced.
-- [risk] The integrated tutor embeds the bundled tutor skill, while external assistants read the installed workspace copy that may be user-modified. Resolve which policy version is authoritative before release.
-- [decision] The approved planning scope for product `gic-agent` is one content-package skill shared by desktop and documentation, with a conditional editor-only tool section and the same bundled reference. Present it as Skill within editor Docs and website documentation; teach standard skill terminology and use with common external AI tools rather than a GIC-only workflow. Initial distribution is copy/paste or ZIP/folder only; marketplaces, plugins, and automatic upstream updates are excluded. The plan also includes example clipboard buttons that copy code and description together, Copy page for all public docs, a generated llms.txt discovery index linking to clean Markdown page exports, and a complete llms-full.txt export with Copy all docs and Download all docs in editor and website, all derived from shared content. Implementation and existing-workspace migration remain pending; see `.agents/plans/gic-agent-content.md`.
-- [decision] Shared-skill delivery preserves the integrated Agent's bundled-skill loading and learner-modified installed copies for external assistants; policy-authority issue `0e7c1ca` is not a blocker and remains open. Desktop Support files labels the artifact Skill and must show the actual configured installation directory and resolved support-file paths. These are planning requirements, not implemented behavior.
+
 - [decision] The browser-neutral public language entry point is `packages/core/src/core.ts`, exported from `@giclang/core`; the Node CLI resides in `packages/cli/src/main.ts`.
 - [decision] `Token` and `TokenType` remain internal until a public core tokenization operation returns them; exporting types without a corresponding operation would enlarge the API without serving a caller.
 - [decision] `parseSource(source)` returns a discriminated `ParseResult` with `diagnostics` on both branches: success has `ok: true` plus a `Program`, while failure has `ok: false`. Keeping diagnostics present on success leaves room for future warnings without changing the public result shape.
@@ -250,6 +248,19 @@
 - [preference] Fabian's personal learning comments are intentional working notes; agents preserve them unless he requests comment review or removal.
 
 - [preference] Finish the macOS workflow before platform-specific Windows/Linux validation; keep the tutor-less PWA available as an interim fallback.
+
+## Shared Skill and Documentation (Planned)
+
+The requirements below are approved planning scope, not implemented behavior. `.agents/plans/gic-agent-content.md` defines six proposed vertical slices; implementation and publication of the complete issue breakdown remain pending.
+
+- [preference] Teach standard skill terminology and transferable creative-coding workflows with common AI tools rather than a GIC-only workflow. Call reusable instructions Skill and the integrated assistant panel Agent.
+- [decision] Maintain one product `gic-agent` skill and language reference in `packages/content`, consumed by desktop and a Skill tab/entry within editor and website Docs. Keep editor tool guidance in a conditional section of the same skill; keep skill metadata separate from Docs metadata and public URLs host-owned.
+- [decision] Initial skill distribution is self-contained copy/paste or ZIP/folder only; marketplaces, plugins, and automatic upstream updates are excluded.
+- [decision] Shared-content exports cover example code plus descriptions, complete individual documentation pages, an `llms.txt` discovery index with Markdown page links, and complete `llms-full.txt` text with Copy all docs and Download all docs. Editor and site expose the actions; bundled editor copying/downloading must work offline without silent truncation or an added desktop server.
+- [decision] Slice 1 preserves the integrated Agent's bundled-skill loading and learner-modified installed copies for external assistants. Policy-authority issue `0e7c1ca` remains open for release consideration but is not a blocker for shared-source delivery.
+- [decision] Desktop Support files must label the artifact Skill rather than Agent policy and show the actual configured installation directory and resolved managed-file paths, including accurate missing/uninstalled states and location changes.
+- [risk] Shipped frontmatter already says `gic-agent`, while managed folders use `gic-tutor`; migration must preserve modified/kept files and manifest records.
+- [risk] ChatGPT standalone-skill ZIP acceptance remains unverified; retain copy/paste and do not promise upload compatibility without an authorized test.
 
 ## Issue Tracking
 
