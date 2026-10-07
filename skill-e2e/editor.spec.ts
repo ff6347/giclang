@@ -1,5 +1,5 @@
-// ABOUTME: Exercises Skill copy, fallback, source inspection, and ZIP download in the editor.
-// ABOUTME: Uses real Chromium permissions, clipboard contents, Monaco input, and recovery storage.
+// ABOUTME: Verifies the editor exposes only the raw-skill and ZIP links.
+// ABOUTME: Preserves the active sketch while exercising keyboard download and narrow layout.
 
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "../e2e/editor.ts";
@@ -7,19 +7,11 @@ import {
 	expectDownloadedSkillArchive,
 	readCanonicalSkillExport,
 } from "../e2e/skill-export.ts";
-import {
-	activateByKeyboard,
-	denyClipboardWritePermission,
-	expectNoHorizontalOverflow,
-	grantClipboardPermissions,
-	readClipboard,
-	restoreClipboardPermissions,
-} from "./support.ts";
+import { activateByKeyboard, expectNoHorizontalOverflow } from "./support.ts";
 
-const fallbackTextName = "Skill and language reference text";
+const skillLinkNames = ["Download skill (ZIP)", "View raw skill"];
 
-test("copies and downloads the complete canonical Skill from editor Docs", async ({
-	browser,
+test("exposes only raw-skill and ZIP links in editor Docs", async ({
 	page,
 }) => {
 	const expected = await readCanonicalSkillExport();
@@ -41,76 +33,52 @@ test("copies and downloads the complete canonical Skill from editor Docs", async
 	await page.getByRole("tab", { name: "Docs", exact: true }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
 	await docs.getByRole("tab", { name: "Skill", exact: true }).click();
-	const article = docs.getByRole("article", { name: "Skill" });
-	const copyButton = article.getByRole("button", {
-		name: "Copy skill and reference",
-	});
-	const status = article.getByRole("status");
-	const fallback = article.locator("details").first();
-	const payload = article.getByRole("textbox", { name: fallbackTextName });
-
-	await grantClipboardPermissions(page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toHaveText("Skill and reference copied.");
-	expect(await readClipboard(page)).toBe(expected.copyText);
-	expect(expected.copyText).not.toContain("GiC editor agent only");
-	for (const toolInstruction of [
-		"search_reference",
-		"read_reference",
-		"search_examples",
-	]) {
-		expect(expected.copyText).not.toContain(toolInstruction);
-	}
-	await expect(fallback).toHaveJSProperty("open", false);
-
-	await activateByKeyboard(page, fallback.locator("summary"));
-	await expect(payload).toBeVisible();
-	await expect(payload).toHaveValue(expected.copyText);
-	await expect(payload).toHaveJSProperty("readOnly", true);
-
-	await denyClipboardWritePermission(browser, page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toContainText(
-		"Clipboard access is unavailable or was blocked",
-	);
-	await expect(status).not.toHaveText("Skill and reference copied.");
-	await expect(fallback).toHaveJSProperty("open", true);
-	await expect(payload).toHaveValue(expected.copyText);
-	await expect(payload).toBeFocused();
+	const actions = docs
+		.getByRole("article", { name: "Skill" })
+		.getByRole("region", { name: "Skill actions" });
+	const links = actions.getByRole("link");
+	await expect(links).toHaveCount(2);
+	expect(await links.allTextContents()).toEqual(skillLinkNames);
+	await expect(actions.getByRole("button")).toHaveCount(0);
 	expect(
-		await payload.evaluate((element) => {
-			if (!(element instanceof HTMLTextAreaElement)) {
-				throw new Error("Expected the complete copy fallback textarea.");
-			}
+		await actions.locator("details, textarea, [role=status]").count(),
+	).toBe(0);
+	expect(
+		await actions.evaluate((element) => {
+			const style = getComputedStyle(element);
 			return {
-				start: element.selectionStart,
-				end: element.selectionEnd,
+				display: style.display,
+				flexWrap: style.flexWrap,
+				columnGap: style.columnGap,
+				rowGap: style.rowGap,
+				linkDecorations: Array.from(
+					element.querySelectorAll("a"),
+					(link) => getComputedStyle(link).textDecorationLine,
+				),
 			};
 		}),
-	).toEqual({ start: 0, end: expected.copyText.length });
-
-	await restoreClipboardPermissions(page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toHaveText("Skill and reference copied.");
-	expect(await readClipboard(page)).toBe(expected.copyText);
-	await expect(fallback).toHaveJSProperty("open", false);
-
-	const sourceDetails = article.locator("details").nth(1);
-	const inspect = sourceDetails.locator("summary");
-	await activateByKeyboard(page, inspect);
-	expect(await sourceDetails.locator("pre").nth(0).textContent()).toBe(
-		expected.skillSource,
-	);
-	expect(await sourceDetails.locator("pre").nth(1).textContent()).toBe(
-		expected.referenceSource,
-	);
-	await activateByKeyboard(page, inspect);
-
-	const downloadButton = article.getByRole("button", {
-		name: "Download skill (ZIP)",
+	).toEqual({
+		display: "flex",
+		flexWrap: "wrap",
+		columnGap: "12px",
+		rowGap: "12px",
+		linkDecorations: ["underline", "underline"],
 	});
+
+	const downloadLink = links.nth(0);
+	await expect(downloadLink).toHaveAttribute("download", "gic-agent.zip");
+	expect(await downloadLink.getAttribute("href")).toMatch(
+		/^data:application\/zip;base64,/,
+	);
+	const rawLink = links.nth(1);
+	await expect(rawLink).toHaveAttribute(
+		"href",
+		"https://giclang.cc/skills/gic-agent.txt",
+	);
+	await expect(rawLink).toHaveAttribute("target", "_blank");
+
 	const downloadPromise = page.waitForEvent("download");
-	await activateByKeyboard(page, downloadButton);
+	await activateByKeyboard(page, downloadLink);
 	await expectDownloadedSkillArchive(await downloadPromise, expected);
 
 	await page.setViewportSize({ width: 375, height: 812 });

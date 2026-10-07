@@ -7,7 +7,6 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import matter from "gray-matter";
 import { readGicAgentSkill, readGicAgentExport } from "../content-files.ts";
 import { createGicAgentExport } from "../skill-export.ts";
 
@@ -17,8 +16,6 @@ const skillBody =
 	"技能を保持する。".repeat(2_000) +
 	"\r\n";
 const skillSource = `---\r\nname: fixture\r\ndescription: fixture skill\r\n---${skillBody}`;
-const startInstruction =
-	"Paste the skill and language reference below into your assistant. Then send your sketch or diagnostic and ask for one next step.";
 const referenceSource =
 	'# Reference Ω\r\n\r\n## Values\r\n\r\n```gic\r\nprint("こんにちは");\r\n```\r\n\r\n' +
 	"Reference end marker.\r\n";
@@ -49,76 +46,17 @@ async function extractArchive(archiveBase64: string): Promise<{
 }
 
 describe("GiC agent export", () => {
-	it("returns the raw source and assembles the complete frontmatter-free copy text", () => {
+	it("assembles exact raw text from complete source files", () => {
 		const result = createGicAgentExport({ skillSource, referenceSource });
 
 		assert.equal(result.skillSource, skillSource);
 		assert.equal(result.referenceSource, referenceSource);
-		assert.ok(result.copyText.startsWith(startInstruction));
-		assert.ok(result.copyText.includes(skillBody));
-		assert.ok(result.copyText.endsWith(referenceSource));
-		assert.ok(!result.copyText.includes("name: fixture"));
-		assert.ok(!result.copyText.includes("description: fixture skill"));
 		assert.equal(
-			result.copyText,
+			result.rawText,
 			[
-				startInstruction,
-				"--- Skill instructions ---",
-				skillBody,
-				"--- Language reference ---",
-				referenceSource,
-			].join("\n\n"),
-		);
-	});
-
-	it("keeps source text without frontmatter unchanged", () => {
-		const skillSource = "# No frontmatter\n\nKeep this complete body.\n";
-		const result = createGicAgentExport({ skillSource, referenceSource });
-
-		assert.equal(result.skillSource, skillSource);
-		assert.equal(
-			result.copyText,
-			[
-				startInstruction,
-				"--- Skill instructions ---",
+				"--- gic-agent/SKILL.md ---",
 				skillSource,
-				"--- Language reference ---",
-				referenceSource,
-			].join("\n\n"),
-		);
-	});
-
-	it("keeps an empty LF-frontmatter source unchanged", () => {
-		const skillSource = "---\nname: empty\n---";
-		const result = createGicAgentExport({ skillSource, referenceSource });
-
-		assert.equal(result.skillSource, skillSource);
-		assert.ok(!result.copyText.includes("name: empty"));
-		assert.equal(
-			result.copyText,
-			[
-				startInstruction,
-				"--- Skill instructions ---",
-				"",
-				"--- Language reference ---",
-				referenceSource,
-			].join("\n\n"),
-		);
-	});
-
-	it("keeps an empty CRLF-frontmatter source unchanged", () => {
-		const skillSource = "---\r\nname: empty\r\n---";
-		const result = createGicAgentExport({ skillSource, referenceSource });
-
-		assert.equal(result.skillSource, skillSource);
-		assert.ok(!result.copyText.includes("name: empty"));
-		assert.equal(
-			result.copyText,
-			[
-				startInstruction,
-				"--- Skill instructions ---",
-				"",
-				"--- Language reference ---",
+				"--- gic-agent/references/language.md ---",
 				referenceSource,
 			].join("\n\n"),
 		);
@@ -164,12 +102,11 @@ describe("GiC agent export", () => {
 		assert.equal(result.skillSource, expectedSkillSource);
 		assert.equal(result.referenceSource, expectedReferenceSource);
 		assert.equal(
-			result.copyText,
+			result.rawText,
 			[
-				startInstruction,
-				"--- Skill instructions ---",
-				`\n${matter(expectedSkillSource).content}`,
-				"--- Language reference ---",
+				"--- gic-agent/SKILL.md ---",
+				expectedSkillSource,
+				"--- gic-agent/references/language.md ---",
 				expectedReferenceSource,
 			].join("\n\n"),
 		);

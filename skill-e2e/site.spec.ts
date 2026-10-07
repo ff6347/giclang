@@ -1,26 +1,16 @@
-// ABOUTME: Exercises the public Skill page copy, fallback, source links, and ZIP download.
-// ABOUTME: Navigates through site Docs and verifies real Chromium clipboard and archive bytes.
+// ABOUTME: Verifies the site exposes raw-skill and ZIP links with exact source output.
+// ABOUTME: Checks local popup navigation, keyboard download, and narrow layout in Chromium.
 
 import { expect, test } from "@playwright/test";
 import {
 	expectDownloadedSkillArchive,
 	readCanonicalSkillExport,
 } from "../e2e/skill-export.ts";
-import {
-	activateByKeyboard,
-	denyClipboardWritePermission,
-	expectNoHorizontalOverflow,
-	grantClipboardPermissions,
-	readClipboard,
-	restoreClipboardPermissions,
-} from "./support.ts";
+import { activateByKeyboard, expectNoHorizontalOverflow } from "./support.ts";
 
-const fallbackTextName = "Skill and language reference text";
+const skillLinkNames = ["Download skill (ZIP)", "View raw skill"];
 
-test("copies and downloads the complete canonical Skill from site Docs", async ({
-	browser,
-	page,
-}) => {
+test("exposes only raw-skill and ZIP links in site Docs", async ({ page }) => {
 	const expected = await readCanonicalSkillExport();
 	await page.goto("/");
 	await page
@@ -36,90 +26,71 @@ test("copies and downloads the complete canonical Skill from site Docs", async (
 	).toBeVisible();
 
 	const actions = page.getByRole("region", { name: "Skill actions" });
-	const copyButton = actions.getByRole("button", {
-		name: "Copy skill and reference",
-	});
-	const status = actions.getByRole("status");
-	const fallback = actions.locator("[data-copy-details]");
-	const payload = actions.getByRole("textbox", { name: fallbackTextName });
-
-	await grantClipboardPermissions(page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toHaveText("Skill and reference copied.");
-	expect(await readClipboard(page)).toBe(expected.copyText);
-	expect(expected.copyText).not.toContain("GiC editor agent only");
-	for (const toolInstruction of [
-		"search_reference",
-		"read_reference",
-		"search_examples",
-	]) {
-		expect(expected.copyText).not.toContain(toolInstruction);
-	}
-	await expect(fallback).toHaveJSProperty("open", false);
-
-	await activateByKeyboard(page, fallback.locator("summary"));
-	await expect(payload).toBeVisible();
-	await expect(payload).toHaveValue(expected.copyText);
-	await expect(payload).toHaveJSProperty("readOnly", true);
-
-	await denyClipboardWritePermission(browser, page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toContainText(
-		"Clipboard access is unavailable or was blocked",
-	);
-	await expect(status).not.toHaveText("Skill and reference copied.");
-	await expect(fallback).toHaveJSProperty("open", true);
-	await expect(payload).toHaveValue(expected.copyText);
-	await expect(payload).toBeFocused();
+	const links = actions.getByRole("link");
+	await expect(links).toHaveCount(2);
+	expect(await links.allTextContents()).toEqual(skillLinkNames);
+	await expect(actions.getByRole("button")).toHaveCount(0);
 	expect(
-		await payload.evaluate((element) => {
-			if (!(element instanceof HTMLTextAreaElement)) {
-				throw new Error("Expected the complete copy fallback textarea.");
-			}
+		await actions.locator("details, textarea, [role=status]").count(),
+	).toBe(0);
+	expect(
+		await actions.evaluate((element) => {
+			const style = getComputedStyle(element);
 			return {
-				start: element.selectionStart,
-				end: element.selectionEnd,
+				display: style.display,
+				flexWrap: style.flexWrap,
+				columnGap: style.columnGap,
+				rowGap: style.rowGap,
+				linkDecorations: Array.from(
+					element.querySelectorAll("a"),
+					(link) => getComputedStyle(link).textDecorationLine,
+				),
 			};
 		}),
-	).toEqual({ start: 0, end: expected.copyText.length });
-
-	await restoreClipboardPermissions(page);
-	await activateByKeyboard(page, copyButton);
-	await expect(status).toHaveText("Skill and reference copied.");
-	expect(await readClipboard(page)).toBe(expected.copyText);
-	await expect(fallback).toHaveJSProperty("open", false);
-
-	const inspectSkill = actions.getByRole("link", {
-		name: "Inspect original SKILL.md",
+	).toEqual({
+		display: "flex",
+		flexWrap: "wrap",
+		columnGap: "12px",
+		rowGap: "12px",
+		linkDecorations: ["underline", "underline"],
 	});
-	await inspectSkill.click();
-	await expect(page).toHaveURL(/\/skills\/gic-agent\/SKILL\.md$/);
-	expect(
-		await page.locator("body").evaluate((element) => element.textContent),
-	).toBe(expected.skillSource);
-	await page.goBack();
-	await expect(
-		page.getByRole("heading", { name: "Skill", exact: true }),
-	).toBeVisible();
 
-	const inspectReference = page.getByRole("link", {
-		name: "Inspect language reference",
-	});
-	await inspectReference.click();
-	await expect(page).toHaveURL(
-		/\/skills\/gic-agent\/references\/language\.md$/,
+	const downloadLink = links.nth(0);
+	expect(await downloadLink.getAttribute("download")).not.toBeNull();
+	const downloadURL = new URL(
+		(await downloadLink.getAttribute("href")) ?? "",
+		page.url(),
 	);
-	expect(
-		await page.locator("body").evaluate((element) => element.textContent),
-	).toBe(expected.referenceSource);
-	await page.goBack();
-	await expect(
-		page.getByRole("heading", { name: "Skill", exact: true }),
-	).toBeVisible();
+	expect(downloadURL.origin).toBe(new URL(page.url()).origin);
+	expect(downloadURL.pathname).toBe("/skills/gic-agent.zip");
 
-	const downloadLink = page.getByRole("link", {
-		name: "Download skill (ZIP)",
-	});
+	const rawLink = links.nth(1);
+	await expect(rawLink).toHaveAttribute("target", "_blank");
+	const rawURL = new URL(
+		(await rawLink.getAttribute("href")) ?? "",
+		page.url(),
+	);
+	expect(rawURL.origin).toBe(new URL(page.url()).origin);
+	expect(rawURL.pathname).toBe("/skills/gic-agent.txt");
+	const popupPromise = page.waitForEvent("popup");
+	const responsePromise = page
+		.context()
+		.waitForEvent("response", (response) => response.url() === rawURL.href);
+	await activateByKeyboard(page, rawLink);
+	const [rawPage, rawResponse] = await Promise.all([
+		popupPromise,
+		responsePromise,
+	]);
+	try {
+		await expect(rawPage).toHaveURL(rawURL.href);
+		await rawPage.waitForLoadState("domcontentloaded");
+		expect(rawResponse.status()).toBe(200);
+		expect(rawResponse.headers()["content-type"]).toContain("text/plain");
+		expect(await rawPage.locator("body").textContent()).toBe(expected.rawText);
+	} finally {
+		await rawPage.close();
+	}
+
 	const downloadPromise = page.waitForEvent("download");
 	await activateByKeyboard(page, downloadLink);
 	await expectDownloadedSkillArchive(await downloadPromise, expected);

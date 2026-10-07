@@ -185,25 +185,9 @@ canvas {
 }
 
 .skill-actions {
-	min-width: 0;
-}
-
-.skill-action-buttons {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--s2);
-}
-
-.skill-actions textarea {
-	box-sizing: border-box;
-	display: block;
-	font: inherit;
-	width: 100%;
-}
-
-.skill-actions pre {
-	max-width: 100%;
-	overflow-x: auto;
+	gap: 0.75rem;
 }
 
 .content-table-scroll {

@@ -185,10 +185,10 @@ test("reopens a moved documentation page from a relative link offline", async ({
 	).toBeVisible();
 });
 
-test("copies and downloads the canonical Skill after an offline restart", async ({
+test("downloads the canonical Skill after an offline restart", async ({
 	context,
 	page,
-}, testInfo) => {
+}) => {
 	test.setTimeout(60_000);
 	const expected = await readCanonicalSkillExport();
 	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
@@ -207,35 +207,15 @@ test("copies and downloads the canonical Skill after an offline restart", async 
 	const article = offlinePage.getByRole("article", { name: "Skill" });
 	const requests: string[] = [];
 	offlinePage.on("request", (request) => requests.push(request.url()));
-	if (testInfo.project.name === "chrome") {
-		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-	}
-	await article
-		.getByRole("button", { name: "Copy skill and reference" })
-		.click();
-	await expect(article.getByRole("status")).toHaveText(
-		/Skill and reference copied\.|Clipboard access is unavailable or was blocked/,
-	);
-	if (testInfo.project.name === "chrome") {
-		await expect(article.getByRole("status")).toHaveText(
-			"Skill and reference copied.",
-		);
-		expect(
-			await offlinePage.evaluate(() => navigator.clipboard.readText()),
-		).toBe(expected.copyText);
-	}
-	const manual = article.locator("details").first();
-	if (
-		!(await manual.evaluate((element) => (element as HTMLDetailsElement).open))
-	) {
-		await manual.locator("summary").click();
-	}
+	const actions = article.getByRole("region", { name: "Skill actions" });
+	await expect(actions.getByRole("link")).toHaveCount(2);
 	await expect(
-		article.getByRole("textbox", { name: "Skill and language reference text" }),
-	).toHaveValue(expected.copyText);
+		actions.getByRole("link", { name: "View raw skill", exact: true }),
+	).toHaveAttribute("href", "https://giclang.cc/skills/gic-agent.txt");
+	await expect(actions.locator("button, details, textarea")).toHaveCount(0);
 	const download = offlinePage.waitForEvent("download");
 	await article
-		.getByRole("button", { name: "Download skill (ZIP)", exact: true })
+		.getByRole("link", { name: "Download skill (ZIP)", exact: true })
 		.click();
 	await expectDownloadedSkillArchive(await download, expected);
 	expect(requests).toEqual([]);

@@ -3,9 +3,6 @@
 
 declare module "*?skill-export" {
 	const content: {
-		readonly copyText: string;
-		readonly skillSource: string;
-		readonly referenceSource: string;
 		readonly archiveBase64: string;
 	};
 	export default content;

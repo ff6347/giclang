@@ -13,7 +13,7 @@ import { test } from "node:test";
 const site = fileURLToPath(new URL("../../", import.meta.url));
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
 
-test("build prerenders the About content", async () => {
+test("build renders exactly two Skill actions and the combined source document", async () => {
 	await promisify(execFile)("pnpm", ["build:site"], {
 		cwd: repository,
 		timeout: 120_000,
@@ -29,9 +29,29 @@ test("build prerenders the About content", async () => {
 		"utf8",
 	);
 	assert.match(skillPage, /<h1[^>]*>Skill<\/h1>/);
-	const skillActions = skillPage.indexOf('aria-label="Skill actions"');
+	const sectionLabel = skillPage.indexOf('aria-label="Skill actions"');
+	const actionsStart = skillPage.lastIndexOf("<section", sectionLabel);
+	const actionsContentStart = skillPage.indexOf(">", actionsStart) + 1;
+	const actionsEnd = skillPage.indexOf("</section>", actionsContentStart);
 	const skillArticle = skillPage.indexOf("<article");
-	assert.ok(skillActions >= 0 && skillActions < skillArticle);
+	assert.ok(actionsStart >= 0 && actionsStart < skillArticle);
+	assert.ok(actionsEnd > actionsContentStart);
+	const actionsContent = skillPage.slice(actionsContentStart, actionsEnd);
+	const links = [...actionsContent.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+	assert.equal(links.length, 2);
+	assert.deepEqual(
+		links.map((link) => (link[2] ?? "").replace(/<[^>]*>/g, "").trim()),
+		["Download skill (ZIP)", "View raw skill"],
+	);
+	assert.match(links[0]?.[1] ?? "", /href="\/skills\/gic-agent\.zip"/);
+	assert.match(links[0]?.[1] ?? "", /\sdownload(?:\s|$)/);
+	assert.match(links[1]?.[1] ?? "", /href="\/skills\/gic-agent\.txt"/);
+	assert.match(links[1]?.[1] ?? "", /target="_blank"/);
+	assert.match(links[1]?.[1] ?? "", /rel="noopener noreferrer"/);
+	assert.equal(
+		actionsContent.replace(/<a\b[^>]*>[\s\S]*?<\/a>/g, "").trim(),
+		"",
+	);
 	assert.match(skillPage, /aria-label="Documentation"[\s\S]*?>[\s\S]*?Skill/);
 	assert.doesNotMatch(skillPage, /GiC editor agent only/);
 	assert.doesNotMatch(
@@ -40,34 +60,34 @@ test("build prerenders the About content", async () => {
 	);
 	assert.match(skillPage, /<h2>GiC agent skill<\/h2>/);
 	assert.match(skillPage, /<h2>Language reference<\/h2>/);
-	assert.match(skillPage, />Copy skill and reference</);
-	assert.match(skillPage, />Download skill \(ZIP\)</);
-	assert.match(skillPage, /aria-label="Skill and language reference text"/);
-	assert.match(skillPage, /readonly/);
-	assert.match(skillPage, /role="status"/);
-	const fallbackStart = skillPage.indexOf("<details");
-	const fallbackEnd = skillPage.indexOf("</details>", fallbackStart);
-	assert.ok(fallbackStart >= 0 && fallbackEnd > fallbackStart);
-	const fallback = skillPage.slice(fallbackStart, fallbackEnd);
-	assert.doesNotMatch(fallback, /<details[^>]*\sopen(?:\s|>)/);
-	assert.match(
-		fallback,
-		/<summary[^>]*>Inspect or copy the complete payload<\/summary>/,
-	);
-	assert.match(fallback, /<label[^>]*for="skill-copy-payload"/);
-	assert.match(fallback, /<textarea[^>]*readonly/);
-	assert.match(skillPage, /href="\/skills\/gic-agent\.zip"/);
-	assert.match(skillPage, /href="\/skills\/gic-agent\/SKILL\.md"/);
-	assert.match(
-		skillPage,
-		/href="\/skills\/gic-agent\/references\/language\.md"/,
-	);
 
-	const drawingPage = await readFile(
-		new URL("../../dist/docs/drawing/index.html", import.meta.url),
+	const canonicalSkill = await readFile(
+		new URL(
+			"../../../../packages/content/content/skills/gic-agent/SKILL.md",
+			import.meta.url,
+		),
 		"utf8",
 	);
-	assert.doesNotMatch(drawingPage, /Copy skill and reference|Download skill/);
+	const canonicalReference = await readFile(
+		new URL(
+			"../../../../packages/content/content/skills/gic-agent/references/language.md",
+			import.meta.url,
+		),
+		"utf8",
+	);
+	const rawText = [
+		"--- gic-agent/SKILL.md ---",
+		canonicalSkill,
+		"--- gic-agent/references/language.md ---",
+		canonicalReference,
+	].join("\n\n");
+	assert.equal(
+		await readFile(
+			new URL("../../dist/skills/gic-agent.txt", import.meta.url),
+			"utf8",
+		),
+		rawText,
+	);
 });
 
 test("skill routes publish source files and a ZIP of the exact canonical sources", async () => {
@@ -119,23 +139,6 @@ test("skill routes publish source files and a ZIP of the exact canonical sources
 			),
 			canonicalReference,
 		);
-		assert.equal(
-			await readFile(
-				new URL("../../dist/skills/gic-agent/SKILL.md", import.meta.url),
-				"utf8",
-			),
-			canonicalSkill,
-		);
-		assert.equal(
-			await readFile(
-				new URL(
-					"../../dist/skills/gic-agent/references/language.md",
-					import.meta.url,
-				),
-				"utf8",
-			),
-			canonicalReference,
-		);
 	} finally {
 		await rm(temporaryDirectory, { recursive: true, force: true });
 	}
@@ -171,12 +174,8 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 				path: "skills/gic-agent.zip",
 			},
 			{
-				href: "/workshop/skills/gic-agent/SKILL.md",
-				path: "skills/gic-agent/SKILL.md",
-			},
-			{
-				href: "/workshop/skills/gic-agent/references/language.md",
-				path: "skills/gic-agent/references/language.md",
+				href: "/workshop/skills/gic-agent.txt",
+				path: "skills/gic-agent.txt",
 			},
 		];
 		for (const { href } of exports) {
@@ -197,13 +196,15 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 			),
 			"utf8",
 		);
+		const rawText = [
+			"--- gic-agent/SKILL.md ---",
+			canonicalSkill,
+			"--- gic-agent/references/language.md ---",
+			canonicalReference,
+		].join("\n\n");
 		assert.equal(
 			await readFile(join(outputDirectory, exports[1].path), "utf8"),
-			canonicalSkill,
-		);
-		assert.equal(
-			await readFile(join(outputDirectory, exports[2].path), "utf8"),
-			canonicalReference,
+			rawText,
 		);
 
 		const archive = join(outputDirectory, exports[0].path);

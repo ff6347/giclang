@@ -34,7 +34,7 @@ export default defineConfig({
 			use: {
 				...devices["Desktop Chrome"],
 				browserName: "chromium",
-				baseURL: "http://127.0.0.1:4321",
+				baseURL: "http://127.0.0.1:4322",
 			},
 		},
 	],
@@ -49,8 +49,8 @@ export default defineConfig({
 		},
 		{
 			command:
-				"pnpm build:site && pnpm --filter @giclang/site exec astro preview --host 127.0.0.1 --port 4321",
-			url: "http://127.0.0.1:4321",
+				"pnpm build:site && pnpm --filter @giclang/site exec astro preview --host 127.0.0.1 --port 4322",
+			url: "http://127.0.0.1:4322",
 			reuseExistingServer: false,
 			timeout: 120_000,
 			stdout: "pipe",

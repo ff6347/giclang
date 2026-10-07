@@ -49,47 +49,54 @@ test(
 			]);
 			assert.ok(results[0]);
 			assert.ok(results[1]);
-			assert.ok(results[1].code.includes('"copyText"'));
-			assert.ok(results[1].code.includes('"archiveBase64"'));
-			return results.map((result) => result!.code);
+			const serialized = results[1].code.match(/export default (.*);/);
+			assert.ok(serialized?.[1]);
+			const value: unknown = JSON.parse(serialized[1]);
+			assert.ok(typeof value === "object" && value !== null);
+			assert.deepEqual(Object.keys(value), ["archiveBase64"]);
+			assert.ok(
+				"archiveBase64" in value && typeof value.archiveBase64 === "string",
+			);
+			return { guide: results[0].code, archive: value.archiveBase64 };
 		};
-		const waitForFixture = async (fixture: string, present: boolean) => {
+		const waitForFixture = async (
+			fixture: string,
+			present: boolean,
+			originalArchive: string,
+		) => {
 			for (let attempt = 0; attempt < 50; attempt++) {
+				const result = await transformSkillGuide();
 				if (
-					(await transformSkillGuide()).every(
-						(code) => code.includes(fixture) === present,
-					)
+					result.guide.includes(fixture) === present &&
+					(result.archive !== originalArchive) === present
 				)
 					return;
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}
-			assert.strictEqual(
-				(await transformSkillGuide()).every(
-					(code) => code.includes(fixture) === present,
-				),
-				true,
-			);
+			const result = await transformSkillGuide();
+			assert.equal(result.guide.includes(fixture), present);
+			assert.equal(result.archive !== originalArchive, present);
 		};
 
 		try {
-			assert.ok(await transformSkillGuide());
+			const { archive: originalArchive } = await transformSkillGuide();
 			const skillFixture = `editor-skill-watch-${randomUUID()}`;
 			await writeFile(
 				skillPath,
 				`${originalSkill.toString("utf8")}\n\n${skillFixture}\n`,
 			);
-			await waitForFixture(skillFixture, true);
+			await waitForFixture(skillFixture, true, originalArchive);
 			await writeFile(skillPath, originalSkill);
-			await waitForFixture(skillFixture, false);
+			await waitForFixture(skillFixture, false, originalArchive);
 
 			const referenceFixture = `editor-reference-watch-${randomUUID()}`;
 			await writeFile(
 				referencePath,
 				`${originalReference.toString("utf8")}\n\n${referenceFixture}\n`,
 			);
-			await waitForFixture(referenceFixture, true);
+			await waitForFixture(referenceFixture, true, originalArchive);
 			await writeFile(referencePath, originalReference);
-			await waitForFixture(referenceFixture, false);
+			await waitForFixture(referenceFixture, false, originalArchive);
 		} finally {
 			await Promise.all([
 				writeFile(skillPath, originalSkill),

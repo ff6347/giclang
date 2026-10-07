@@ -1,14 +1,13 @@
 // ABOUTME: Publishes the canonical GiC skill sources and archive as static routes.
-// ABOUTME: Emits only the three website-owned skill download and inspection paths.
+// ABOUTME: Emits only the website-owned ZIP and combined plaintext paths.
 
 import { Buffer } from "node:buffer";
 import type { APIRoute, GetStaticPaths } from "astro";
-import { readGicAgentExport, readGicAgentSkill } from "@giclang/content/node";
+import { readGicAgentExport } from "@giclang/content/node";
 
 export const getStaticPaths: GetStaticPaths = () => [
 	{ params: { path: "gic-agent.zip" } },
-	{ params: { path: "gic-agent/SKILL.md" } },
-	{ params: { path: "gic-agent/references/language.md" } },
+	{ params: { path: "gic-agent.txt" } },
 ];
 
 export const GET: APIRoute = async ({ params }) => {
@@ -22,15 +21,10 @@ export const GET: APIRoute = async ({ params }) => {
 		});
 	}
 
-	if (
-		params.path === "gic-agent/SKILL.md" ||
-		params.path === "gic-agent/references/language.md"
-	) {
-		const { skillSource, referenceSource } = await readGicAgentSkill();
-		const source =
-			params.path === "gic-agent/SKILL.md" ? skillSource : referenceSource;
-		return new Response(source, {
-			headers: { "Content-Type": "text/markdown; charset=utf-8" },
+	if (params.path === "gic-agent.txt") {
+		const { rawText } = await readGicAgentExport();
+		return new Response(rawText, {
+			headers: { "Content-Type": "text/plain; charset=utf-8" },
 		});
 	}
 

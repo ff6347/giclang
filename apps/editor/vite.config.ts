@@ -111,8 +111,9 @@ function productContent(): Plugin {
 				this.addWatchFile(SKILL_SOURCE_PATH);
 				this.addWatchFile(LANGUAGE_REFERENCE_PATH);
 				if (id.endsWith("?skill-export")) {
+					const { archiveBase64 } = await readGicAgentExport();
 					return {
-						code: `export default ${JSON.stringify(await readGicAgentExport())};`,
+						code: `export default ${JSON.stringify({ archiveBase64 })};`,
 						map: null,
 					};
 				}
