@@ -110,6 +110,9 @@ importers:
 
   packages/content:
     dependencies:
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       gray-matter:
         specifier: 4.0.3
         version: 4.0.3
@@ -3868,6 +3871,12 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution:
+      {
+        integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==,
+      }
 
   filelist@1.0.6:
     resolution:
@@ -8980,6 +8989,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
       picomatch: 4.0.5
+
+  fflate@0.8.3: {}
 
   filelist@1.0.6:
     dependencies:

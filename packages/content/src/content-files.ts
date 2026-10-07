@@ -3,6 +3,8 @@
 
 import { readFile, readdir } from "node:fs/promises";
 import matter from "gray-matter";
+import { createGicAgentExport } from "./skill-export.ts";
+import type { GicAgentExport } from "./skill-export.ts";
 import { compileMarkdown } from "./markdown-content.ts";
 
 export type ContentSection = "about" | "docs" | "examples";
@@ -22,6 +24,10 @@ export async function readGicAgentSkill(): Promise<GicAgentSkill> {
 		readFile(new URL("references/language.md", contentDirectory), "utf8"),
 	]);
 	return { skillSource, referenceSource };
+}
+
+export async function readGicAgentExport(): Promise<GicAgentExport> {
+	return createGicAgentExport(await readGicAgentSkill());
 }
 
 interface FileEntry {
