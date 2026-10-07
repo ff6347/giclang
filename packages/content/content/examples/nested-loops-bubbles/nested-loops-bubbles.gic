@@ -1,0 +1,14 @@
+// ABOUTME: Draws a grid of translucent, randomly sized bubbles.
+// ABOUTME: Adapts Fabian's nested-loop bubble sketch to GIC dimensions.
+// Source: https://snippets.qawsed.site/p5js/loop/nested-loops-bubbles/index.js
+randomSeed(225);
+background("black");
+strokeWidth(0.25);
+repeat(column, 1, 16) {
+	repeat(row, 1, 16) {
+		let x = column * 6.25;
+		let y = row * 6.25;
+		fill(65, 12, random(30, 230), random(0, 30));
+		circle(x, y, random(3.125, 8.75));
+	}
+}

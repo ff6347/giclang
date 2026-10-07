@@ -1,0 +1,21 @@
+// ABOUTME: Alternates horizontal and vertical line cells.
+// ABOUTME: Ports Fabian's checkerboard weave to the GIC canvas.
+// Source: https://snippets.qawsed.site/p5js/loop/weave-pattern/index.js
+background("lightgoldenrodyellow");
+stroke("black");
+strokeWidth(1);
+repeat(cell, 0, 25) {
+	let column = cell % 5;
+	let row = floor(cell / 5);
+	let left = column * 20;
+	let top = row * 20;
+	if (cell % 2 == 0) {
+		line(left, top + 5, left + 20, top + 5);
+		line(left, top + 10, left + 20, top + 10);
+		line(left, top + 15, left + 20, top + 15);
+	} else {
+		line(left + 5, top, left + 5, top + 20);
+		line(left + 10, top, left + 10, top + 20);
+		line(left + 15, top, left + 15, top + 20);
+	}
+}
