@@ -22,3 +22,11 @@
 - [technique] Passed desktop tests (161 passed, one existing live-provider smoke ignored), Cargo formatting, Clippy with warnings denied, and macOS app/DMG packaging.
 - [risk] `pnpm fmt:check` fails on pre-existing files because Oxfmt does not discover `.prettierrc.mjs`. Existing issue `3c2e51f` tracks that configuration problem. All slice files pass scoped Oxfmt checks using the existing config; unrelated formatting was not changed.
 - [risk] The packaged app launched, but macOS denied accessibility automation, so interactive native Settings and Agent verification is not claimed. No real provider completion or paid request was made. Existing Monaco chunk-size and site gray-matter eval warnings remain unrelated tracked concerns.
+
+## Editor prompt boundary
+
+- [decision] Fabian specified GiC capitalization and separated integrated-tool instructions from the portable skill. `apps/editor/prompts/agent-context.md` owns those instructions; the desktop composes them after the canonical skill only in the Agent's system prompt. Socratic guidance and academic integrity remain in the common skill.
+- [decision] Neither Docs surface nor installed external-assistant copies include the editor supplement. No installed-file loading, migration, tools, or later-slice actions were added. Fabian's guide edits and local heading commit were preserved.
+- [technique] A native real-HTTP provider test failed before prompt composition and passed after it. The test compares complete source inputs in the actual outgoing system message rather than pinning authored paragraphs. Provider routes, including Codex default instructions, use the composed policy.
+- [technique] Core/CLI and compact tests, both typechecks, lint, site typecheck/build tests, Cargo tests/formatting/Clippy, and desktop packaging passed after the boundary change. All edited files pass scoped formatting with the existing configuration.
+- [risk] Port 5173 was occupied by another worktree's tests. An isolated temporary configuration ran the complete browser suite on port 5197: 99 passed, eight existing skips, and one failure because the Monaco external-assets test hardcodes origin 5173. That unrelated test was not changed; other worktrees' servers were left untouched.

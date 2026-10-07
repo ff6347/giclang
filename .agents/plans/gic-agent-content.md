@@ -1,7 +1,7 @@
-<!-- ABOUTME: Plans one shared GIC agent skill for the desktop application and public documentation. -->
+<!-- ABOUTME: Plans one shared GiC agent skill for the desktop application and public documentation. -->
 <!-- ABOUTME: Defines beginner-focused copy/paste and downloadable skill delivery without marketplaces. -->
 
-# Shared GIC agent content
+# Shared GiC agent content
 
 ## Status and goal
 
@@ -18,7 +18,7 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 ## Scope decisions
 
 1. The desktop Agent, documentation, and downloads use the same `SKILL.md`, not separately authored prompts or provider-specific teaching policies.
-2. That skill contains a clearly labeled **GIC editor agent only** section for the integrated application's tools and supplied context. It applies only when the GIC host supplies those capabilities; ordinary chats and external coding tools must not assume they exist.
+2. Integrated tool and context guidance lives in the editor-owned `apps/editor/prompts/agent-context.md`, labeled **GiC editor agent only**. The desktop app appends it to the shared skill only when creating the Agent's system prompt. It is excluded from `packages/content`, both Docs surfaces, and installed external-assistant skills.
 3. The common policy consults the supplied language reference before explaining syntax or signatures. In ordinary chat the reference is pasted; in an installed skill it is a bundled file; in the editor it is accessed through the existing reference tools.
 4. Distribution is limited to copy/paste and a downloadable ZIP containing an ordinary skill folder. An extracted folder is also usable by filesystem-based assistants.
 5. Use `gic-agent` for the skill frontmatter, containing folder, download identity, and managed workspace skill path. Label its documentation tab/entry **Skill**, and call the artifact the **GIC skill** (`gic-agent`). Keep **Agent** for the existing integrated panel; distinguish the skill's reusable instructions from the agent that uses them.
@@ -30,7 +30,8 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 
 ## Existing integration points
 
-- [Product skill](../../packages/content/content/skills/gic-agent/SKILL.md): canonical `gic-agent` teaching instructions with conditional integrated-editor guidance.
+- [Product skill](../../packages/content/content/skills/gic-agent/SKILL.md): canonical portable `gic-agent` teaching instructions.
+- [Editor Agent context](../../apps/editor/prompts/agent-context.md): integrated-tool supplement appended only to the desktop Agent's system prompt.
 - [Bundled reference](../../packages/content/content/skills/gic-agent/references/language.md): consumed by the integrated reference tools, documentation, and installed workspace.
 - [Native Agent](../../apps/desktop/src-tauri/src/agent.rs), [reference access](../../apps/desktop/src-tauri/src/reference.rs), and [managed files](../../apps/desktop/src-tauri/src/managed_files.rs): embed the package-owned sources directly.
 - [Workspace guidance](../../apps/desktop/src-tauri/workspace/AGENTS.md): directs external assistants to the installed skill.
@@ -53,7 +54,8 @@ packages/content/content/
             └── language.md
 ```
 
-- `SKILL.md` starts with portable `name` and `description` frontmatter. Keep all teaching instructions there, including the conditional editor-only section. Do not duplicate those instructions in the documentation page.
+- `SKILL.md` starts with portable `name` and `description` frontmatter. Keep all common teaching instructions there. Do not duplicate those instructions in the documentation page.
+- `apps/editor/prompts/agent-context.md` holds only editor-specific tool and context guidance and is appended to the desktop Agent's system prompt, not the package-owned skill.
 - `references/language.md` is the shared compact reference. Review it against the [active specification](../../docs/Language%20specification.md), product reference pages, and shared built-in registry before publication. In particular, reconcile `print` arity with the active zero-or-more-arguments contract.
 - `docs/skill.md` contains learner setup guidance for the Skill tab/page and presents the canonical skill through the host's rendering/assembly, rather than maintaining a pasted copy of its body.
 - Skill/reference Markdown is raw skill content, not a normal Docs record requiring `title` and `order`. Keep it outside the existing Docs glob and validate it through an appropriate package-owned boundary.
@@ -73,7 +75,7 @@ In desktop Settings, the Support files section labels `SKILL.md` as **Skill** an
 
 ### Copy into a chat
 
-Provide **Copy skill and reference**, alongside selectable text when clipboard access fails. The payload contains the canonical skill body, the complete compact reference, and a short instruction explaining how to begin. Keep the editor-only section visibly conditional; do not rewrite the teaching policy per provider.
+Provide **Copy skill and reference**, alongside selectable text when clipboard access fails. The payload contains the canonical skill body, the complete compact reference, and a short instruction explaining how to begin. Exclude the editor-owned tool supplement; do not rewrite the teaching policy per provider.
 
 Explain the short workflow:
 
@@ -133,7 +135,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 
 ## Implementation sequence
 
-1. **Establish the shared source.** Relocate the product skill and reference into the content package. Separate common guidance from the conditional editor-only section within the same skill. Preserve its teaching constraints and reference-grounding behavior. Validate naming and reference links directly; do not write tests that pin authored paragraphs.
+1. **Establish the shared source.** Relocate the product skill and reference into the content package. Keep common guidance in the shared skill and integrated tool/context guidance in the separate editor-owned prompt supplement. Preserve its teaching constraints and reference-grounding behavior. Validate naming and reference links directly; do not write tests that pin authored paragraphs.
 2. **Connect the desktop.** Embed the canonical skill and reference in the existing Agent and reference tools. Update workspace guidance, relevant build tooling, and managed paths to `gic-agent`. Label the support file Skill and show its actual installation directory and each support file's resolved path in Settings. Preserve the existing Agent tool set, bundled-skill loading boundary, and managed-file protections.
 3. **Preserve managed-file safety.** No path migration or local cleanup is required by Fabian's pre-release decision. Files and records outside the managed set remain untouched. Exercise install, repair, update, keep, replace, and uninstall against real temporary files, preserving modified and explicitly kept files.
 4. **Expose the shared content.** Add package-owned assembly for the copy payload and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
@@ -145,7 +147,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 
 Pending approval of the complete breakdown before publication to git-bug. Each slice includes its relevant content, host integration, and behavior verification rather than creating standalone infrastructure issues.
 
-1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, conditional editor-only guidance, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
+1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, an editor-owned supplement appended only to the desktop system prompt, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
 2. **Copy or download the GIC skill for another AI tool.** Blocked by: Slice 1. Deliver complete skill/reference copying and a portable skill ZIP on editor and site, with setup guidance, feedback, and manual-copy fallback.
 3. **Copy example code and description together.** Blocked by: None. Deliver example clipboard actions on editor and site without changing the current sketch.
 4. **Copy individual documentation pages and publish Markdown versions.** Blocked by: Slice 1. Deliver complete per-page copying and clean Markdown exports, including assembled Skill content, on editor and site with offline editor access.
@@ -172,7 +174,7 @@ Review declarative frontmatter, links, and prose directly. Run the applicable co
 ## Acceptance criteria
 
 - One maintained `SKILL.md` in `packages/content` supplies the desktop Agent, the skill shown in documentation, and downloaded/copied instructions.
-- The only editor-specific guidance is a clearly gated section of that same skill; external chats do not claim access to GIC-only tools.
+- Editor-specific guidance is appended from the editor-owned file only to the desktop Agent's system prompt; shared content, Docs, and installed external-assistant skills contain no integrated-tool instructions.
 - One shared language reference grounds all three delivery paths without requiring a website fetch.
 - Public and managed skill identities consistently use `gic-agent`. Docs uses **Skill** for the reusable artifact; the integrated panel remains **Agent**.
 - Skill is reachable within editor Docs and website documentation, with the shared instructions, reference, copy action, and download on both hosts.
