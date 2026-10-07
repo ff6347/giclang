@@ -20,7 +20,7 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 1. The desktop Agent, documentation, and downloads use the same `SKILL.md`, not separately authored prompts or provider-specific teaching policies.
 2. Integrated tool and context guidance lives in the editor-owned `apps/editor/prompts/agent-context.md`, labeled **GiC editor agent only**. The desktop app appends it to the shared skill only when creating the Agent's system prompt. It is excluded from `packages/content`, both Docs surfaces, and installed external-assistant skills.
 3. The common policy consults the supplied language reference before explaining syntax or signatures. In ordinary chat the reference is pasted; in an installed skill it is a bundled file; in the editor it is accessed through the existing reference tools.
-4. Distribution is limited to copy/paste and a downloadable ZIP containing an ordinary skill folder. An extracted folder is also usable by filesystem-based assistants.
+4. Skill distribution uses exactly two ordinary links on desktop, PWA, and website: **Download skill (ZIP)** and **View raw skill**. The ZIP contains an ordinary skill folder; the raw link opens the website's combined plaintext skill/reference for manual use. No skill clipboard action, button, details, textarea, status feedback, or fallback is included. An extracted folder is usable by filesystem-based assistants.
 5. Use `gic-agent` for the skill frontmatter, containing folder, download identity, and managed workspace skill path. Label its documentation tab/entry **Skill**, and call the artifact the **GIC skill** (`gic-agent`). Keep **Agent** for the existing integrated panel; distinguish the skill's reusable instructions from the agent that uses them.
 6. Make the Skill tab part of the editor's Docs and expose the same Skill content within the website's documentation navigation. Follow each host's navigation conventions; do not make the skill available only through the Agent panel or a separate GIC-only setup experience.
 7. Keep the source host-neutral. Content validation and assembly belong to `@giclang/content`; public URLs, browser controls, and native embedding belong to their hosts.
@@ -65,7 +65,7 @@ packages/content/content/
 
 ### Skill within Docs
 
-Use **Skill** as the editor Docs tab label and the corresponding website documentation entry/page title. Both expose the same skill, reference, copy action, and ZIP download without requiring use of the integrated Agent.
+Use **Skill** as the editor Docs tab label and the corresponding website documentation entry/page title. Both expose the same skill, reference, ZIP link, and website raw-text link without requiring use of the integrated Agent.
 
 Explain briefly that a skill is reusable instructions and supporting resources an AI assistant can load. Show `SKILL.md` and `references/` as common, portable conventions, distinguish installing a skill from pasting it into one conversation, and demonstrate using it with ChatGPT or Claude. Do not hide standard terminology behind a bespoke product name or require learners to stay inside GIC for help.
 
@@ -73,17 +73,17 @@ Explain briefly that a skill is reusable instructions and supporting resources a
 
 In desktop Settings, the Support files section labels `SKILL.md` as **Skill** and retains **Language reference** for its reference. Show the actual installation directory selected by the learner, not an assumed default, and each managed file's resolved destination path alongside its existing state and actions. Paths must be readable and selectable and stay accurate after the projects folder changes. For missing or uninstalled files, distinguish the destination from a claim that the file exists. Keep local installation paths in Settings; do not include them in public documentation, downloads, or clipboard exports intended for external chats.
 
-### Copy into a chat
+### Raw skill text
 
-Provide **Copy skill and reference**, alongside selectable text when clipboard access fails. The payload contains the canonical skill body, the complete compact reference, and a short instruction explaining how to begin. Exclude the editor-owned tool supplement; do not rewrite the teaching policy per provider.
+Provide **View raw skill** as an ordinary link to `https://giclang.cc/skills/gic-agent.txt`. The website publishes both complete original canonical sources, including skill frontmatter, in one plaintext document with source labels. Exclude the editor-owned tool supplement; do not rewrite the teaching policy per provider. The website uses its deployment base for local route links; the editor opens the public website URL.
 
 Explain the short workflow:
 
-1. Copy the instructions and reference.
+1. Open the raw skill text and select the complete instructions and reference manually.
 2. Open ChatGPT or Claude and paste them into a conversation.
 3. Send the relevant sketch or diagnostic and ask for one next step.
 
-Explain that an external chat cannot see the GIC editor or its files automatically. Sharing sketch content sends it to the chosen provider. Do not require browsing, API credentials, paid plugins, or terminal commands for this path.
+Opening the website raw text requires a network connection on all platforms; editor ZIP downloading remains bundled and offline. An external chat cannot see the GiC editor or its files automatically. Sharing sketch content sends it to the chosen provider. Do not require API credentials, paid plugins, or terminal commands for this path.
 
 ### Copy an example
 
@@ -127,7 +127,7 @@ gic-agent.zip
         └── language.md
 ```
 
-The folder name and frontmatter name must match. The skill explicitly points to its bundled reference; a website link alone is not sufficient. Publish the same source files for inspection, and explain that users can extract the ZIP for a filesystem-based assistant.
+The folder name and frontmatter name must match. The skill explicitly points to its bundled reference; a website link alone is not sufficient. Publish both original source files together in the website's raw plaintext document, and explain that users can extract the ZIP for a filesystem-based assistant.
 
 Give short provider-specific upload and activation instructions where verified. Claude documents ZIP-folder uploads, including Free accounts with code execution enabled. ChatGPT documents skill uploads for eligible workspaces, but the accepted standalone-skill file layout must be tested before claiming this ZIP is supported there. If uploading is unavailable or rejected, direct the learner to copy/paste; do not add another distribution system to work around it.
 
@@ -138,7 +138,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 1. **Establish the shared source.** Relocate the product skill and reference into the content package. Keep common guidance in the shared skill and integrated tool/context guidance in the separate editor-owned prompt supplement. Preserve its teaching constraints and reference-grounding behavior. Validate naming and reference links directly; do not write tests that pin authored paragraphs.
 2. **Connect the desktop.** Embed the canonical skill and reference in the existing Agent and reference tools. Update workspace guidance, relevant build tooling, and managed paths to `gic-agent`. Label the support file Skill and show its actual installation directory and each support file's resolved path in Settings. Preserve the existing Agent tool set, bundled-skill loading boundary, and managed-file protections.
 3. **Preserve managed-file safety.** No path migration or local cleanup is required by Fabian's pre-release decision. Files and records outside the managed set remain untouched. Exercise install, repair, update, keep, replace, and uninstall against real temporary files, preserving modified and explicitly kept files.
-4. **Expose the shared content.** Add package-owned assembly for the copy payload and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
+4. **Expose the shared content.** Add package-owned assembly for the combined raw text and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
 5. **Enable example copying.** Assemble one text payload from each example's code and description and expose **Copy to clipboard** on existing example surfaces in the editor and website. Reuse the clipboard feedback/fallback behavior where practical; do not introduce another example catalogue.
 6. **Make documentation portable.** Add Copy page, Copy all docs, and Download all docs throughout the appropriate editor and site Docs surfaces. Generate the complete `llms.txt` index, clean Markdown page exports, and combined `llms-full.txt` through shared content assembly. Publish them with each web host's routing/base-path conventions and expose the bundled exports in desktop Docs. Validate links and complete-document coverage against clean production builds.
 7. **Verify learner use.** Exercise copy/paste in real ChatGPT and Claude conversations. Test actual skill uploads where an authorized eligible account is available. Record unsupported or untested combinations honestly and keep copy/paste available as the fallback.
@@ -148,7 +148,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 Pending approval of the complete breakdown before publication to git-bug. Each slice includes its relevant content, host integration, and behavior verification rather than creating standalone infrastructure issues.
 
 1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, an editor-owned supplement appended only to the desktop system prompt, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
-2. **Copy or download the GiC skill for another AI tool.** Implemented. Editor and site provide complete skill/reference copying, a portable two-file ZIP, original source inspection, setup guidance, truthful feedback, and selectable-text fallback. Editor actions work offline. Claude's documented upload path is linked; actual provider archive acceptance remains unverified.
+2. **Download or view the raw GiC skill for another AI tool.** Implemented. Desktop, PWA, and website expose exactly two matching ordinary links: Download skill (ZIP) and View raw skill. The ZIP preserves the canonical pair and is bundled offline in the editor; the website publishes both complete original sources together as plaintext. Skill clipboard actions/tests, details, textareas, feedback, and fallbacks are excluded. Claude's documented upload path is linked; actual provider archive acceptance remains unverified.
 3. **Copy example code and description together.** Blocked by: None. Deliver example clipboard actions on editor and site without changing the current sketch.
 4. **Copy individual documentation pages and publish Markdown versions.** Blocked by: Slice 1. Deliver complete per-page copying and clean Markdown exports, including assembled Skill content, on editor and site with offline editor access.
 5. **Publish an llms.txt index for the documentation.** Blocked by: Slice 4. Deliver the generated complete index, working Markdown links, Docs discovery, and bundled desktop access.
@@ -158,7 +158,7 @@ Pending approval of the complete breakdown before publication to git-bug. Each s
 
 For executable behavior, follow red-green TDD at the narrowest seam:
 
-- Assemble copy text from fixture instruction/reference inputs and verify neither is omitted or altered; do not assert the wording of production prose.
+- Assemble combined raw text from fixture skill/reference inputs and verify both original sources, including frontmatter, are complete and unaltered; do not assert the wording of production prose.
 - Create and extract a real ZIP, verify its file structure and referenced-file availability, and compare its contents with the package-owned inputs.
 - Assemble example copy payloads from fixture code and Markdown descriptions, verifying exact code preservation, inclusion of the description, and exclusion of frontmatter/rendered HTML without pinning production prose. Exercise the real example buttons on both hosts, checking clipboard contents, success feedback, failure fallback, and preservation of the current sketch.
 - Test fixture-driven documentation serialization and host-provided URL resolution, preserving titles, code blocks, and Markdown while excluding frontmatter and resolving relative links. Exercise Copy page and its feedback/fallback on both hosts, including editor copying without network access.
@@ -167,7 +167,7 @@ For executable behavior, follow red-green TDD at the narrowest seam:
 - Exercise managed-file provisioning and any approved migration with real temporary files, including modified and kept support files. Verify the integrated Agent still loads the bundled skill rather than installed edits.
 - Verify Skill naming and resolved support-file paths through the actual configured projects directory. Exercise Settings after a location change and with missing/uninstalled files, preserving status and conflict-resolution actions.
 - Preserve deterministic integrated-Agent tests proving reference lookup, enabled-example lookup, context handling, and absence of arbitrary shell/file/web capabilities.
-- Drive the real editor Docs navigation and website documentation navigation to reach Skill and exercise copy, clipboard failure fallback, visible source presentation, and downloads on both hosts. Test browser behavior without provider mocks or test-only DOM state.
+- Drive real editor and website Docs navigation to reach Skill and verify exactly two matching ordinary links, the website plaintext popup, downloaded source bytes, unchanged sketch state, and offline editor ZIP delivery. Test browser behavior without provider mocks or test-only DOM state.
 
 Review declarative frontmatter, links, and prose directly. Run the applicable content, editor, site, and desktop checks from project instructions. Include a clean site build and the site package's own validation. Do not claim ZIP acceptance, provider access, or teaching behavior without a real authorized test; installing a skill alone does not guarantee model adherence.
 
@@ -177,9 +177,9 @@ Review declarative frontmatter, links, and prose directly. Run the applicable co
 - Editor-specific guidance is appended from the editor-owned file only to the desktop Agent's system prompt; shared content, Docs, and installed external-assistant skills contain no integrated-tool instructions.
 - One shared language reference grounds all three delivery paths without requiring a website fetch.
 - Public and managed skill identities consistently use `gic-agent`. Docs uses **Skill** for the reusable artifact; the integrated panel remains **Agent**.
-- Skill is reachable within editor Docs and website documentation, with the shared instructions, reference, copy action, and download on both hosts.
+- Skill is reachable within editor Docs and website documentation, with shared instructions/reference and exactly two ordinary links for ZIP download and website raw text on both hosts.
 - Learners can explain what a skill is and use this one with common external AI tools without relying on the integrated GIC Agent.
-- Copy/paste includes the instructions and reference, with an accessible fallback when clipboard access fails.
+- The website raw plaintext contains both complete original sources for manual selection and pasting. No skill clipboard action, button, details, textarea, feedback, or fallback is present.
 - Examples in the editor and website offer **Copy to clipboard** that copies both the complete example code and its description, with success feedback and manual-copy fallback, without changing the current sketch.
 - Every documentation page in editor and site offers Copy page with its title and complete Markdown content, preserved code, portable links, success feedback, and manual-copy fallback. Bundled editor content is copyable without a network request.
 - Both web deployments publish an `llms.txt` index covering all public docs and clean Markdown versions of every indexed page; the desktop editor exposes the bundled index without requiring a server. Docs makes the index discoverable on both hosts.
