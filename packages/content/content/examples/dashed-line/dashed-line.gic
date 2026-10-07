@@ -1,0 +1,14 @@
+// ABOUTME: Draws ten evenly spaced diagonal line segments.
+// ABOUTME: Adapts Fabian's dashed-line sketch to a static GIC canvas.
+// Source: https://snippets.qawsed.site/p5js/loop/dashed-line/index.js
+background(60, 0, 0);
+noFill();
+repeat(i, 0, 10) {
+	let start = -45 + i * 10;
+	let end = start + 5;
+	let x1 = 50 - sin(45) * start;
+	let y1 = 50 + cos(45) * start;
+	let x2 = 50 - sin(45) * end;
+	let y2 = 50 + cos(45) * end;
+	line(x1, y1, x2, y2);
+}

@@ -1,0 +1,40 @@
+// ABOUTME: Draws overlapping irregular triangles in pastel colors.
+// ABOUTME: Adapts Fabian's random triangle sketch to a square canvas.
+// Source: https://snippets.qawsed.site/p5js/loop/dancing-triangles/index.js
+func rotatedX(localX, localY, rotation) {
+	return cos(rotation) * localX - sin(rotation) * localY;
+}
+
+func rotatedY(localX, localY, rotation) {
+	return sin(rotation) * localX + cos(rotation) * localY;
+}
+
+randomSeed(55);
+background(12, 0, 0);
+repeat(i, 0, 100) {
+	let centerX = 50 + random(-20, 20);
+	let centerY = 50 + random(-50, 50);
+	let radius = WIDTH / random(5, 25);
+	let angleA = 0;
+	let angleB = random(100, 120);
+	let angleC = angleB + random(100, 120);
+	let rotation = random(0, 360);
+	let jitterA = random(-10, 10);
+	let jitterB = random(-10, 10);
+	let jitterC = random(-10, 10);
+	let localAX = cos(angleA) * radius + jitterA;
+	let localAY = sin(angleA) * radius + jitterA;
+	let localBX = cos(angleB) * radius + jitterB;
+	let localBY = sin(angleB) * radius + jitterB;
+	let localCX = cos(angleC) * radius + jitterC;
+	let localCY = sin(angleC) * radius + jitterC;
+	fill(80, 5, random(200, 330), random(0, 100));
+	triangle(
+		centerX + rotatedX(localAX, localAY, rotation),
+		centerY + rotatedY(localAX, localAY, rotation),
+		centerX + rotatedX(localBX, localBY, rotation),
+		centerY + rotatedY(localBX, localBY, rotation),
+		centerX + rotatedX(localCX, localCY, rotation),
+		centerY + rotatedY(localCX, localCY, rotation)
+	);
+}

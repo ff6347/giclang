@@ -1,0 +1,35 @@
+// ABOUTME: Draws seven colored layers of radial branch marks.
+// ABOUTME: Adapts Fabian's polar wreath sketch to a square canvas.
+// Source: https://snippets.qawsed.site/p5js/polar-coordinates-adventskranz/index.js
+func rotatedX(localX, localY, angle) {
+	return cos(angle) * localX - sin(angle) * localY;
+}
+
+func rotatedY(localX, localY, angle) {
+	return sin(angle) * localX + cos(angle) * localY;
+}
+
+randomSeed(2520);
+background("white");
+noFill();
+stroke("black");
+strokeWidth(0.5);
+repeat(branch, 0, 2520) {
+	let angle = branch % 360;
+	let radius = 25;
+	let x = 50 + cos(angle) * radius;
+	let y = 50 + sin(angle) * radius;
+	stroke(random(40, 100), 12, random(260, 350));
+	point(x + random(-2.5, 2.5), y);
+	let branchAngle = angle + random(0, 180);
+	let localX1 = random(1.25, 12.5);
+	let localY1 = random(1.25, 12.5);
+	let localX2 = -random(1.25, 12.5);
+	let localY2 = -random(1.25, 12.5);
+	line(
+		x + rotatedX(localX1, localY1, branchAngle),
+		y + rotatedY(localX1, localY1, branchAngle),
+		x + rotatedX(localX2, localY2, branchAngle),
+		y + rotatedY(localX2, localY2, branchAngle)
+	);
+}

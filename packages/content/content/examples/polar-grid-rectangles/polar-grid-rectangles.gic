@@ -1,0 +1,26 @@
+// ABOUTME: Draws a grid of squares rotated by column.
+// ABOUTME: Uses polar coordinates from Fabian's rectangle-grid sketch.
+// Source: https://snippets.qawsed.site/p5js/loop/grid-of-rects/sketch.js
+background(60, 0, 0);
+fill("white");
+repeat(column, 0, 9) {
+	let angle = column * 10;
+	repeat(row, 0, 9) {
+		let centerX = 10 + column * 10;
+		let centerY = 10 + row * 10;
+		let cornerRadius = sqrt(2) * 2.5;
+		let angle1 = 225 + angle;
+		let angle2 = 315 + angle;
+		let angle3 = 45 + angle;
+		let angle4 = 135 + angle;
+		let x1 = centerX + cos(angle1) * cornerRadius;
+		let y1 = centerY + sin(angle1) * cornerRadius;
+		let x2 = centerX + cos(angle2) * cornerRadius;
+		let y2 = centerY + sin(angle2) * cornerRadius;
+		let x3 = centerX + cos(angle3) * cornerRadius;
+		let y3 = centerY + sin(angle3) * cornerRadius;
+		let x4 = centerX + cos(angle4) * cornerRadius;
+		let y4 = centerY + sin(angle4) * cornerRadius;
+		quad(x1, y1, x2, y2, x3, y3, x4, y4);
+	}
+}

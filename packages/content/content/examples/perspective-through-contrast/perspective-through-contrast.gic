@@ -1,0 +1,11 @@
+// ABOUTME: Contrasts black and white rectangles against a gray field.
+// ABOUTME: Fits Fabian's wide contrast composition to a square canvas.
+// Source: https://snippets.qawsed.site/p5js/perspective/through-contrast/index.js
+background(60, 0, 0);
+noStroke();
+fill(68, 0, 0);
+rect(0, 0, WIDTH, 74);
+fill("black");
+rect(15, 27, 30, 66);
+fill("white");
+rect(55, 27, 30, 66);
