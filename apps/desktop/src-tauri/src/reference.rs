@@ -1,7 +1,8 @@
 // ABOUTME: Provides bounded lookup into the bundled GIC language reference.
 // ABOUTME: Keeps model-facing reference access independent of files and network.
 
-const REFERENCE: &str = include_str!("../workspace/gic-tutor/references/language.md");
+const REFERENCE: &str =
+    include_str!("../../../../packages/content/content/skills/gic-agent/references/language.md");
 const MAX_QUERY_CHARS: usize = 200;
 const MAX_RESULTS: usize = 5;
 const MAX_EXCERPT_CHARS: usize = 384;

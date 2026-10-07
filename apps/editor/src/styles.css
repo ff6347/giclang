@@ -1224,6 +1224,12 @@ canvas {
 	font-weight: 600;
 }
 
+.support-file-path {
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	user-select: text;
+}
+
 .assistant-guidance {
 	font-size: smaller;
 }

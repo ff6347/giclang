@@ -85,6 +85,31 @@ function metadataList(
 	return value.map((entry: string) => entry.trim());
 }
 
+export function compileSkillDocumentation(
+	path: string,
+	source: string,
+	skillSource: string,
+	referenceSource: string,
+	resolveImage?: (path: string) => string,
+): MarkdownContent {
+	const guide = compileMarkdown(path, source, resolveImage);
+	if ("enabled" in guide) {
+		throw new Error(`Skill documentation '${path}' cannot be an example.`);
+	}
+	const skillBody = matter(skillSource).content.trim();
+	const assembled = [
+		matter(source).content.trim(),
+		"## GIC agent skill",
+		skillBody,
+		"## Language reference",
+		referenceSource.trim(),
+	].join("\n\n");
+	return {
+		...guide,
+		html: markdown.render(assembled, { resolveImage }).trimEnd(),
+	};
+}
+
 export function compileMarkdown(
 	path: string,
 	source: string,

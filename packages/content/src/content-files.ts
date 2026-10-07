@@ -7,6 +7,23 @@ import { compileMarkdown } from "./markdown-content.ts";
 
 export type ContentSection = "about" | "docs" | "examples";
 
+export interface GicAgentSkill {
+	readonly skillSource: string;
+	readonly referenceSource: string;
+}
+
+export async function readGicAgentSkill(): Promise<GicAgentSkill> {
+	const contentDirectory = new URL(
+		"../content/skills/gic-agent/",
+		import.meta.resolve("@giclang/content/node"),
+	);
+	const [skillSource, referenceSource] = await Promise.all([
+		readFile(new URL("SKILL.md", contentDirectory), "utf8"),
+		readFile(new URL("references/language.md", contentDirectory), "utf8"),
+	]);
+	return { skillSource, referenceSource };
+}
+
 interface FileEntry {
 	readonly path: string;
 	readonly fileUrl: URL;

@@ -20,6 +20,15 @@ test("build prerenders the About content", async () => {
 		"utf8",
 	);
 	assert.match(html, /<main>[\s\S]*<\/main>/);
+
+	const skillPage = await readFile(
+		new URL("../../dist/docs/skill/index.html", import.meta.url),
+		"utf8",
+	);
+	assert.match(skillPage, /<h1>Skill<\/h1>/);
+	assert.match(skillPage, /aria-label="Documentation"[\s\S]*?>[\s\S]*?Skill/);
+	assert.match(skillPage, /<h2>GIC agent skill<\/h2>/);
+	assert.match(skillPage, /<h2>Language reference<\/h2>/);
 });
 
 test("documentation images resolve to emitted package assets", async () => {

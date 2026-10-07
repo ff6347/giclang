@@ -7,11 +7,34 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { validateExampleFiles } from "@giclang/content/model";
-import { compileMarkdown } from "@giclang/content/markdown";
+import { readGicAgentSkill } from "@giclang/content/node";
+import {
+	compileMarkdown,
+	compileSkillDocumentation,
+} from "@giclang/content/markdown";
 
 const CONTENT_ROOT = fileURLToPath(
 	new URL("../../packages/content/content/", import.meta.url),
 );
+const SKILL_GUIDE_PATH = fileURLToPath(
+	new URL("../../packages/content/content/docs/skill.md", import.meta.url),
+);
+const SKILL_SOURCE_PATH = fileURLToPath(
+	new URL(
+		"../../packages/content/content/skills/gic-agent/SKILL.md",
+		import.meta.url,
+	),
+);
+const LANGUAGE_REFERENCE_PATH = fileURLToPath(
+	new URL(
+		"../../packages/content/content/skills/gic-agent/references/language.md",
+		import.meta.url,
+	),
+);
+const SKILL_SOURCE_PATHS = new Set([
+	SKILL_SOURCE_PATH,
+	LANGUAGE_REFERENCE_PATH,
+]);
 const PWA_DESCRIPTION = "Create static generative graphics with GIC.";
 
 function isProductContent(path: string): boolean {
@@ -31,6 +54,15 @@ function productContent(): Plugin {
 			server.watcher.add(CONTENT_ROOT);
 		},
 		hotUpdate({ file, server, type }) {
+			if (SKILL_SOURCE_PATHS.has(file)) {
+				const skillModules =
+					server.moduleGraph.getModulesByFile(SKILL_GUIDE_PATH);
+				if (skillModules === undefined) return [];
+				for (const module of skillModules) {
+					server.moduleGraph.invalidateModule(module);
+				}
+				return [...skillModules];
+			}
 			if (!isProductContent(file) || (type !== "create" && type !== "delete")) {
 				return;
 			}
@@ -63,7 +95,10 @@ function productContent(): Plugin {
 				);
 			}
 		},
-		transform(source, id) {
+		async transform(source, id) {
+			if (id.includes("?raw")) {
+				return;
+			}
 			const path = id.split("?")[0];
 			if (
 				path === undefined ||
@@ -72,11 +107,27 @@ function productContent(): Plugin {
 			) {
 				return;
 			}
+			if (path === SKILL_GUIDE_PATH) {
+				this.addWatchFile(SKILL_SOURCE_PATH);
+				this.addWatchFile(LANGUAGE_REFERENCE_PATH);
+			}
 			const images: string[] = [];
-			const content = compileMarkdown(path, source, (imagePath) => {
+			const resolveImage = (imagePath: string): string => {
 				const index = images.push(imagePath) - 1;
 				return `__gic_image_${index}__`;
-			});
+			};
+			const content =
+				path === SKILL_GUIDE_PATH
+					? await readGicAgentSkill().then(({ skillSource, referenceSource }) =>
+							compileSkillDocumentation(
+								"docs/skill.md",
+								source,
+								skillSource,
+								referenceSource,
+								resolveImage,
+							),
+						)
+					: compileMarkdown(path, source, resolveImage);
 			const imports = images.map(
 				(imagePath, index) =>
 					`import image${index} from ${JSON.stringify(`${imagePath.startsWith(".") ? imagePath : `./${imagePath}`}?url`)};`,

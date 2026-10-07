@@ -28,6 +28,28 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(page).toHaveURL("/");
 });
 
+test("opens the shared Skill from editor Docs", async ({ page }) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Docs" }).click();
+
+	const docs = page.getByRole("tabpanel", { name: "Docs" });
+	const skill = docs.getByRole("tab", { name: "Skill", exact: true });
+	await expect(skill).toBeVisible();
+	await skill.click();
+
+	const article = docs.getByRole("article", { name: "Skill" });
+	await expect(
+		article.getByRole("heading", { name: "Skill", exact: true }),
+	).toBeVisible();
+	await expect(article.locator(".content-markdown")).toContainText("gic-agent");
+	await expect(article.locator(".content-markdown")).toContainText(
+		"Language reference",
+	);
+	await expect(article.locator(".content-markdown")).toContainText(
+		"GIC editor agent only",
+	);
+});
+
 test("centers Docs, About, and Settings in a 66ch reading column", async ({
 	page,
 }) => {

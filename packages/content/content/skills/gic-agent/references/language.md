@@ -85,7 +85,7 @@ func drawSquare(x, y, size) {
 - `background`, `fill`, and `stroke` each accept a CSS color String, OKLCH `(lightness, chroma, hue)`, or OKLCH with alpha `(lightness, chroma, hue, alpha)`.
 - Lightness, chroma, and alpha range from 0 to 100 inclusive; hue ranges from 0 to 360 inclusive.
 - Hex (`fill("#ff6347")`) and named CSS colors (`fill("tomato")`) are accepted.
-- Style functions: `fill`, `noFill()`, `stroke`, `noStroke()`, `strokeWidth(weight)`.
+- Style functions: `fill`, `noFill()`, `stroke`, `noStroke()`, `strokeWidth(width)`.
 - Style persists until changed.
 
 ## Drawing
@@ -109,7 +109,7 @@ arc(x, y, radius, startAngle, endAngle);
 
 ## Output
 
-`print(value);` writes a Number, Boolean, or String to the console.
+`print(value1, value2, ...);` writes zero or more Number, Boolean, or String values to the console. For example, `print();` writes no values.
 
 ## Math and constants
 

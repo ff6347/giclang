@@ -34,7 +34,8 @@ const GO_URL: &str = "https://opencode.ai/zen/go/v1";
 const GO_MODELS_URL: &str = "https://opencode.ai/zen/go/v1/models";
 const OPENROUTER_MODELS_URL: &str = "https://openrouter.ai/api/v1/models/user";
 const OPENROUTER_KEY_URL: &str = "https://openrouter.ai/api/v1/key";
-const TUTOR_POLICY: &str = include_str!("../workspace/gic-tutor/SKILL.md");
+const TUTOR_POLICY: &str =
+    include_str!("../../../../packages/content/content/skills/gic-agent/SKILL.md");
 const TUTOR_DEADLINE: Duration = Duration::from_secs(90);
 const MAX_REFERENCE_CALLS: usize = 2;
 const MAX_REFERENCE_TOOL_TURNS: usize = 2;

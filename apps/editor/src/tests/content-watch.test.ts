@@ -3,10 +3,89 @@
 
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
+
+test(
+	"skill documentation refreshes when either canonical source changes",
+	{ timeout: 45_000 },
+	async () => {
+		const skillPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/SKILL.md",
+				import.meta.url,
+			),
+		);
+		const referencePath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/references/language.md",
+				import.meta.url,
+			),
+		);
+		const skillGuidePath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/docs/skill.md",
+				import.meta.url,
+			),
+		);
+		const [originalSkill, originalReference] = await Promise.all([
+			readFile(skillPath),
+			readFile(referencePath),
+		]);
+		const server = await createServer({
+			configFile: fileURLToPath(
+				new URL("../../vite.config.ts", import.meta.url),
+			),
+			logLevel: "error",
+			root: fileURLToPath(new URL("../../", import.meta.url)),
+			server: { middlewareMode: true, preTransformRequests: false },
+		});
+		const transformSkillGuide = async () => {
+			const result = await server.transformRequest(`/@fs${skillGuidePath}`);
+			assert.ok(result);
+			return result.code;
+		};
+		const waitForFixture = async (fixture: string, present: boolean) => {
+			for (let attempt = 0; attempt < 50; attempt++) {
+				if ((await transformSkillGuide()).includes(fixture) === present) return;
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
+			assert.strictEqual(
+				(await transformSkillGuide()).includes(fixture),
+				present,
+			);
+		};
+
+		try {
+			assert.ok(await transformSkillGuide());
+			const skillFixture = `editor-skill-watch-${randomUUID()}`;
+			await writeFile(
+				skillPath,
+				`${originalSkill.toString("utf8")}\n\n${skillFixture}\n`,
+			);
+			await waitForFixture(skillFixture, true);
+			await writeFile(skillPath, originalSkill);
+			await waitForFixture(skillFixture, false);
+
+			const referenceFixture = `editor-reference-watch-${randomUUID()}`;
+			await writeFile(
+				referencePath,
+				`${originalReference.toString("utf8")}\n\n${referenceFixture}\n`,
+			);
+			await waitForFixture(referenceFixture, true);
+			await writeFile(referencePath, originalReference);
+			await waitForFixture(referenceFixture, false);
+		} finally {
+			await Promise.all([
+				writeFile(skillPath, originalSkill),
+				writeFile(referencePath, originalReference),
+			]);
+			await server.close();
+		}
+	},
+);
 
 test("content discovery refreshes after creating and deleting documents and examples", async () => {
 	const id = `content-watch-${randomUUID()}`;
