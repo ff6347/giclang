@@ -74,6 +74,10 @@ code {
 	font-size: inherit;
 }
 
+code:not(pre code) {
+	font-style: italic;
+}
+
 button,
 input {
 	font: inherit;

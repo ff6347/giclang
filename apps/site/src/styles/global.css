@@ -93,6 +93,10 @@ pre > code {
 	background-color: transparent;
 }
 
+code:not(pre code) {
+	font-style: italic;
+}
+
 article,
 section,
 p {

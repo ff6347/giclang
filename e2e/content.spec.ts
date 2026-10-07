@@ -50,6 +50,8 @@ test("uses the body font and size for inline and block documentation code", asyn
 		await expect(code).toHaveCSS("font-size", bodyFont.size);
 		await expect(code).toHaveCSS("font-family", bodyFont.family);
 	}
+	await expect(inlineCode).toHaveCSS("font-style", "italic");
+	await expect(blockCode).toHaveCSS("font-style", "normal");
 });
 
 test("centers Docs, About, and Settings in a 66ch reading column", async ({
