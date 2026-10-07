@@ -16,3 +16,6 @@
 - [technique] Web hosts own public routes and deployment-base URL mapping. Desktop Docs exposes the bundled index and copyable pages without creating an HTTP server.
 - [decision] Fabian asked to leave the untracked `.zed/` directory untouched; only planning files are included in this change.
 - [decision] Fabian included the combined full-text documentation export in this increment. Generate `llms-full.txt` from all indexed public docs, including Skill, and expose Copy all docs and Download all docs on editor and site, with bundled offline editor access and no silent truncation.
+- [decision] Fabian removed existing policy-authority issue `0e7c1ca` as a blocker for the shared-skill slice. Preserve the integrated Agent's bundled-skill loading and learner-editable external copies; leave the existing issue open and unchanged.
+- [decision] Desktop Support files must label the artifact Skill rather than Agent policy and show the actual configured installation directory and resolved paths. These requirements belong to the first proposed vertical slice.
+- [decision] The plan records six proposed vertical slices and their dependencies. Publication to git-bug awaits approval of the complete breakdown; no issues were created.
