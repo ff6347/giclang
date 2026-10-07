@@ -31,7 +31,7 @@
 		"dev:browser": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/editor dev",
 		"dev:content": "pnpm --filter @giclang/content dev",
 		"dev:desktop": "pnpm --filter @giclang/desktop dev",
-		"dev:site": "pnpm --filter @giclang/site dev"
+		"dev:site": "pnpm --filter @giclang/core build && pnpm --filter @giclang/content build && pnpm --filter @giclang/site dev"
 	},
 	"devDependencies": {
 		"@playwright/test": "1.62.1",
