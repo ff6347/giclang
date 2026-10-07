@@ -3,7 +3,7 @@ title: Skill
 order: 80
 ---
 
-# Use a skill with an AI assistant
+## Use a skill with an AI assistant
 
 A skill is a reusable set of instructions and supporting resources that helps an AI assistant work in a particular area are way. You can tell an agent to talk like a pirate and it will comply. The GiC skill is named `gic-agent`. It teaches an assistant to help you understand and create giclang sketches without doing the heavy lifting for you.
 
