@@ -15,3 +15,4 @@
 - [decision] The plan also covers Copy page for every public documentation page and a generated llms.txt discovery index linking to clean Markdown page exports in editor and site. All derive from shared content; a combined full-text documentation export is a separate follow-up.
 - [technique] Web hosts own public routes and deployment-base URL mapping. Desktop Docs exposes the bundled index and copyable pages without creating an HTTP server.
 - [decision] Fabian asked to leave the untracked `.zed/` directory untouched; only planning files are included in this change.
+- [decision] Fabian included the combined full-text documentation export in this increment. Generate `llms-full.txt` from all indexed public docs, including Skill, and expose Copy all docs and Download all docs on editor and site, with bundled offline editor access and no silent truncation.
