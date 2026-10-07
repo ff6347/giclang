@@ -69,19 +69,12 @@ main {
 	padding-right: var(--s2);
 }
 pre {
-	font-weight: normal;
-	line-height: 1.5;
-	padding: var(--s1);
-	border-left: var(--s1) solid var(--color-chrome);
-	background-color: white;
-	margin-bottom: var(--s2);
-}
-
-pre,
-code {
-	white-space: pre-wrap;
-	word-wrap: break-word;
-	tab-size: 2;
+	box-sizing: border-box;
+	font-family: inherit;
+	font-size: inherit;
+	margin: 1em 0;
+	max-width: 100%;
+	overflow-x: auto;
 }
 
 code {
@@ -95,6 +88,9 @@ pre > code {
 
 code:not(pre code) {
 	font-style: italic;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	tab-size: 2;
 }
 
 article,

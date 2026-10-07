@@ -51,7 +51,16 @@ test("uses the body font and size for inline and block documentation code", asyn
 		await expect(code).toHaveCSS("font-family", bodyFont.family);
 	}
 	await expect(inlineCode).toHaveCSS("font-style", "italic");
+	const chromeBackground = await page
+		.locator(".application-chrome")
+		.evaluate((element) => getComputedStyle(element).backgroundColor);
+	await expect(inlineCode).toHaveCSS("background-color", chromeBackground);
 	await expect(blockCode).toHaveCSS("font-style", "normal");
+	await expect(blockCode).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	const block = article.locator("pre").first();
+	await expect(block).toHaveCSS("border-left-width", "0px");
+	await expect(block).toHaveCSS("padding-left", "0px");
+	await expect(block).toHaveCSS("overflow-x", "auto");
 });
 
 test("centers Docs, About, and Settings in a 66ch reading column", async ({
