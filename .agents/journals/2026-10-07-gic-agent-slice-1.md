@@ -30,3 +30,10 @@
 - [technique] A native real-HTTP provider test failed before prompt composition and passed after it. The test compares complete source inputs in the actual outgoing system message rather than pinning authored paragraphs. Provider routes, including Codex default instructions, use the composed policy.
 - [technique] Core/CLI and compact tests, both typechecks, lint, site typecheck/build tests, Cargo tests/formatting/Clippy, and desktop packaging passed after the boundary change. All edited files pass scoped formatting with the existing configuration.
 - [risk] Port 5173 was occupied by another worktree's tests. An isolated temporary configuration ran the complete browser suite on port 5197: 99 passed, eight existing skips, and one failure because the Monaco external-assets test hardcodes origin 5173. That unrelated test was not changed; other worktrees' servers were left untouched.
+
+## Reflection and slice 2 handoff
+
+- [technique] Final desktop tests reported 161 passed and one live-provider test ignored; Cargo formatting, both site build tests, scoped Oxfmt, and whitespace checks passed. The temporary alternate-port Playwright config was removed.
+- [decision] Commits `81deef1` and `ebe2789`, along with Fabian's `08ff483` heading change, were pushed to `docs/gic-agent-plan`. Local HEAD, tracking ref, and live remote matched `ebe2789a72c5c892099e7d7aa6a09b74c79e8be5`; the working tree was clean before reflection.
+- [technique] Luna's read-only slice 2 discovery identified `readGicAgentSkill()` as the exact-source seam. Browser Docs expose compiled HTML, so portable copy/ZIP inputs need build-time source wiring rather than HTML reconstruction. No active ZIP-generation dependency or generic clipboard fallback was found.
+- [decision] Fabian requested reflection and a handoff for slice 2, not implementation in this session. The local ignored `.agents/handoff.md` describes complete skill/reference copying, portable ZIP download, both host integrations, offline editor behavior, and provider-verification limits. The shared plan remains active because slices 2–6 are incomplete.

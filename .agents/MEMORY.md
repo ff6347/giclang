@@ -263,6 +263,9 @@ Slice 1 is implemented. `.agents/plans/gic-agent-content.md` retains the remaini
 - [decision] Fabian approved the pre-release `gic-agent` paths without application migration or local cleanup. Existing files and manifest records outside the declared managed set remain untouched.
 - [technique] The desktop embeds the package-owned skill and reference directly, appending the editor-owned supplement only to the Agent's system prompt. Editor Vite and site collection loaders assemble the portable Skill guide through `compileSkillDocumentation`; Markdown compilation stays build-time because its dependencies require Node globals.
 - [technique] Vite tracks the skill and reference as dependencies of the Skill guide and invalidates that guide when either canonical source changes.
+- [technique] `readGicAgentSkill()` exposes exact portable source strings. `compileSkillDocumentation()` strips skill frontmatter and produces display HTML; use the original source pair for ZIP files and authored text for copy payloads, never reconstruct either from HTML. Raw sources are not yet exposed in the browser content model.
+- [technique] Verify desktop prompt composition through the real local-HTTP provider test, comparing the canonical skill and editor supplement in the outgoing system message. Codex also consumes the composed policy through `default_instructions`.
+- [risk] Browser acceptance currently assumes port 5173 in the Monaco external-assets test. An isolated alternate-port run avoids disturbing another worktree's server but fails that hardcoded-origin assertion; report this separately rather than changing unrelated tests in a content slice.
 - [risk] ChatGPT standalone-skill ZIP acceptance remains unverified; retain copy/paste and do not promise upload compatibility without an authorized test.
 
 ## Issue Tracking
