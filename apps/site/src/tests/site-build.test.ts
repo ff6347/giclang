@@ -27,7 +27,12 @@ test("build prerenders the About content", async () => {
 	);
 	assert.match(skillPage, /<h1>Skill<\/h1>/);
 	assert.match(skillPage, /aria-label="Documentation"[\s\S]*?>[\s\S]*?Skill/);
-	assert.match(skillPage, /<h2>GIC agent skill<\/h2>/);
+	assert.doesNotMatch(skillPage, /GiC editor agent only/);
+	assert.doesNotMatch(
+		skillPage,
+		/search_reference|read_reference|search_examples/,
+	);
+	assert.match(skillPage, /<h2>GiC agent skill<\/h2>/);
 	assert.match(skillPage, /<h2>Language reference<\/h2>/);
 });
 

@@ -1,6 +1,6 @@
-# GIC language reference
+# GiC language reference
 
-GIC (Gestalten in Code) is a small C-style language for two-dimensional generative graphics. Source files use the `.gic` extension. Sketches run top to bottom once; animation is outside the core static language.
+GiC (Gestalten in Code) is a small C-style language for two-dimensional generative graphics. Source files use the `.gic` extension. Sketches run top to bottom once; animation is outside the core static language.
 
 ## Values
 

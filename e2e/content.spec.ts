@@ -45,9 +45,21 @@ test("opens the shared Skill from editor Docs", async ({ page }) => {
 	await expect(article.locator(".content-markdown")).toContainText(
 		"Language reference",
 	);
-	await expect(article.locator(".content-markdown")).toContainText(
-		"GIC editor agent only",
-	);
+	const skillContent = article.locator(".content-markdown");
+	for (const toolInstruction of [
+		"GiC editor agent only",
+		"search_reference",
+		"read_reference",
+		"search_examples",
+	]) {
+		await expect(skillContent).not.toContainText(toolInstruction);
+	}
+	await expect(
+		skillContent.getByRole("heading", {
+			name: "GiC agent skill",
+			exact: true,
+		}),
+	).toBeVisible();
 });
 
 test("centers Docs, About, and Settings in a 66ch reading column", async ({

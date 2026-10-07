@@ -99,7 +99,7 @@ export function compileSkillDocumentation(
 	const skillBody = matter(skillSource).content.trim();
 	const assembled = [
 		matter(source).content.trim(),
-		"## GIC agent skill",
+		"## GiC agent skill",
 		skillBody,
 		"## Language reference",
 		referenceSource.trim(),
