@@ -11,3 +11,4 @@
 - [technique] The content package owns source and assembly; editor, site, and native hosts own presentation, public URLs, and embedding. Skill metadata must not be treated as normal Docs frontmatter.
 - [decision] Fabian specified Skill as the documentation label, with a Skill tab within editor Docs and the same content in website documentation. Agent remains the integrated panel label; `gic-agent` remains the skill identity.
 - [decision] Learners should learn standard skill terminology and transferable use with common AI tools for creative coding, not depend on a GIC-only workflow. Both documentation hosts expose the shared instructions, reference, copy action, and download.
+- [decision] Fabian added a Copy to clipboard button for examples. The plan covers copying code and description together from the shared example content in editor and website, with feedback and selectable-text fallback; no implementation was requested.

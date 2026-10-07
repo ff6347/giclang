@@ -74,6 +74,14 @@ Explain the short workflow:
 
 Explain that an external chat cannot see the GIC editor or its files automatically. Sharing sketch content sends it to the chosen provider. Do not require browsing, API credentials, paid plugins, or terminal commands for this path.
 
+### Copy an example
+
+Add a **Copy to clipboard** button to examples in the editor and on the website. One click copies the example's complete GIC source and its description together as readable text, ready to paste into ChatGPT, Claude, or another tool.
+
+Use the same package-owned example source and description on both hosts. Preserve the code exactly and include the description as authored Markdown without YAML frontmatter or rendered HTML. Clearly separate the description from a fenced `gic` code block. Copy the bundled example, not an unrelated or edited sketch from the editor. This action does not prepend the skill or silently send anything to a provider.
+
+Show success only after copying succeeds. If clipboard access fails or is unavailable, offer the same payload as selectable text for manual copying. The copy action must not open or modify the learner's current sketch.
+
 ### Download a skill
 
 Provide **Download skill (ZIP)** with this structure:
@@ -98,7 +106,8 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 2. **Connect the desktop.** Embed the canonical skill and reference in the existing Agent and reference tools. Update workspace guidance, support-file labels, relevant build tooling, and managed paths to `gic-agent`. Preserve the existing Agent tool set and managed-file protections.
 3. **Handle existing workspaces safely.** Before implementing path migration, confirm how existing `.agents/skills/gic-tutor/` files and digest records should be handled. Never discard modified or explicitly kept files. Present any required migration choice to Fabian; do not silently introduce aliases or backward compatibility. Exercise install, repair, update, keep, replace, and uninstall against real temporary files.
 4. **Expose the shared content.** Add package-owned assembly for the copy payload and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
-5. **Verify learner use.** Exercise copy/paste in real ChatGPT and Claude conversations. Test actual skill uploads where an authorized eligible account is available. Record unsupported or untested combinations honestly and keep copy/paste available as the fallback.
+5. **Enable example copying.** Assemble one text payload from each example's code and description and expose **Copy to clipboard** on existing example surfaces in the editor and website. Reuse the clipboard feedback/fallback behavior where practical; do not introduce another example catalogue.
+6. **Verify learner use.** Exercise copy/paste in real ChatGPT and Claude conversations. Test actual skill uploads where an authorized eligible account is available. Record unsupported or untested combinations honestly and keep copy/paste available as the fallback.
 
 ## Verification
 
@@ -106,6 +115,7 @@ For executable behavior, follow red-green TDD at the narrowest seam:
 
 - Assemble copy text from fixture instruction/reference inputs and verify neither is omitted or altered; do not assert the wording of production prose.
 - Create and extract a real ZIP, verify its file structure and referenced-file availability, and compare its contents with the package-owned inputs.
+- Assemble example copy payloads from fixture code and Markdown descriptions, verifying exact code preservation, inclusion of the description, and exclusion of frontmatter/rendered HTML without pinning production prose. Exercise the real example buttons on both hosts, checking clipboard contents, success feedback, failure fallback, and preservation of the current sketch.
 - Exercise managed-file provisioning and any approved migration with real temporary files, including modified and kept support files.
 - Preserve deterministic integrated-Agent tests proving reference lookup, enabled-example lookup, context handling, and absence of arbitrary shell/file/web capabilities.
 - Drive the real editor Docs navigation and website documentation navigation to reach Skill and exercise copy, clipboard failure fallback, visible source presentation, and downloads on both hosts. Test browser behavior without provider mocks or test-only DOM state.
@@ -121,6 +131,7 @@ Review declarative frontmatter, links, and prose directly. Run the applicable co
 - Skill is reachable within editor Docs and website documentation, with the shared instructions, reference, copy action, and download on both hosts.
 - Learners can explain what a skill is and use this one with common external AI tools without relying on the integrated GIC Agent.
 - Copy/paste includes the instructions and reference, with an accessible fallback when clipboard access fails.
+- Examples in the editor and website offer **Copy to clipboard** that copies both the complete example code and its description, with success feedback and manual-copy fallback, without changing the current sketch.
 - The ZIP contains the matching `gic-agent` folder and its reference and works through verified provider upload paths; unverified/unavailable paths are labeled and offer copy/paste.
 - Existing learner files, kept policies, and sketches remain protected during any approved workspace migration.
 - The Agent continues to guide beginners rather than produce complete assignment solutions.
