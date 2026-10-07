@@ -149,9 +149,9 @@ nav.default-nav {
 }
 
 @media (max-width: 48rem) {
-	header{
+	header {
 		display: block;
-		h1{
+		h1 {
 			font-size: 1.5rem;
 			text-align: left;
 		}
@@ -165,7 +165,7 @@ nav.default-nav {
 		position: absolute;
 		top: 0;
 		right: 0;
-		button{
+		button {
 			border-radius: 0px;
 			border: none;
 			background-color: var(--color-background);
@@ -173,7 +173,7 @@ nav.default-nav {
 		button:hover {
 			background-color: var(--color-chrome);
 		}
-		ul{
+		ul {
 			position: absolute;
 			top: var(--s8);
 			right: var(--s2);
@@ -182,7 +182,7 @@ nav.default-nav {
 			flex-direction: column;
 			align-items: stretch;
 			/*justify-content: flex-end;*/
-			li{
+			li {
 				/*max-width: 10px;*/
 				margin-top: -16px;
 				border-left: none;
@@ -199,8 +199,6 @@ nav.default-nav {
 		min-height: var(--s6);
 		cursor: pointer;
 	}
-
-
 
 	nav.default-nav[data-expanded="false"] ul {
 		display: none;
