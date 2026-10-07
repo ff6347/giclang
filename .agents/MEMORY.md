@@ -249,17 +249,19 @@
 
 - [preference] Finish the macOS workflow before platform-specific Windows/Linux validation; keep the tutor-less PWA available as an interim fallback.
 
-## Shared Skill and Documentation (Planned)
+## Shared Skill and Documentation
 
-The requirements below are approved planning scope, not implemented behavior. `.agents/plans/gic-agent-content.md` defines six proposed vertical slices; implementation and publication of the complete issue breakdown remain pending.
+Slice 1 is implemented. `.agents/plans/gic-agent-content.md` retains the remaining planned slices; implementation of slices 2–6 and publication of the complete issue breakdown remain pending.
 
 - [preference] Teach standard skill terminology and transferable creative-coding workflows with common AI tools rather than a GIC-only workflow. Call reusable instructions Skill and the integrated assistant panel Agent.
 - [decision] Maintain one product `gic-agent` skill and language reference in `packages/content`, consumed by desktop and a Skill tab/entry within editor and website Docs. Keep editor tool guidance in a conditional section of the same skill; keep skill metadata separate from Docs metadata and public URLs host-owned.
-- [decision] Initial skill distribution is self-contained copy/paste or ZIP/folder only; marketplaces, plugins, and automatic upstream updates are excluded.
-- [decision] Shared-content exports cover example code plus descriptions, complete individual documentation pages, an `llms.txt` discovery index with Markdown page links, and complete `llms-full.txt` text with Copy all docs and Download all docs. Editor and site expose the actions; bundled editor copying/downloading must work offline without silent truncation or an added desktop server.
+- [decision] Planned slice 2 distribution is self-contained copy/paste or ZIP/folder only; marketplaces, plugins, and automatic upstream updates are excluded.
+- [decision] Planned slices 3–6 cover example code plus descriptions, complete individual documentation pages, an `llms.txt` discovery index with Markdown page links, and complete `llms-full.txt` text with Copy all docs and Download all docs. Editor and site will expose the actions; bundled editor copying/downloading must work offline without silent truncation or an added desktop server.
 - [decision] Slice 1 preserves the integrated Agent's bundled-skill loading and learner-modified installed copies for external assistants. Policy-authority issue `0e7c1ca` remains open for release consideration but is not a blocker for shared-source delivery.
 - [decision] Desktop Support files must label the artifact Skill rather than Agent policy and show the actual configured installation directory and resolved managed-file paths, including accurate missing/uninstalled states and location changes.
-- [risk] Shipped frontmatter already says `gic-agent`, while managed folders use `gic-tutor`; migration must preserve modified/kept files and manifest records.
+- [decision] Fabian approved the pre-release `gic-agent` paths without application migration or local cleanup. Existing files and manifest records outside the declared managed set remain untouched.
+- [technique] The desktop embeds the package-owned skill and reference directly. Editor Vite and site collection loaders assemble the Skill guide through `compileSkillDocumentation`; Markdown compilation stays build-time because its dependencies require Node globals.
+- [technique] Vite tracks the skill and reference as dependencies of the Skill guide and invalidates that guide when either canonical source changes.
 - [risk] ChatGPT standalone-skill ZIP acceptance remains unverified; retain copy/paste and do not promise upload compatibility without an authorized test.
 
 ## Issue Tracking
@@ -270,7 +272,7 @@ The requirements below are approved planning scope, not implemented behavior. `.
 ## Desktop Workspace
 
 - [lesson] A managed workspace file that the student keeps needs a persistent `kept` flag in the digest manifest, not only its recorded digest. Recording the student's digest alone makes the next reconcile see on-disk equal to recorded and silently replace it with the bundled version.
-- [decision] The desktop workspace is rooted at `~/Documents/gestalten-in-code/`. Only `AGENTS.md`, `.agents/skills/gic-tutor/SKILL.md`, and `.agents/skills/gic-tutor/references/**` are managed; `sketches/` and `sessions/` are scaffolding that the manager never scans or modifies.
+- [decision] The desktop workspace is rooted at `~/Documents/gestalten-in-code/`. Only `AGENTS.md`, `.agents/skills/gic-agent/SKILL.md`, and `.agents/skills/gic-agent/references/**` are managed; `sketches/` and `sessions/` are scaffolding that the manager never scans or modifies.
 - [technique] Processing-style sketch names must account for normalized existing folder names and direct `.gic` basenames as well as names reserved in the current session; suffixes continue `a` through `z`, then `aa` and onward.
 - [lesson] Register a Monaco `Cmd+K` command only when its desktop action exists. A no-op PWA binding can shadow Monaco's `Ctrl+K` hover chord.
 - [decision] Desktop Save and Save As capture a thumbnail only when the currently successful Canvas preview belongs to the exact source snapshot being saved. Native storage accepts bounded, validated 100 × 100 PNG bytes in the existing owned sketch bundle transaction; absent capture preserves the saved thumbnail, and standalone sources never write a neighbor thumbnail.

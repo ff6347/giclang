@@ -5,7 +5,9 @@
 
 ## Status and goal
 
-Planning only; implementation requires a separate instruction from Fabian.
+Slice 1 is implemented. Slices 2–6 remain planned and require a separate instruction from Fabian. Publication of the complete issue breakdown remains pending approval.
+
+Fabian approved the pre-release `gic-agent` naming without migration code or local cleanup. Existing files and manifest records outside the managed set remain untouched.
 
 Make the desktop Agent and the skill visible in GIC documentation use one maintained instruction source and one bundled language reference in `packages/content`. Name the product skill `gic-agent` consistently. Present it as **Skill** within Docs in both the editor and the website. Let learners either copy everything into an ordinary ChatGPT or Claude conversation or download a skill folder as a ZIP for upload or local use.
 
@@ -28,9 +30,9 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 
 ## Existing integration points
 
-- [Product skill](../../apps/desktop/src-tauri/workspace/gic-tutor/SKILL.md): already has `name: gic-agent`, but its folder is `gic-tutor`; combines teaching policy and integrated tool instructions.
-- [Bundled reference](../../apps/desktop/src-tauri/workspace/gic-tutor/references/language.md): consumed by the integrated reference tools and installed workspace.
-- [Native Agent](../../apps/desktop/src-tauri/src/agent.rs), [reference access](../../apps/desktop/src-tauri/src/reference.rs), and [managed files](../../apps/desktop/src-tauri/src/managed_files.rs): embed the desktop-owned sources.
+- [Product skill](../../packages/content/content/skills/gic-agent/SKILL.md): canonical `gic-agent` teaching instructions with conditional integrated-editor guidance.
+- [Bundled reference](../../packages/content/content/skills/gic-agent/references/language.md): consumed by the integrated reference tools, documentation, and installed workspace.
+- [Native Agent](../../apps/desktop/src-tauri/src/agent.rs), [reference access](../../apps/desktop/src-tauri/src/reference.rs), and [managed files](../../apps/desktop/src-tauri/src/managed_files.rs): embed the package-owned sources directly.
 - [Workspace guidance](../../apps/desktop/src-tauri/workspace/AGENTS.md): directs external assistants to the installed skill.
 - [Content files API](../../packages/content/src/content-files.ts): exposes package-owned files to Node build tools; currently enumerates About, Docs, and Examples.
 - [Editor content adapter](../../apps/editor/src/lib/content.ts) and [site collection](../../apps/site/src/content.config.ts): consume shared product documentation through their existing host-specific pipelines.
@@ -133,7 +135,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 
 1. **Establish the shared source.** Relocate the product skill and reference into the content package. Separate common guidance from the conditional editor-only section within the same skill. Preserve its teaching constraints and reference-grounding behavior. Validate naming and reference links directly; do not write tests that pin authored paragraphs.
 2. **Connect the desktop.** Embed the canonical skill and reference in the existing Agent and reference tools. Update workspace guidance, relevant build tooling, and managed paths to `gic-agent`. Label the support file Skill and show its actual installation directory and each support file's resolved path in Settings. Preserve the existing Agent tool set, bundled-skill loading boundary, and managed-file protections.
-3. **Handle existing workspaces safely.** Before implementing path migration, confirm how existing `.agents/skills/gic-tutor/` files and digest records should be handled. Never discard modified or explicitly kept files. Present any required migration choice to Fabian; do not silently introduce aliases or backward compatibility. Exercise install, repair, update, keep, replace, and uninstall against real temporary files.
+3. **Preserve managed-file safety.** No path migration or local cleanup is required by Fabian's pre-release decision. Files and records outside the managed set remain untouched. Exercise install, repair, update, keep, replace, and uninstall against real temporary files, preserving modified and explicitly kept files.
 4. **Expose the shared content.** Add package-owned assembly for the copy payload and ZIP/folder. Add the **Skill** tab within editor Docs and the corresponding Skill entry/page within the Astro website's documentation. Present the shared instructions, reference, standard skill terminology, and setup guidance in both. Use the same instructions and reference in every output; keep download URLs host-owned.
 5. **Enable example copying.** Assemble one text payload from each example's code and description and expose **Copy to clipboard** on existing example surfaces in the editor and website. Reuse the clipboard feedback/fallback behavior where practical; do not introduce another example catalogue.
 6. **Make documentation portable.** Add Copy page, Copy all docs, and Download all docs throughout the appropriate editor and site Docs surfaces. Generate the complete `llms.txt` index, clean Markdown page exports, and combined `llms-full.txt` through shared content assembly. Publish them with each web host's routing/base-path conventions and expose the bundled exports in desktop Docs. Validate links and complete-document coverage against clean production builds.
@@ -143,7 +145,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 
 Pending approval of the complete breakdown before publication to git-bug. Each slice includes its relevant content, host integration, and behavior verification rather than creating standalone infrastructure issues.
 
-1. **Share the gic-agent skill between desktop and documentation.** Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, conditional editor-only guidance, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
+1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, conditional editor-only guidance, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
 2. **Copy or download the GIC skill for another AI tool.** Blocked by: Slice 1. Deliver complete skill/reference copying and a portable skill ZIP on editor and site, with setup guidance, feedback, and manual-copy fallback.
 3. **Copy example code and description together.** Blocked by: None. Deliver example clipboard actions on editor and site without changing the current sketch.
 4. **Copy individual documentation pages and publish Markdown versions.** Blocked by: Slice 1. Deliver complete per-page copying and clean Markdown exports, including assembled Skill content, on editor and site with offline editor access.
