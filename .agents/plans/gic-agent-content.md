@@ -5,7 +5,7 @@
 
 ## Status and goal
 
-Slice 1 is implemented. Slices 2–6 remain planned and require a separate instruction from Fabian. Publication of the complete issue breakdown remains pending approval.
+Slices 1–2 are implemented. Slices 3–6 remain planned and require a separate instruction from Fabian. Publication of the complete issue breakdown remains pending approval.
 
 Fabian approved the pre-release `gic-agent` naming without migration code or local cleanup. Existing files and manifest records outside the managed set remain untouched.
 
@@ -148,7 +148,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 Pending approval of the complete breakdown before publication to git-bug. Each slice includes its relevant content, host integration, and behavior verification rather than creating standalone infrastructure issues.
 
 1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, an editor-owned supplement appended only to the desktop system prompt, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
-2. **Copy or download the GIC skill for another AI tool.** Blocked by: Slice 1. Deliver complete skill/reference copying and a portable skill ZIP on editor and site, with setup guidance, feedback, and manual-copy fallback.
+2. **Copy or download the GiC skill for another AI tool.** Implemented. Editor and site provide complete skill/reference copying, a portable two-file ZIP, original source inspection, setup guidance, truthful feedback, and selectable-text fallback. Editor actions work offline. Claude's documented upload path is linked; actual provider archive acceptance remains unverified.
 3. **Copy example code and description together.** Blocked by: None. Deliver example clipboard actions on editor and site without changing the current sketch.
 4. **Copy individual documentation pages and publish Markdown versions.** Blocked by: Slice 1. Deliver complete per-page copying and clean Markdown exports, including assembled Skill content, on editor and site with offline editor access.
 5. **Publish an llms.txt index for the documentation.** Blocked by: Slice 4. Deliver the generated complete index, working Markdown links, Docs discovery, and bundled desktop access.
