@@ -85,10 +85,8 @@ code {
 }
 
 code {
-	font-family:
-		ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
-		"DejaVu Sans Mono", monospace;
-	font-size: 0.89em;
+	font-family: var(--font-body);
+
 	background-color: var(--color-chrome);
 }
 pre > code {
