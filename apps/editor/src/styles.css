@@ -68,6 +68,12 @@ body {
 	font-family: var(--font-body);
 }
 
+pre,
+code {
+	font-family: inherit;
+	font-size: inherit;
+}
+
 button,
 input {
 	font: inherit;
