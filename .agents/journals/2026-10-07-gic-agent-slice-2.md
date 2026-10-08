@@ -59,3 +59,7 @@
 - [lesson] Text before the opening frontmatter delimiter prevents ordinary frontmatter parsers from discovering skill metadata. The fixture regression returned empty metadata before the fix and correctly parsed `name` and `description` afterward.
 - [technique] Passed all three shared-export tests, all four website build tests including the non-root base, core/CLI tests (433), compact tests, package/browser/site typechecks, lint, browser production build, dedicated Chromium link/export acceptance, and the complete Firefox suite (100 passed, eight existing desktop-Agent skips). GPT-6 Luna ran bounded quality gates; scoped formatting and whitespace checks passed.
 - [decision] The two-link UI, ZIP generation, desktop prompt boundary, installed learner copies, `.zed/`, and issues are unchanged. No server owned by Fabian was stopped or reused for acceptance. Root formatting retains its previously recorded limitation; the browser build retains the existing chunk-size warning.
+
+## Skill resource follow-up
+
+- [decision] Fabian requested an explicit slice 5 reminder to link the canonical portable skill to `https://giclang.cc/llms.txt` after the index is published, verify the public link and its inclusion in raw/ZIP exports, and retain reference-first guidance with optional web access. This is a plan update only; no later-slice implementation or placeholder link was added.
