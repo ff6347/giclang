@@ -383,10 +383,12 @@ fn set_owner_only(path: &std::path::Path) -> Result<(), std::io::Error> {
     let entries = acl
         .all()
         .map_err(|_| std::io::Error::other("unable to protect credential permissions"))?;
+    // These SID buffers have initialized allocations but zero logical length.
+    // Moving them preserves the bytes used by the Windows permission calls.
     let existing_sids: Vec<Vec<u16>> = entries
-        .iter()
+        .into_iter()
         .filter(|entry| entry.entry_type == AceType::AccessAllow)
-        .filter_map(|entry| entry.sid.clone())
+        .filter_map(|entry| entry.sid)
         .collect();
     for existing_sid in existing_sids {
         acl.remove(

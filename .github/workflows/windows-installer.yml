@@ -27,6 +27,7 @@ jobs:
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           targets: x86_64-pc-windows-msvc
+          components: clippy
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -39,6 +40,9 @@ jobs:
 
       - name: Test Windows desktop bridge
         run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc -- --test-threads=1
+
+      - name: Lint Windows desktop bridge
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --all-targets -- -D warnings
 
   package-probe:
     runs-on: windows-2022
