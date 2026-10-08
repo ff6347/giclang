@@ -87,6 +87,15 @@ test("copies bundled example text and reports clipboard denial without fallback 
 		"Could not copy to clipboard.",
 	);
 	await expect(card.getByRole("status")).toHaveCount(0);
+	if (!editor) {
+		await expect(button.locator(".copy-confirmation")).toBeHidden();
+		await expect(button.locator(".copy-label")).toBeVisible();
+		// A prior success deadline must not clear a subsequent clipboard error.
+		await page.waitForTimeout(2_100);
+		await expect(card.getByRole("alert")).toHaveText(
+			"Could not copy to clipboard.",
+		);
+	}
 	expect(await card.locator("details, textarea, pre, code").count()).toBe(
 		countsBefore,
 	);

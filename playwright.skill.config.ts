@@ -30,7 +30,11 @@ export default defineConfig({
 		},
 		{
 			name: "site-chromium",
-			testMatch: ["site.spec.ts", "example-copy.spec.ts"],
+			testMatch: [
+				"site.spec.ts",
+				"example-copy.spec.ts",
+				"site-copy-feedback.spec.ts",
+			],
 			use: {
 				...devices["Desktop Chrome"],
 				browserName: "chromium",
