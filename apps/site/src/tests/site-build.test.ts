@@ -76,7 +76,6 @@ test("build renders exactly two Skill actions and the combined source document",
 		"utf8",
 	);
 	const rawText = [
-		"--- gic-agent/SKILL.md ---",
 		canonicalSkill,
 		"--- gic-agent/references/language.md ---",
 		canonicalReference,
@@ -197,7 +196,6 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 			"utf8",
 		);
 		const rawText = [
-			"--- gic-agent/SKILL.md ---",
 			canonicalSkill,
 			"--- gic-agent/references/language.md ---",
 			canonicalReference,

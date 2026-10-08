@@ -21,7 +21,6 @@ export function createGicAgentExport({
 	referenceSource,
 }: GicAgentExportInput): GicAgentExport {
 	const rawText = [
-		"--- gic-agent/SKILL.md ---",
 		skillSource,
 		"--- gic-agent/references/language.md ---",
 		referenceSource,

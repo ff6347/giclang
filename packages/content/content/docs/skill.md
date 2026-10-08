@@ -13,7 +13,7 @@ A common portable skill layout has a `SKILL.md` file and a `references/` folder 
 
 You can use the instructions manually with ChatGPT, Claude, or another assistant that accepts text in a conversation:
 
-1. Open **View raw skill** and select its complete text, including both source labels.
+1. Open **View raw skill** and select its complete text, including the skill and language reference.
 2. Paste the complete text into a conversation.
 3. Share the relevant sketch or error details, then ask for one next step or an explanation.
 

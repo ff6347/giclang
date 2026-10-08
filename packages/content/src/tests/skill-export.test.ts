@@ -7,6 +7,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import matter from "gray-matter";
 import { readGicAgentSkill, readGicAgentExport } from "../content-files.ts";
 import { createGicAgentExport } from "../skill-export.ts";
 
@@ -51,10 +52,13 @@ describe("GiC agent export", () => {
 
 		assert.equal(result.skillSource, skillSource);
 		assert.equal(result.referenceSource, referenceSource);
+		assert.deepEqual(matter(result.rawText).data, {
+			name: "fixture",
+			description: "fixture skill",
+		});
 		assert.equal(
 			result.rawText,
 			[
-				"--- gic-agent/SKILL.md ---",
 				skillSource,
 				"--- gic-agent/references/language.md ---",
 				referenceSource,
@@ -104,7 +108,6 @@ describe("GiC agent export", () => {
 		assert.equal(
 			result.rawText,
 			[
-				"--- gic-agent/SKILL.md ---",
 				expectedSkillSource,
 				"--- gic-agent/references/language.md ---",
 				expectedReferenceSource,
