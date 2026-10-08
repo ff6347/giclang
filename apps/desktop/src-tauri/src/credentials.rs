@@ -5,6 +5,10 @@ use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf, sync::Mutex};
 use tempfile::NamedTempFile;
 
+#[cfg(all(test, windows))]
+#[path = "credentials-tests.rs"]
+mod tests;
+
 #[derive(Default, Deserialize, Serialize)]
 struct AuthFile {
     codex: Option<CodexCredentials>,
