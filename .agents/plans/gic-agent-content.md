@@ -50,6 +50,10 @@ packages/content/content/
 └── skills/
     └── gic-agent/
         ├── SKILL.md
+        ├── agents/
+        │   └── openai.yaml
+        ├── assets/
+        │   └── icon.svg
         └── references/
             └── language.md
 ```
@@ -123,15 +127,19 @@ Provide **Download skill (ZIP)** with this structure:
 gic-agent.zip
 └── gic-agent/
     ├── SKILL.md
+    ├── agents/
+    │   └── openai.yaml
+    ├── assets/
+    │   └── icon.svg
     └── references/
         └── language.md
 ```
 
-The folder name and frontmatter name must match. The skill explicitly points to its bundled reference; a website link alone is not sufficient. Publish both original source files together in the website's raw plaintext document, and explain that users can extract the ZIP for a filesystem-based assistant.
+The folder name and frontmatter name must match. The skill explicitly points to its bundled reference; a website link alone is not sufficient. The ZIP also preserves package-owned OpenAI metadata and the GiC logo; its metadata icon paths resolve within the extracted skill folder. Keep display metadata and the icon out of the combined raw text and leave desktop installed-file management unchanged. Publish both original source files together in the website's raw plaintext document, and explain that users can extract the ZIP for a filesystem-based assistant.
 
-Give short provider-specific upload and activation instructions where verified. Claude documents ZIP-folder uploads, including Free accounts with code execution enabled. ChatGPT documents skill uploads for eligible workspaces, but the accepted standalone-skill file layout must be tested before claiming this ZIP is supported there. If uploading is unavailable or rejected, direct the learner to copy/paste; do not add another distribution system to work around it.
+Give short provider-specific upload and activation instructions where verified. Claude documents ZIP-folder uploads, including Free accounts with code execution enabled. Fabian manually imported the skill/reference ZIP into ChatGPT and Claude; ChatGPT generated OpenAI metadata and a heart icon. The four-file package includes the supplied metadata with GiC capitalization and the existing GiC logo. Provider acceptance and icon presentation for that archive remain unverified. If uploading is unavailable or rejected, direct the learner to copy/paste; do not add another distribution system to work around it.
 
-Sources: [Agent Skills specification](https://agentskills.io/specification), [Claude skill uploads](https://support.claude.com/en/articles/12512180-use-skills-in-claude), and [ChatGPT skill uploads](https://help.openai.com/en/articles/20001066-skills-in-chatgpt). These establish documented capabilities, not completed account tests.
+Sources: [Agent Skills specification](https://agentskills.io/specification), [Claude skill uploads](https://support.claude.com/en/articles/12512180-use-skills-in-claude), and [ChatGPT skill uploads](https://help.openai.com/en/articles/20001066-skills-in-chatgpt). These establish documented capabilities; Fabian's reported account checks cover the skill/reference ZIP, not the four-file package.
 
 ## Implementation sequence
 
@@ -148,7 +156,7 @@ Sources: [Agent Skills specification](https://agentskills.io/specification), [Cl
 Pending approval of the complete breakdown before publication to git-bug. Each slice includes its relevant content, host integration, and behavior verification rather than creating standalone infrastructure issues.
 
 1. **Share the gic-agent skill between desktop and documentation.** Implemented; no migration required. Blocked by: None. Deliver the canonical skill/reference in desktop and editor/site Docs, an editor-owned supplement appended only to the desktop system prompt, consistent naming, safe managed-file handling, and Support files labels and installation paths. Existing policy-authority issue `0e7c1ca` does not block this slice; preserve the current loading boundary.
-2. **Download or view the raw GiC skill for another AI tool.** Implemented. Desktop, PWA, and website expose exactly two matching ordinary links: Download skill (ZIP) and View raw skill. The ZIP preserves the canonical pair and is bundled offline in the editor; the website publishes both complete original sources together as plaintext. Skill clipboard actions/tests, details, textareas, feedback, and fallbacks are excluded. Claude's documented upload path is linked; actual provider archive acceptance remains unverified.
+2. **Download or view the raw GiC skill for another AI tool.** Implemented. Desktop, PWA, and website expose exactly two matching ordinary links: Download skill (ZIP) and View raw skill. The ZIP preserves the canonical skill/reference, OpenAI display metadata, and GiC icon and is bundled offline in the editor; the website publishes both complete original sources together as plaintext. Skill clipboard actions/tests, details, textareas, feedback, and fallbacks are excluded. Claude's documented upload path and ChatGPT Skills are linked; Fabian confirmed skill/reference ZIP imports in both, while four-file archive acceptance remains unverified. The portable skill links to the public website, Docs, repository, and examples with optional web access; the `llms.txt` link remains a slice 5 follow-up.
 3. **Copy example code and description together.** Blocked by: None. Deliver example clipboard actions on editor and site without changing the current sketch.
 4. **Copy individual documentation pages and publish Markdown versions.** Blocked by: Slice 1. Deliver complete per-page copying and clean Markdown exports, including assembled Skill content, on editor and site with offline editor access.
 5. **Publish an llms.txt index for the documentation.** Blocked by: Slice 4. Deliver the generated complete index, working Markdown links, Docs discovery, and bundled desktop access. Once the website index is published, add `https://giclang.cc/llms.txt` to the optional further-resources section in the canonical `packages/content/content/skills/gic-agent/SKILL.md`. Verify the link resolves and is included in the raw skill and ZIP exports. Keep the bundled language reference authoritative and web access optional; do not add a broken placeholder link before publication.
