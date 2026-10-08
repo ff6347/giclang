@@ -1,41 +1,9 @@
 ---
-// ABOUTME: Publishes package-owned examples as static cards with selectable source.
-// ABOUTME: Copies authored descriptions and code using the shared content contract.
-import { readFile } from "node:fs/promises";
-import { compileMarkdown } from "@giclang/content/markdown";
-import {
-	createExampleCopyText,
-	createExamples,
-	type ExampleDescription,
-} from "@giclang/content/model";
-import { listContentFiles } from "@giclang/content/node";
+// ABOUTME: Presents package-owned examples as compact equal-height overview cards.
+// ABOUTME: Links each thumbnail and title to its complete static example page.
 import DefaultLayout from "../layouts/default.astro";
-
-const exampleDescriptions: Record<string, ExampleDescription> = {};
-const exampleSources: Record<string, string> = {};
-const exampleThumbnails = import.meta.glob<string>(
-	"../../../../packages/content/content/examples/*/thumbnail.png",
-	{ eager: true, query: "?url&no-inline", import: "default" },
-);
-
-for (const file of await listContentFiles("examples")) {
-	const path = `/content/${file.path}`;
-	if (file.kind === "markdown") {
-		const description = compileMarkdown(file.path, file.source);
-		if (!("enabled" in description)) {
-			throw new Error(`Example description '${file.path}' requires metadata.`);
-		}
-		exampleDescriptions[path] = description;
-	} else if (file.path.endsWith(".gic")) {
-		exampleSources[path] = await readFile(file.fileUrl, "utf8");
-	}
-}
-
-const examples = createExamples({
-	exampleDescriptions,
-	exampleSources,
-	exampleThumbnails,
-});
+import { examples } from "../lib/examples.ts";
+import { renderUserMarkdown } from "@giclang/content/user-markdown";
 ---
 
 <DefaultLayout>
@@ -45,61 +13,37 @@ const examples = createExamples({
 			{examples.map((example) => (
 				<li class="content-card" data-example-id={example.id}>
 					<div class="content-card-content">
-						<img
-							alt={`${example.title} thumbnail`}
-							class="example-thumbnail"
-							height="100"
-							src={example.thumbnailUrl}
-							width="100"
-							loading="lazy"
-						/>
-						<h2>{example.title}</h2>
-						<div class="content-markdown" set:html={example.html} />
-						<pre
-							tabindex="0"
-							aria-label={`${example.title} source`}
-						><code>{example.source}</code></pre>
-						<button
-							class="application-button"
-							type="button"
-							data-copy-text={encodeURIComponent(
-								createExampleCopyText(example),
-							)}
+						<a
+							class="example-link"
+							href={`${import.meta.env.BASE_URL}examples/${encodeURIComponent(example.id)}/`}
 						>
-							Copy to clipboard
-						</button>
-						<p class="copy-status" role="status"></p>
+							<img
+								alt={`${example.title} thumbnail`}
+								class="example-thumbnail"
+								height="100"
+								src={example.thumbnailUrl}
+								width="100"
+								loading="lazy"
+							/>
+						</a>
+						<h2>
+							<a
+								class="example-link"
+								href={`${import.meta.env.BASE_URL}examples/${encodeURIComponent(example.id)}/`}
+							>
+								{example.title}
+							</a>
+						</h2>
+						<div
+							class="content-markdown"
+							set:html={renderUserMarkdown(example.markdown)}
+						/>
 					</div>
 				</li>
 			))}
 		</ul>
 	</main>
 </DefaultLayout>
-
-<script>
-	for (const button of document.querySelectorAll<HTMLButtonElement>(
-		"[data-copy-text]",
-	)) {
-		const status =
-			button.parentElement?.querySelector<HTMLElement>(".copy-status");
-		const payload = button.dataset.copyText;
-		if (!status || payload === undefined) continue;
-		button.addEventListener("click", async () => {
-			status.textContent = "";
-			button.disabled = true;
-			try {
-				await navigator.clipboard.writeText(decodeURIComponent(payload));
-				status.setAttribute("role", "status");
-				status.textContent = "Copied to clipboard.";
-			} catch {
-				status.setAttribute("role", "alert");
-				status.textContent = "Could not copy to clipboard.";
-			} finally {
-				button.disabled = false;
-			}
-		});
-	}
-</script>
 
 <style>
 	.examples-page {
@@ -118,7 +62,9 @@ const examples = createExamples({
 	}
 
 	.content-card {
-		flex: 1 1 24rem;
+		flex: 0 1 18rem;
+		height: 18rem;
+		width: 18rem;
 		min-width: 0;
 		max-width: 100%;
 		list-style: none;
@@ -129,69 +75,43 @@ const examples = createExamples({
 		align-items: flex-start;
 		background-color: var(--color-background);
 		border: 2px solid var(--color-text);
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: var(--s3);
+		height: 100%;
+		overflow: hidden;
 		padding: var(--s3);
 		margin: var(--s0);
 	}
 
 	.content-card h2 {
+		flex: none;
+		font-size: 1.25rem;
+		line-height: 1.25;
 		padding: var(--s0);
 	}
 
-	.example-thumbnail {
-		border: 2px solid var(--color-text);
+	.example-link {
+		color: inherit;
 		flex: none;
-		image-rendering: pixelated;
 	}
 
-	.content-markdown {
-		min-width: 0;
-		width: 100%;
-	}
-
-	.content-markdown :global(p:last-child) {
-		margin-bottom: var(--s0);
-	}
-
-	pre {
-		background-color: var(--color-background);
-		margin: var(--s0);
-		max-width: 100%;
-		overflow-x: auto;
-		width: 100%;
-		user-select: text;
-	}
-
-	.application-button {
-		background-color: var(--color-background);
-		border: 2px solid var(--color-text);
-		color: var(--color-text);
-		font: inherit;
-		padding: var(--s1) var(--s2);
-		cursor: pointer;
-	}
-
-	.application-button:hover:not(:disabled) {
-		background-color: var(--color-control);
-	}
-
-	.application-button:disabled {
-		cursor: wait;
-	}
-
-	.application-button:focus-visible,
-	pre:focus-visible {
+	.example-link:focus-visible {
 		outline: 2px solid var(--color-text);
 		outline-offset: 2px;
 	}
 
-	.copy-status {
-		margin: var(--s0);
+	.example-thumbnail {
+		border: 2px solid var(--color-text);
+		image-rendering: pixelated;
 	}
 
-	.copy-status:empty {
-		display: none;
+	.content-markdown {
+		flex: 1;
+		min-height: 0;
+		min-width: 0;
+		overflow: hidden;
+		width: 100%;
 	}
 </style>

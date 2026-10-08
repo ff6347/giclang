@@ -1,0 +1,125 @@
+---
+// ABOUTME: Publishes complete example descriptions and manually selectable GIC source.
+// ABOUTME: Copies bundled example text without execution or additional failure UI.
+import type { ExampleContent } from "@giclang/content/model";
+import { createExampleCopyText } from "@giclang/content/model";
+import DefaultLayout from "../../layouts/default.astro";
+import { examples } from "../../lib/examples.ts";
+
+export function getStaticPaths() {
+	return examples.map((example) => ({
+		params: { id: example.id },
+		props: { example },
+	}));
+}
+
+interface Props {
+	example: ExampleContent;
+}
+
+const { example } = Astro.props;
+---
+
+<DefaultLayout>
+	<main class="example-page">
+		<a href={`${import.meta.env.BASE_URL}examples/`}>Back to examples</a>
+		<article aria-labelledby="example-title" data-example-id={example.id}>
+			<h1 id="example-title">{example.title}</h1>
+			<img
+				alt={`${example.title} thumbnail`}
+				class="example-thumbnail"
+				height="100"
+				src={example.thumbnailUrl}
+				width="100"
+			/>
+			<div class="content-markdown" set:html={example.html} />
+			<pre
+				tabindex="0"
+				aria-label={`${example.title} source`}
+			><code>{example.source}</code></pre>
+			<button
+				class="application-button"
+				type="button"
+				data-copy-text={encodeURIComponent(createExampleCopyText(example))}
+			>
+				Copy to clipboard
+			</button>
+			<p class="copy-status" role="status"></p>
+		</article>
+	</main>
+</DefaultLayout>
+
+<script>
+	for (const button of document.querySelectorAll<HTMLButtonElement>(
+		"[data-copy-text]",
+	)) {
+		const status =
+			button.parentElement?.querySelector<HTMLElement>(".copy-status");
+		const payload = button.dataset.copyText;
+		if (!status || payload === undefined) continue;
+		button.addEventListener("click", async () => {
+			status.textContent = "";
+			button.disabled = true;
+			try {
+				await navigator.clipboard.writeText(decodeURIComponent(payload));
+				status.setAttribute("role", "status");
+				status.textContent = "Copied to clipboard.";
+			} catch {
+				status.setAttribute("role", "alert");
+				status.textContent = "Could not copy to clipboard.";
+			} finally {
+				button.disabled = false;
+			}
+		});
+	}
+</script>
+
+<style>
+	.example-page {
+		padding-bottom: var(--s4);
+	}
+
+	.example-thumbnail {
+		border: 2px solid var(--color-text);
+		image-rendering: pixelated;
+		margin-block: var(--s3);
+	}
+
+	pre {
+		background-color: var(--color-background);
+		max-width: 100%;
+		overflow-x: auto;
+		user-select: text;
+	}
+
+	.application-button {
+		background-color: var(--color-background);
+		border: 2px solid var(--color-text);
+		color: var(--color-text);
+		font: inherit;
+		padding: var(--s1) var(--s2);
+		cursor: pointer;
+	}
+
+	.application-button:hover:not(:disabled) {
+		background-color: var(--color-control);
+	}
+
+	.application-button:disabled {
+		cursor: wait;
+	}
+
+	.application-button:focus-visible,
+	pre:focus-visible {
+		outline: 2px solid var(--color-text);
+		outline-offset: 2px;
+	}
+
+	.copy-status {
+		margin: var(--s0);
+	}
+
+	.copy-status:empty {
+		display: none;
+	}
+</style>

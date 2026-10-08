@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { promisify, stripVTControlCharacters } from "node:util";
 import { compileMarkdown } from "@giclang/content/markdown";
 import { listContentFiles } from "@giclang/content/node";
+import { renderUserMarkdown } from "@giclang/content/user-markdown";
 
 const site = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -82,6 +83,10 @@ async function verifyExamples(outputDirectory: string, base: string) {
 		);
 	}
 	assert.match(html, /<h1[^>]*>Examples<\/h1>/);
+	assert.ok(
+		!/<pre\b|data-copy-text=/.test(html),
+		"overview cards omit full source and copy payloads",
+	);
 	assert.doesNotMatch(html, /<(?:textarea|details|canvas|iframe)\b/i);
 	assert.doesNotMatch(
 		html,
@@ -100,6 +105,17 @@ async function verifyExamples(outputDirectory: string, base: string) {
 		examples.map((example) => example.id),
 	);
 	const { createExampleCopyText } = await import("@giclang/content/model");
+	const pages = [html];
+	const detailDirectories = (
+		await readdir(join(outputDirectory, "examples"), { withFileTypes: true })
+	)
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.sort();
+	assert.deepEqual(
+		detailDirectories,
+		examples.map((example) => example.id).sort(),
+	);
 
 	for (const [index, example] of examples.entries()) {
 		const card = cards[index]?.[2] ?? "";
@@ -109,10 +125,52 @@ async function verifyExamples(outputDirectory: string, base: string) {
 			/<div\b[^>]*class="content-markdown"[^>]*>([\s\S]*?)<\/div>/.exec(card);
 		assert.equal(
 			normalizeHtml(description?.[1] ?? ""),
+			normalizeHtml(renderUserMarkdown(example.markdown)),
+		);
+		assert.doesNotMatch(
+			description?.[1] ?? "",
+			/<(?:a|button|input|img|iframe)\b/,
+		);
+		const links = [...card.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].filter(
+			(link) => /\bclass="example-link"/.test(link[1] ?? ""),
+		);
+		assert.equal(
+			links.length,
+			2,
+			"thumbnail and title both link to the detail page",
+		);
+		for (const link of links)
+			assert.equal(
+				/href="([^"]+)"/.exec(link[1] ?? "")?.[1],
+				`${base}examples/${encodeURIComponent(example.id)}/`,
+			);
+		assert.match(links[0]?.[2] ?? "", /<img\b/);
+		assert.equal(decodeHtml(links[1]?.[2] ?? ""), example.title);
+		assert.ok(example.id);
+		const detail = await readFile(
+			join(outputDirectory, "examples", example.id, "index.html"),
+			"utf8",
+		);
+		pages.push(detail);
+		assert.doesNotMatch(detail, /<(?:textarea|details|canvas|iframe)\b/i);
+		assert.doesNotMatch(
+			detail,
+			/Load this example|Run this example|data-gic-|runtime\.js/,
+		);
+		assert.match(
+			detail,
+			new RegExp(`href="${base}examples/"[^>]*>Back to examples<`),
+		);
+		const fullDescription =
+			/<div\b[^>]*class="content-markdown"[^>]*>([\s\S]*?)<\/div>/.exec(detail);
+		assert.equal(
+			normalizeHtml(fullDescription?.[1] ?? ""),
 			normalizeHtml(example.html),
 		);
 		const source =
-			/<pre\b([^>]*)>\s*<code\b([^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/.exec(card);
+			/<pre\b([^>]*)>\s*<code\b([^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/.exec(
+				detail,
+			);
 		assert.ok(source, `${example.id} has permanently visible source`);
 		const attributes = `${source[1]} ${source[2]}`;
 		assert.doesNotMatch(
@@ -123,8 +181,8 @@ async function verifyExamples(outputDirectory: string, base: string) {
 		assert.equal(decodeHtml(source[3]), example.source);
 
 		const buttons = [
-			...card.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g),
-		];
+			...detail.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g),
+		].filter((button) => button[1]?.includes("data-copy-text"));
 		assert.equal(buttons.length, 1);
 		assert.equal(
 			buttons[0]?.[2].replace(/<[^>]*>/g, "").trim(),
@@ -149,7 +207,7 @@ async function verifyExamples(outputDirectory: string, base: string) {
 			"exact authored source is fenced as gic",
 		);
 		assert.doesNotMatch(copyText, /^---\s*\n/);
-		assert.match(card, /role="status"/);
+		assert.match(detail, /role="status"/);
 
 		const thumbnail = /<img\b[^>]*src="([^"]+)"/.exec(card);
 		assert.ok(thumbnail);
@@ -161,7 +219,9 @@ async function verifyExamples(outputDirectory: string, base: string) {
 		);
 	}
 
-	const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
+	const scripts = pages.flatMap((page) => [
+		...page.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g),
+	]);
 	assert.ok(scripts.length > 0);
 	const scriptSources = await Promise.all(
 		scripts.map(async ([, attributes, inlineSource]) => {

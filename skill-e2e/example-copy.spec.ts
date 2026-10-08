@@ -33,13 +33,19 @@ test("copies bundled example text and reports clipboard denial without fallback 
 			.getByRole("link", { name: "examples", exact: true })
 			.click();
 		await expect(page).toHaveURL(/\/examples\/$/);
+		await page
+			.getByRole("heading", { name: expected.title, exact: true })
+			.getByRole("link")
+			.click();
+		await expect(page).toHaveURL(new RegExp(`/examples/${expected.id}/$`));
 		await expect(page.locator("canvas, iframe, textarea")).toHaveCount(0);
 		await expect(page.getByRole("button", { name: /Run|Load/ })).toHaveCount(0);
 	}
-	const cards = page.locator(".content-card");
-	const card = cards.filter({
-		has: page.getByRole("heading", { name: expected.title, exact: true }),
-	});
+	const card = editor
+		? page.locator(".content-card").filter({
+				has: page.getByRole("heading", { name: expected.title, exact: true }),
+			})
+		: page.getByRole("article", { name: expected.title, exact: true });
 	await card.hover();
 	const code = card.locator("pre > code");
 	await expect(code).toHaveText(expected.source);
