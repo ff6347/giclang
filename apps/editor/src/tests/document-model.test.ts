@@ -231,7 +231,10 @@ describe("document model", () => {
 		const snapshot = createUntitledDocument();
 		const latest = updateDocumentDescription(
 			updateDocumentSource(snapshot, "latest source"),
-			{ ...snapshot.description, body: "latest description" },
+			{
+				...snapshot.description,
+				body: "latest description",
+			},
 		);
 		const renamed = renameDocument(latest, "Untitled sketch 2");
 
