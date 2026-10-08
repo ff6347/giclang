@@ -83,6 +83,9 @@ jobs:
           if ($header.Count -ne 2 -or $header[0] -ne 0x4d -or $header[1] -ne 0x5a) {
             throw "Installer is not a Windows executable: $installer"
           }
+          $unsignedInstaller = $installer -replace '_x64-setup\.exe$', '_x64-unsigned-setup.exe'
+          Move-Item -LiteralPath $installer -Destination $unsignedInstaller
+          $installer = $unsignedInstaller
           $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $(Split-Path -Path $installer -Leaf)`n" | Set-Content -Encoding ascii -NoNewline "$installer.sha256"
           "version=$version" >> $env:GITHUB_OUTPUT
