@@ -27,7 +27,16 @@ export async function readGicAgentSkill(): Promise<GicAgentSkill> {
 }
 
 export async function readGicAgentExport(): Promise<GicAgentExport> {
-	return createGicAgentExport(await readGicAgentSkill());
+	const contentDirectory = new URL(
+		"../content/skills/gic-agent/",
+		import.meta.resolve("@giclang/content/node"),
+	);
+	const [skill, metadataSource, iconSource] = await Promise.all([
+		readGicAgentSkill(),
+		readFile(new URL("agents/openai.yaml", contentDirectory), "utf8"),
+		readFile(new URL("assets/icon.svg", contentDirectory), "utf8"),
+	]);
+	return createGicAgentExport({ ...skill, metadataSource, iconSource });
 }
 
 interface FileEntry {

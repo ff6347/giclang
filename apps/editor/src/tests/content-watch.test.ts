@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 
 test(
-	"skill documentation refreshes when either canonical source changes",
+	"skill documentation and archive refresh when any canonical export source changes",
 	{ timeout: 45_000 },
 	async () => {
 		const skillPath = fileURLToPath(
@@ -24,16 +24,31 @@ test(
 				import.meta.url,
 			),
 		);
+		const metadataPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/agents/openai.yaml",
+				import.meta.url,
+			),
+		);
+		const iconPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/assets/icon.svg",
+				import.meta.url,
+			),
+		);
 		const skillGuidePath = fileURLToPath(
 			new URL(
 				"../../../../packages/content/content/docs/skill.md",
 				import.meta.url,
 			),
 		);
-		const [originalSkill, originalReference] = await Promise.all([
-			readFile(skillPath),
-			readFile(referencePath),
-		]);
+		const [originalSkill, originalReference, originalMetadata, originalIcon] =
+			await Promise.all([
+				readFile(skillPath),
+				readFile(referencePath),
+				readFile(metadataPath),
+				readFile(iconPath),
+			]);
 		const server = await createServer({
 			configFile: fileURLToPath(
 				new URL("../../vite.config.ts", import.meta.url),
@@ -63,18 +78,19 @@ test(
 			fixture: string,
 			present: boolean,
 			originalArchive: string,
+			displayed: boolean,
 		) => {
 			for (let attempt = 0; attempt < 50; attempt++) {
 				const result = await transformSkillGuide();
 				if (
-					result.guide.includes(fixture) === present &&
+					result.guide.includes(fixture) === (present && displayed) &&
 					(result.archive !== originalArchive) === present
 				)
 					return;
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}
 			const result = await transformSkillGuide();
-			assert.equal(result.guide.includes(fixture), present);
+			assert.equal(result.guide.includes(fixture), present && displayed);
 			assert.equal(result.archive !== originalArchive, present);
 		};
 
@@ -85,22 +101,42 @@ test(
 				skillPath,
 				`${originalSkill.toString("utf8")}\n\n${skillFixture}\n`,
 			);
-			await waitForFixture(skillFixture, true, originalArchive);
+			await waitForFixture(skillFixture, true, originalArchive, true);
 			await writeFile(skillPath, originalSkill);
-			await waitForFixture(skillFixture, false, originalArchive);
+			await waitForFixture(skillFixture, false, originalArchive, true);
 
 			const referenceFixture = `editor-reference-watch-${randomUUID()}`;
 			await writeFile(
 				referencePath,
 				`${originalReference.toString("utf8")}\n\n${referenceFixture}\n`,
 			);
-			await waitForFixture(referenceFixture, true, originalArchive);
+			await waitForFixture(referenceFixture, true, originalArchive, true);
 			await writeFile(referencePath, originalReference);
-			await waitForFixture(referenceFixture, false, originalArchive);
+			await waitForFixture(referenceFixture, false, originalArchive, true);
+
+			const metadataFixture = `editor-metadata-watch-${randomUUID()}`;
+			await writeFile(
+				metadataPath,
+				`${originalMetadata.toString("utf8")}\n# ${metadataFixture}\n`,
+			);
+			await waitForFixture(metadataFixture, true, originalArchive, false);
+			await writeFile(metadataPath, originalMetadata);
+			await waitForFixture(metadataFixture, false, originalArchive, false);
+
+			const iconFixture = `editor-icon-watch-${randomUUID()}`;
+			await writeFile(
+				iconPath,
+				`${originalIcon.toString("utf8")}\n<!-- ${iconFixture} -->\n`,
+			);
+			await waitForFixture(iconFixture, true, originalArchive, false);
+			await writeFile(iconPath, originalIcon);
+			await waitForFixture(iconFixture, false, originalArchive, false);
 		} finally {
 			await Promise.all([
 				writeFile(skillPath, originalSkill),
 				writeFile(referencePath, originalReference),
+				writeFile(metadataPath, originalMetadata),
+				writeFile(iconPath, originalIcon),
 			]);
 			await server.close();
 		}

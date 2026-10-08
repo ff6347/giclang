@@ -35,12 +35,20 @@ export async function expectDownloadedSkillArchive(
 			.sort();
 		expect(entries).toEqual([
 			"gic-agent/SKILL.md",
+			"gic-agent/agents/openai.yaml",
+			"gic-agent/assets/icon.svg",
 			"gic-agent/references/language.md",
 		]);
 		execFileSync("unzip", ["-q", archivePath, "-d", directory]);
 		expect(await readFile(join(directory, "gic-agent/SKILL.md"))).toEqual(
 			Buffer.from(expected.skillSource, "utf8"),
 		);
+		expect(
+			await readFile(join(directory, "gic-agent/agents/openai.yaml")),
+		).toEqual(Buffer.from(expected.metadataSource, "utf8"));
+		expect(
+			await readFile(join(directory, "gic-agent/assets/icon.svg")),
+		).toEqual(Buffer.from(expected.iconSource, "utf8"));
 		expect(
 			await readFile(join(directory, "gic-agent/references/language.md")),
 		).toEqual(Buffer.from(expected.referenceSource, "utf8"));

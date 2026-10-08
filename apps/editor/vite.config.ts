@@ -34,6 +34,18 @@ const LANGUAGE_REFERENCE_PATH = fileURLToPath(
 const SKILL_SOURCE_PATHS = new Set([
 	SKILL_SOURCE_PATH,
 	LANGUAGE_REFERENCE_PATH,
+	fileURLToPath(
+		new URL(
+			"../../packages/content/content/skills/gic-agent/agents/openai.yaml",
+			import.meta.url,
+		),
+	),
+	fileURLToPath(
+		new URL(
+			"../../packages/content/content/skills/gic-agent/assets/icon.svg",
+			import.meta.url,
+		),
+	),
 ]);
 const PWA_DESCRIPTION = "Create static generative graphics with GIC.";
 
@@ -108,8 +120,9 @@ function productContent(): Plugin {
 				return;
 			}
 			if (path === SKILL_GUIDE_PATH) {
-				this.addWatchFile(SKILL_SOURCE_PATH);
-				this.addWatchFile(LANGUAGE_REFERENCE_PATH);
+				for (const sourcePath of SKILL_SOURCE_PATHS) {
+					this.addWatchFile(sourcePath);
+				}
 				if (id.endsWith("?skill-export")) {
 					const { archiveBase64 } = await readGicAgentExport();
 					return {

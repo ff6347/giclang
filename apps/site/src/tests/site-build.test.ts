@@ -12,6 +12,32 @@ import { test } from "node:test";
 
 const site = fileURLToPath(new URL("../../", import.meta.url));
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
+const canonicalSkillPaths = {
+	skill: "SKILL.md",
+	metadata: "agents/openai.yaml",
+	icon: "assets/icon.svg",
+	reference: "references/language.md",
+} as const;
+const archiveEntries = [
+	"gic-agent/SKILL.md",
+	"gic-agent/agents/openai.yaml",
+	"gic-agent/assets/icon.svg",
+	"gic-agent/references/language.md",
+];
+
+async function readCanonicalSkillFiles() {
+	const [skill, metadata, icon, reference] = await Promise.all(
+		Object.values(canonicalSkillPaths).map((path) =>
+			readFile(
+				new URL(
+					`../../../../packages/content/content/skills/gic-agent/${path}`,
+					import.meta.url,
+				),
+			),
+		),
+	);
+	return { skill, metadata, icon, reference };
+}
 
 test("build renders exactly two Skill actions and the combined source document", async () => {
 	await promisify(execFile)("pnpm", ["build:site"], {
@@ -61,24 +87,11 @@ test("build renders exactly two Skill actions and the combined source document",
 	assert.match(skillPage, /<h2>GiC agent skill<\/h2>/);
 	assert.match(skillPage, /<h2>Language reference<\/h2>/);
 
-	const canonicalSkill = await readFile(
-		new URL(
-			"../../../../packages/content/content/skills/gic-agent/SKILL.md",
-			import.meta.url,
-		),
-		"utf8",
-	);
-	const canonicalReference = await readFile(
-		new URL(
-			"../../../../packages/content/content/skills/gic-agent/references/language.md",
-			import.meta.url,
-		),
-		"utf8",
-	);
+	const canonicalFiles = await readCanonicalSkillFiles();
 	const rawText = [
-		canonicalSkill,
+		canonicalFiles.skill.toString("utf8"),
 		"--- gic-agent/references/language.md ---",
-		canonicalReference,
+		canonicalFiles.reference.toString("utf8"),
 	].join("\n\n");
 	assert.equal(
 		await readFile(
@@ -94,17 +107,17 @@ test("skill routes publish source files and a ZIP of the exact canonical sources
 	const temporaryDirectory = await mkdtemp(`${tmpdir()}/gic-agent-`);
 
 	try {
-		const archiveEntries = await promisify(execFile)("unzip", [
+		const archiveListing = await promisify(execFile)("unzip", [
 			"-Z1",
 			fileURLToPath(archive),
 		]);
 		assert.deepEqual(
-			archiveEntries.stdout
+			archiveListing.stdout
 				.trim()
 				.split("\n")
 				.filter((path) => !path.endsWith("/"))
 				.sort(),
-			["gic-agent/SKILL.md", "gic-agent/references/language.md"],
+			archiveEntries,
 		);
 		await promisify(execFile)("unzip", [
 			"-q",
@@ -113,31 +126,15 @@ test("skill routes publish source files and a ZIP of the exact canonical sources
 			temporaryDirectory,
 		]);
 
-		const canonicalSkill = await readFile(
-			new URL(
-				"../../../../packages/content/content/skills/gic-agent/SKILL.md",
-				import.meta.url,
-			),
-			"utf8",
-		);
-		const canonicalReference = await readFile(
-			new URL(
-				"../../../../packages/content/content/skills/gic-agent/references/language.md",
-				import.meta.url,
-			),
-			"utf8",
-		);
-		assert.equal(
-			await readFile(`${temporaryDirectory}/gic-agent/SKILL.md`, "utf8"),
-			canonicalSkill,
-		);
-		assert.equal(
-			await readFile(
-				`${temporaryDirectory}/gic-agent/references/language.md`,
-				"utf8",
-			),
-			canonicalReference,
-		);
+		const canonicalFiles = await readCanonicalSkillFiles();
+		for (const [path, source] of [
+			["gic-agent/SKILL.md", canonicalFiles.skill],
+			["gic-agent/agents/openai.yaml", canonicalFiles.metadata],
+			["gic-agent/assets/icon.svg", canonicalFiles.icon],
+			["gic-agent/references/language.md", canonicalFiles.reference],
+		] as const) {
+			assert.deepEqual(await readFile(join(temporaryDirectory, path)), source);
+		}
 	} finally {
 		await rm(temporaryDirectory, { recursive: true, force: true });
 	}
@@ -181,24 +178,11 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 			assert.ok(skillPage.includes(`href="${href}"`));
 		}
 
-		const canonicalSkill = await readFile(
-			new URL(
-				"../../../../packages/content/content/skills/gic-agent/SKILL.md",
-				import.meta.url,
-			),
-			"utf8",
-		);
-		const canonicalReference = await readFile(
-			new URL(
-				"../../../../packages/content/content/skills/gic-agent/references/language.md",
-				import.meta.url,
-			),
-			"utf8",
-		);
+		const canonicalFiles = await readCanonicalSkillFiles();
 		const rawText = [
-			canonicalSkill,
+			canonicalFiles.skill.toString("utf8"),
 			"--- gic-agent/references/language.md ---",
-			canonicalReference,
+			canonicalFiles.reference.toString("utf8"),
 		].join("\n\n");
 		assert.equal(
 			await readFile(join(outputDirectory, exports[1].path), "utf8"),
@@ -206,11 +190,11 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 		);
 
 		const archive = join(outputDirectory, exports[0].path);
-		const archiveEntries = await promisify(execFile)("unzip", ["-Z1", archive]);
-		assert.deepEqual(archiveEntries.stdout.trim().split("\n").sort(), [
-			"gic-agent/SKILL.md",
-			"gic-agent/references/language.md",
-		]);
+		const archiveListing = await promisify(execFile)("unzip", ["-Z1", archive]);
+		assert.deepEqual(
+			archiveListing.stdout.trim().split("\n").sort(),
+			archiveEntries,
+		);
 		await mkdir(extractionDirectory);
 		await promisify(execFile)("unzip", [
 			"-q",
@@ -218,17 +202,14 @@ test("skill exports resolve beneath a non-root Astro base", async () => {
 			"-d",
 			extractionDirectory,
 		]);
-		assert.equal(
-			await readFile(join(extractionDirectory, "gic-agent/SKILL.md"), "utf8"),
-			canonicalSkill,
-		);
-		assert.equal(
-			await readFile(
-				join(extractionDirectory, "gic-agent/references/language.md"),
-				"utf8",
-			),
-			canonicalReference,
-		);
+		for (const [path, source] of [
+			["gic-agent/SKILL.md", canonicalFiles.skill],
+			["gic-agent/agents/openai.yaml", canonicalFiles.metadata],
+			["gic-agent/assets/icon.svg", canonicalFiles.icon],
+			["gic-agent/references/language.md", canonicalFiles.reference],
+		] as const) {
+			assert.deepEqual(await readFile(join(extractionDirectory, path)), source);
+		}
 	} finally {
 		await rm(temporaryDirectory, { recursive: true, force: true });
 	}
