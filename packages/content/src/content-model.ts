@@ -11,6 +11,7 @@ export interface MarkdownContent {
 
 export interface ExampleDescription extends MarkdownContent {
 	readonly enabled: boolean;
+	readonly markdown: string;
 }
 
 export interface DocumentationContent extends MarkdownContent {
@@ -112,6 +113,19 @@ export function createProductContent(
 			id: documentationId(path),
 		})),
 	);
+	return {
+		about: requireSingleAbout(input.about),
+		docs,
+		examples: createExamples(input),
+	};
+}
+
+export function createExamples(
+	input: Pick<
+		ProductContentInput,
+		"exampleDescriptions" | "exampleSources" | "exampleThumbnails"
+	>,
+): ExampleContent[] {
 	const descriptions = byExampleId(input.exampleDescriptions);
 	const sources = byExampleId(input.exampleSources);
 	const thumbnails = byExampleId(input.exampleThumbnails);
@@ -147,9 +161,16 @@ export function createProductContent(
 		});
 	}
 
-	return {
-		about: requireSingleAbout(input.about),
-		docs,
-		examples: ordered(examples),
-	};
+	return ordered(examples);
+}
+
+export function createExampleCopyText(
+	example: Pick<ExampleContent, "markdown" | "source">,
+): string {
+	const runs = example.source.match(/`+/g) ?? [];
+	const fence = "`".repeat(
+		runs.reduce((length, run) => Math.max(length, run.length + 1), 3),
+	);
+	const ending = example.source.endsWith("\n") ? "" : "\n";
+	return `${example.markdown}\n\n${fence}gic\n${example.source}${ending}${fence}\n`;
 }

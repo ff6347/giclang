@@ -2,6 +2,8 @@
 // ABOUTME: Covers About, Docs, and disabled example exclusion.
 
 import { expect, test } from "@playwright/test";
+import { readBundledExample } from "./example-copy.ts";
+import { setEditorSource } from "./editor.ts";
 
 test("presents bundled About and documentation content without navigation", async ({
 	page,
@@ -233,6 +235,34 @@ test("hides disabled examples from the application", async ({ page }) => {
 	await expect(
 		examples.getByRole("heading", { name: "An Obvious Circle" }),
 	).toHaveCount(0);
+});
+
+test("shows selectable bundled example code and copies without loading it", async ({
+	page,
+}) => {
+	const expected = await readBundledExample();
+	await page.goto("/");
+	await setEditorSource(page, "point(23, 41);");
+	const sourceBefore = await page.locator(".view-line").allTextContents();
+	await page.getByRole("tab", { name: "Examples", exact: true }).click();
+	const card = page.locator(".content-card").filter({
+		has: page.getByRole("heading", { name: expected.title, exact: true }),
+	});
+	await card.hover();
+	await expect(card.locator("pre > code")).toBeVisible();
+	expect(await card.locator("pre > code").textContent()).toBe(expected.source);
+	await card
+		.getByRole("button", { name: "Copy to clipboard", exact: true })
+		.click();
+	await expect(card.locator('[role="status"], [role="alert"]')).toHaveText(
+		/^(Copied to clipboard\.|Could not copy to clipboard\.)$/,
+	);
+	await expect(card.locator("details, textarea")).toHaveCount(0);
+	await page.getByRole("tab", { name: "Gestalten", exact: true }).click();
+	expect(await page.locator(".view-line").allTextContents()).toEqual(
+		sourceBefore,
+	);
+	await expect(page.getByRole("alertdialog")).toHaveCount(0);
 });
 
 test("animates overflowing example cards above neighboring cards on hover", async ({

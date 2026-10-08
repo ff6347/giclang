@@ -127,6 +127,7 @@ test("desktop provider sends bounded-candidate search data only with the request
 			categories: ["Shapes"],
 			tags: ["circle"],
 			html: "An <em>orbit</em> pattern &amp; variations.",
+			markdown: "An *orbit* pattern & variations.",
 			source: "circle(50, 50, 20);",
 			enabled: true,
 			fileName: "orbit.gic",

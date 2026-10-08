@@ -28,6 +28,7 @@ function examplePage(
 	return {
 		...page(title, order),
 		enabled,
+		markdown: title,
 	};
 }
 
@@ -167,6 +168,7 @@ Builds a regular rectangle grid.
 			tags: ["rectangles"],
 			title: "Repeated grid",
 			enabled: false,
+			markdown: "\nBuilds a regular rectangle grid.\n",
 		});
 	});
 

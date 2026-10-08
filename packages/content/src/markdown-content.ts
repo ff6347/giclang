@@ -151,8 +151,13 @@ export function compileMarkdown(
 	if (!("enabled" in metadata) || !isBooleanField(metadata.enabled)) {
 		throw new Error(`Content '${path}' requires 'enabled' to be a boolean.`);
 	}
+	const closingDelimiter = source.indexOf("\n---", source.indexOf("\n") + 1);
 	return {
 		...content,
 		enabled: metadata.enabled,
+		markdown:
+			closingDelimiter === -1
+				? ""
+				: source.slice(closingDelimiter + 4).replace(/^\r?\n/, ""),
 	};
 }

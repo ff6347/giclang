@@ -9,6 +9,7 @@ import {
 	showBothWorkspaces,
 } from "../../../e2e/documentation-layout.ts";
 import { setEditorSource } from "../../../e2e/editor.ts";
+import { readBundledExample } from "../../../e2e/example-copy.ts";
 import {
 	readCanonicalSkillExport,
 	expectDownloadedSkillArchive,
@@ -218,6 +219,57 @@ test("downloads the canonical Skill after an offline restart", async ({
 		.getByRole("link", { name: "Download skill (ZIP)", exact: true })
 		.click();
 	await expectDownloadedSkillArchive(await download, expected);
+	expect(requests).toEqual([]);
+	await offlinePage
+		.getByRole("tab", { name: "Gestalten", exact: true })
+		.click();
+	expect(await offlinePage.locator(".view-line").allTextContents()).toEqual(
+		sourceBefore,
+	);
+});
+
+test("copies bundled examples after an offline restart without fallback UI", async ({
+	context,
+	page,
+	browserName,
+}) => {
+	test.setTimeout(60_000);
+	const expected = await readBundledExample();
+	if (browserName === "chromium")
+		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
+	await page.goto("/");
+	await waitForServiceWorker(page);
+	const offlinePage = await restartOffline(context, page);
+	await expect(offlinePage.locator(".monaco-editor")).toBeVisible();
+	const sourceBefore = await offlinePage
+		.locator(".view-line")
+		.allTextContents();
+	await offlinePage.getByRole("tab", { name: "Examples", exact: true }).click();
+	const card = offlinePage.locator(".content-card").filter({
+		has: offlinePage.getByRole("heading", {
+			name: expected.title,
+			exact: true,
+		}),
+	});
+	await card.hover();
+	expect(await card.locator("pre > code").textContent()).toBe(expected.source);
+	const requests: string[] = [];
+	offlinePage.on("request", (request) => requests.push(request.url()));
+	await card
+		.getByRole("button", { name: "Copy to clipboard", exact: true })
+		.click();
+	await expect(card.locator('[role="status"], [role="alert"]')).toHaveText(
+		/^(Copied to clipboard\.|Could not copy to clipboard\.)$/,
+	);
+	if (browserName === "chromium") {
+		await expect(card.getByRole("status")).toHaveText("Copied to clipboard.");
+		expect(
+			await offlinePage.evaluate(() => navigator.clipboard.readText()),
+		).toBe(expected.copyText);
+	}
+	await expect(card.locator("details, textarea")).toHaveCount(0);
+	expect(await card.locator("pre > code").textContent()).toBe(expected.source);
 	expect(requests).toEqual([]);
 	await offlinePage
 		.getByRole("tab", { name: "Gestalten", exact: true })

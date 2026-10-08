@@ -21,7 +21,7 @@ export default defineConfig({
 	projects: [
 		{
 			name: "editor-chromium",
-			testMatch: "editor.spec.ts",
+			testMatch: ["editor.spec.ts", "example-copy.spec.ts"],
 			use: {
 				...devices["Desktop Chrome"],
 				browserName: "chromium",
@@ -30,7 +30,7 @@ export default defineConfig({
 		},
 		{
 			name: "site-chromium",
-			testMatch: "site.spec.ts",
+			testMatch: ["site.spec.ts", "example-copy.spec.ts"],
 			use: {
 				...devices["Desktop Chrome"],
 				browserName: "chromium",

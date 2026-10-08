@@ -145,6 +145,7 @@ canvas {
 .content-card:is(:hover, :focus-within) .content-card-content {
 	box-shadow: 3px 3px 0 var(--color-text);
 	max-height: 100vh;
+	overflow-y: auto;
 	transform: translateZ(50px);
 }
 
@@ -234,6 +235,20 @@ canvas {
 	border: 2px solid var(--color-text);
 	flex: none;
 	image-rendering: pixelated;
+}
+
+.example-card-body {
+	min-width: 0;
+	width: 100%;
+}
+
+.example-source {
+	max-height: 16rem;
+	max-width: 100%;
+	overflow: auto;
+	overflow-wrap: anywhere;
+	user-select: text;
+	white-space: pre-wrap;
 }
 
 .application-chrome {
