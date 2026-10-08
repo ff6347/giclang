@@ -75,7 +75,7 @@ In desktop Settings, the Support files section labels `SKILL.md` as **Skill** an
 
 ### Raw skill text
 
-Provide **View raw skill** as an ordinary link to `https://giclang.cc/skills/gic-agent.txt`. The website publishes both complete original canonical sources, including skill frontmatter, in one plaintext document with source labels. Exclude the editor-owned tool supplement; do not rewrite the teaching policy per provider. The website uses its deployment base for local route links; the editor opens the public website URL.
+Provide **View raw skill** as an ordinary link to `https://giclang.cc/skills/gic-agent.txt`. The website publishes both complete original canonical sources, including skill frontmatter, in one plaintext document beginning with the skill's original frontmatter, with a label before the appended reference. Exclude the editor-owned tool supplement; do not rewrite the teaching policy per provider. The website uses its deployment base for local route links; the editor opens the public website URL.
 
 Explain the short workflow:
 
