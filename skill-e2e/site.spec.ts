@@ -111,6 +111,106 @@ test("keeps example cards compact and opens full source through thumbnail and ti
 	).toBeFocused();
 });
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+	test(`raises and expands example cards on hover and focus (${reducedMotion})`, async ({
+		page,
+	}) => {
+		await page.emulateMedia({ reducedMotion });
+		await page.goto("/examples/");
+		await page.mouse.move(0, 0);
+		const cards = page.locator(".content-card");
+		const longestIndex = await cards.evaluateAll((elements) =>
+			elements.reduce(
+				(longest, element, index, candidates) =>
+					(element.querySelector(".content-markdown")?.textContent?.length ??
+						0) >
+					(candidates[longest]?.querySelector(".content-markdown")?.textContent
+						?.length ?? 0)
+						? index
+						: longest,
+				0,
+			),
+		);
+		const card = cards.nth(longestIndex);
+		const content = card.locator(".content-card-content");
+		const description = card.locator(".content-markdown");
+		const slots = await cards.evaluateAll((elements) =>
+			elements.map((element) => {
+				const { x, y, width, height } = element.getBoundingClientRect();
+				return { x: x + window.scrollX, y: y + window.scrollY, width, height };
+			}),
+		);
+		const collapsed = await content.boundingBox();
+		if (!collapsed) throw new Error("Example card has no visible bounds.");
+		await expect(content).toHaveCSS("box-shadow", "none");
+		await card.hover();
+		await expect(card).toHaveCSS("z-index", "1");
+		await expect(content).not.toHaveCSS("box-shadow", "none");
+		await expect
+			.poll(async () => (await content.boundingBox())?.width ?? 0)
+			.toBeGreaterThan(collapsed.width);
+		await expect
+			.poll(async () => (await content.boundingBox())?.height ?? 0)
+			.toBeGreaterThan(collapsed.height);
+		expect(
+			await cards.evaluateAll((elements) =>
+				elements.map((element) => {
+					const { x, y, width, height } = element.getBoundingClientRect();
+					return {
+						x: x + window.scrollX,
+						y: y + window.scrollY,
+						width,
+						height,
+					};
+				}),
+			),
+		).toEqual(slots);
+		await expect
+			.poll(() =>
+				description.evaluate(
+					(element) => element.clientHeight >= element.scrollHeight,
+				),
+			)
+			.toBe(true);
+		await page.mouse.move(0, 0);
+		await expect(content).toHaveCSS("box-shadow", "none");
+		await expect
+			.poll(async () => (await content.boundingBox())?.height ?? 0)
+			.toBeCloseTo(collapsed.height, 0);
+		await card.getByRole("link").first().focus();
+		await page.keyboard.press("Tab");
+		await expect(card.getByRole("link").nth(1)).toBeFocused();
+		await expect(card).toHaveCSS("z-index", "1");
+		await expect(content).not.toHaveCSS("box-shadow", "none");
+		await expect
+			.poll(async () => (await content.boundingBox())?.height ?? 0)
+			.toBeGreaterThan(collapsed.height);
+		if (reducedMotion === "reduce")
+			await expect(content).toHaveCSS("transition-duration", "0s");
+		await page.setViewportSize({ width: 375, height: 300 });
+		await expectNoHorizontalOverflow(page);
+		await expect
+			.poll(() =>
+				content.evaluate(
+					(element) => element.clientHeight <= window.innerHeight,
+				),
+			)
+			.toBe(true);
+		await expect
+			.poll(() =>
+				description.evaluate(
+					(element) => element.clientHeight >= element.scrollHeight,
+				),
+			)
+			.toBe(true);
+		await page.keyboard.press("Enter");
+		await expect(
+			page.getByRole("link", { name: "Back to examples", exact: true }),
+		).toBeVisible();
+		await expect(page.locator("article pre > code")).toBeVisible();
+	});
+}
+
 test("exposes only raw-skill and ZIP links in site Docs", async ({ page }) => {
 	const expected = await readCanonicalSkillExport();
 	await page.goto("/");

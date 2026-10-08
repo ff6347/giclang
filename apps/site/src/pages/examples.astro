@@ -69,6 +69,8 @@ import { renderUserMarkdown } from "@giclang/content/user-markdown";
 		max-width: 100%;
 		list-style: none;
 		padding: var(--s0);
+		position: relative;
+		perspective: 800px;
 	}
 
 	.content-card-content {
@@ -79,10 +81,37 @@ import { renderUserMarkdown } from "@giclang/content/user-markdown";
 		display: flex;
 		flex-direction: column;
 		gap: var(--s3);
-		height: 100%;
+		left: 0;
+		max-height: 100%;
+		min-height: 100%;
 		overflow: hidden;
 		padding: var(--s3);
 		margin: var(--s0);
+		position: absolute;
+		right: 0;
+		top: 0;
+		transform: translateZ(0);
+		transition:
+			transform 160ms ease-out,
+			box-shadow 160ms ease-out,
+			max-height 200ms ease-in-out;
+	}
+
+	.content-card:is(:hover, :focus-within) {
+		z-index: 1;
+	}
+
+	.content-card:is(:hover, :focus-within) .content-card-content {
+		box-shadow: 3px 3px 0 var(--color-text);
+		max-height: 100vh;
+		overflow-y: auto;
+		transform: translateZ(50px);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.content-card-content {
+			transition: none;
+		}
 	}
 
 	.content-card h2 {
@@ -108,10 +137,8 @@ import { renderUserMarkdown } from "@giclang/content/user-markdown";
 	}
 
 	.content-markdown {
-		flex: 1;
-		min-height: 0;
+		flex: none;
 		min-width: 0;
-		overflow: hidden;
 		width: 100%;
 	}
 </style>
