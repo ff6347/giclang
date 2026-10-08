@@ -27,7 +27,7 @@ The Agent remains a teaching assistant: plain language, Socratic questions, shor
 8. Make every public documentation page individually copyable in editor and site. Generate an `llms.txt` index covering the complete public documentation catalogue, with links to clean Markdown exports of each page, from the same content rather than a separately maintained AI documentation set.
 9. Preserve the current loading boundary: the integrated Agent uses the bundled canonical skill, while external assistants can use learner-modified installed copies. Sharing the shipped source does not require the desktop Agent to load those edits. Existing git-bug issue `0e7c1ca` is not a blocker for this work and remains open and unchanged.
 10. Use **Skill**, not **Agent policy**, in the application's Support files section. Show the actual configured installation directory and resolved support-file paths so learners can locate the skill and reference.
-11. The website Examples page uses the package-owned enabled examples and resembles the editor's cards, showing thumbnails, descriptions, and permanently selectable code without executing it. Example clipboard failure shows only an error; no fallback details, textarea, or additional content is added.
+11. The website Examples overview uses package-owned enabled examples in fixed `18rem × 18rem` cards resembling the editor. Thumbnails and titles link to build-generated `/examples/<id>/` pages with complete linked descriptions, permanently selectable source, and Copy to clipboard. Overview previews are noninteractive; neither overview nor detail pages execute code. Example clipboard failure shows only an error; no fallback details, textarea, or additional content is added.
 
 ## Existing integration points
 
