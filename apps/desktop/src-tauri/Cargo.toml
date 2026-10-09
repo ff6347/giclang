@@ -3,7 +3,7 @@
 
 [package]
 name = "gic-desktop"
-version = "0.9.0-beta.4"
+version = "0.9.0-beta.5"
 description = "Desktop application for Gestalten in Code"
 edition = "2021"
 
