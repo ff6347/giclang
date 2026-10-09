@@ -34,7 +34,10 @@
 		"fflate": "0.8.3",
 		"gray-matter": "4.0.3",
 		"js-yaml": "4.3.2",
-		"markdown-it": "15.0.2"
+		"markdown-it": "15.0.2",
+		"micromark": "4.0.2",
+		"micromark-extension-gfm-table": "2.1.2",
+		"parse5-sax-parser": "7.0.0"
 	},
 	"devDependencies": {
 		"@types/js-yaml": "4.0.9"

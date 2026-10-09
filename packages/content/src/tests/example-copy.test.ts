@@ -22,7 +22,7 @@ function description(body: string, newline = "\n") {
 		"content/examples/fixture/description.md",
 		source,
 	);
-	assert.ok("markdown" in compiled);
+	assert.ok("enabled" in compiled);
 	return compiled;
 }
 

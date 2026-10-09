@@ -125,6 +125,15 @@ importers:
       markdown-it:
         specifier: 15.0.2
         version: 15.0.2
+      micromark:
+        specifier: 4.0.2
+        version: 4.0.2(supports-color@8.1.1)
+      micromark-extension-gfm-table:
+        specifier: 2.1.2
+        version: 2.1.2
+      parse5-sax-parser:
+        specifier: 7.0.0
+        version: 7.0.0
     devDependencies:
       "@types/js-yaml":
         specifier: 4.0.9
@@ -5283,6 +5292,12 @@ packages:
         integrity: sha512-GG2AQYWoLgL877gQIKeRPGO1xF9+eG1ujIb5soS5gPvLQ1y2o8FL90w2QWNdf9I361Mpp7726c+lj3U0qK1uGw==,
       }
 
+  parse5-sax-parser@7.0.0:
+    resolution:
+      {
+        integrity: sha512-5A+v2SNsq8T6/mG3ahcz8ZtQ0OUFTatxPbeidoMB7tkJSGDY3tdfl4MHovtLQHkEn5CGxijNWRQHhRQ6IRpXKg==,
+      }
+
   parse5@7.3.0:
     resolution:
       {
@@ -10041,6 +10056,10 @@ snapshots:
       is-alphanumerical: 2.0.1
       is-decimal: 2.0.1
       is-hexadecimal: 2.0.1
+
+  parse5-sax-parser@7.0.0:
+    dependencies:
+      parse5: 7.3.0
 
   parse5@7.3.0:
     dependencies:

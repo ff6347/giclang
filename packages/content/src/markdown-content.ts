@@ -11,6 +11,8 @@ import {
 	isStringList,
 } from "./metadata-validation.ts";
 
+export { portableMarkdown } from "./portable-markdown.ts";
+
 const markdown = new MarkdownIt({
 	html: true,
 	linkify: true,
@@ -96,18 +98,28 @@ export function compileSkillDocumentation(
 	if ("enabled" in guide) {
 		throw new Error(`Skill documentation '${path}' cannot be an example.`);
 	}
-	const skillBody = matter(skillSource).content.trim();
 	const assembled = [
-		matter(source).content.trim(),
+		guide.markdown,
 		"## GiC agent skill",
-		skillBody,
+		markdownBody(skillSource),
 		"## Language reference",
-		referenceSource.trim(),
+		referenceSource,
 	].join("\n\n");
 	return {
 		...guide,
 		html: markdown.render(assembled, { resolveImage }).trimEnd(),
+		markdown: assembled,
 	};
+}
+
+function markdownBody(source: string): string {
+	if (!matter.test(source.replace(/^\uFEFF/, ""))) {
+		return source;
+	}
+	const closingDelimiter = source.indexOf("\n---", source.indexOf("\n") + 1);
+	return closingDelimiter === -1
+		? ""
+		: source.slice(closingDelimiter + 4).replace(/^\r?\n/, "");
 }
 
 export function compileMarkdown(
@@ -141,6 +153,7 @@ export function compileMarkdown(
 			isExampleDescription,
 		),
 		html: markdown.render(parsed.content, { resolveImage }).trimEnd(),
+		markdown: markdownBody(source),
 		order: metadata.order,
 		tags: metadataList(metadata, "tags", path, isExampleDescription),
 		title: metadata.title.trim(),
@@ -151,13 +164,8 @@ export function compileMarkdown(
 	if (!("enabled" in metadata) || !isBooleanField(metadata.enabled)) {
 		throw new Error(`Content '${path}' requires 'enabled' to be a boolean.`);
 	}
-	const closingDelimiter = source.indexOf("\n---", source.indexOf("\n") + 1);
 	return {
 		...content,
 		enabled: metadata.enabled,
-		markdown:
-			closingDelimiter === -1
-				? ""
-				: source.slice(closingDelimiter + 4).replace(/^\r?\n/, ""),
 	};
 }

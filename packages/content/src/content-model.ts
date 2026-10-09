@@ -4,6 +4,7 @@
 export interface MarkdownContent {
 	readonly categories: string[];
 	readonly html: string;
+	readonly markdown: string;
 	readonly order: number;
 	readonly tags: string[];
 	readonly title: string;
@@ -11,7 +12,6 @@ export interface MarkdownContent {
 
 export interface ExampleDescription extends MarkdownContent {
 	readonly enabled: boolean;
-	readonly markdown: string;
 }
 
 export interface DocumentationContent extends MarkdownContent {
@@ -162,6 +162,12 @@ export function createExamples(
 	}
 
 	return ordered(examples);
+}
+
+export function createDocumentationCopyText(
+	doc: Pick<MarkdownContent, "title" | "markdown">,
+): string {
+	return `# ${doc.title}\n\n${doc.markdown}`;
 }
 
 export function createExampleCopyText(

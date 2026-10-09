@@ -14,6 +14,7 @@ function page(title: string, order: number): MarkdownContent {
 	return {
 		categories: [],
 		html: `<p>${title}</p>`,
+		markdown: title,
 		order,
 		tags: [],
 		title,
@@ -51,6 +52,8 @@ Use **repeat** for a pattern.
 			categories: [],
 			html: `<p>Use <strong>repeat</strong> for a pattern.</p>
 <details><summary>More</summary>Nested loops are supported.</details>`,
+			markdown:
+				"\nUse **repeat** for a pattern.\n\n<details><summary>More</summary>Nested loops are supported.</details>\n",
 			order: 20,
 			tags: [],
 			title: "Repeated patterns",
