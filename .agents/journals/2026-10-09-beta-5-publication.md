@@ -12,3 +12,8 @@
 - [risk] Site deployment is independent Coolify deployment, not the editor's Pages workflow. The public website is not claimed updated before this PR is merged and deployed.
 - [risk] Release issue `830289e` and installer issue `50cd09c` remain open: publication is not full v0.9 acceptance. Complete packaged provider lifecycle, file/export, replacement/uninstall, and credential-hardening acceptance remain incomplete. Existing Linux unused-import warning is tracked by `cd52c71`; no unrelated fix or suppression is included.
 - [lesson] Git-bug mutation helpers exported verification comments successfully; bridge pull still reports the known `issue edit: no matching operation found` problem tracked by `3aaca1f`.
+
+## Release process checklist
+
+- [decision] Fabian requested `.agents/RELEASE-PROCESS.md` as a reusable operational checklist for himself and future agents. It documents desktop/GitHub Releases delivery, excludes npm publication, and references existing skills and project quality gates rather than duplicating their procedures.
+- [verification] The checklist was checked against all three installer workflows, the Pages workflow, current version fields, and beta.5 preparation/publication evidence. All 19 relative links resolve; root formatting and whitespace checks pass. A read-only review found no actionable correctness issues. This documentation change does not execute another release.
