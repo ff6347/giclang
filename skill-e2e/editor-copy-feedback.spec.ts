@@ -119,10 +119,12 @@ test("restarts editor copy confirmation when copying again before it disappears"
 		(element) => Number(element.getAnimations()[0]!.startTime) + 2_000,
 	);
 	await expect
-		.poll(() =>
-			confirmation.evaluate((element) =>
-				Number(element.getAnimations()[0]?.currentTime ?? 0),
-			),
+		.poll(
+			() =>
+				confirmation.evaluate((element) =>
+					Number(element.getAnimations()[0]?.currentTime ?? 0),
+				),
+			{ intervals: [50] },
 		)
 		.toBeGreaterThan(1_000);
 	await button.click();
