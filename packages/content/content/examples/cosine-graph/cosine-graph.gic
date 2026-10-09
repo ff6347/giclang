@@ -1,0 +1,15 @@
+// ABOUTME: Plots cosine samples alongside two gray axes.
+// ABOUTME: Ports Fabian's static cosine graph to GIC dimensions.
+// Source: https://snippets.qawsed.site/p5js/motion/sine-cos-graph/index.js
+background("white");
+stroke(80, 0, 0);
+line(0, 50, WIDTH, 50);
+line(50, 0, 50, HEIGHT);
+stroke("black");
+strokeWidth(3);
+repeat(step, 0, 10) {
+	let x = step * 10;
+	let angle = x / WIDTH * 360;
+	let y = 50 + cos(angle) * 20;
+	point(x, y);
+}

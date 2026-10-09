@@ -57,7 +57,9 @@ export async function moveDocumentationBesideEditor(page: Page, title: string) {
 	await page.mouse.move(
 		target!.x + target!.width / 2,
 		target!.y + target!.height / 2,
-		{ steps: 16 },
+		{
+			steps: 16,
+		},
 	);
 	await page.mouse.up();
 }

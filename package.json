@@ -1,6 +1,6 @@
 {
 	"name": "gic-lang",
-	"version": "0.9.0-beta.4",
+	"version": "0.9.0-beta.5",
 	"private": true,
 	"description": "",
 	"keywords": [],
@@ -22,8 +22,8 @@
 		"test": "pnpm build:cli && node --test packages/core/src/tests/*.test.ts packages/cli/src/tests/*.test.ts",
 		"test:e2e": "playwright test",
 		"test:pwa": "playwright test --config playwright.pwa.config.ts",
-		"format": "oxfmt",
-		"fmt:check": "oxfmt --check",
+		"format": "prettier --write .",
+		"fmt:check": "prettier --check .",
 		"lint": "oxlint",
 		"lint:fix": "oxlint --fix",
 		"typecheck": "pnpm --filter @giclang/core build && pnpm --filter @giclang/core typecheck && pnpm --filter @giclang/cli typecheck && pnpm --filter @giclang/content typecheck",
