@@ -13,10 +13,11 @@ const docs = await getCollection("docs");
 					{docs.map((doc) => (
 						<li>
 							<a
-								href={`/docs/${doc.id}`}
+								href={`${import.meta.env.BASE_URL}docs/${doc.id}`}
 
 								aria-current={
-									Astro.url.pathname.replace(/\/$/, "") === `/docs/${doc.id}`
+									Astro.url.pathname.replace(/\/$/, "") ===
+									`${import.meta.env.BASE_URL}docs/${doc.id}`
 										? "page"
 										: undefined
 								}
@@ -49,6 +50,11 @@ const docs = await getCollection("docs");
 	.docs-content {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.docs-content :global(.content-table-scroll) {
+		max-width: 100%;
+		overflow-x: auto;
 	}
 
 	nav a[aria-current="page"] {

@@ -5,7 +5,7 @@ import type { ExampleContent } from "@giclang/content/model";
 import { createExampleCopyText } from "@giclang/content/model";
 import DefaultLayout from "../../layouts/default.astro";
 import { examples } from "../../lib/examples.ts";
-import checkIcon from "pixelarticons/svg/check.svg?raw";
+import CopyButton from "../../components/copy-button.astro";
 
 export function getStaticPaths() {
 	return examples.map((example) => ({
@@ -38,71 +38,13 @@ const { example } = Astro.props;
 				tabindex="0"
 				aria-label={`${example.title} source`}
 			><code>{example.source}</code></pre>
-			<button
-				class="application-button"
-				aria-label="Copy to clipboard"
-				type="button"
-				data-copy-text={encodeURIComponent(createExampleCopyText(example))}
-			>
-				<span class="copy-label">Copy to clipboard</span>
-				<span
-					class="copy-confirmation"
-					aria-hidden="true"
-					set:html={checkIcon}
-				/>
-			</button>
-			<p class="copy-status" role="status"></p>
+			<CopyButton
+				label="Copy to clipboard"
+				text={createExampleCopyText(example)}
+			/>
 		</article>
 	</main>
 </DefaultLayout>
-
-<script>
-	for (const button of document.querySelectorAll<HTMLButtonElement>(
-		"[data-copy-text]",
-	)) {
-		const status =
-			button.parentElement?.querySelector<HTMLElement>(".copy-status");
-		const confirmation =
-			button.querySelector<HTMLElement>(".copy-confirmation");
-		const payload = button.dataset.copyText;
-		if (!status || !confirmation || payload === undefined) continue;
-		let feedbackTimeout: number | undefined;
-		let confirmationAnimation: Animation | undefined;
-		button.addEventListener("click", async () => {
-			window.clearTimeout(feedbackTimeout);
-			confirmationAnimation?.cancel();
-			button.classList.remove("copied");
-			status.textContent = "";
-			button.disabled = true;
-			try {
-				await navigator.clipboard.writeText(decodeURIComponent(payload));
-				status.setAttribute("role", "status");
-				status.textContent = "Copied to clipboard.";
-				button.classList.add("copied");
-				if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-					confirmationAnimation = confirmation.animate(
-						[
-							{ opacity: 0, transform: "scale(0.5)", offset: 0 },
-							{ opacity: 1, transform: "scale(1)", offset: 0.15 },
-							{ opacity: 1, transform: "scale(1)", offset: 0.8 },
-							{ opacity: 0, transform: "scale(0.5)", offset: 1 },
-						],
-						{ duration: 2_000, easing: "steps(3, end)" },
-					);
-				}
-				feedbackTimeout = window.setTimeout(() => {
-					button.classList.remove("copied");
-					status.textContent = "";
-				}, 2_000);
-			} catch {
-				status.setAttribute("role", "alert");
-				status.textContent = "Could not copy to clipboard.";
-			} finally {
-				button.disabled = false;
-			}
-		});
-	}
-</script>
 
 <style>
 	.example-page {
@@ -126,63 +68,8 @@ const { example } = Astro.props;
 		user-select: text;
 	}
 
-	.application-button {
-		background-color: var(--color-background);
-		border: 2px solid var(--color-text);
-		color: var(--color-text);
-		font: inherit;
-		padding: var(--s1) var(--s2);
-		cursor: pointer;
-		position: relative;
-		box-shadow: var(--box-shadow);
-	}
-
-	.application-button:hover:not(:disabled) {
-		background-color: var(--color-control);
-	}
-
-	.application-button:disabled {
-		cursor: wait;
-	}
-
-	.application-button:focus-visible,
 	pre:focus-visible {
 		outline: 2px solid var(--color-text);
 		outline-offset: 2px;
-	}
-
-	.copy-status {
-		margin: var(--s0);
-	}
-
-	.copy-confirmation {
-		align-items: center;
-		display: flex;
-		inset: 0;
-		justify-content: center;
-		position: absolute;
-		visibility: hidden;
-	}
-
-	.copy-confirmation :global(svg) {
-		height: 1.25em;
-		width: 1.25em;
-	}
-
-	.copied .copy-label {
-		visibility: hidden;
-	}
-
-	.copied .copy-confirmation {
-		visibility: visible;
-	}
-
-	.copy-status[role="status"] {
-		clip-path: inset(50%);
-		height: 1px;
-		overflow: hidden;
-		position: absolute;
-		white-space: nowrap;
-		width: 1px;
 	}
 </style>

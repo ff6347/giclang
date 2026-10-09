@@ -11,7 +11,7 @@ export default defineConfig({
 	retries: 0,
 	timeout: 30_000,
 	expect: { timeout: 5_000 },
-	globalTimeout: 180_000,
+	globalTimeout: 300_000,
 	reporter: "list",
 	use: {
 		actionTimeout: 10_000,
@@ -25,6 +25,7 @@ export default defineConfig({
 				"editor.spec.ts",
 				"example-copy.spec.ts",
 				"editor-copy-feedback.spec.ts",
+				"editor-documentation-copy.spec.ts",
 			],
 			use: {
 				...devices["Desktop Chrome"],
@@ -38,6 +39,7 @@ export default defineConfig({
 				"site.spec.ts",
 				"example-copy.spec.ts",
 				"site-copy-feedback.spec.ts",
+				"site-documentation-copy.spec.ts",
 			],
 			use: {
 				...devices["Desktop Chrome"],
@@ -56,8 +58,7 @@ export default defineConfig({
 			stderr: "pipe",
 		},
 		{
-			command:
-				"pnpm build:site && pnpm --filter @giclang/site exec astro preview --host 127.0.0.1 --port 4322",
+			command: "pnpm build:site && node apps/site/scripts/serve-site-tests.mjs",
 			url: "http://127.0.0.1:4322",
 			reuseExistingServer: false,
 			timeout: 120_000,

@@ -104,7 +104,13 @@ test("copies bundled example text and reports clipboard denial without fallback 
 	await expect(card.getByRole("alert")).toHaveText(
 		"Could not copy to clipboard.",
 	);
-	await expect(card.getByRole("status")).toHaveCount(0);
+	if (editor) {
+		await expect(card.getByRole("status")).toHaveCount(1);
+		await expect(card.getByRole("status")).toBeEmpty();
+		await expect(card.getByRole("status")).toHaveCSS("clip-path", "inset(50%)");
+	} else {
+		await expect(card.getByRole("status")).toHaveCount(0);
+	}
 	await expect(card.getByRole("alert")).toBeVisible();
 	await expect(checkmark).toBeHidden();
 	await expect(label).toBeVisible();

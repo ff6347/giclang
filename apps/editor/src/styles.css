@@ -256,11 +256,12 @@ canvas {
 	margin-bottom: var(--s2);
 }
 
-.example-copy-button {
+.copy-button {
+	justify-self: start;
 	position: relative;
 }
 
-.example-copy-button .copy-confirmation {
+.copy-button .copy-confirmation {
 	align-items: center;
 	display: flex;
 	inset: 0;
@@ -269,20 +270,20 @@ canvas {
 	visibility: hidden;
 }
 
-.example-copy-button .copy-confirmation svg {
+.copy-button .copy-confirmation svg {
 	height: 1.25em;
 	width: 1.25em;
 }
 
-.example-copy-button.copied .copy-label {
+.copy-button.copied .copy-label {
 	visibility: hidden;
 }
 
-.example-copy-button.copied .copy-confirmation {
+.copy-button.copied .copy-confirmation {
 	visibility: visible;
 }
 
-.example-copy-status[role="status"] {
+.copy-status[role="status"] {
 	clip-path: inset(50%);
 	height: 1px;
 	overflow: hidden;

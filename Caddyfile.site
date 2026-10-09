@@ -3,5 +3,7 @@
 :80 {
 	root * /srv
 	encode zstd gzip
+	@markdown path_regexp \.md$
+	header @markdown Content-Type "text/markdown; charset=utf-8"
 	file_server
 }

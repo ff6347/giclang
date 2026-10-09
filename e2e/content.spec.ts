@@ -17,13 +17,20 @@ test("presents bundled About and documentation content without navigation", asyn
 
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
-	await expect(docs.getByRole("button")).toHaveCount(0);
+	await expect(docs.getByRole("button")).toHaveCount(1);
+	await expect(
+		docs.getByRole("button", { name: "Copy page", exact: true }),
+	).toBeVisible();
 	await expect(docs.getByRole("tab").first()).toBeVisible();
 	await expect(docs.locator("h2").first()).toBeVisible();
 	await expect(docs.locator(".content-markdown > *").first()).toBeVisible();
 	const nextPage = docs.getByRole("tab").nth(1);
 	await nextPage.click();
 	await expect(nextPage).toHaveAttribute("aria-selected", "true");
+	await expect(docs.getByRole("button")).toHaveCount(1);
+	await expect(
+		docs.getByRole("button", { name: "Copy page", exact: true }),
+	).toBeVisible();
 	await expect(docs.getByRole("heading", { level: 2 })).toHaveText(
 		(await nextPage.innerText()).trim(),
 	);

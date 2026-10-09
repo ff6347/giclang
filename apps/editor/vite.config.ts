@@ -7,10 +7,19 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { validateExampleFiles } from "@giclang/content/model";
-import { readGicAgentExport, readGicAgentSkill } from "@giclang/content/node";
+import {
+	listContentFiles,
+	readGicAgentExport,
+	readGicAgentSkill,
+} from "@giclang/content/node";
+import {
+	createDocumentationLinkResolver,
+	documentationExports,
+} from "./scripts/documentation.ts";
 import {
 	compileMarkdown,
 	compileSkillDocumentation,
+	portableMarkdown,
 } from "@giclang/content/markdown";
 
 const CONTENT_ROOT = fileURLToPath(
@@ -136,7 +145,7 @@ function productContent(): Plugin {
 				const index = images.push(imagePath) - 1;
 				return `__gic_image_${index}__`;
 			};
-			const content =
+			let content =
 				path === SKILL_GUIDE_PATH
 					? await readGicAgentSkill().then(({ skillSource, referenceSource }) =>
 							compileSkillDocumentation(
@@ -148,6 +157,22 @@ function productContent(): Plugin {
 							),
 						)
 					: compileMarkdown(path, source, resolveImage);
+			const contentPath = relative(CONTENT_ROOT, path).replaceAll("\\", "/");
+			if (contentPath.startsWith("docs/")) {
+				const files = await listContentFiles("docs");
+				const documentPaths = new Set(
+					files
+						.filter((file) => file.kind === "markdown")
+						.map((file) => file.path),
+				);
+				content = {
+					...content,
+					markdown: portableMarkdown(
+						content.markdown,
+						createDocumentationLinkResolver(contentPath, documentPaths),
+					),
+				};
+			}
 			const imports = images.map(
 				(imagePath, index) =>
 					`import image${index} from ${JSON.stringify(`${imagePath.startsWith(".") ? imagePath : `./${imagePath}`}?url`)};`,
@@ -178,6 +203,7 @@ const pwaDescription =
 export default defineConfig({
 	plugins: [
 		productContent(),
+		documentationExports(),
 		VitePWA({
 			injectRegister: null,
 			registerType: "prompt",
@@ -211,6 +237,7 @@ export default defineConfig({
 				],
 			},
 			workbox: {
+				navigateFallbackDenylist: [/\.md(?:$|\?)/i],
 				cleanupOutdatedCaches: true,
 				clientsClaim: false,
 				globPatterns: ["**/*.{css,html,js,png,svg,ttf,webmanifest}"],
