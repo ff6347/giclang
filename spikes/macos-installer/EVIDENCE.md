@@ -7,6 +7,9 @@
 
 - A locally built Apple Silicon DMG and embedded `GiC.app` pass Developer ID signature verification for team `WB5CKL86MX`. Without notarization, Gatekeeper rejects the app as `Unnotarized Developer ID`. A local, unquarantined install, launch, replacement, and uninstall passed with private GiC configuration isolated and restored; this does not establish downloaded-app acceptance.
 - The [Mac-only PR CI probe](https://github.com/ff6347/giclang/actions/runs/36614784323) passed desktop tests and built an unsigned DMG on `macos-15`. The downloaded DMG matched its SHA-256 manifest (`8e294adf8a987e43df5eafbcc70de2c4883361c8bcca0f18646eba67d3be2280`) and passed `hdiutil verify`. Its embedded executable is arm64 with an ad-hoc signature and no team ID. This run did not test notarization or CI signing.
+- The first [signed candidate run](https://github.com/ff6347/giclang/actions/runs/36617819563) imported the Developer ID certificate and built a signed DMG, but Apple returned HTTP 403 reporting that a required team agreement was missing or expired. It retained no candidate. The [retry on the same `main` commit](https://github.com/ff6347/giclang/actions/runs/36619581537) passed signing, notarization, stapling, signature, team, and Gatekeeper checks before retaining the candidate.
+- The downloaded `GiC_0.1.0_aarch64.dmg` matched the successful run's SHA-256 manifest (`f5e896937a166a5101505a987dce9c2ca7140670468bd54545d1440cef3dc429`). On this Mac, `hdiutil verify`, `stapler validate`, strict `codesign` verification, and Gatekeeper assessments of the DMG and embedded app passed with `source=Notarized Developer ID`. The embedded app is arm64, version `0.1.0`, signed by team `WB5CKL86MX`.
+- Fabian downloaded the candidate to a second Mac, copied `GiC.app` into `/Applications`, and launched it without a Gatekeeper warning or bypass. Replacement by a later signed package, data preservation across replacement, and uninstall of the distributed candidate have not been checked.
 
 ## Signed candidate
 
@@ -26,6 +29,5 @@ On this Mac, `base64 -i <file>` encodes either file. Its wrapped output can be s
 
 ## Remaining release checks
 
-1. Explicitly review and land this Mac-only workflow before manually dispatching the signed job from `main`; its certificate import, signing, notarization, stapling, and Gatekeeper checks have not yet run in CI.
-2. Download the candidate DMG and compare its SHA-256 manifest; test Gatekeeper, visible launch, replacement, and uninstall on a Mac without treating an unquarantined local launch as distribution evidence.
-3. Decide Intel Mac support separately; the existing runner and verified packages are Apple Silicon only. Keep all three desktop version sources synchronized when preparing a real release.
+1. Test replacement by a later signed package, preservation of user data, and uninstall on a Mac. The local unquarantined 0.1.0 → 0.1.1 lifecycle check is not a substitute for this distributed-artifact check.
+2. Decide Intel Mac support separately; the existing runner and verified packages are Apple Silicon only. Keep all three desktop version sources synchronized when preparing a real release.
