@@ -245,6 +245,9 @@ test("copies bundled examples after an offline restart without fallback UI", asy
 	const sourceBefore = await offlinePage
 		.locator(".view-line")
 		.allTextContents();
+	const recoveryBefore = await offlinePage.evaluate(() =>
+		localStorage.getItem("gic.recovery.v1"),
+	);
 	await offlinePage.getByRole("tab", { name: "Examples", exact: true }).click();
 	const card = offlinePage.locator(".content-card").filter({
 		has: offlinePage.getByRole("heading", {
@@ -253,23 +256,45 @@ test("copies bundled examples after an offline restart without fallback UI", asy
 		}),
 	});
 	await card.hover();
-	expect(await card.locator("pre > code").textContent()).toBe(expected.source);
+	await expect(card.locator("pre, code")).toHaveCount(0);
+	const button = card.getByRole("button", {
+		name: "Copy to clipboard",
+		exact: true,
+	});
+	await expect(button).toHaveAttribute("aria-label", "Copy to clipboard");
+	const label = button.locator(".copy-label");
+	const checkmark = button.locator(".copy-confirmation svg");
+	await expect(label).toBeVisible();
+	await expect(checkmark).toBeHidden();
+	const buttonSize = await button.evaluate((element) => {
+		const { width, height } = getComputedStyle(element);
+		return { width, height };
+	});
 	const requests: string[] = [];
 	offlinePage.on("request", (request) => requests.push(request.url()));
-	await card
-		.getByRole("button", { name: "Copy to clipboard", exact: true })
-		.click();
-	await expect(card.locator('[role="status"], [role="alert"]')).toHaveText(
-		/^(Copied to clipboard\.|Could not copy to clipboard\.)$/,
-	);
+	await button.click();
+	await expect(
+		card.locator('[role="status"], [role="alert"]').filter({ hasText: /\S/ }),
+	).toHaveText(/^(Copied to clipboard\.|Could not copy to clipboard\.)$/);
 	if (browserName === "chromium") {
 		await expect(card.getByRole("status")).toHaveText("Copied to clipboard.");
+		await expect(card.getByRole("status")).toHaveCSS("clip-path", "inset(50%)");
+		await expect(checkmark).toBeVisible();
+		await expect(label).toBeHidden();
+		await expect(button).toHaveCSS("width", buttonSize.width);
+		await expect(button).toHaveCSS("height", buttonSize.height);
 		expect(
 			await offlinePage.evaluate(() => navigator.clipboard.readText()),
 		).toBe(expected.copyText);
+		await offlinePage.waitForTimeout(2_100);
+		await expect(checkmark).toBeHidden();
+		await expect(label).toBeVisible();
+		await expect(card.getByRole("status")).toBeEmpty();
+		await expect(button).toHaveAttribute("aria-label", "Copy to clipboard");
+		await expect(button).toHaveCSS("width", buttonSize.width);
+		await expect(button).toHaveCSS("height", buttonSize.height);
 	}
-	await expect(card.locator("details, textarea")).toHaveCount(0);
-	expect(await card.locator("pre > code").textContent()).toBe(expected.source);
+	await expect(card.locator("pre, code, details, textarea")).toHaveCount(0);
 	expect(requests).toEqual([]);
 	await offlinePage
 		.getByRole("tab", { name: "Gestalten", exact: true })
@@ -277,6 +302,10 @@ test("copies bundled examples after an offline restart without fallback UI", asy
 	expect(await offlinePage.locator(".view-line").allTextContents()).toEqual(
 		sourceBefore,
 	);
+	expect(
+		await offlinePage.evaluate(() => localStorage.getItem("gic.recovery.v1")),
+	).toBe(recoveryBefore);
+	await expect(offlinePage.getByRole("alertdialog")).toHaveCount(0);
 });
 
 test.afterEach(async () => {

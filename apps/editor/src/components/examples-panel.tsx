@@ -1,7 +1,8 @@
 // ABOUTME: Presents bundled examples without changing the active sketch when copying.
-// ABOUTME: Offers selectable source and clipboard feedback beside the existing load action.
+// ABOUTME: Offers transient in-button clipboard confirmation beside the existing load action.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Check } from "pixelarticons/react";
 import { Button } from "@base-ui/react";
 import {
 	createExampleCopyText,
@@ -18,17 +19,45 @@ function ExampleCard({
 }) {
 	const [copying, setCopying] = useState(false);
 	const [status, setStatus] = useState<"status" | "alert" | null>(null);
+	const confirmation = useRef<HTMLSpanElement>(null);
+	const feedbackTimeout = useRef<number | undefined>(undefined);
+	const confirmationAnimation = useRef<Animation | undefined>(undefined);
+	const mounted = useRef(false);
+
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+			window.clearTimeout(feedbackTimeout.current);
+			confirmationAnimation.current?.cancel();
+		};
+	}, []);
 
 	async function copy() {
+		window.clearTimeout(feedbackTimeout.current);
+		confirmationAnimation.current?.cancel();
 		setStatus(null);
 		setCopying(true);
 		try {
 			await navigator.clipboard.writeText(createExampleCopyText(example));
+			if (!mounted.current) return;
 			setStatus("status");
+			if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+				confirmationAnimation.current = confirmation.current?.animate(
+					[
+						{ opacity: 0, transform: "scale(0.5)", offset: 0 },
+						{ opacity: 1, transform: "scale(1)", offset: 0.15 },
+						{ opacity: 1, transform: "scale(1)", offset: 0.8 },
+						{ opacity: 0, transform: "scale(0.5)", offset: 1 },
+					],
+					{ duration: 2_000, easing: "steps(3, end)" },
+				);
+			}
+			feedbackTimeout.current = window.setTimeout(() => setStatus(null), 2_000);
 		} catch {
-			setStatus("alert");
+			if (mounted.current) setStatus("alert");
 		} finally {
-			setCopying(false);
+			if (mounted.current) setCopying(false);
 		}
 	}
 
@@ -53,27 +82,31 @@ function ExampleCard({
 						Load this example
 					</Button>
 					<Button
-						className="application-button"
+						className={`application-button example-copy-button${status === "status" ? " copied" : ""}`}
+						aria-label="Copy to clipboard"
 						type="button"
 						disabled={copying}
 						onClick={copy}
 					>
-						Copy to clipboard
+						<span className="copy-label">Copy to clipboard</span>
+						<span
+							className="copy-confirmation"
+							aria-hidden="true"
+							ref={confirmation}
+						>
+							<Check />
+						</span>
 					</Button>
-					{status && (
-						<p role={status}>
-							{status === "status"
-								? "Copied to clipboard."
-								: "Could not copy to clipboard."}
-						</p>
-					)}
-					<pre
-						className="example-source"
-						tabIndex={0}
-						aria-label={`${example.title} source`}
+					<p
+						className="example-copy-status"
+						role={status === "alert" ? "alert" : "status"}
 					>
-						<code>{example.source}</code>
-					</pre>
+						{status === "status"
+							? "Copied to clipboard."
+							: status === "alert"
+								? "Could not copy to clipboard."
+								: ""}
+					</p>
 				</div>
 			</div>
 		</li>

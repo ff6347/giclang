@@ -241,14 +241,43 @@ canvas {
 	min-width: 0;
 	width: 100%;
 }
+.example-card-body > * {
+	margin-bottom: var(--s2);
+}
 
-.example-source {
-	max-height: 16rem;
-	max-width: 100%;
-	overflow: auto;
-	overflow-wrap: anywhere;
-	user-select: text;
-	white-space: pre-wrap;
+.example-copy-button {
+	position: relative;
+}
+
+.example-copy-button .copy-confirmation {
+	align-items: center;
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	position: absolute;
+	visibility: hidden;
+}
+
+.example-copy-button .copy-confirmation svg {
+	height: 1.25em;
+	width: 1.25em;
+}
+
+.example-copy-button.copied .copy-label {
+	visibility: hidden;
+}
+
+.example-copy-button.copied .copy-confirmation {
+	visibility: visible;
+}
+
+.example-copy-status[role="status"] {
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
 }
 
 .application-chrome {

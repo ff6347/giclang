@@ -1,5 +1,5 @@
 // ABOUTME: Exercises real example clipboard success and denial on both hosts.
-// ABOUTME: Verifies selectable source, error-only feedback, and sketch preservation.
+// ABOUTME: Verifies host-specific source presentation, transient feedback, and sketch preservation.
 
 import { expect, test } from "@playwright/test";
 import { setEditorSource } from "../e2e/editor.ts";
@@ -48,20 +48,38 @@ test("copies bundled example text and reports clipboard denial without fallback 
 		: page.getByRole("article", { name: expected.title, exact: true });
 	await card.hover();
 	const code = card.locator("pre > code");
-	await expect(code).toHaveText(expected.source);
-	expect(await code.textContent()).toBe(expected.source);
-	await expect(code).toBeVisible();
-	expect(
-		await code.evaluate((element) => getComputedStyle(element).userSelect),
-	).not.toBe("none");
+	if (editor) {
+		await expect(card.locator("pre, code")).toHaveCount(0);
+	} else {
+		await expect(code).toHaveText(expected.source);
+		expect(await code.textContent()).toBe(expected.source);
+		await expect(code).toBeVisible();
+		expect(
+			await code.evaluate((element) => getComputedStyle(element).userSelect),
+		).not.toBe("none");
+	}
 	const button = card.getByRole("button", {
 		name: "Copy to clipboard",
 		exact: true,
+	});
+	await expect(button).toHaveAttribute("aria-label", "Copy to clipboard");
+	const label = button.locator(".copy-label");
+	const checkmark = button.locator(".copy-confirmation svg");
+	await expect(label).toBeVisible();
+	await expect(checkmark).toBeHidden();
+	const buttonSize = await button.evaluate((element) => {
+		const { width, height } = getComputedStyle(element);
+		return { width, height };
 	});
 	const requests: string[] = [];
 	page.on("request", (request) => requests.push(request.url()));
 	await activateByKeyboard(page, button);
 	await expect(card.getByRole("status")).toHaveText("Copied to clipboard.");
+	await expect(card.getByRole("status")).toHaveCSS("clip-path", "inset(50%)");
+	await expect(checkmark).toBeVisible();
+	await expect(label).toBeHidden();
+	await expect(button).toHaveCSS("width", buttonSize.width);
+	await expect(button).toHaveCSS("height", buttonSize.height);
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
 		expected.copyText,
 	);
@@ -87,52 +105,32 @@ test("copies bundled example text and reports clipboard denial without fallback 
 		"Could not copy to clipboard.",
 	);
 	await expect(card.getByRole("status")).toHaveCount(0);
-	if (!editor) {
-		await expect(button.locator(".copy-confirmation")).toBeHidden();
-		await expect(button.locator(".copy-label")).toBeVisible();
-		// A prior success deadline must not clear a subsequent clipboard error.
-		await page.waitForTimeout(2_100);
-		await expect(card.getByRole("alert")).toHaveText(
-			"Could not copy to clipboard.",
-		);
-	}
+	await expect(card.getByRole("alert")).toBeVisible();
+	await expect(checkmark).toBeHidden();
+	await expect(label).toBeVisible();
+	await expect(button).toHaveCSS("width", buttonSize.width);
+	await expect(button).toHaveCSS("height", buttonSize.height);
+	// A prior success deadline must not clear a subsequent clipboard error.
+	await page.waitForTimeout(2_100);
+	await expect(card.getByRole("alert")).toHaveText(
+		"Could not copy to clipboard.",
+	);
+	await expect(card.getByRole("alert")).toBeVisible();
 	expect(await card.locator("details, textarea, pre, code").count()).toBe(
 		countsBefore,
 	);
 	await expect(card.locator("details, textarea")).toHaveCount(0);
-	expect(await code.textContent()).toBe(expected.source);
+	if (editor) {
+		await expect(card.locator("pre, code")).toHaveCount(0);
+	} else {
+		expect(await code.textContent()).toBe(expected.source);
+	}
 	if (editor) {
 		await page.setViewportSize({ width: 1280, height: 320 });
 		const content = card.locator(".content-card-content");
 		await content.hover({ position: { x: 20, y: 200 } });
 		await page.mouse.wheel(0, 5000);
-		await expect
-			.poll(() => content.evaluate((element) => element.scrollTop))
-			.toBeGreaterThan(0);
-		await code.locator("..").focus();
-		await code.locator("..").press("End");
 
-		await expect
-			.poll(() =>
-				code.evaluate((element) => {
-					const text = element.firstChild;
-					if (!text?.textContent) return false;
-					const range = document.createRange();
-					const end = text.textContent.trimEnd().length;
-					range.setStart(text, end - 1);
-					range.setEnd(text, end);
-					const last = range.getBoundingClientRect();
-					const card = element
-						.closest(".content-card-content")
-						?.getBoundingClientRect();
-					return (
-						!!card &&
-						last.top >= card.top &&
-						last.bottom <= Math.min(card.bottom, innerHeight)
-					);
-				}),
-			)
-			.toBe(true);
 		const alert = card.getByRole("alert");
 		await alert.scrollIntoViewIfNeeded();
 		await expect
@@ -160,10 +158,29 @@ test("copies bundled example text and reports clipboard denial without fallback 
 		});
 	}
 	await activateByKeyboard(page, button);
+	await expect(card.getByRole("alert")).toHaveCount(0);
 	await expect(card.getByRole("status")).toHaveText("Copied to clipboard.");
+	await expect(card.getByRole("status")).toHaveCSS("clip-path", "inset(50%)");
+	await expect(checkmark).toBeVisible();
+	await expect(label).toBeHidden();
+	await expect(button).toHaveCSS("width", buttonSize.width);
+	await expect(button).toHaveCSS("height", buttonSize.height);
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
 		expected.copyText,
 	);
+	await page.waitForTimeout(2_100);
+	await expect(checkmark).toBeHidden();
+	await expect(label).toBeVisible();
+	await expect(card.getByRole("status")).toBeEmpty();
+	await expect(button).toHaveAttribute("aria-label", "Copy to clipboard");
+	await expect(button).toHaveCSS("width", buttonSize.width);
+	await expect(button).toHaveCSS("height", buttonSize.height);
+	await expect(card.locator("details, textarea")).toHaveCount(0);
+	if (editor) {
+		await expect(card.locator("pre, code")).toHaveCount(0);
+	} else {
+		expect(await code.textContent()).toBe(expected.source);
+	}
 	expect(requests).toEqual([]);
 	await page.setViewportSize({ width: 375, height: 812 });
 	await expect
