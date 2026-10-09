@@ -72,7 +72,7 @@ pre {
 	font-weight: normal;
 	line-height: 1.5;
 	padding: var(--s1);
-	border-left: var(--s1) solid var(--color-chrome);
+
 	background-color: white;
 	margin-bottom: var(--s2);
 }

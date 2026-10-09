@@ -108,11 +108,15 @@ const { example } = Astro.props;
 	.example-page {
 		padding-bottom: var(--s4);
 	}
+	.example-page > article > * {
+		margin-bottom: var(--s4);
+	}
 
 	.example-thumbnail {
 		border: 2px solid var(--color-text);
 		image-rendering: pixelated;
 		margin-block: var(--s3);
+		box-shadow: var(--box-shadow);
 	}
 
 	pre {
@@ -130,6 +134,7 @@ const { example } = Astro.props;
 		padding: var(--s1) var(--s2);
 		cursor: pointer;
 		position: relative;
+		box-shadow: var(--box-shadow);
 	}
 
 	.application-button:hover:not(:disabled) {
