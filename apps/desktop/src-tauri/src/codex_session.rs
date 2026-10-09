@@ -148,6 +148,34 @@ mod tests {
         format!("x.{}.x", BASE64_URL_SAFE_NO_PAD.encode(claims.to_string()))
     }
 
+    async fn read_request(socket: &mut tokio::net::TcpStream) -> String {
+        let mut bytes = Vec::new();
+        let mut buffer = [0; 1024];
+        loop {
+            let count = socket.read(&mut buffer).await.unwrap();
+            assert_ne!(count, 0, "request closed before its body was received");
+            bytes.extend_from_slice(&buffer[..count]);
+            let Some(body_start) = bytes.windows(4).position(|part| part == b"\r\n\r\n") else {
+                continue;
+            };
+            let headers = String::from_utf8_lossy(&bytes[..body_start]);
+            let length = headers
+                .lines()
+                .find_map(|line| {
+                    line.to_ascii_lowercase()
+                        .strip_prefix("content-length:")
+                        .map(str::to_owned)
+                })
+                .unwrap()
+                .trim()
+                .parse::<usize>()
+                .unwrap();
+            if bytes.len() >= body_start + 4 + length {
+                return String::from_utf8(bytes).unwrap();
+            }
+        }
+    }
+
     #[tokio::test]
     async fn expired_access_refreshes_once_and_rotation_survives_restart() {
         let directory = tempfile::tempdir().unwrap();
@@ -166,30 +194,7 @@ mod tests {
         .to_string();
         let server = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
-            let mut bytes = Vec::new();
-            let mut buffer = [0; 1024];
-            loop {
-                let count = socket.read(&mut buffer).await.unwrap();
-                bytes.extend_from_slice(&buffer[..count]);
-                let Some(body_start) = bytes.windows(4).position(|part| part == b"\r\n\r\n") else {
-                    continue;
-                };
-                let headers = String::from_utf8_lossy(&bytes[..body_start]);
-                let length = headers
-                    .lines()
-                    .find_map(|line| {
-                        line.to_ascii_lowercase()
-                            .strip_prefix("content-length:")
-                            .map(str::to_owned)
-                    })
-                    .unwrap()
-                    .trim()
-                    .parse::<usize>()
-                    .unwrap();
-                if bytes.len() >= body_start + 4 + length {
-                    break;
-                }
-            }
+            let request = read_request(&mut socket).await;
             socket
                 .write_all(
                     format!(
@@ -200,7 +205,7 @@ mod tests {
                 )
                 .await
                 .unwrap();
-            String::from_utf8(bytes).unwrap()
+            request
         });
         let session = CodexSession::default();
         let client = reqwest::Client::new();
@@ -258,6 +263,7 @@ mod tests {
         .to_string();
         let server = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
+            read_request(&mut socket).await;
             waiting.send(()).unwrap();
             proceed.await.unwrap();
             socket
@@ -287,7 +293,10 @@ mod tests {
         observed.await.unwrap();
         store.sign_out_codex().unwrap();
         release.send(()).unwrap();
-        assert!(request.await.unwrap().is_err());
+        assert_eq!(
+            request.await.unwrap().err().unwrap(),
+            "Codex account changed. Retry the request."
+        );
         server.await.unwrap();
         assert!(!store.status().unwrap().codex_authenticated);
         assert!(!directory.path().join("auth.json").exists());
@@ -304,6 +313,7 @@ mod tests {
         let url = format!("http://{}/token", listener.local_addr().unwrap());
         let server = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
+            read_request(&mut socket).await;
             socket
                 .write_all(b"HTTP/1.1 401 Unauthorized\r\nContent-Length: 17\r\nConnection: close\r\n\r\nsynthetic-refresh")
                 .await
