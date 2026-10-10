@@ -38,6 +38,7 @@ export default defineConfig({
 			name: "site-chromium",
 			testMatch: [
 				"site.spec.ts",
+				"site-layout.spec.ts",
 				"example-copy.spec.ts",
 				"site-copy-feedback.spec.ts",
 				"site-documentation-copy.spec.ts",

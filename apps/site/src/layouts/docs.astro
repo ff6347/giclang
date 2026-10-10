@@ -66,6 +66,7 @@ const fullText = await documentationFullText();
 
 	aside {
 		flex: 0 0 14rem;
+		margin-left: var(--s4);
 	}
 
 	.documentation-exports {
@@ -96,7 +97,7 @@ const fullText = await documentationFullText();
 
 		aside {
 			flex: none;
-			width: 100%;
+			width: calc(100% - var(--s4));
 		}
 
 		.docs-content {
