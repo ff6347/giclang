@@ -33,3 +33,10 @@
 - [risk] Root `pnpm fmt:check` still scans ignored Astro files and nested Delta worktrees and fails on twenty-six unrelated paths, tracked by `3c2e51f`. All tracked regular files pass. Existing chunk-size and `gray-matter` eval warnings remain; operator state was not reformatted.
 - [risk] Native git-bug push and bridge export ran through the mutation helper. Bridge pull still reports `issue edit: no matching operation found`; full bridge synchronization is not claimed. The complete slice issue breakdown was not published, and `0e7c1ca` remains unchanged.
 - [risk] Live `/llms.txt` was 404 at initial discovery. No main merge, public deployment, live URL verification, packaged desktop/Windows UI, or real provider paste/upload was performed. Keep the plan active until operator landing, live index/full-text/page/Skill verification, and account acceptance are complete; remove it rather than archive once all criteria pass.
+
+## Website layout follow-up
+
+- [decision] Fabian authorized merging `origin/main` into `docs/gic-agent-plan` before the layout fixes. The merge includes beta.5 Downloads content from `53c4506` without conflicts; it does not land this topic branch on main or deploy it.
+- [decision] Only the Docs sidebar receives left spacing using `--s4`; its mobile width accounts for that margin. The Docs main text styles stay unchanged. Downloads uses a semantic `main` to inherit the existing centered `66ch` content styling, retaining every release link and warning.
+- [technique] Three rendered Chromium layout regressions failed first for zero sidebar inset and the absent Downloads main, then passed after implementation. Both Docs routes and Downloads fit a 375 px viewport; Downloads stays centered at desktop widths.
+- [verification] All 29 site Chromium acceptance tests and 20 site/server Node tests passed. Site typecheck, lint, scoped Prettier, and diff whitespace checks passed. Fabian's existing IPv6 port-4321 server was left running; production acceptance used port 4322.
