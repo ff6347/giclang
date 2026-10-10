@@ -5,7 +5,12 @@ import { readFile, readdir } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import type { Plugin, ResolvedConfig } from "vite";
 import { listContentFiles, readGicAgentSkill } from "@giclang/content/node";
-import { createDocumentationCopyText } from "@giclang/content/model";
+import {
+	createDocumentationCopyText,
+	createDocumentationIndex,
+	createDocumentationFullText,
+	type DocumentationContent,
+} from "@giclang/content/model";
 import {
 	compileMarkdown,
 	compileSkillDocumentation,
@@ -40,7 +45,8 @@ async function documentationFiles() {
 	const documentPaths = new Set(
 		files.filter((file) => file.kind === "markdown").map((file) => file.path),
 	);
-	return Promise.all(
+	const docs: DocumentationContent[] = [];
+	const published = await Promise.all(
 		files.map(async (file) => {
 			if (file.kind !== "markdown") {
 				return {
@@ -68,19 +74,42 @@ async function documentationFiles() {
 							skill.referenceSource,
 						)
 					: compileMarkdown(file.path, file.source);
+			const doc = {
+				...content,
+				id: file.path.slice("docs/".length, -".md".length),
+				markdown: portableMarkdown(
+					content.markdown,
+					createDocumentationLinkResolver(file.path, documentPaths),
+				),
+			};
+			docs.push(doc);
 			return {
 				path: file.path,
-				source: createDocumentationCopyText({
-					...content,
-					markdown: portableMarkdown(
-						content.markdown,
-						createDocumentationLinkResolver(file.path, documentPaths),
-					),
-				}),
+				source: createDocumentationCopyText(doc),
 				type: "text/markdown; charset=utf-8",
 			};
 		}),
 	);
+	return [
+		...published,
+		{
+			path: "llms.txt",
+			source: createDocumentationIndex(
+				docs,
+				(id) => `docs/${id}.md`,
+				"llms-full.txt",
+			),
+			type: "text/plain; charset=utf-8",
+		},
+		{
+			path: "llms-full.txt",
+			source: createDocumentationFullText(
+				docs,
+				(id) => `https://giclang.cc/docs/${id}.md`,
+			),
+			type: "text/plain; charset=utf-8",
+		},
+	];
 }
 
 export function documentationExports(): Plugin {
@@ -115,12 +144,15 @@ export function documentationExports(): Plugin {
 						.pathname;
 					if (!pathname.startsWith(config.base)) return next();
 					const path = decodeURIComponent(pathname.slice(config.base.length));
-					if (!documents.has(path)) return next();
+					const textExport = path === "llms.txt" || path === "llms-full.txt";
+					if (!documents.has(path) && !textExport) return next();
 					const body = await readFile(
 						resolve(config.root, config.build.outDir, path),
 					);
 					response.writeHead(200, {
-						"content-type": "text/markdown; charset=utf-8",
+						"content-type": textExport
+							? "text/plain; charset=utf-8"
+							: "text/markdown; charset=utf-8",
 					});
 					response.end(body);
 				} catch (error) {
@@ -139,7 +171,9 @@ export function documentationExports(): Plugin {
 					const path = pathname.slice(config.base.length);
 					if (
 						!(path.startsWith("docs/") && path.endsWith(".md")) &&
-						!path.startsWith("docs-assets/")
+						!path.startsWith("docs-assets/") &&
+						path !== "llms.txt" &&
+						path !== "llms-full.txt"
 					)
 						return next();
 					const file = (await documentationFiles()).find(

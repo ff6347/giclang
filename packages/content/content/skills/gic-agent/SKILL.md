@@ -48,6 +48,7 @@ When web search or browsing is available, use these project resources for additi
 
 - [GiC website](https://giclang.cc)
 - [GiC documentation](https://giclang.cc/docs)
+- [GiC documentation index](https://giclang.cc/llms.txt)
 - [GiC source repository](https://github.com/ff6347/giclang)
 - [GiC examples](https://github.com/ff6347/giclang/tree/main/packages/content/content/examples)
 

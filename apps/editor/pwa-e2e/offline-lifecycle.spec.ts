@@ -8,6 +8,7 @@ import {
 	type Page,
 	type Request,
 } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import {
 	followBundledDocumentationLink,
@@ -15,6 +16,7 @@ import {
 	showBothWorkspaces,
 } from "../../../e2e/documentation-layout.ts";
 import { readBundledDocumentation } from "../../../e2e/documentation-copy.ts";
+import { readBundledDocumentationExport } from "../../../e2e/documentation-export.ts";
 import { setEditorSource } from "../../../e2e/editor.ts";
 import { readBundledExample } from "../../../e2e/example-copy.ts";
 import {
@@ -60,12 +62,43 @@ async function chooseFileCommand(page: Page, name: string) {
 		.click();
 }
 
-test("serves the Markdown export instead of the shell on a controlled online navigation", async ({
+function expectDocumentationIndex(
+	text: string,
+	docs: Awaited<ReturnType<typeof readBundledDocumentationExport>>["docs"],
+	context: "published" | "bundled",
+) {
+	const prefix = context === "published" ? "" : "https://giclang.cc/";
+	expect(text).toMatch(/^# GiC\n\n\S/);
+	expect(text).toContain("## Documentation\n");
+	const entries = [...text.matchAll(/\[([^\]]+)\]\(([^)]+\.md)\)/g)];
+	expect(entries.map((entry) => [entry[1], entry[2]])).toEqual(
+		docs.map((doc) => [doc.title, `${prefix}docs/${doc.id}.md`]),
+	);
+	expect(text).toContain(`](${prefix}llms-full.txt)`);
+}
+
+test("serves documentation exports instead of the shell on a controlled online navigation", async ({
 	page,
 }) => {
 	test.setTimeout(60_000);
 	const expected = await readBundledDocumentation("drawing");
+	const exports = await readBundledDocumentationExport();
 	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
+	for (const path of [
+		"/llms.txt",
+		"/llms.txt?download=1",
+		"/llms-full.txt",
+		"/llms-full.txt?download=1",
+	]) {
+		const response = await fetch(`http://127.0.0.1:4173${path}`);
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-type")).toBe(
+			"text/plain; charset=utf-8",
+		);
+		const text = await response.text();
+		if (path.startsWith("/llms-full.txt")) expect(text).toBe(exports.fullText);
+		else expectDocumentationIndex(text, exports.docs, "published");
+	}
 	await page.goto("/");
 	await waitForServiceWorker(page);
 	await page.reload();
@@ -85,6 +118,25 @@ test("serves the Markdown export instead of the shell on a controlled online nav
 			.soft(response.headers()["content-type"])
 			.toBe("text/markdown; charset=utf-8");
 		expect.soft(await response.text()).toBe(expected.copyText);
+		await expect(page.locator("#app")).toHaveCount(0);
+	}
+	for (const path of [
+		"/llms.txt",
+		"/llms.txt?download=1",
+		"/llms-full.txt",
+		"/llms-full.txt?download=1",
+	]) {
+		const response = await page.goto(path);
+		if (response === null)
+			throw new Error("Documentation export navigation returned no response.");
+		expect(response.status()).toBe(200);
+		expect
+			.soft(response.headers()["content-type"])
+			.toBe("text/plain; charset=utf-8");
+		const text = await response.text();
+		if (path.startsWith("/llms-full.txt"))
+			expect.soft(text).toBe(exports.fullText);
+		else expectDocumentationIndex(text, exports.docs, "published");
 		await expect(page.locator("#app")).toHaveCount(0);
 	}
 });
@@ -264,6 +316,169 @@ test("downloads the canonical Skill after an offline restart", async ({
 	);
 });
 
+test("exports all bundled documentation after an offline restart without changing the sketch", async ({
+	context,
+	page,
+	browserName,
+}) => {
+	test.setTimeout(60_000);
+	const expected = await readBundledDocumentationExport();
+	if (browserName === "chromium")
+		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+	await fetch("http://127.0.0.1:4173/__pwa_test_online", { method: "POST" });
+	await page.goto("/");
+	await waitForServiceWorker(page);
+	await setEditorSource(page, 'point(23, 41);\nprint("keep my sketch");');
+	await expect
+		.poll(() => page.evaluate(() => localStorage.getItem("gic.recovery.v1")))
+		.not.toBeNull();
+	const offlinePage = await restartOffline(context, page);
+	await offlinePage
+		.getByRole("alertdialog", { name: "Recover unsaved sketch?" })
+		.getByRole("button", { name: "Restore", exact: true })
+		.click();
+	await expect(offlinePage.locator(".view-line")).toHaveText([
+		"point(23, 41);",
+		'print("keep my sketch");',
+	]);
+	await expect(offlinePage.locator("#output")).toHaveText(
+		"Line 2: keep my sketch",
+	);
+	const sourceBefore = await offlinePage
+		.locator(".view-line")
+		.allTextContents();
+	const recoveryBefore = await offlinePage.evaluate(() =>
+		localStorage.getItem("gic.recovery.v1"),
+	);
+	await offlinePage.getByRole("tab", { name: "Docs", exact: true }).click();
+	const docs = offlinePage.getByRole("tabpanel", { name: "Docs", exact: true });
+	for (const doc of expected.docs) {
+		await docs.getByRole("tab", { name: doc.title, exact: true }).click();
+		const article = docs.getByRole("article", { name: doc.title, exact: true });
+		await expect(article).toHaveAttribute("data-document-id", doc.id);
+		const exports = article.getByRole("region", {
+			name: "Documentation exports",
+			exact: true,
+		});
+		await expect(exports).toBeVisible();
+		await expect(exports).toContainText("may exceed chat input limits");
+		await expect(exports).toContainText(/copy one page/i);
+		await expect(exports).toContainText(/download/i);
+		await expect(
+			exports.getByRole("button", { name: "Copy all docs", exact: true }),
+		).toBeVisible();
+		for (const [label, filename] of [
+			["Download documentation index", "llms.txt"],
+			["Download all docs", "llms-full.txt"],
+		] as const) {
+			const link = exports.getByRole("link", { name: label, exact: true });
+			await expect(link).toHaveAttribute("download", filename);
+			expect(await link.getAttribute("href")).toMatch(/^(data:|blob:)/);
+		}
+		await expect(
+			article.getByRole("button", { name: "Copy page", exact: true }),
+		).toBeVisible();
+	}
+	await docs.getByRole("tab", { name: "Skill", exact: true }).click();
+	const article = docs.getByRole("article", { name: "Skill", exact: true });
+	const actions = article.getByRole("region", { name: "Skill actions" });
+	expect(await actions.getByRole("link").allTextContents()).toEqual([
+		"Download skill (ZIP)",
+		"View raw skill",
+	]);
+	await expect(
+		actions.getByRole("link", { name: "Download skill (ZIP)", exact: true }),
+	).toHaveAttribute("download", "gic-agent.zip");
+	await expect(
+		actions.getByRole("link", { name: "View raw skill", exact: true }),
+	).toHaveAttribute("href", "https://giclang.cc/skills/gic-agent.txt");
+	await expect(actions.locator("button, details, textarea")).toHaveCount(0);
+	await offlinePage.evaluate(() => document.fonts.ready);
+	const bodyBefore = await article.locator(".content-markdown").innerHTML();
+	const exports = article.getByRole("region", {
+		name: "Documentation exports",
+		exact: true,
+	});
+	const requests: string[] = [];
+	offlinePage.on("request", (request) => requests.push(request.url()));
+	const copy = exports.getByRole("button", {
+		name: "Copy all docs",
+		exact: true,
+	});
+	const status = exports.getByRole("status");
+	await expect(status).toBeEmpty();
+	await copy.click();
+	await expect(
+		exports
+			.locator('[role="status"], [role="alert"]')
+			.filter({ hasText: /\S/ }),
+	).toHaveText(/^(Copied to clipboard\.|Could not copy to clipboard\.)$/);
+	if (
+		browserName === "chromium" ||
+		(await status.textContent()) === "Copied to clipboard."
+	) {
+		await expect(status).toHaveText("Copied to clipboard.");
+		await expect(status).toHaveCSS("clip-path", "inset(50%)");
+		await expect(exports.getByRole("alert")).toHaveCount(0);
+		await expect(copy.locator(".copy-confirmation svg")).toBeVisible();
+		await expect(copy.locator(".copy-label")).toBeHidden();
+		if (browserName === "chromium")
+			expect(
+				await offlinePage.evaluate(() => navigator.clipboard.readText()),
+			).toBe(expected.fullText);
+		await expect(copy.locator(".copy-label")).toBeVisible({ timeout: 2_500 });
+		await expect(status).toBeEmpty();
+	} else {
+		const error = exports.getByRole("alert");
+		await expect(error).toHaveText("Could not copy to clipboard.");
+		await expect(error).toBeVisible();
+		await expect(error).toHaveCSS("clip-path", "none");
+		await expect(status).toBeEmpty();
+		await expect(copy.locator(".copy-confirmation")).toBeHidden();
+		await expect(copy.locator(".copy-label")).toBeVisible();
+		await offlinePage.waitForTimeout(2_100);
+		await expect(error).toHaveText("Could not copy to clipboard.");
+		await expect(error).toBeVisible();
+	}
+	await expect(copy).toHaveAccessibleName("Copy all docs");
+	await expect(article.locator(':scope > [role="status"]')).toBeEmpty();
+	for (const [label, filename] of [
+		["Download all docs", "llms-full.txt"],
+		["Download documentation index", "llms.txt"],
+	] as const) {
+		const pending = offlinePage.waitForEvent("download");
+		await exports.getByRole("link", { name: label, exact: true }).click();
+		const download = await pending;
+		expect(download.suggestedFilename()).toBe(filename);
+		expect(download.url()).toMatch(/^(data:|blob:)/);
+		expect(await download.failure()).toBeNull();
+		const path = await download.path();
+		if (path === null) throw new Error("Documentation download has no file.");
+		const text = await readFile(path, "utf8");
+		if (filename === "llms-full.txt") {
+			expect(text).toBe(expected.fullText);
+			expect(text).toContain("## GiC agent skill");
+			expect(text).toContain("## Language reference");
+		} else expectDocumentationIndex(text, expected.docs, "bundled");
+	}
+	expect(requests).toEqual([]);
+	expect(await article.locator(".content-markdown").innerHTML()).toBe(
+		bodyBefore,
+	);
+	await expect(article.locator("details, textarea")).toHaveCount(0);
+	await expect(offlinePage).toHaveURL("/");
+	await offlinePage
+		.getByRole("tab", { name: "Gestalten", exact: true })
+		.click();
+	await expect
+		.poll(() => offlinePage.locator(".view-line").allTextContents())
+		.toEqual(sourceBefore);
+	expect(
+		await offlinePage.evaluate(() => localStorage.getItem("gic.recovery.v1")),
+	).toBe(recoveryBefore);
+	await expect(offlinePage.getByRole("alertdialog")).toHaveCount(0);
+});
+
 test("copies bundled examples after an offline restart without fallback UI", async ({
 	context,
 	page,
@@ -420,10 +635,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				name: "Copy page",
 				exact: true,
 			});
-			await expect(article.getByRole("button")).toHaveCount(1);
+			await expect(
+				article.getByRole("button", { name: "Copy page", exact: true }),
+			).toHaveCount(1);
 			const label = button.locator(".copy-label");
 			const confirmation = button.locator(".copy-confirmation");
-			const status = article.getByRole("status");
+			const status = article.locator(':scope > [role="status"]');
 			await expect(label).toBeVisible();
 			await expect(confirmation).toBeHidden();
 			await expect(status).toBeEmpty();
@@ -438,7 +655,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			await button.click();
 			await expect(
 				article
-					.locator('[role="status"], [role="alert"]')
+					.locator(':scope > [role="status"], :scope > [role="alert"]')
 					.filter({ hasText: /\S/ }),
 			).toHaveText(/^(Copied to clipboard\.|Could not copy to clipboard\.)$/);
 			if (
@@ -447,7 +664,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 			) {
 				await expect(status).toHaveText("Copied to clipboard.");
 				await expect(status).toHaveCSS("clip-path", "inset(50%)");
-				await expect(article.getByRole("alert")).toHaveCount(0);
+				await expect(article.locator(':scope > [role="alert"]')).toHaveCount(0);
 				await expect(confirmation.locator("svg")).toBeVisible();
 				await expect(confirmation).toHaveAttribute("aria-hidden", "true");
 				await expect(label).toBeHidden();
@@ -486,7 +703,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 				await expect(confirmation).toBeHidden();
 				await expect(status).toBeEmpty();
 			} else {
-				const error = article.getByRole("alert");
+				const error = article.locator(':scope > [role="alert"]');
 				await expect(error).toHaveText("Could not copy to clipboard.");
 				await expect(error).toBeVisible();
 				await expect(error).toHaveCSS("clip-path", "none");

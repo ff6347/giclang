@@ -237,7 +237,10 @@ export default defineConfig({
 				],
 			},
 			workbox: {
-				navigateFallbackDenylist: [/\.md(?:$|\?)/i],
+				navigateFallbackDenylist: [
+					/\.md(?:$|\?)/i,
+					/\/llms(?:-full)?\.txt(?:$|\?)/i,
+				],
 				cleanupOutdatedCaches: true,
 				clientsClaim: false,
 				globPatterns: ["**/*.{css,html,js,png,svg,ttf,webmanifest}"],

@@ -3,6 +3,8 @@
 :80 {
 	root * /srv
 	encode zstd gzip
+	@plaintext path /llms.txt /llms-full.txt
+	header @plaintext Content-Type "text/plain; charset=utf-8"
 	@markdown path_regexp \.md$
 	header @markdown Content-Type "text/markdown; charset=utf-8"
 	file_server

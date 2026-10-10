@@ -4,6 +4,7 @@ import {
 } from "@giclang/content/model";
 import { documentationTargetId } from "../lib/documentation-links.ts";
 import { CopyButton } from "./copy-button.tsx";
+import { DocumentationExports } from "./documentation-exports.tsx";
 import { Markdown } from "./markdown";
 import { SkillActions } from "./skill-actions.tsx";
 
@@ -39,6 +40,7 @@ export function DocsPanel({ doc, docIds, onOpen }: DocsPanelProps) {
 			<h2>{doc.title}</h2>
 			<CopyButton text={createDocumentationCopyText(doc)} label="Copy page" />
 			{doc.id === "skill" && <SkillActions />}
+			<DocumentationExports />
 			<Markdown content={doc} />
 		</article>
 	);

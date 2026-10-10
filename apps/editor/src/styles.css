@@ -196,10 +196,15 @@ canvas {
 	overflow-x: auto;
 }
 
-.skill-actions {
+.skill-actions,
+.documentation-export-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.75rem;
+}
+
+.documentation-export-actions {
+	align-items: center;
 }
 
 .content-table-scroll {

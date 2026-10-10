@@ -17,7 +17,7 @@ test("presents bundled About and documentation content without navigation", asyn
 
 	await page.getByRole("tab", { name: "Docs" }).click();
 	const docs = page.getByRole("tabpanel", { name: "Docs" });
-	await expect(docs.getByRole("button")).toHaveCount(1);
+	await expect(docs.getByRole("button")).toHaveCount(2);
 	await expect(
 		docs.getByRole("button", { name: "Copy page", exact: true }),
 	).toBeVisible();
@@ -27,7 +27,7 @@ test("presents bundled About and documentation content without navigation", asyn
 	const nextPage = docs.getByRole("tab").nth(1);
 	await nextPage.click();
 	await expect(nextPage).toHaveAttribute("aria-selected", "true");
-	await expect(docs.getByRole("button")).toHaveCount(1);
+	await expect(docs.getByRole("button")).toHaveCount(2);
 	await expect(
 		docs.getByRole("button", { name: "Copy page", exact: true }),
 	).toBeVisible();

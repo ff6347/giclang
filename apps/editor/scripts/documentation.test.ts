@@ -10,6 +10,7 @@ import test from "node:test";
 import { build, createLogger, createServer, preview } from "vite";
 import { listContentFiles } from "@giclang/content/node";
 import { readBundledDocumentation } from "../../../e2e/documentation-copy.ts";
+import { readBundledDocumentationExport } from "../../../e2e/documentation-export.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const configFile = join(root, "vite.config.ts");
@@ -30,6 +31,34 @@ function capturedLogger() {
 
 async function assertPages(origin: string, base: string, output?: string) {
 	const files = await listContentFiles("docs");
+	const expectedExport = await readBundledDocumentationExport();
+	for (const path of ["llms.txt", "llms-full.txt"]) {
+		const response = await fetch(`${origin}${base}${path}`);
+		assert.equal(response.status, 200);
+		assert.equal(
+			response.headers.get("content-type"),
+			"text/plain; charset=utf-8",
+		);
+		const text = await response.text();
+		if (output) assert.equal(await readFile(join(output, path), "utf8"), text);
+		if (path === "llms-full.txt") assert.equal(text, expectedExport.fullText);
+		else {
+			const links = [...text.matchAll(/^- \[([^\]]+)\]\(([^)]+)\)/gm)];
+			assert.deepEqual(
+				links.map((link) => link[2]),
+				[
+					...expectedExport.docs.map((doc) => `docs/${doc.id}.md`),
+					"llms-full.txt",
+				],
+			);
+			for (const link of links) {
+				const url = new URL(link[2]!, `${origin}${base}llms.txt`);
+				assert.equal(url.origin, origin);
+				assert.ok(url.pathname.startsWith(base));
+				assert.equal((await fetch(url)).status, 200);
+			}
+		}
+	}
 	for (const path of ["docs/%FF.md", "docs/%E0%A4%A.md"]) {
 		assert.equal((await fetch(`${origin}${base}${path}`)).status, 400);
 	}

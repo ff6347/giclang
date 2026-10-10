@@ -1,8 +1,11 @@
 ---
 import DefaultLayout from "./default.astro";
 import { getCollection } from "astro:content";
+import CopyButton from "../components/copy-button.astro";
+import { documentationFullText } from "../lib/documentation-exports.ts";
 
 const docs = await getCollection("docs");
+const fullText = await documentationFullText();
 ---
 
 <DefaultLayout>
@@ -28,6 +31,24 @@ const docs = await getCollection("docs");
 					))}
 				</ul>
 			</nav>
+			<section class="documentation-exports" aria-label="Documentation exports">
+				<a href={`${import.meta.env.BASE_URL}llms.txt`}>
+					Documentation index (llms.txt)
+				</a>
+				<div>
+					<CopyButton label="Copy all docs" text={fullText} />
+				</div>
+				<a
+					href={`${import.meta.env.BASE_URL}llms-full.txt`}
+					download="llms-full.txt"
+				>
+					Download all docs
+				</a>
+				<p>
+					The full document may exceed a chat's input limits. Use Copy page for
+					an individual page or Download all docs instead.
+				</p>
+			</section>
 		</aside>
 
 		<div class="docs-content">
@@ -45,6 +66,13 @@ const docs = await getCollection("docs");
 
 	aside {
 		flex: 0 0 14rem;
+	}
+
+	.documentation-exports {
+		display: flex;
+		flex-direction: column;
+		gap: var(--s4);
+		margin-top: var(--s4);
 	}
 
 	.docs-content {

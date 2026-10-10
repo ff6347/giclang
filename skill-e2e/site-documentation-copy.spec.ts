@@ -90,7 +90,9 @@ for (const document of documents) {
 		const record = (request: { url(): string }) => requests.push(request.url());
 		page.on("request", record);
 		await activateByKeyboard(page, button);
-		await expect(page.getByRole("status")).toHaveText("Copied to clipboard.");
+		await expect(page.getByRole("main").getByRole("status")).toHaveText(
+			"Copied to clipboard.",
+		);
 		expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
 			document.copyText,
 		);
@@ -134,7 +136,10 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		await expect(confirmation.locator("svg")).toBeVisible();
 		await expect(label).toBeHidden();
 		await expect(button).toHaveAccessibleName("Copy page");
-		await expect(page.getByRole("status")).toHaveCSS("clip-path", "inset(50%)");
+		await expect(page.getByRole("main").getByRole("status")).toHaveCSS(
+			"clip-path",
+			"inset(50%)",
+		);
 		expect(await dimensions(button)).toEqual(size);
 		expect(await dimensions(main)).toEqual(mainSize);
 		const timing = await confirmation.evaluate((element) =>
@@ -150,7 +155,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		);
 		await expect(label).toBeVisible({ timeout: 3_500 });
 		await expect(confirmation).toBeHidden();
-		await expect(page.getByRole("status")).toBeEmpty();
+		await expect(page.getByRole("main").getByRole("status")).toBeEmpty();
 		expect(await dimensions(button)).toEqual(size);
 		await page.setViewportSize({ width: 375, height: 812 });
 		const narrowSize = await dimensions(button);
@@ -191,9 +196,11 @@ test("restarts documentation confirmation before its previous expiry", async ({
 	// Cross the previous deadline while the repeated confirmation is active.
 	await page.waitForTimeout(1_100);
 	await expect(button.locator(".copy-label")).toBeHidden();
-	await expect(page.getByRole("status")).toHaveText("Copied to clipboard.");
+	await expect(page.getByRole("main").getByRole("status")).toHaveText(
+		"Copied to clipboard.",
+	);
 	await expect(button.locator(".copy-label")).toBeVisible({ timeout: 2_000 });
-	await expect(page.getByRole("status")).toBeEmpty();
+	await expect(page.getByRole("main").getByRole("status")).toBeEmpty();
 });
 
 test("clipboard denial stays visible through repeats and recovers without fallback UI or requests", async ({
@@ -215,7 +222,9 @@ test("clipboard denial stays visible through repeats and recovers without fallba
 	const requests: string[] = [];
 	page.on("request", (request) => requests.push(request.url()));
 	await button.click();
-	await expect(page.getByRole("status")).toHaveText("Copied to clipboard.");
+	await expect(page.getByRole("main").getByRole("status")).toHaveText(
+		"Copied to clipboard.",
+	);
 	const cdp = await browser.newBrowserCDPSession();
 	const pageSession = await context.newCDPSession(page);
 	try {
@@ -240,7 +249,7 @@ test("clipboard denial stays visible through repeats and recovers without fallba
 				await expect(page.getByRole("alert")).toBeVisible();
 				await expect(button.locator(".copy-confirmation")).toBeHidden();
 				await expect(button.locator(".copy-label")).toBeVisible();
-				await expect(page.getByRole("status")).toHaveCount(0);
+				await expect(page.getByRole("main").getByRole("status")).toHaveCount(0);
 				await page.waitForTimeout(2_100);
 				await expect(page.getByRole("alert")).toHaveText(
 					"Could not copy to clipboard.",
@@ -252,7 +261,7 @@ test("clipboard denial stays visible through repeats and recovers without fallba
 				);
 			} else {
 				await expect(page.getByRole("alert")).toHaveCount(0);
-				await expect(page.getByRole("status")).toHaveText(
+				await expect(page.getByRole("main").getByRole("status")).toHaveText(
 					"Copied to clipboard.",
 				);
 				await expect(button.locator(".copy-confirmation svg")).toBeVisible();
@@ -262,7 +271,7 @@ test("clipboard denial stays visible through repeats and recovers without fallba
 				await expect(button.locator(".copy-label")).toBeVisible({
 					timeout: 3_500,
 				});
-				await expect(page.getByRole("status")).toBeEmpty();
+				await expect(page.getByRole("main").getByRole("status")).toBeEmpty();
 			}
 			expect(await dimensions(button)).toEqual(size);
 			await expect(button).toBeEnabled();

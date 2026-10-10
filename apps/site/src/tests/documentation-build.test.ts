@@ -54,6 +54,37 @@ function decodeHtml(text: string): string {
 	});
 }
 
+function verifyExportControls(html: string, base: string, fullText: string) {
+	const controls =
+		/<section\b[^>]*aria-label="Documentation exports"[^>]*>([\s\S]*?)<\/section>/.exec(
+			html,
+		)?.[1];
+	assert.ok(controls, "Docs exposes documentation exports separately");
+	assert.match(
+		controls,
+		new RegExp(
+			`href="${base}llms\\.txt"[^>]*>\\s*Documentation index \\(llms\\.txt\\)`,
+		),
+	);
+	assert.match(
+		controls,
+		new RegExp(
+			`href="${base}llms-full\\.txt"[^>]*download="llms-full\\.txt"[^>]*>\\s*Download all docs`,
+		),
+	);
+	const buttons = [
+		...controls.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g),
+	];
+	assert.equal(buttons.length, 1);
+	assert.match(buttons[0][1], /aria-label="Copy all docs"/);
+	const payload = /data-copy-text="([^"]*)"/.exec(buttons[0][1]);
+	assert.ok(payload);
+	assert.equal(decodeURIComponent(decodeHtml(payload[1])), fullText);
+	assert.match(controls, /may exceed[\s\S]*chat[\s\S]*limits/i);
+	assert.match(controls, /individual page/i);
+	assert.doesNotMatch(controls, /<(?:textarea|input|details)\b/);
+}
+
 async function verifyDocumentation(output: string, base: string) {
 	const files = await listContentFiles("docs");
 	const skill = await readGicAgentSkill();
@@ -63,6 +94,58 @@ async function verifyDocumentation(output: string, base: string) {
 		published.filter((file) => file.endsWith(".md")).sort(),
 		documents.map((file) => posix.basename(file.path)).sort(),
 	);
+	const ordered = documents.toSorted(
+		(left, right) =>
+			Number(left.frontmatter.order) - Number(right.frontmatter.order) ||
+			String(left.frontmatter.title).localeCompare(
+				String(right.frontmatter.title),
+			),
+	);
+	const index = await readFile(join(output, "llms.txt"), "utf8");
+	const fullText = await readFile(join(output, "llms-full.txt"), "utf8");
+	assert.match(index, /^# GiC\n/);
+	assert.deepEqual(
+		[...index.matchAll(/^## (.+)$/gm)].map((match) => match[1]),
+		["Documentation", "Optional"],
+	);
+	const links = [...index.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
+	assert.deepEqual(
+		links.filter((link) => link[2].endsWith(".md")).map((link) => link[1]),
+		ordered.map((file) => String(file.frontmatter.title).trim()),
+	);
+	assert.deepEqual(
+		links.map((link) => link[2]).sort(),
+		[...documents.map((file) => file.path), "llms-full.txt"].sort(),
+	);
+	for (const origin of ["https://giclang.cc", "https://unrelated.example"]) {
+		for (const [, , href] of links) {
+			const url = new URL(href, `${origin}${base}llms.txt`);
+			assert.equal(url.origin, origin);
+			assert.ok(url.pathname.startsWith(base));
+			assert.ok(
+				(await readFile(join(output, url.pathname.slice(base.length)))).length,
+			);
+		}
+	}
+	const sections = await Promise.all(
+		ordered.map(async (file) => {
+			const page = await readFile(join(output, file.path), "utf8");
+			const title = String(file.frontmatter.title).trim();
+			assert.ok(page.startsWith(`# ${title}\n\n`));
+			return `# ${title}\n\nSource: https://giclang.cc/${file.path}\n\n${page.slice(`# ${title}\n\n`.length)}`;
+		}),
+	);
+	assert.equal(
+		fullText,
+		`# GiC documentation\n\n${sections.join("\n\n---\n\n")}`,
+	);
+	assert.equal([...fullText.matchAll(/^Source: /gm)].length, documents.length);
+	assert.doesNotMatch(
+		fullText,
+		/<html\b|<!doctype|file:\/\/|\/Users\/|\.agents\/(?:MEMORY\.md|journals\/|plans\/|decisions\/)|name: gic-agent\n/,
+	);
+	const catalogue = await readFile(join(output, "docs", "index.html"), "utf8");
+	verifyExportControls(catalogue, base, fullText);
 	for (const file of documents) {
 		const id = file.path.slice("docs/".length, -".md".length);
 		const resolveImage = (href: string) =>
@@ -91,7 +174,9 @@ async function verifyDocumentation(output: string, base: string) {
 		const html = await readFile(join(output, "docs", id, "index.html"), "utf8");
 		const buttons = [
 			...html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g),
-		].filter((button) => button[1]?.includes("data-copy-text"));
+		].filter((button) => button[1]?.includes('aria-label="Copy page"'));
+		verifyExportControls(html, base, fullText);
+
 		assert.equal(buttons.length, 1, `${id} has one Copy page control`);
 		assert.match(buttons[0]?.[1] ?? "", /aria-label="Copy page"/);
 		assert.equal(buttons[0]?.[2].replace(/<[^>]*>/g, "").trim(), "Copy page");

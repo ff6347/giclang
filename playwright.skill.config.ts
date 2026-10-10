@@ -26,6 +26,7 @@ export default defineConfig({
 				"example-copy.spec.ts",
 				"editor-copy-feedback.spec.ts",
 				"editor-documentation-copy.spec.ts",
+				"editor-documentation-export.spec.ts",
 			],
 			use: {
 				...devices["Desktop Chrome"],
@@ -40,6 +41,7 @@ export default defineConfig({
 				"example-copy.spec.ts",
 				"site-copy-feedback.spec.ts",
 				"site-documentation-copy.spec.ts",
+				"site-documentation-export.spec.ts",
 			],
 			use: {
 				...devices["Desktop Chrome"],

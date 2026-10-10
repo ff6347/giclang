@@ -84,7 +84,7 @@ test("copies complete displayed pages while navigating Docs without changing the
 	for (const id of ["skill", "language-reference", "drawing", "functions"]) {
 		const { article, expected } = await openDocumentation(page, id);
 		const button = copyButton(article);
-		await expect(article.getByRole("button")).toHaveCount(1);
+		await expect(article.getByRole("button")).toHaveCount(2);
 		await expect(button).toHaveAccessibleName("Copy page");
 		await expect(article.locator("details, textarea")).toHaveCount(0);
 		if (id === "skill") {
@@ -116,7 +116,7 @@ test("copies complete displayed pages while navigating Docs without changing the
 		const recordRequest = (request: Request) => requests.push(request.url());
 		page.on("request", recordRequest);
 		await activateByKeyboard(page, button);
-		await expect(article.getByRole("status")).toHaveText(
+		await expect(article.locator(':scope > [role="status"]')).toHaveText(
 			"Copied to clipboard.",
 		);
 		const copied = await readClipboard(page);
@@ -155,7 +155,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 		const button = copyButton(article);
 		const label = button.locator(".copy-label");
 		const confirmation = button.locator(".copy-confirmation");
-		const status = article.getByRole("status");
+		const status = article.locator(':scope > [role="status"]');
 		await expect(status).toBeEmpty();
 		await expect(status).toHaveCSS("clip-path", "inset(50%)");
 		const size = await dimensions(button);
@@ -228,7 +228,7 @@ test("keeps genuine clipboard denial visible past prior success and permits retr
 	const button = copyButton(article);
 	const size = await dimensions(button);
 	const bodyBefore = await article.locator(".content-markdown").innerHTML();
-	const status = article.getByRole("status");
+	const status = article.locator(':scope > [role="status"]');
 	await expect(status).toBeEmpty();
 	const statusBefore = await status.elementHandle();
 	const cdp = await browser.newBrowserCDPSession();
@@ -252,7 +252,7 @@ test("keeps genuine clipboard denial visible past prior success and permits retr
 		});
 	}
 	await activateByKeyboard(page, button);
-	const error = article.getByRole("alert");
+	const error = article.locator(':scope > [role="alert"]');
 	await expect(error).toHaveText("Could not copy to clipboard.");
 	expect(
 		(await page.evaluate(() => performance.now())) - successTime,
