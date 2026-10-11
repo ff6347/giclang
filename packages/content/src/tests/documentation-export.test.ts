@@ -32,7 +32,7 @@ const ordered = [pages[3]!, pages[2]!, pages[1]!, pages[0]!];
 const url = (id: string) => `https://giclang.cc/docs/${id}.md`;
 
 const intro =
-	"# GiC\n\n> GiC (Gestalten in Code) is a small language for two-dimensional generative graphics and learning programming.\n\nThis index links to complete Markdown documentation. It is not a full-text export. Web access is optional; use the bundled language reference first for syntax and built-in signatures.\n\n## Documentation\n\n";
+	"# GiC\n\n> GiC (Gestalten in Code) is a small language for two-dimensional generative graphics and learning programming.\n\nCanonical website: https://giclang.cc/\n\nThis index links to complete Markdown documentation. It is not a full-text export. Web access is optional; use the bundled language reference first for syntax and built-in signatures.\n\n## Documentation\n\n";
 
 describe("documentation exports", () => {
 	it("indexes every page once in documentation order with host-owned destinations", () => {

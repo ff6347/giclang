@@ -200,6 +200,7 @@ export function createDocumentationIndex(
 		[
 			"# GiC",
 			"> GiC (Gestalten in Code) is a small language for two-dimensional generative graphics and learning programming.",
+			"Canonical website: https://giclang.cc/",
 			"This index links to complete Markdown documentation. It is not a full-text export. Web access is optional; use the bundled language reference first for syntax and built-in signatures.",
 			"## Documentation",
 			links.join("\n"),

@@ -42,6 +42,7 @@ test("discovers the index, crawls every Markdown page, and downloads identical c
 		.click();
 	await expect(page).toHaveURL(/\/llms\.txt$/);
 	const index = await page.locator("body").innerText();
+	expect(index).toContain("Canonical website: https://giclang.cc/");
 	const indexUrl = page.url();
 	const links = [...index.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
 	const markdownLinks = links.filter((link) => link[2].endsWith(".md"));

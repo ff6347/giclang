@@ -104,6 +104,7 @@ async function verifyDocumentation(output: string, base: string) {
 	const index = await readFile(join(output, "llms.txt"), "utf8");
 	const fullText = await readFile(join(output, "llms-full.txt"), "utf8");
 	assert.match(index, /^# GiC\n/);
+	assert.match(index, /^Canonical website: https:\/\/giclang\.cc\/$/m);
 	assert.deepEqual(
 		[...index.matchAll(/^## (.+)$/gm)].map((match) => match[1]),
 		["Documentation", "Optional"],
