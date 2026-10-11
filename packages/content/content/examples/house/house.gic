@@ -1,0 +1,22 @@
+// ABOUTME: Builds a colored house scene around a shared horizon.
+// ABOUTME: Places the sun, roof, and walls at fixed canvas coordinates.
+// Source: https://snippets.qawsed.site/p5js/perspective/house-relative/index.js
+background("lightgoldenrodyellow");
+stroke("orange");
+strokeWidth(3.5);
+fill("coral");
+circle(25, 50, 10);
+noStroke();
+fill("lavender");
+rect(30, 45, 40, 20);
+quad(30, 45, 35, 35, 65, 35, 70, 45);
+fill("lightgrey");
+triangle(65, 35, 70, 45, 60, 45);
+rect(60, 45, 10, 20);
+fill("darkseagreen");
+rect(0, 55, WIDTH, HEIGHT - 55);
+stroke("lavenderblush");
+strokeWidth(1);
+line(0, 55, 60, 55);
+stroke("lightgrey");
+line(60, 55, WIDTH, 55);

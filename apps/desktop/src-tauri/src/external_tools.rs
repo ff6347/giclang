@@ -58,12 +58,12 @@ pub(crate) fn detect_in_paths(executable: &str, dirs: &[PathBuf]) -> bool {
 fn candidate_names(executable: &str) -> Vec<OsString> {
     #[cfg(target_os = "windows")]
     {
-        return vec![
+        vec![
             OsString::from(executable),
             OsString::from(format!("{executable}.exe")),
             OsString::from(format!("{executable}.cmd")),
             OsString::from(format!("{executable}.bat")),
-        ];
+        ]
     }
     #[cfg(not(target_os = "windows"))]
     {

@@ -1,0 +1,16 @@
+// ABOUTME: Draws a randomized field of diagonal grid marks.
+// ABOUTME: Ports Fabian's 10 PRINT sketch to the GIC canvas.
+// Source: https://snippets.qawsed.site/p5js/loop/10-print-goto-10/sketch.js
+randomSeed(10);
+background("white");
+stroke("black");
+strokeWidth(2);
+repeat(x, 0, WIDTH, 5) {
+	repeat(y, 0, HEIGHT, 5) {
+		if (random(0, 1) < 0.5) {
+			line(x, y, x + 5, y + 5);
+		} else {
+			line(x, y + 5, x + 5, y);
+		}
+	}
+}

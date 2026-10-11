@@ -9,15 +9,15 @@ Status categories used here: **complete**, **in-progress**, **missing**, **obsol
 
 ## Source Inputs and Boundaries
 
-| Area | Evidence |
-| :--- | :--- |
-| Educational boundary | Root `AGENTS.md`; `docs/AGENTS.md`; `HANDOFF.md` tasks and gate. Agents should guide and audit, not implement language features for Fabian. |
-| Current checklist | `docs/LESSONS.md`, the current source for the active curriculum checklist. |
-| Current specification | `docs/deprecated/Language specification rev 2.md`, especially sections: Language Specification, Functions, Animation, Built-in Functions, Grammar (EBNF), Implementation Architecture, CLI Tool, Testing Strategy, Project Structure. |
-| Existing milestone docs | `docs/milestones/lexer.md`, `parser-basic.md`, `parser-expression-precedence.md`, `parser-call-expressions.md`, `parser-assignment.md`, `parser-if-statements.md`, `parser-repeat-statements.md`, `parser-functions.md`. |
-| Durable context | `docs/MEMORY.md`; `docs/journals/2026-07-29-language-design-and-parser-errors.md`; `docs/journals/2026-07-31-repeat-parser-milestone.md`. |
-| Implementation spot checks | `src/lexer.ts`, `src/tokens.ts`, `src/parser.ts`, `src/ast.ts`, `src/analyzer.ts`, `src/interpreter.ts`, `src/tests/`. |
-| Open git-bugs | Local `git-bug bug --status open --format json --by creation --direction asc`: `0885b28` and `6a023d1` are open. |
+| Area                       | Evidence                                                                                                                                                                                                                              |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Educational boundary       | Root `AGENTS.md`; `docs/AGENTS.md`; `HANDOFF.md` tasks and gate. Agents should guide and audit, not implement language features for Fabian.                                                                                           |
+| Current checklist          | `docs/LESSONS.md`, the current source for the active curriculum checklist.                                                                                                                                                            |
+| Current specification      | `docs/deprecated/Language specification rev 2.md`, especially sections: Language Specification, Functions, Animation, Built-in Functions, Grammar (EBNF), Implementation Architecture, CLI Tool, Testing Strategy, Project Structure. |
+| Existing milestone docs    | `docs/milestones/lexer.md`, `parser-basic.md`, `parser-expression-precedence.md`, `parser-call-expressions.md`, `parser-assignment.md`, `parser-if-statements.md`, `parser-repeat-statements.md`, `parser-functions.md`.              |
+| Durable context            | `docs/MEMORY.md`; `docs/journals/2026-07-29-language-design-and-parser-errors.md`; `docs/journals/2026-07-31-repeat-parser-milestone.md`.                                                                                             |
+| Implementation spot checks | `src/lexer.ts`, `src/tokens.ts`, `src/parser.ts`, `src/ast.ts`, `src/analyzer.ts`, `src/interpreter.ts`, `src/tests/`.                                                                                                                |
+| Open git-bugs              | Local `git-bug bug --status open --format json --by creation --direction asc`: `0885b28` and `6a023d1` are open.                                                                                                                      |
 
 ## `docs/LESSONS.md` Item Classifications
 

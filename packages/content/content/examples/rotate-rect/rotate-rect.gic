@@ -1,9 +1,31 @@
-// ABOUTME: Places a large white quadrilateral at the source rectangle's fixed 13-degree rotation.
+// ABOUTME: Calculates rectangle corners with a user-defined rotation function.
 // ABOUTME: Demonstrates figure and ground through one tilted rectangle crossing a dark Canvas.
 // Adapted from Fabian Morón Zirfas's Rotate Rect:
 // https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/form/2d/processing/rotate_rect
 
+func rotate(x, y, width, height, angle) {
+	let left = x - width / 2;
+	let right = x + width / 2;
+	let top = y - height / 2;
+	let bottom = y + height / 2;
+	let cosine = cos(angle);
+	let sine = sin(angle);
+	let centerX = WIDTH / 2;
+	let centerY = HEIGHT / 2;
+	quad(
+		centerX + cosine * left - sine * top,
+		centerY + sine * left + cosine * top,
+		centerX + cosine * right - sine * top,
+		centerY + sine * right + cosine * top,
+		centerX + cosine * right - sine * bottom,
+		centerY + sine * right + cosine * bottom,
+		centerX + cosine * left - sine * bottom,
+		centerY + sine * left + cosine * bottom
+	);
+	return;
+}
+
 background("#000000");
 noStroke();
 fill("#ffffff");
-quad(-19.95, -17.46, 77.49, 5.03, 54.99, 102.47, -42.45, 79.97);
+rotate(-WIDTH / 3, 0, WIDTH, HEIGHT, 13);

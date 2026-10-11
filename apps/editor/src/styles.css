@@ -68,6 +68,17 @@ body {
 	font-family: var(--font-body);
 }
 
+pre,
+code {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+code:not(pre code) {
+	background-color: var(--color-chrome);
+	font-style: italic;
+}
+
 button,
 input {
 	font: inherit;
@@ -1083,7 +1094,7 @@ canvas {
 }
 
 .agent-markdown code {
-	background: var(--color-control);
+	background: var(--color-chrome);
 	font-family: inherit;
 	font-size: 1rem;
 	padding: 0 var(--s1);

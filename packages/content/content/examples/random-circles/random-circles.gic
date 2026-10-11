@@ -1,11 +1,11 @@
 // ABOUTME: Fills a regular grid with circles whose radii are chosen at random.
-// ABOUTME: Demonstrates how seeded variation gives repeated marks a textured rhythm.
+// ABOUTME: Demonstrates how random variation gives repeated marks a textured rhythm.
 // Inspired by Fabian Morón Zirfas's Processing Random Circles:
 // https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/processing/random_circles
 // Related p5.js version by Fabian Morón Zirfas:
 // https://github.com/ff6347/gestalten-in-code/tree/e8b8f8446c13c01494ccfd1e92ce2bb1638daf66/chance/p5js/random_circles
 
-randomSeed(440);
+
 background("#cccccc");
 fill("#ffffff");
 stroke("#000000");

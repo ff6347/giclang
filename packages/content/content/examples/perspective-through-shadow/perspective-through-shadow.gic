@@ -1,0 +1,9 @@
+// ABOUTME: Draws a white square and a small triangular shadow.
+// ABOUTME: Adapts Fabian's shadow composition to GIC coordinates.
+// Source: https://snippets.qawsed.site/p5js/perspective/shadow/index.js
+background(90, 0, 0);
+fill("white");
+rect(35, 45, 30, 30);
+fill("black");
+noStroke();
+triangle(65, 60, 70, 60, 65, 75);

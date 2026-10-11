@@ -28,6 +28,41 @@ test("presents bundled About and documentation content without navigation", asyn
 	await expect(page).toHaveURL("/");
 });
 
+test("uses the body font and size for inline and block documentation code", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.getByRole("tab", { name: "Docs" }).click();
+	const docs = page.getByRole("tabpanel", { name: "Docs" });
+	await docs
+		.getByRole("tab", { name: "User defined Functions", exact: true })
+		.click();
+	const article = docs.getByRole("article", { name: "User defined Functions" });
+	const inlineCode = article.locator("p code").first();
+	const blockCode = article.locator("pre code").first();
+	await expect(inlineCode).toBeVisible();
+	await expect(blockCode).toBeVisible();
+	const bodyFont = await page.locator("body").evaluate((element) => ({
+		family: getComputedStyle(element).fontFamily,
+		size: getComputedStyle(element).fontSize,
+	}));
+	for (const code of [inlineCode, blockCode]) {
+		await expect(code).toHaveCSS("font-size", bodyFont.size);
+		await expect(code).toHaveCSS("font-family", bodyFont.family);
+	}
+	await expect(inlineCode).toHaveCSS("font-style", "italic");
+	const chromeBackground = await page
+		.locator(".application-chrome")
+		.evaluate((element) => getComputedStyle(element).backgroundColor);
+	await expect(inlineCode).toHaveCSS("background-color", chromeBackground);
+	await expect(blockCode).toHaveCSS("font-style", "normal");
+	await expect(blockCode).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	const block = article.locator("pre").first();
+	await expect(block).toHaveCSS("border-left-width", "0px");
+	await expect(block).toHaveCSS("padding-left", "0px");
+	await expect(block).toHaveCSS("overflow-x", "auto");
+});
+
 test("centers Docs, About, and Settings in a 66ch reading column", async ({
 	page,
 }) => {

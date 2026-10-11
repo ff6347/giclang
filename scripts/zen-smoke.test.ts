@@ -53,7 +53,11 @@ test("a successful HTTP stream without a valid terminal is not a completion", ()
 	);
 	assert.deepEqual(
 		summarizeSse('data: {"type":"response.completed"}\n\n', "responses"),
-		{ textLength: 0, completed: false, errorEvent: false },
+		{
+			textLength: 0,
+			completed: false,
+			errorEvent: false,
+		},
 	);
 	assert.deepEqual(
 		summarizeSse(
