@@ -40,3 +40,9 @@
 - [decision] Only the Docs sidebar receives left spacing using `--s4`; its mobile width accounts for that margin. The Docs main text styles stay unchanged. Downloads uses a semantic `main` to inherit the existing centered `66ch` content styling, retaining every release link and warning.
 - [technique] Three rendered Chromium layout regressions failed first for zero sidebar inset and the absent Downloads main, then passed after implementation. Both Docs routes and Downloads fit a 375 px viewport; Downloads stays centered at desktop widths.
 - [verification] All 29 site Chromium acceptance tests and 20 site/server Node tests passed. Site typecheck, lint, scoped Prettier, and diff whitespace checks passed. Fabian's existing IPv6 port-4321 server was left running; production acceptance used port 4322.
+
+## Documentation index identity
+
+- [decision] The shared documentation index identifies `https://giclang.cc/` as its canonical website, including when served locally. Documentation and complete-export links retain host-owned destinations and work under a nested deployment base.
+- [technique] The exact shared-index regression failed for the missing canonical website line before implementation. Shared fixture tests, real root/nested production builds, and Chromium index discovery/crawling passed with that line. Rebuild the content package before invoking site build tests directly because the site imports its compiled output.
+- [verification] `pnpm test`, `pnpm test:compact`, package/browser/site typechecks, browser production build, all 20 site/server tests, lint, scoped Prettier, and diff whitespace checks passed. No main landing, deployment, or provider behavior was claimed.
