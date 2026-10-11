@@ -6,9 +6,30 @@ import { readFile, readdir } from "node:fs/promises";
 import { describe, it } from "node:test";
 import matter from "gray-matter";
 import { compileMarkdown } from "../markdown-content.ts";
-import { listContentFiles } from "../content-files.ts";
+import { listContentFiles, readGicAgentSkill } from "../content-files.ts";
 
 describe("content files", () => {
+	it("loads exact canonical skill sources without transforming their metadata", async () => {
+		const [skill, expectedSkillSource, expectedReferenceSource] =
+			await Promise.all([
+				readGicAgentSkill(),
+				readFile(
+					new URL("../../content/skills/gic-agent/SKILL.md", import.meta.url),
+					"utf8",
+				),
+				readFile(
+					new URL(
+						"../../content/skills/gic-agent/references/language.md",
+						import.meta.url,
+					),
+					"utf8",
+				),
+			]);
+
+		assert.equal(skill.skillSource, expectedSkillSource);
+		assert.equal(skill.referenceSource, expectedReferenceSource);
+	});
+
 	it("finds the About Markdown with its frontmatter and source", async () => {
 		const files = await listContentFiles("about");
 		const about = files.find((file) => file.path === "about/index.md");

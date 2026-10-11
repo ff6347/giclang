@@ -5,11 +5,13 @@ export type SupportFileState = "missing" | "upToDate" | "modified";
 
 export interface SupportFileStatus {
 	readonly path: string;
+	readonly resolvedPath: string;
 	readonly state: SupportFileState;
 }
 
 export interface WorkspaceStatus {
 	readonly installed: boolean;
+	readonly directory: string;
 	readonly files: SupportFileStatus[];
 }
 
@@ -22,8 +24,8 @@ export interface AssistantStatus {
 
 const FILE_TITLES: Record<string, string> = {
 	"AGENTS.md": "AGENTS.md",
-	".agents/skills/gic-tutor/SKILL.md": "Agent policy",
-	".agents/skills/gic-tutor/references/language.md": "Language reference",
+	".agents/skills/gic-agent/SKILL.md": "Skill",
+	".agents/skills/gic-agent/references/language.md": "Language reference",
 };
 
 export function supportFileTitle(path: string): string {
@@ -36,8 +38,22 @@ const STATE_LABELS: Record<SupportFileState, string> = {
 	modified: "Modified",
 };
 
-export function supportFileLabel(state: SupportFileState): string {
+export function supportFileLabel(
+	state: SupportFileState,
+	installed = true,
+): string {
+	if (!installed && state === "missing") return "Not installed";
 	return STATE_LABELS[state];
+}
+
+export function supportFilePresentation(
+	file: SupportFileStatus,
+	installed: boolean,
+): { destination: string; state: string } {
+	return {
+		destination: file.resolvedPath,
+		state: supportFileLabel(file.state, installed),
+	};
 }
 
 export interface AssistantPresentation {

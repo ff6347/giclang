@@ -50,13 +50,15 @@ sessions/
 AGENTS.md
 .agents/
   skills/
-    gic-tutor/
+    gic-agent/
       SKILL.md
       references/
 ```
 
 - `AGENTS.md` is short always-on guidance.
-- `.agents/skills/gic-tutor/SKILL.md` is the canonical Socratic policy used by GIC, Codex, and OpenCode.
+- `packages/content/content/skills/gic-agent/SKILL.md` is the canonical Socratic skill bundled by GiC and presented in documentation.
+- The desktop Agent's system prompt appends `apps/editor/prompts/agent-context.md` to that skill. The editor-owned supplement describes integrated tools and context and is not installed or shown in documentation.
+- `.agents/skills/gic-agent/SKILL.md` is the installed copy available to external assistants such as Codex and OpenCode. Learner edits to installed copies do not change the integrated Agent's bundled instructions.
 - Bundled examples and reference material are immutable sources.
 - First run installs managed support files; Settings offers Repair/Reinstall and Uninstall.
 - Updates replace unmodified managed files, flag modified files, and never overwrite user changes.

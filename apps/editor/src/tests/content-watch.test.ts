@@ -3,10 +3,145 @@
 
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
+
+test(
+	"skill documentation and archive refresh when any canonical export source changes",
+	{ timeout: 45_000 },
+	async () => {
+		const skillPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/SKILL.md",
+				import.meta.url,
+			),
+		);
+		const referencePath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/references/language.md",
+				import.meta.url,
+			),
+		);
+		const metadataPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/agents/openai.yaml",
+				import.meta.url,
+			),
+		);
+		const iconPath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/skills/gic-agent/assets/icon.svg",
+				import.meta.url,
+			),
+		);
+		const skillGuidePath = fileURLToPath(
+			new URL(
+				"../../../../packages/content/content/docs/skill.md",
+				import.meta.url,
+			),
+		);
+		const [originalSkill, originalReference, originalMetadata, originalIcon] =
+			await Promise.all([
+				readFile(skillPath),
+				readFile(referencePath),
+				readFile(metadataPath),
+				readFile(iconPath),
+			]);
+		const server = await createServer({
+			configFile: fileURLToPath(
+				new URL("../../vite.config.ts", import.meta.url),
+			),
+			logLevel: "error",
+			root: fileURLToPath(new URL("../../", import.meta.url)),
+			server: { middlewareMode: true, preTransformRequests: false },
+		});
+		const transformSkillGuide = async () => {
+			const results = await Promise.all([
+				server.transformRequest(`/@fs${skillGuidePath}`),
+				server.transformRequest(`/@fs${skillGuidePath}?skill-export`),
+			]);
+			assert.ok(results[0]);
+			assert.ok(results[1]);
+			const serialized = results[1].code.match(/export default (.*);/);
+			assert.ok(serialized?.[1]);
+			const value: unknown = JSON.parse(serialized[1]);
+			assert.ok(typeof value === "object" && value !== null);
+			assert.deepEqual(Object.keys(value), ["archiveBase64"]);
+			assert.ok(
+				"archiveBase64" in value && typeof value.archiveBase64 === "string",
+			);
+			return { guide: results[0].code, archive: value.archiveBase64 };
+		};
+		const waitForFixture = async (
+			fixture: string,
+			present: boolean,
+			originalArchive: string,
+			displayed: boolean,
+		) => {
+			for (let attempt = 0; attempt < 50; attempt++) {
+				const result = await transformSkillGuide();
+				if (
+					result.guide.includes(fixture) === (present && displayed) &&
+					(result.archive !== originalArchive) === present
+				)
+					return;
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
+			const result = await transformSkillGuide();
+			assert.equal(result.guide.includes(fixture), present && displayed);
+			assert.equal(result.archive !== originalArchive, present);
+		};
+
+		try {
+			const { archive: originalArchive } = await transformSkillGuide();
+			const skillFixture = `editor-skill-watch-${randomUUID()}`;
+			await writeFile(
+				skillPath,
+				`${originalSkill.toString("utf8")}\n\n${skillFixture}\n`,
+			);
+			await waitForFixture(skillFixture, true, originalArchive, true);
+			await writeFile(skillPath, originalSkill);
+			await waitForFixture(skillFixture, false, originalArchive, true);
+
+			const referenceFixture = `editor-reference-watch-${randomUUID()}`;
+			await writeFile(
+				referencePath,
+				`${originalReference.toString("utf8")}\n\n${referenceFixture}\n`,
+			);
+			await waitForFixture(referenceFixture, true, originalArchive, true);
+			await writeFile(referencePath, originalReference);
+			await waitForFixture(referenceFixture, false, originalArchive, true);
+
+			const metadataFixture = `editor-metadata-watch-${randomUUID()}`;
+			await writeFile(
+				metadataPath,
+				`${originalMetadata.toString("utf8")}\n# ${metadataFixture}\n`,
+			);
+			await waitForFixture(metadataFixture, true, originalArchive, false);
+			await writeFile(metadataPath, originalMetadata);
+			await waitForFixture(metadataFixture, false, originalArchive, false);
+
+			const iconFixture = `editor-icon-watch-${randomUUID()}`;
+			await writeFile(
+				iconPath,
+				`${originalIcon.toString("utf8")}\n<!-- ${iconFixture} -->\n`,
+			);
+			await waitForFixture(iconFixture, true, originalArchive, false);
+			await writeFile(iconPath, originalIcon);
+			await waitForFixture(iconFixture, false, originalArchive, false);
+		} finally {
+			await Promise.all([
+				writeFile(skillPath, originalSkill),
+				writeFile(referencePath, originalReference),
+				writeFile(metadataPath, originalMetadata),
+				writeFile(iconPath, originalIcon),
+			]);
+			await server.close();
+		}
+	},
+);
 
 test("content discovery refreshes after creating and deleting documents and examples", async () => {
 	const id = `content-watch-${randomUUID()}`;

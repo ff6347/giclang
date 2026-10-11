@@ -11,7 +11,7 @@ import { useState } from "react";
 import type { Appearance, DarkTheme, LightTheme } from "../lib/theme.ts";
 import {
 	assistantPresentation,
-	supportFileLabel,
+	supportFilePresentation,
 	supportFileTitle,
 } from "../lib/workspace-support.ts";
 import type { WorkspaceController } from "../hooks/use-workspace.ts";
@@ -590,6 +590,10 @@ export function SettingsPanel({
 						</Button>
 					</div>
 					<h2>Support files</h2>
+					<p>
+						Installation directory:{" "}
+						<code>{workspace.status?.directory ?? "Loading…"}</code>
+					</p>
 					<div className="workspace-support-actions">
 						<Button
 							className="application-button"
@@ -611,36 +615,47 @@ export function SettingsPanel({
 					</div>
 					{workspace.status !== null && (
 						<ul className="support-files">
-							{workspace.status.files.map((file) => (
-								<li key={file.path} className="support-file-row">
-									<span className="support-file-name">
-										{supportFileTitle(file.path)}
-									</span>
-									<span
-										className={`support-file-state support-file-state-${file.state}`}
-									>
-										{supportFileLabel(file.state)}
-									</span>
-									{file.state === "modified" && (
-										<span className="support-file-actions">
-											<Button
-												className="application-button"
-												type="button"
-												onClick={() => workspace.resolve(file.path, "keep")}
-											>
-												Keep my version
-											</Button>
-											<Button
-												className="application-button"
-												type="button"
-												onClick={() => workspace.resolve(file.path, "replace")}
-											>
-												Replace with GIC version
-											</Button>
+							{workspace.status.files.map((file) => {
+								const presentation = supportFilePresentation(
+									file,
+									workspace.status?.installed === true,
+								);
+								return (
+									<li key={file.path} className="support-file-row">
+										<span className="support-file-name">
+											{supportFileTitle(file.path)}
 										</span>
-									)}
-								</li>
-							))}
+										<span
+											className={`support-file-state support-file-state-${file.state}`}
+										>
+											{presentation.state}
+										</span>
+										<code className="support-file-path">
+											{presentation.destination}
+										</code>
+										{file.state === "modified" && (
+											<span className="support-file-actions">
+												<Button
+													className="application-button"
+													type="button"
+													onClick={() => workspace.resolve(file.path, "keep")}
+												>
+													Keep my version
+												</Button>
+												<Button
+													className="application-button"
+													type="button"
+													onClick={() =>
+														workspace.resolve(file.path, "replace")
+													}
+												>
+													Replace with GIC version
+												</Button>
+											</span>
+										)}
+									</li>
+								);
+							})}
 						</ul>
 					)}
 					<h2>External assistants</h2>

@@ -13,7 +13,7 @@ How does the desktop application tell unmodified managed support files apart fro
 
 ### Comparison
 
-- Managed support files are `AGENTS.md`, `.agents/skills/gic-tutor/SKILL.md`, and every file under `.agents/skills/gic-tutor/references/`.
+- Managed support files are `AGENTS.md`, `.agents/skills/gic-agent/SKILL.md`, and every file under `.agents/skills/gic-agent/references/`.
 - The native host keeps an app-owned manifest next to `settings.json` mapping each managed relative path to the SHA-256 digest of the content it last installed or adopted.
 - On reconcile:
   - a missing file is installed;
@@ -23,7 +23,7 @@ How does the desktop application tell unmodified managed support files apart fro
 
 ### Presentation
 
-- Settings shows a Support files section listing each managed file as Missing, Up to date, or Modified.
+- Settings shows a Support files section listing each managed file as Missing, Up to date, or Modified. The skill is labeled Skill. The section shows the configured installation directory and native-resolved destination paths; missing files in an uninstalled workspace are labeled Not installed.
 - Modified rows offer Keep my version (adopts the current content as the new baseline) and Replace with GIC version (backs the current file up to `<name>.user-bak`, then installs the bundled version).
 - No live text diff is shown in v0.9.
 
@@ -32,6 +32,7 @@ How does the desktop application tell unmodified managed support files apart fro
 - First run and Repair/Update run the same reconcile.
 - Uninstall removes only unmodified managed files, prunes emptied managed directories, and leaves user sketches, sessions, and modified files in place; it records the workspace as uninstalled so the next launch does not reinstall.
 - Installing again re-runs reconcile, which restores missing files and still preserves any user modifications.
+- No managed-path migration or local cleanup is required for the pre-release `gic-agent` naming. Files and manifest records outside the declared managed set remain untouched.
 
 ### Projects folder location
 

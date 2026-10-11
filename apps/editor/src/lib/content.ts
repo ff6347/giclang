@@ -7,6 +7,8 @@ import {
 	type MarkdownContent,
 } from "@giclang/content/model";
 
+export { default as gicAgentExport } from "../../../../packages/content/content/docs/skill.md?skill-export";
+
 const about = import.meta.glob<MarkdownContent>(
 	"../../../../packages/content/content/about/index.md",
 	{

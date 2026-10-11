@@ -156,6 +156,7 @@ canvas {
 .content-card:is(:hover, :focus-within) .content-card-content {
 	box-shadow: 3px 3px 0 var(--color-text);
 	max-height: 100vh;
+	overflow-y: auto;
 	transform: translateZ(50px);
 }
 
@@ -193,6 +194,17 @@ canvas {
 	box-sizing: border-box;
 	max-width: 100%;
 	overflow-x: auto;
+}
+
+.skill-actions,
+.documentation-export-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.documentation-export-actions {
+	align-items: center;
 }
 
 .content-table-scroll {
@@ -239,6 +251,50 @@ canvas {
 	border: 2px solid var(--color-text);
 	flex: none;
 	image-rendering: pixelated;
+}
+
+.example-card-body {
+	min-width: 0;
+	width: 100%;
+}
+.example-card-body > * {
+	margin-bottom: var(--s2);
+}
+
+.copy-button {
+	justify-self: start;
+	position: relative;
+}
+
+.copy-button .copy-confirmation {
+	align-items: center;
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	position: absolute;
+	visibility: hidden;
+}
+
+.copy-button .copy-confirmation svg {
+	height: 1.25em;
+	width: 1.25em;
+}
+
+.copy-button.copied .copy-label {
+	visibility: hidden;
+}
+
+.copy-button.copied .copy-confirmation {
+	visibility: visible;
+}
+
+.copy-status[role="status"] {
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
 }
 
 .application-chrome {
@@ -1233,6 +1289,12 @@ canvas {
 .support-file-name,
 .assistant-name {
 	font-weight: 600;
+}
+
+.support-file-path {
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	user-select: text;
 }
 
 .assistant-guidance {

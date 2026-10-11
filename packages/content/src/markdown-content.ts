@@ -11,6 +11,8 @@ import {
 	isStringList,
 } from "./metadata-validation.ts";
 
+export { portableMarkdown } from "./portable-markdown.ts";
+
 const markdown = new MarkdownIt({
 	html: true,
 	linkify: true,
@@ -85,6 +87,41 @@ function metadataList(
 	return value.map((entry: string) => entry.trim());
 }
 
+export function compileSkillDocumentation(
+	path: string,
+	source: string,
+	skillSource: string,
+	referenceSource: string,
+	resolveImage?: (path: string) => string,
+): MarkdownContent {
+	const guide = compileMarkdown(path, source, resolveImage);
+	if ("enabled" in guide) {
+		throw new Error(`Skill documentation '${path}' cannot be an example.`);
+	}
+	const assembled = [
+		guide.markdown,
+		"## GiC agent skill",
+		markdownBody(skillSource),
+		"## Language reference",
+		referenceSource,
+	].join("\n\n");
+	return {
+		...guide,
+		html: markdown.render(assembled, { resolveImage }).trimEnd(),
+		markdown: assembled,
+	};
+}
+
+function markdownBody(source: string): string {
+	if (!matter.test(source.replace(/^\uFEFF/, ""))) {
+		return source;
+	}
+	const closingDelimiter = source.indexOf("\n---", source.indexOf("\n") + 1);
+	return closingDelimiter === -1
+		? ""
+		: source.slice(closingDelimiter + 4).replace(/^\r?\n/, "");
+}
+
 export function compileMarkdown(
 	path: string,
 	source: string,
@@ -116,6 +153,7 @@ export function compileMarkdown(
 			isExampleDescription,
 		),
 		html: markdown.render(parsed.content, { resolveImage }).trimEnd(),
+		markdown: markdownBody(source),
 		order: metadata.order,
 		tags: metadataList(metadata, "tags", path, isExampleDescription),
 		title: metadata.title.trim(),

@@ -40,6 +40,7 @@ pub(crate) enum FileState {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ManagedFileReport {
     pub(crate) path: String,
+    pub(crate) resolved_path: String,
     pub(crate) state: FileState,
 }
 
@@ -47,6 +48,7 @@ pub(crate) struct ManagedFileReport {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct WorkspaceStatus {
     pub(crate) installed: bool,
+    pub(crate) directory: String,
     pub(crate) files: Vec<ManagedFileReport>,
 }
 
@@ -301,10 +303,15 @@ impl WorkspaceManager {
             };
             files.push(ManagedFileReport {
                 path: file.relative_path.to_owned(),
+                resolved_path: target.display().to_string(),
                 state,
             });
         }
-        Ok(WorkspaceStatus { installed, files })
+        Ok(WorkspaceStatus {
+            installed,
+            directory: workspace_root.display().to_string(),
+            files,
+        })
     }
 
     fn ensure_structure(&self, workspace_root: &Path) -> Result<(), String> {
@@ -411,8 +418,8 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     const AGENTS: &str = "AGENTS.md";
-    const SKILL: &str = ".agents/skills/gic-tutor/SKILL.md";
-    const REFERENCE: &str = ".agents/skills/gic-tutor/references/language.md";
+    const SKILL: &str = ".agents/skills/gic-agent/SKILL.md";
+    const REFERENCE: &str = ".agents/skills/gic-agent/references/language.md";
 
     fn files(
         first: &'static [u8],
@@ -492,10 +499,19 @@ mod tests {
         );
         assert!(directory.join("state/managed-workspace.json").is_file());
         assert!(status.installed);
-        assert!(status
-            .files
-            .iter()
-            .all(|report| report.state == FileState::UpToDate));
+        assert_eq!(
+            status.directory,
+            workspace.workspace_root().display().to_string()
+        );
+        assert!(status.files.iter().all(|report| {
+            report.state == FileState::UpToDate
+                && report.resolved_path
+                    == workspace
+                        .workspace_root()
+                        .join(&report.path)
+                        .display()
+                        .to_string()
+        }));
         remove_test_directory(&directory);
     }
 
@@ -505,11 +521,43 @@ mod tests {
         let status = workspace.status(&v1()).expect("status");
 
         assert!(!status.installed);
-        assert!(status
-            .files
-            .iter()
-            .all(|report| report.state == FileState::Missing));
+        assert_eq!(
+            status.directory,
+            workspace.workspace_root().display().to_string()
+        );
+        assert!(status.files.iter().all(|report| {
+            report.state == FileState::Missing
+                && report.resolved_path
+                    == workspace
+                        .workspace_root()
+                        .join(&report.path)
+                        .display()
+                        .to_string()
+        }));
         assert!(!workspace.workspace_root().exists());
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn status_paths_follow_the_configured_workspace_root() {
+        let (workspace, directory) = manager("relocated-status");
+        workspace.reconcile(&v1()).expect("install");
+        let relocated_root = directory.join("relocated");
+        workspace
+            .set_root(relocated_root.clone())
+            .expect("relocate workspace");
+
+        let status = workspace.status(&v1()).expect("status");
+
+        assert_eq!(status.directory, relocated_root.display().to_string());
+        assert_eq!(status.files.len(), v1().len());
+        for report in &status.files {
+            assert_eq!(
+                report.resolved_path,
+                relocated_root.join(&report.path).display().to_string(),
+            );
+            assert!(v1().iter().any(|file| file.relative_path == report.path));
+        }
         remove_test_directory(&directory);
     }
 
@@ -583,6 +631,11 @@ mod tests {
             "my own guidance\n",
         );
         assert_eq!(state_for(&status, AGENTS), FileState::UpToDate);
+        assert!(workspace
+            .read_manifest()
+            .files
+            .get(AGENTS)
+            .is_some_and(|record| record.kept));
 
         let later = workspace.reconcile(&v2()).expect("later update");
         assert_eq!(
@@ -590,6 +643,33 @@ mod tests {
             "my own guidance\n",
         );
         assert_eq!(state_for(&later, AGENTS), FileState::UpToDate);
+        assert!(workspace
+            .read_manifest()
+            .files
+            .get(AGENTS)
+            .is_some_and(|record| record.kept));
+        remove_test_directory(&directory);
+    }
+
+    #[test]
+    fn reconcile_preserves_unrelated_manifest_records() {
+        let (workspace, directory) = manager("unrelated-manifest-record");
+        let manifest_path = directory.join("state/managed-workspace.json");
+        std::fs::create_dir_all(manifest_path.parent().expect("manifest parent"))
+            .expect("create manifest directory");
+        std::fs::write(
+            &manifest_path,
+            r#"{"version":1,"enabled":true,"files":{"unrelated/file.md":{"digest":"user-record","kept":true}}}"#,
+        )
+        .expect("write manifest with unrelated record");
+
+        workspace.reconcile(&v1()).expect("reconcile");
+        workspace.uninstall(&v1()).expect("uninstall");
+
+        let manifest = workspace.read_manifest();
+        assert!(manifest.files.contains_key("unrelated/file.md"));
+        assert_eq!(manifest.files["unrelated/file.md"].digest, "user-record");
+        assert!(manifest.files["unrelated/file.md"].kept);
         remove_test_directory(&directory);
     }
 

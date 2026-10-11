@@ -3,7 +3,19 @@
 :80 {
 	root * /srv
 	encode zstd gzip
-	header /sw.js Cache-Control "no-cache, no-store, must-revalidate"
-	try_files {path} /index.html
-	file_server
+	@plaintext path /llms.txt /llms-full.txt
+	handle @plaintext {
+		header Content-Type "text/plain; charset=utf-8"
+		file_server
+	}
+	@markdown path_regexp \.md$
+	handle @markdown {
+		header Content-Type "text/markdown; charset=utf-8"
+		file_server
+	}
+	handle {
+		header /sw.js Cache-Control "no-cache, no-store, must-revalidate"
+		try_files {path} /index.html
+		file_server
+	}
 }

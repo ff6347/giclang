@@ -1,0 +1,144 @@
+---
+// ABOUTME: Presents package-owned examples as compact equal-height overview cards.
+// ABOUTME: Links each thumbnail and title to its complete static example page.
+import DefaultLayout from "../layouts/default.astro";
+import { examples } from "../lib/examples.ts";
+import { renderUserMarkdown } from "@giclang/content/user-markdown";
+---
+
+<DefaultLayout>
+	<main class="examples-page">
+		<h1>Examples</h1>
+		<ul class="content-card-list">
+			{examples.map((example) => (
+				<li class="content-card" data-example-id={example.id}>
+					<div class="content-card-content">
+						<a
+							class="example-link"
+							href={`${import.meta.env.BASE_URL}examples/${encodeURIComponent(example.id)}/`}
+						>
+							<img
+								alt={`${example.title} thumbnail`}
+								class="example-thumbnail"
+								height="100"
+								src={example.thumbnailUrl}
+								width="100"
+								loading="lazy"
+							/>
+						</a>
+						<h2>
+							<a
+								class="example-link"
+								href={`${import.meta.env.BASE_URL}examples/${encodeURIComponent(example.id)}/`}
+							>
+								{example.title}
+							</a>
+						</h2>
+						<div
+							class="content-markdown"
+							set:html={renderUserMarkdown(example.markdown)}
+						/>
+					</div>
+				</li>
+			))}
+		</ul>
+	</main>
+</DefaultLayout>
+
+<style>
+	.examples-page {
+		max-width: 90rem;
+		padding-bottom: var(--s4);
+	}
+
+	.content-card-list {
+		align-items: flex-start;
+		display: flex;
+		flex-flow: row wrap;
+		gap: var(--s3);
+		list-style: none;
+		margin: var(--s0);
+		padding: var(--s0);
+	}
+
+	.content-card {
+		flex: 0 1 18rem;
+		height: 18rem;
+		width: 18rem;
+		min-width: 0;
+		max-width: 100%;
+		list-style: none;
+		padding: var(--s0);
+		position: relative;
+		perspective: 800px;
+	}
+
+	.content-card-content {
+		align-items: flex-start;
+		background-color: var(--color-background);
+		border: 2px solid var(--color-text);
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		gap: var(--s3);
+		left: 0;
+		max-height: 100%;
+		min-height: 100%;
+		overflow: hidden;
+		padding: var(--s3);
+		margin: var(--s0);
+		position: absolute;
+		right: 0;
+		top: 0;
+		transform: translateZ(0);
+		transition:
+			transform 160ms ease-out,
+			box-shadow 160ms ease-out,
+			max-height 200ms ease-in-out;
+	}
+
+	.content-card:is(:hover, :focus-within) {
+		z-index: 1;
+	}
+
+	.content-card:is(:hover, :focus-within) .content-card-content {
+		box-shadow: 3px 3px 0 var(--color-text);
+		max-height: 100vh;
+		overflow-y: auto;
+		transform: translateZ(50px);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.content-card-content {
+			transition: none;
+		}
+	}
+
+	.content-card h2 {
+		flex: none;
+		font-size: 1.25rem;
+		line-height: 1.25;
+		padding: var(--s0);
+	}
+
+	.example-link {
+		color: inherit;
+		flex: none;
+	}
+
+	.example-link:focus-visible {
+		outline: 2px solid var(--color-text);
+		outline-offset: 2px;
+	}
+
+	.example-thumbnail {
+		border: 2px solid var(--color-text);
+		image-rendering: pixelated;
+	}
+
+	.content-markdown {
+		flex: none;
+		min-width: 0;
+		width: 100%;
+	}
+</style>

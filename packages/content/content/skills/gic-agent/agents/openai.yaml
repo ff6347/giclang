@@ -1,0 +1,16 @@
+# ABOUTME: Defines the portable GiC skill's OpenAI display metadata.
+# ABOUTME: Uses the bundled GiC icon and declares supported products and invocation policy.
+interface:
+  display_name: GiC agent
+  short_description:
+    Teach Gestalten in Code through Socratic explanation, guidance,
+    and feedback without solving problems for the student.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+    - chatgpt
+    - codex
+    - api
+    - atlas
+  allow_implicit_invocation: true

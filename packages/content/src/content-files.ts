@@ -3,9 +3,41 @@
 
 import { readFile, readdir } from "node:fs/promises";
 import matter from "gray-matter";
+import { createGicAgentExport } from "./skill-export.ts";
+import type { GicAgentExport } from "./skill-export.ts";
 import { compileMarkdown } from "./markdown-content.ts";
 
 export type ContentSection = "about" | "docs" | "examples";
+
+export interface GicAgentSkill {
+	readonly skillSource: string;
+	readonly referenceSource: string;
+}
+
+export async function readGicAgentSkill(): Promise<GicAgentSkill> {
+	const contentDirectory = new URL(
+		"../content/skills/gic-agent/",
+		import.meta.resolve("@giclang/content/node"),
+	);
+	const [skillSource, referenceSource] = await Promise.all([
+		readFile(new URL("SKILL.md", contentDirectory), "utf8"),
+		readFile(new URL("references/language.md", contentDirectory), "utf8"),
+	]);
+	return { skillSource, referenceSource };
+}
+
+export async function readGicAgentExport(): Promise<GicAgentExport> {
+	const contentDirectory = new URL(
+		"../content/skills/gic-agent/",
+		import.meta.resolve("@giclang/content/node"),
+	);
+	const [skill, metadataSource, iconSource] = await Promise.all([
+		readGicAgentSkill(),
+		readFile(new URL("agents/openai.yaml", contentDirectory), "utf8"),
+		readFile(new URL("assets/icon.svg", contentDirectory), "utf8"),
+	]);
+	return createGicAgentExport({ ...skill, metadataSource, iconSource });
+}
 
 interface FileEntry {
 	readonly path: string;

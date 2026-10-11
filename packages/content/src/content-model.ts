@@ -4,6 +4,7 @@
 export interface MarkdownContent {
 	readonly categories: string[];
 	readonly html: string;
+	readonly markdown: string;
 	readonly order: number;
 	readonly tags: string[];
 	readonly title: string;
@@ -38,7 +39,9 @@ interface ProductContentInput {
 	readonly exampleThumbnails: Record<string, string>;
 }
 
-function ordered<T extends MarkdownContent>(entries: T[]): T[] {
+function ordered<T extends Pick<MarkdownContent, "order" | "title">>(
+	entries: readonly T[],
+): T[] {
 	return entries.toSorted(
 		(left, right) =>
 			left.order - right.order || left.title.localeCompare(right.title),
@@ -112,6 +115,19 @@ export function createProductContent(
 			id: documentationId(path),
 		})),
 	);
+	return {
+		about: requireSingleAbout(input.about),
+		docs,
+		examples: createExamples(input),
+	};
+}
+
+export function createExamples(
+	input: Pick<
+		ProductContentInput,
+		"exampleDescriptions" | "exampleSources" | "exampleThumbnails"
+	>,
+): ExampleContent[] {
 	const descriptions = byExampleId(input.exampleDescriptions);
 	const sources = byExampleId(input.exampleSources);
 	const thumbnails = byExampleId(input.exampleThumbnails);
@@ -147,9 +163,80 @@ export function createProductContent(
 		});
 	}
 
-	return {
-		about: requireSingleAbout(input.about),
-		docs,
-		examples: ordered(examples),
-	};
+	return ordered(examples);
+}
+
+export function createDocumentationCopyText(
+	doc: Pick<MarkdownContent, "title" | "markdown">,
+): string {
+	return `# ${doc.title}\n\n${doc.markdown}`;
+}
+
+export function createDocumentationIndex(
+	docs: readonly Pick<DocumentationContent, "id" | "title" | "order">[],
+	resolvePageUrl: (id: string) => string,
+	fullTextUrl: string,
+): string {
+	const destination = (url: string) =>
+		url
+			.replaceAll("&", "&amp;")
+			.replace(/[()\s<>\\]/g, (character) =>
+				character === "("
+					? "%28"
+					: character === ")"
+						? "%29"
+						: encodeURIComponent(character),
+			);
+	const links = ordered(docs).map((doc) => {
+		const title = doc.title
+			.replaceAll("&", "&amp;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
+			.replace(/[\r\n]+/g, " ")
+			.replace(/[\\[\]*_`]/g, "\\$&");
+		return `- [${title}](${destination(resolvePageUrl(doc.id))})`;
+	});
+	return (
+		[
+			"# GiC",
+			"> GiC (Gestalten in Code) is a small language for two-dimensional generative graphics and learning programming.",
+			"Canonical website: https://giclang.cc/",
+			"This index links to complete Markdown documentation. It is not a full-text export. Web access is optional; use the bundled language reference first for syntax and built-in signatures.",
+			"## Documentation",
+			links.join("\n"),
+			"## Optional",
+			`- [Complete documentation](${destination(fullTextUrl)})`,
+		].join("\n\n") + "\n"
+	);
+}
+
+export function createDocumentationFullText(
+	docs: readonly Pick<
+		DocumentationContent,
+		"id" | "title" | "order" | "markdown"
+	>[],
+	resolvePageUrl: (id: string) => string,
+): string {
+	return (
+		"# GiC documentation\n\n" +
+		ordered(docs)
+			.map((doc) =>
+				createDocumentationCopyText({
+					title: doc.title,
+					markdown: `Source: ${resolvePageUrl(doc.id)}\n\n${doc.markdown}`,
+				}),
+			)
+			.join("\n\n---\n\n")
+	);
+}
+
+export function createExampleCopyText(
+	example: Pick<ExampleContent, "markdown" | "source">,
+): string {
+	const runs = example.source.match(/`+/g) ?? [];
+	const fence = "`".repeat(
+		runs.reduce((length, run) => Math.max(length, run.length + 1), 3),
+	);
+	const ending = example.source.endsWith("\n") ? "" : "\n";
+	return `${example.markdown}\n\n${fence}gic\n${example.source}${ending}${fence}\n`;
 }
