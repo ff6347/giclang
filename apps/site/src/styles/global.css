@@ -75,7 +75,9 @@ pre {
 	margin: 1em 0;
 	max-width: 100%;
 	overflow-x: auto;
+	tab-size: 2;
 }
+
 
 code {
 	font-family: var(--font-body);
