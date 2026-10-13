@@ -16,7 +16,8 @@ const startupError = () => {
 };
 
 try {
-	const config = loadConfig();
+	const development = process.argv.includes("--development");
+	const config = loadConfig(process.env, development);
 	process.umask(0o077);
 	mkdirSync(dirname(config.dbPath), { recursive: true });
 	const store = openStore(config.dbPath);
@@ -26,6 +27,15 @@ try {
 		hostname: config.host,
 		port: config.port,
 	});
+	if (development) {
+		server.once("listening", () => {
+			const address = server.address();
+			if (address && typeof address === "object")
+				console.info(
+					`Feedback development server listening on port ${address.port}.`,
+				);
+		});
+	}
 	server.on("error", () => {
 		store.close();
 		startupError();

@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { loadConfig } from "../config.ts";
 import { config, fixture } from "./fixture.ts";
 
@@ -51,6 +52,36 @@ test("requires separate secrets and validates closed-by-default server configura
 		/FORM_OPEN/,
 	);
 	assert.throws(() => loadConfig({ ...environment, PORT: "NaN" }), /PORT/);
+});
+
+test("development defaults open a loopback-only form with private temporary secrets", () => {
+	const loaded = loadConfig({}, true);
+	assert.equal(loaded.host, "127.0.0.1");
+	assert.equal(loaded.port, 3000);
+	assert.equal(loaded.formOpen, true);
+	assert.equal(loaded.participantPassword, "feedback");
+	assert.equal(
+		loaded.dbPath,
+		fileURLToPath(new URL("../../data/development.sqlite", import.meta.url)),
+	);
+	assert.ok(loaded.adminSecret.length >= 32);
+	assert.ok(loaded.cookieSecret.length >= 32);
+	assert.notEqual(loaded.adminSecret, loaded.cookieSecret);
+	const restarted = loadConfig({}, true);
+	assert.notEqual(restarted.adminSecret, loaded.adminSecret);
+	assert.notEqual(restarted.cookieSecret, loaded.cookieSecret);
+	assert.throws(() => loadConfig({}), /PARTICIPANT_PASSWORD/);
+});
+
+test("explicit development configuration overrides defaults without relaxing validation", () => {
+	const env = {
+		...environment,
+		HOST: "localhost",
+		PORT: "4175",
+		FORM_OPEN: "false",
+	};
+	assert.deepEqual(loadConfig(env, true), loadConfig(env));
+	assert.throws(() => loadConfig({ COOKIE_SECRET: "" }, true), /COOKIE_SECRET/);
 });
 
 test("serves package-owned tokens and fonts without exposing arbitrary files", async (t) => {

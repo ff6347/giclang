@@ -1,7 +1,26 @@
 // ABOUTME: Validates feedback server environment settings before opening the database.
-// ABOUTME: Requires separate access secrets and keeps submissions closed unless explicitly enabled.
+// ABOUTME: Keeps production fail-closed and supplies defaults only for explicit development mode.
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
+import { randomBytes } from "node:crypto";
+import { fileURLToPath } from "node:url";
+
+export function loadConfig(
+	env: NodeJS.ProcessEnv = process.env,
+	development = false,
+) {
+	if (development) {
+		env = {
+			HOST: "127.0.0.1",
+			FORM_OPEN: "true",
+			DB_PATH: fileURLToPath(
+				new URL("../data/development.sqlite", import.meta.url),
+			),
+			PARTICIPANT_PASSWORD: "feedback",
+			ADMIN_SECRET: randomBytes(32).toString("hex"),
+			COOKIE_SECRET: randomBytes(32).toString("hex"),
+			...env,
+		};
+	}
 	const required = (name: string) => {
 		const value = env[name];
 		if (!value?.trim()) throw new Error(`${name} is required.`);

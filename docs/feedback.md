@@ -25,23 +25,31 @@ Firefox on desktop and portrait-tablet viewports, including JavaScript-disabled
 submission. Browser artifacts contain test answers; never run these tests
 against a collection database.
 
-For local interactive use, supply three distinct environment variables through
-your shell or secret manager: `PARTICIPANT_PASSWORD`, `ADMIN_SECRET`, and
-`COOKIE_SECRET`. Generate the admin and cookie secrets independently with a
-cryptographic generator; each must contain at least 32 characters. Never commit
-secrets, paste them into issue comments, or use production secrets for tests.
+For local interactive use, run this from the monorepo root without configuring
+environment variables:
 
 ```sh
-FORM_OPEN=true \
-DB_PATH="$PWD/apps/feedback/data/local.sqlite" \
-HOST=127.0.0.1 \
 pnpm dev:feedback
 ```
 
-Open `http://localhost:3000`. Secure cookies remain enabled; localhost is suitable
-for local browser verification, but remote access requires HTTPS. `DB_PATH` is
-required. `HOST` defaults to `0.0.0.0`, `PORT` to `3000`, and submissions remain
-closed unless `FORM_OPEN=true`. Restart after changing environment settings.
+Open `http://localhost:3000` and use the public development password `feedback`.
+Development mode binds only to `127.0.0.1`, opens the form, and persists test
+responses in the ignored `apps/feedback/data/development.sqlite` file. It generates
+independent admin and cookie secrets in memory; they are never printed or written
+to a configuration file. Restarting the watched server requires logging in again.
+Secure cookies remain enabled.
+
+Explicit environment variables override these defaults. For example,
+`PORT=3001 pnpm dev:feedback` changes the local port. Supply your own `ADMIN_SECRET`
+to exercise private exports, and `COOKIE_SECRET` to retain sessions across restarts;
+each must contain at least 32 characters. Use distinct secrets and never use
+production credentials or participant data for development.
+
+`pnpm --filter @giclang/feedback start` and the container do **not** enable development
+defaults. They require `PARTICIPANT_PASSWORD`, `ADMIN_SECRET`, `COOKIE_SECRET`,
+and `DB_PATH`; their host defaults to `0.0.0.0` and submissions stay closed unless
+`FORM_OPEN=true`. Supply production secrets through your secret manager or
+Coolify runtime environment, never committed files or issue comments.
 
 ## 2. Prepare the host and Coolify service
 
