@@ -1,0 +1,5 @@
+# ABOUTME: Keeps private feedback databases out of source control.
+# ABOUTME: Excludes SQLite data and sidecar files produced during local operation.
+data/
+*.sqlite
+*.sqlite-*
