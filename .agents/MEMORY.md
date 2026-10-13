@@ -302,6 +302,12 @@ Slices 1–6 are implemented on `docs/gic-agent-plan`. `.agents/plans/gic-agent-
 - [risk] Browser acceptance currently assumes port 5173 in the Monaco external-assets test. An isolated alternate-port run avoids disturbing another worktree's server but fails that hardcoded-origin assertion; report this separately rather than changing unrelated tests in a content slice.
 - [technique] Fabian manually imported the skill/reference ZIP into ChatGPT and Claude. ChatGPT generated `agents/openai.yaml` and a heart icon; the package owns the supplied metadata with GiC capitalization and bundles the existing GiC logo instead. The four-file archive's provider acceptance and icon presentation still need an account check; retain manual raw-text use and do not equate import with teaching-policy adherence.
 
+## Workshop Feedback
+
+- [decision] `apps/feedback` is a separate Node/Hono/SQLite application with native server-rendered forms and package-owned style assets. `.agents/plans/feedback.md` freezes its questionnaire; `docs/feedback.md` documents operation. Deployment, logging privacy, institutional review, and the human pilot remain operator gates.
+- [lesson] Native form POSTs can send `Origin: null` under `Referrer-Policy: no-referrer`. Feedback uses `same-origin` so strict Origin checks work while external referrers remain suppressed. Behind HTTPS termination, the private backend relies on the proxy preserving Host and overwriting X-Forwarded-Proto.
+- [technique] Feedback's Compose service runs as UID 1000 with a read-only root and a directory bind mount for SQLite/WAL/SHM. Validate persistence across container replacement and use SQLite backup APIs or `VACUUM INTO`, never a live raw-file copy.
+
 ## Issue Tracking
 
 - [technique] `git-bug push` fails when the SSH agent has no identities (go-git only tries the agent). Confirmed fallback: system Git pushes fine via key files — `git push origin 'refs/bugs/*:refs/bugs/*' 'refs/identities/*:refs/identities/*'`. The SourceHut remote has no git-bug bridge.
