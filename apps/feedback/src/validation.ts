@@ -74,15 +74,20 @@ export function validate(
 		};
 	const fields = result.data;
 	const answers: Answers = {};
-	const hasHelp = questions.some(
-		(q) => q.kind === "checkbox" && fields.answers[q.id] === "1",
+	const answeredGroups = new Set(
+		questions.flatMap((q) =>
+			q.kind === "checkbox" && fields.answers[q.id] === "1" ? [q.group] : [],
+		),
 	);
 	for (const question of questions) {
 		const value = fields.answers[question.id];
 		if (question.kind === "text") {
 			answers[question.id] = value?.trim() ? value : null;
 		} else if (!value) {
-			answers[question.id] = question.kind === "checkbox" && hasHelp ? 0 : null;
+			answers[question.id] =
+				question.kind === "checkbox" && answeredGroups.has(question.group)
+					? 0
+					: null;
 		} else {
 			answers[question.id] =
 				question.kind === "rating" || question.kind === "checkbox"

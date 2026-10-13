@@ -17,27 +17,50 @@ export const responseColumns = [
 ];
 export const wishColumns = ["id", "response_id", "position", "want", "so_that"];
 
+function questionColumnType(kind: (typeof questions)[number]["kind"]) {
+	return kind === "rating" || kind === "checkbox" ? "INTEGER" : "TEXT";
+}
+
 export function openStore(path: string) {
 	const db = new DatabaseSync(path);
 	db.exec(
 		"PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;",
 	);
-	db.exec(`
-		CREATE TABLE IF NOT EXISTS responses (
-			id TEXT PRIMARY KEY,
-			submitted_on TEXT NOT NULL,
-			form_version TEXT NOT NULL,
-			consent INTEGER NOT NULL CHECK(consent=1),
-			${questions.map((q) => `${q.id} ${q.kind === "rating" || q.kind === "checkbox" ? "INTEGER" : "TEXT"}`).join(",")}
+	db.exec("BEGIN IMMEDIATE");
+	try {
+		db.exec(`
+			CREATE TABLE IF NOT EXISTS responses (
+				id TEXT PRIMARY KEY,
+				submitted_on TEXT NOT NULL,
+				form_version TEXT NOT NULL,
+				consent INTEGER NOT NULL CHECK(consent=1),
+				${questions.map((q) => `${q.id} ${questionColumnType(q.kind)}`).join(",")}
+			);
+			CREATE TABLE IF NOT EXISTS wishes (
+				id TEXT PRIMARY KEY,
+				response_id TEXT NOT NULL REFERENCES responses(id),
+				position INTEGER NOT NULL,
+				want TEXT NOT NULL,
+				so_that TEXT
+			);
+		`);
+		const responseFields = new Set(
+			db
+				.prepare("PRAGMA table_info(responses)")
+				.all()
+				.map((column) => String(column.name)),
 		);
-		CREATE TABLE IF NOT EXISTS wishes (
-			id TEXT PRIMARY KEY,
-			response_id TEXT NOT NULL REFERENCES responses(id),
-			position INTEGER NOT NULL,
-			want TEXT NOT NULL,
-			so_that TEXT
-		);
-	`);
+		for (const question of questions)
+			if (!responseFields.has(question.id))
+				db.exec(
+					`ALTER TABLE responses ADD COLUMN ${question.id} ${questionColumnType(question.kind)}`,
+				);
+		db.exec("COMMIT");
+	} catch (error) {
+		db.exec("ROLLBACK");
+		db.close();
+		throw error;
+	}
 	const insertResponse = db.prepare(
 		`INSERT INTO responses (${responseColumns.join(",")}) VALUES (${responseColumns.map(() => "?").join(",")})`,
 	);
@@ -52,7 +75,7 @@ export function openStore(path: string) {
 				insertResponse.run(
 					id,
 					new Date().toISOString().slice(0, 10),
-					"v1",
+					"v2",
 					1,
 					...questions.map((q) => answers[q.id] ?? null),
 				);

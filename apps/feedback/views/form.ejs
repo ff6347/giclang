@@ -22,11 +22,15 @@
 <%- include("partials/rating-table", { items: ["b2_focus", "b2_limits_blocked", "b2_code_image", "b2_errors"].map(question) }) %>
 <%- include("partials/text", { item: question("b3_simplicity_moment") }) %></section>
 <section><h2>Section C: Working with AI</h2><p>Didn't use any help? Skip to Section D.</p>
-<fieldset><legend>Which kinds of help did you use at all?</legend><% for (const id of ["c1_tutor", "c1_chat", "c1_agent", "c1_human", "c1_none"]) { const item = question(id); %><label><input type="checkbox" name="<%= item.id %>" value="1"<% if (values.getAll(item.id).includes("1")) { %> checked<% } %>> <%= item.label %></label><% } %></fieldset>
+<%- include("partials/checkboxes", { legend: "Which kinds of help did you use at all?", items: ["c1_tutor", "c1_chat", "c1_agent", "c1_human", "c1_none"].map(question) }) %>
 <%- include("partials/choice", { item: question("c2_main_help") }) %>
 <h3>C3.</h3><p>The following statements are about the help you chose in C2.</p>
 <%- include("partials/rating-table", { items: ["c3_understand_why", "c3_own_thinking", "c3_accepted_unclear", "c3_explain_code", "c3_learned_more"].map(question) }) %>
-<%- include("partials/text", { item: question("c4_ai_situation") }) %></section>
+<p>If you did not use AI, you can skip the remaining questions in this section.</p>
+<%- include("partials/text", { item: question("c4_ai_situation") }) %>
+<p>Select all that apply.</p>
+<%- include("partials/checkboxes", { legend: "During this workshop, what did you use AI help for?", items: ["c5_hint", "c5_understand", "c5_debug", "c5_generate", "c5_modify", "c5_explore", "c5_other"].map(question) }) %>
+<%- include("partials/choice", { item: question("c6_ai_speed") }) %></section>
 <section><h2>Section D: Workshop and tool</h2><%- include("partials/choice", { item: question("d1_pace") }) %>
 <%- include("partials/rating-table", { items: ["d2_explanations", "d2_practice_time", "d2_editor", "d2_docs"].map(question) }) %>
 <%- include("partials/choice", { item: question("d3_continue") }) %><%- include("partials/text", { item: question("d4_keep") }) %><%- include("partials/text", { item: question("d5_change") }) %></section>

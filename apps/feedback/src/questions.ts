@@ -1,12 +1,16 @@
 // ABOUTME: Defines the frozen coded questions for the workshop feedback form.
 // ABOUTME: Shares stored IDs, labels, response kinds, and allowed options with the server.
 
+type CheckboxGroup = "help" | "ai-use";
+
 export type Question = {
 	id: string;
 	label: string;
-	kind: "choice" | "rating" | "checkbox" | "text";
 	options: { value: string; label: string }[];
-};
+} & (
+	| { kind: "choice" | "rating" | "text" }
+	| { kind: "checkbox"; group: CheckboxGroup }
+);
 
 const confidenceOptions = [
 	{ value: "1", label: "Not confident" },
@@ -44,12 +48,14 @@ const ratingQuestions = (
 	}));
 
 const checkboxQuestions = (
+	group: CheckboxGroup,
 	entries: readonly (readonly [string, string])[],
 ): Question[] =>
 	entries.map(([id, label]) => ({
 		id,
 		label,
 		kind: "checkbox",
+		group,
 		options: [{ value: "1", label }],
 	}));
 
@@ -129,7 +135,7 @@ export const questions: Question[] = [
 		kind: "text",
 		options: [],
 	},
-	...checkboxQuestions([
+	...checkboxQuestions("help", [
 		["c1_tutor", "GIC tutor (built-in agent)"],
 		["c1_chat", "External chat (ChatGPT, Claude.ai, Le Chat, …)"],
 		[
@@ -177,10 +183,32 @@ export const questions: Question[] = [
 	{
 		id: "c4_ai_situation",
 		label:
-			"Describe one situation where this help supported or hindered your learning.",
+			"Describe one suggestion you received from AI. What did you do with it, and how did it affect your understanding?",
 		kind: "text",
 		options: [],
 	},
+	...checkboxQuestions("ai-use", [
+		["c5_hint", "Get a hint about what to try next"],
+		["c5_understand", "Understand a programming concept or existing code"],
+		["c5_debug", "Understand or fix an error"],
+		["c5_generate", "Generate code"],
+		["c5_modify", "Change or extend existing code"],
+		["c5_explore", "Explore different visual ideas or approaches"],
+		["c5_other", "Something else"],
+	]),
+	...ratingQuestions(
+		[
+			[
+				"c6_ai_speed",
+				"Using AI helped me make progress on my sketch more quickly.",
+			],
+		],
+		agreementOptions.map((option) =>
+			option.value === "0"
+				? { ...option, label: "Can't say / did not use AI" }
+				: option,
+		),
+	),
 	{
 		id: "d1_pace",
 		label: "The pace of the workshop was…",

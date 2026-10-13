@@ -43,6 +43,25 @@ test("submits the questionnaire after a native validation error and caps added w
 	await page
 		.getByLabel("As a user I want to be able to")
 		.fill("draw a pattern");
+	await page
+		.getByLabel(
+			"Describe one suggestion you received from AI. What did you do with it, and how did it affect your understanding?",
+		)
+		.fill("I changed the suggested loop to see how the image changed.");
+	const purposes = page.getByRole("group", {
+		name: "During this workshop, what did you use AI help for?",
+	});
+	await expect(purposes.getByRole("checkbox")).toHaveCount(7);
+	await purposes.getByLabel("Get a hint about what to try next").check();
+	await purposes
+		.getByLabel("Understand a programming concept or existing code")
+		.check();
+	await page
+		.getByRole("group", {
+			name: "Using AI helped me make progress on my sketch more quickly.",
+		})
+		.getByLabel("Agree", { exact: true })
+		.check();
 	await page.getByRole("button", { name: "Submit feedback" }).click();
 	await expect(page).toHaveURL(/\/form$/);
 	await expect(
@@ -161,6 +180,13 @@ test.describe("without JavaScript", () => {
 			.locator('input[name="so_that"]')
 			.nth(19)
 			.fill("I can make patterns");
+		await page.getByLabel("Generate code", { exact: true }).check();
+		await page
+			.getByRole("group", {
+				name: "Using AI helped me make progress on my sketch more quickly.",
+			})
+			.getByLabel("Can't say / did not use AI")
+			.check();
 		await page.getByRole("button", { name: "Submit feedback" }).click();
 		await expect(page).toHaveURL(/\/thanks$/);
 	});

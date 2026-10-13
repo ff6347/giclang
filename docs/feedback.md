@@ -120,10 +120,19 @@ never the raw files.
 
 Skipped answers export as empty cells. Rating opt-outs export as `0`; exclude
 them from means. Negatively worded items are not reverse-coded in storage.
-Unanswered C1 checkboxes are all `NULL`; once one is selected, the others are
-`0`. Responses carry a random UUID, UTC date only, and `form_version=v1`.
+Each checkbox group (C1 sources of help, C5 AI-use purposes) is coded independently:
+all `NULL` when skipped, or selected items `1` and unselected items `0`.
+Responses carry a random UUID, UTC date only, and `form_version=v2`.
 Wishes link to the response with a one-based position. These IDs do not identify
 participants and are never returned in submission URLs.
+
+Opening an existing database adds missing nullable question columns in a transaction.
+Existing responses and wishes remain intact; `v1` rows keep their version and have
+empty C5/C6 cells. Interpret C4 by form version: `v1` asked how the chosen help
+supported or hindered learning; `v2` asks about an AI suggestion, what the participant
+did with it, and its effect on understanding. Do not pool these as identical prompts.
+C3 still concerns the main source of help selected in C2, which may be human;
+C4–C6 explicitly concern AI.
 
 ## 5. Back up consistently
 

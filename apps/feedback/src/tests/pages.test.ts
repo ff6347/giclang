@@ -40,6 +40,14 @@ test("defines every frozen questionnaire item with its stored ID", () => {
 			"c3_explain_code",
 			"c3_learned_more",
 			"c4_ai_situation",
+			"c5_hint",
+			"c5_understand",
+			"c5_debug",
+			"c5_generate",
+			"c5_modify",
+			"c5_explore",
+			"c5_other",
+			"c6_ai_speed",
 			"d1_pace",
 			"d2_explanations",
 			"d2_practice_time",
@@ -101,4 +109,36 @@ test("preserves and escapes invalid submission values", () => {
 
 test("escapes login errors", () => {
 	assert.match(loginPage("<invalid>"), /&lt;invalid&gt;/);
+});
+
+test("renders the approved AI-specific pilot items with preserved answers", () => {
+	const page = formPage(
+		new URLSearchParams({
+			c4_ai_situation: "I changed the suggested loop.",
+			c5_hint: "1",
+			c5_generate: "1",
+			c6_ai_speed: "0",
+		}),
+	);
+	assert.match(
+		page,
+		/Describe one suggestion you received from AI\. What did you do with it, and how did it affect your understanding\?/,
+	);
+	assert.match(page, /I changed the suggested loop\.<\/textarea>/);
+	assert.match(page, /During this workshop, what did you use AI help for\?/);
+	assert.match(page, /name="c5_hint" value="1" checked/);
+	assert.match(page, /name="c5_generate" value="1" checked/);
+	assert.match(
+		page,
+		/Using AI helped me make progress on my sketch more quickly\./,
+	);
+	assert.match(page, /name="c6_ai_speed" value="0" checked/);
+	assert.match(
+		page,
+		/If you did not use AI, you can skip the remaining questions in this section\./,
+	);
+	assert.doesNotMatch(
+		page,
+		/Describe one situation where this help supported or hindered your learning/,
+	);
 });

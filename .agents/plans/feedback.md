@@ -7,8 +7,8 @@
 
 Build a small anonymous feedback form for Fabian Morón Zirfas's GIC workshop,
 part of his master's thesis (Speculative Software, FH Potsdam). Preserve the
-questionnaire wording and item IDs below. Only a pilot approved by Fabian may
-trigger questionnaire changes.
+approved v2 pilot questionnaire wording and item IDs below. Further questionnaire
+changes require Fabian's approval.
 
 ## 1. Research context
 
@@ -43,10 +43,16 @@ trigger questionnaire changes.
 | Publication     | Aggregates and anonymised quotes only; never raw data                                                                                                   |
 | Questionnaire   | Frozen; only an approved pilot may trigger changes                                                                                                      |
 
-## 3. Frozen questionnaire
+## 3. Frozen questionnaire (v2 pilot)
 
 Store the item IDs exactly as shown. Use the wording verbatim. Every item is optional
 except consent.
+
+Fabian approved C5, C6, and the revised C4 following discussion of
+[Rojas-Galeano's exploratory study](https://arxiv.org/pdf/2507.22900v4#page=22).
+These are adapted self-report questions, not a validated scale or evidence of
+demonstrated learning. C3 refers to the source of help selected in C2, including
+human help; C4–C6 refer explicitly to AI.
 
 ### Intro text
 
@@ -141,8 +147,29 @@ Did not use (`0`)
 | `c3_explain_code`     | I could explain my final code to someone else.              |
 | `c3_learned_more`     | Compared to the part without AI, I learned more.            |
 
-`c4_ai_situation` _(open text)_: Describe one situation where this help supported or
-hindered your learning.
+_If you did not use AI, you can skip the remaining questions in this section._
+
+`c4_ai_situation` _(open text)_: Describe one suggestion you received from AI. What
+did you do with it, and how did it affect your understanding?
+
+`c5_*` _(checkboxes, booleans)_: During this workshop, what did you use AI help for?
+_Select all that apply._
+
+| ID              | Label                                             |
+| --------------- | ------------------------------------------------- |
+| `c5_hint`       | Get a hint about what to try next                 |
+| `c5_understand` | Understand a programming concept or existing code |
+| `c5_debug`      | Understand or fix an error                        |
+| `c5_generate`   | Generate code                                     |
+| `c5_modify`     | Change or extend existing code                    |
+| `c5_explore`    | Explore different visual ideas or approaches      |
+| `c5_other`      | Something else                                    |
+
+`c6_ai_speed` _(single choice, integer rating)_: Using AI helped me make progress
+on my sketch more quickly.
+
+Options: Strongly disagree (`1`) / Disagree (`2`) / Agree (`3`) /
+Strongly agree (`4`) / Can't say / did not use AI (`0`).
 
 ### Section D: Workshop and tool
 
@@ -188,8 +215,9 @@ tool → `yes_other`
   not use") are stored as `0` and must be excluded from means during analysis.
 - B2 `b2_limits_blocked` and C3 `c3_accepted_unclear` are negatively worded **on
   purpose**. Do not reverse-code them in storage.
-- For C1, store all `NULL` if no checkbox is selected; otherwise selected items
-  are `1` and unselected items are `0`. Do not infer a skipped answer as "None".
+- For each checkbox group (C1 and C5) independently, store all `NULL` if no
+  checkbox in that group is selected; otherwise selected items are `1` and
+  unselected items in that group are `0`. Do not infer a skipped answer as "None".
 
 ## 4. Data model
 
@@ -199,6 +227,13 @@ tool → `yes_other`
   `want` text, nullable `so_that` text.
 - Validate coded values with server-side allowlists; write responses and wishes
   in one transaction. No participant identifier links responses.
+- Record revised-form submissions as `form_version=v2`. On opening an existing
+  database, transactionally add missing nullable question columns without
+  rewriting existing responses or wishes.
+- Existing `v1` rows retain their version and contain `NULL` for C5/C6. Their C4
+  prompt was "Describe one situation where this help supported or hindered your
+  learning." Interpret C4 by form version rather than treating both prompts as
+  identical.
 
 ## 5. Application requirements
 
