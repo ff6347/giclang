@@ -15,5 +15,7 @@
 !apps/feedback/package.json
 !apps/feedback/src/
 !apps/feedback/src/*.ts
+!apps/feedback/views/
+!apps/feedback/views/**
 !apps/feedback/public/
 !apps/feedback/public/*

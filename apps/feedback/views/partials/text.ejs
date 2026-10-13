@@ -1,0 +1,5 @@
+<%# ABOUTME: Renders one optional open-text questionnaire item. %>
+<%# ABOUTME: Escapes preserved submission text inside the textarea element. %>
+<label class="text-answer" for="<%= item.id %>"><%- include("label", { label: item.label }) %>
+<textarea id="<%= item.id %>" name="<%= item.id %>" maxlength="2000"><%= values.get(item.id) ?? "" %></textarea>
+</label>

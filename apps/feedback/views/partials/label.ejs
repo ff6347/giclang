@@ -1,0 +1,3 @@
+<%# ABOUTME: Renders frozen questionnaire labels with code-formatted GIC terms. %>
+<%# ABOUTME: Escapes every text segment while keeping code markup structural. %>
+<% for (const part of labelParts(label)) { %><% if (part.code) { %><code><%= part.text %></code><% } else { %><%= part.text %><% } %><% } %>

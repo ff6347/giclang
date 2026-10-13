@@ -15,6 +15,7 @@ ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 DB_PATH=/data/feedback.sqlite FOR
 COPY --from=dependencies /app /app
 COPY packages/styles ./packages/styles
 COPY apps/feedback/src ./apps/feedback/src
+COPY apps/feedback/views ./apps/feedback/views
 COPY apps/feedback/public ./apps/feedback/public
 RUN mkdir /data && chown node:node /data
 USER node

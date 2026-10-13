@@ -98,9 +98,22 @@ importers:
       "@hono/node-server":
         specifier: 2.1.4
         version: 2.1.4(hono@4.13.13)
+      csv-stringify:
+        specifier: 6.9.0
+        version: 6.9.0
+      ejs:
+        specifier: 7.0.1
+        version: 7.0.1
       hono:
         specifier: 4.13.13
         version: 4.13.13
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
+    devDependencies:
+      "@types/ejs":
+        specifier: 3.1.5
+        version: 3.1.5
 
   apps/site:
     dependencies:
@@ -3049,6 +3062,12 @@ packages:
         integrity: sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==,
       }
 
+  "@types/ejs@3.1.5":
+    resolution:
+      {
+        integrity: sha512-nv+GSx77ZtXiJzwKdsASqi+YQ5Z7vwHsTP0JY2SiQgjGckkBRKZnk8nIM+7oUZ1VCtuTz0+By4qVR7fqzp/Dfg==,
+      }
+
   "@types/estree-jsx@1.0.5":
     resolution:
       {
@@ -3542,6 +3561,12 @@ packages:
         integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==,
       }
 
+  csv-stringify@6.9.0:
+    resolution:
+      {
+        integrity: sha512-6b3e29CILFfSQ2nDRuZMRROzQOpPuJ+s8zPB5H7eK5ncXBbFOyVuRLU5Sx/zAUmVri3Ly49GyC8NEme4SVSAbA==,
+      }
+
   data-view-buffer@1.0.2:
     resolution:
       {
@@ -3698,6 +3723,14 @@ packages:
         integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==,
       }
     engines: { node: ">=0.10.0" }
+    hasBin: true
+
+  ejs@7.0.1:
+    resolution:
+      {
+        integrity: sha512-TrAb1fY4jNY6aQrNjMJsoWQxGUK47A38JxuUvnt75vDcAA9Ln7ur6FHo+irVa5Bwd3w9rdUT3xLSl5MRgHIugg==,
+      }
+    engines: { node: ">=0.12.18" }
     hasBin: true
 
   electron-to-chromium@1.5.433:
@@ -6822,6 +6855,12 @@ packages:
         integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==,
       }
 
+  zod@4.6.6:
+    resolution:
+      {
+        integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==,
+      }
+
   zwitch@2.0.4:
     resolution:
       {
@@ -8441,6 +8480,8 @@ snapshots:
     dependencies:
       "@types/ms": 2.1.0
 
+  "@types/ejs@3.1.5": {}
+
   "@types/estree-jsx@1.0.5":
     dependencies:
       "@types/estree": 1.0.9
@@ -8779,6 +8820,8 @@ snapshots:
 
   csstype@3.2.3: {}
 
+  csv-stringify@6.9.0: {}
+
   data-view-buffer@1.0.2:
     dependencies:
       call-bound: 1.0.4
@@ -8870,6 +8913,8 @@ snapshots:
   ejs@3.1.10:
     dependencies:
       jake: 10.9.4
+
+  ejs@7.0.1: {}
 
   electron-to-chromium@1.5.433: {}
 
@@ -11138,5 +11183,7 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   zod@4.6.5: {}
+
+  zod@4.6.6: {}
 
   zwitch@2.0.4: {}

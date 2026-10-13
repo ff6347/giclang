@@ -12,6 +12,12 @@
 	"dependencies": {
 		"@giclang/styles": "workspace:^",
 		"@hono/node-server": "2.1.4",
-		"hono": "4.13.13"
+		"csv-stringify": "6.9.0",
+		"ejs": "7.0.1",
+		"hono": "4.13.13",
+		"zod": "4.6.6"
+	},
+	"devDependencies": {
+		"@types/ejs": "3.1.5"
 	}
 }

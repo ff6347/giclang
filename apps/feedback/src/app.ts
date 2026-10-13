@@ -8,7 +8,7 @@ import { getSignedCookie, setSignedCookie } from "hono/cookie";
 import { serveAssets } from "./assets.ts";
 import { closedPage, formPage, loginPage, thanksPage } from "./pages.ts";
 import { exportCsv, type Store } from "./store.ts";
-import { validate } from "./validation.ts";
+import { formFields, loginSchema, validate } from "./validation.ts";
 
 export type Config = {
 	participantPassword: string;
@@ -84,11 +84,12 @@ export function createApp(config: Config, store: Store) {
 	app.get("/", (c) => c.html(config.formOpen ? loginPage() : closedPage()));
 	app.post("/login", async (c) => {
 		if (!config.formOpen) return c.html(closedPage(), 403);
-		const values = new URLSearchParams(await c.req.text());
+		const result = loginSchema.safeParse(
+			formFields(new URLSearchParams(await c.req.text())),
+		);
 		if (
-			values.getAll("password").length !== 1 ||
-			[...values.keys()].some((key) => key !== "password") ||
-			!matches(values.get("password") ?? "", config.participantPassword)
+			!result.success ||
+			!matches(result.data.password, config.participantPassword)
 		) {
 			return c.html(loginPage("The password is incorrect."), 401);
 		}

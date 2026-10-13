@@ -75,18 +75,28 @@ test("renders the form with local assets, native controls, and twenty wish rows"
 test("preserves and escapes invalid submission values", () => {
 	const values = new URLSearchParams([
 		["a1_experience", "little"],
-		["b3_simplicity_moment", "<script>alert(1)</script>"],
-		["want", "Make <shapes>"],
+		["b3_simplicity_moment", "</textarea><script>alert(1)</script>"],
+		["want", '" onfocus="alert(1)'],
 		["so_that", "I can use & learn"],
 	]);
 	const page = formPage(values, ["Consent is required."]);
 
 	assert.match(page, /value="little" checked/);
-	assert.match(page, /&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/textarea>/);
-	assert.match(page, /value="Make &lt;shapes&gt;"/);
+	assert.match(
+		page,
+		/&lt;\/textarea&gt;&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/textarea>/,
+	);
+	assert.match(
+		page,
+		/value="(?:&quot;|&#34;) onfocus=(?:&quot;|&#34;)alert\(1\)"/,
+	);
 	assert.match(page, /value="I can use &amp; learn"/);
 	assert.match(page, /Consent is required\./);
 	assert.doesNotMatch(page, /<script>alert\(1\)<\/script>/);
+	assert.doesNotMatch(
+		page,
+		/<input name="want" maxlength="500" value="" onfocus=/,
+	);
 });
 
 test("escapes login errors", () => {

@@ -16,6 +16,21 @@ test("password gate protects form and exports with separate credentials", async 
 		body: new URLSearchParams({ password: "wrong" }),
 	});
 	assert.equal(wrong.status, 401);
+	for (const body of [
+		new URLSearchParams([
+			["password", config.participantPassword],
+			["password", config.participantPassword],
+		]),
+		new URLSearchParams({
+			password: config.participantPassword,
+			unknown: "value",
+		}),
+	]) {
+		assert.equal(
+			(await app.request("/login", { method: "POST", body })).status,
+			401,
+		);
+	}
 	const login = await app.request("/login", {
 		method: "POST",
 		body: new URLSearchParams({ password: config.participantPassword }),

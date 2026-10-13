@@ -3,6 +3,7 @@
 
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
+import { stringify } from "csv-stringify/sync";
 import { questions } from "./questions.ts";
 import type { Submission } from "./validation.ts";
 
@@ -77,17 +78,16 @@ export type Store = ReturnType<typeof openStore>;
 
 export function exportCsv(store: Store, table: Table): string {
 	const columns = table === "responses" ? responseColumns : wishColumns;
-	const cell = (value: unknown) => {
-		let text = value === null || value === undefined ? "" : String(value);
-		if (/^\s*[=+\-@]/u.test(text)) text = `'${text}`;
-		return `"${text.replaceAll('"', '""')}"`;
-	};
-	return (
-		[
-			columns.map(cell).join(","),
-			...store
-				.rows(table)
-				.map((row) => columns.map((name) => cell(row[name])).join(",")),
-		].join("\r\n") + "\r\n"
-	);
+	return stringify(store.rows(table), {
+		columns,
+		header: true,
+		quoted: true,
+		quoted_empty: true,
+		record_delimiter: "windows",
+		escape_formulas: true,
+		cast: {
+			// The questionnaire also protects formula prefixes after whitespace.
+			string: (value) => (/^\s+[=+\-@]/u.test(value) ? `'${value}` : value),
+		},
+	});
 }

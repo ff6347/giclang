@@ -1,0 +1,40 @@
+<%# ABOUTME: Renders the frozen anonymous GIC workshop feedback questionnaire. %>
+<%# ABOUTME: Uses partials and EJS escaping for participant-provided values. %>
+<%- include("partials/page-start", { title: "GIC Workshop Feedback", withScript: true }) %>
+<h1>GIC Workshop Feedback</h1>
+<p>This form is part of Fabian Morón Zirfas's master's thesis (Speculative Software, FH Potsdam). It asks how you experienced learning programming with GIC, with and without AI. There are no right or wrong answers. Critical feedback is especially useful.</p>
+<ul>
+<li>It takes about 10 minutes. Every question is optional, so skip anything that doesn't apply.</li>
+<li>The form is anonymous. No names, email addresses or IP addresses are collected. Please don't mention names or other identifying details in your written answers.</li>
+<li>Your answers will be used for the thesis, for future workshops and in publications. Short anonymous quotes may be used. The raw data will not be published, and Fabian will keep it indefinitely.</li>
+<li>Because responses are anonymous, a single response can't be found or deleted after you submit it.</li>
+<li>You may answer the written questions in German or English.</li>
+</ul>
+<% if (errors.length) { %><div class="error" role="alert"><ul><% for (const error of errors) { %><li><%= error %></li><% } %></ul></div><% } %>
+<form method="post" action="/submit">
+<div class="honeypot" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+<fieldset><legend>Consent</legend><label><input type="checkbox" name="consent" value="1" required<% if (values.getAll("consent").includes("1")) { %> checked<% } %>> I agree that my anonymous answers may be used and quoted as described above. (required)</label></fieldset>
+<section><h2>Section A: About you</h2><% for (const id of ["a1_experience", "a2_vibecoding", "a3_ai_attitude"]) { %><%- include("partials/choice", { item: question(id) }) %><% } %></section>
+<section><h2>Section B: Concepts and GIC without AI</h2>
+<h3>B1. Grid (classic table)</h3><p>Now, at the end of the workshop, how confident are you that you could use each of these in your own sketch without help?</p>
+<%- include("partials/rating-table", { items: ["b1_variables", "b1_drawing", "b1_coordinates", "b1_arithmetic", "b1_conditionals", "b1_repeat", "b1_functions", "b1_random", "b1_debugging"].map(question) }) %>
+<h3>B2.</h3><p>Think about the part of the workshop before AI was introduced.</p>
+<%- include("partials/rating-table", { items: ["b2_focus", "b2_limits_blocked", "b2_code_image", "b2_errors"].map(question) }) %>
+<%- include("partials/text", { item: question("b3_simplicity_moment") }) %></section>
+<section><h2>Section C: Working with AI</h2><p>Didn't use any help? Skip to Section D.</p>
+<fieldset><legend>Which kinds of help did you use at all?</legend><% for (const id of ["c1_tutor", "c1_chat", "c1_agent", "c1_human", "c1_none"]) { const item = question(id); %><label><input type="checkbox" name="<%= item.id %>" value="1"<% if (values.getAll(item.id).includes("1")) { %> checked<% } %>> <%= item.label %></label><% } %></fieldset>
+<%- include("partials/choice", { item: question("c2_main_help") }) %>
+<h3>C3.</h3><p>The following statements are about the help you chose in C2.</p>
+<%- include("partials/rating-table", { items: ["c3_understand_why", "c3_own_thinking", "c3_accepted_unclear", "c3_explain_code", "c3_learned_more"].map(question) }) %>
+<%- include("partials/text", { item: question("c4_ai_situation") }) %></section>
+<section><h2>Section D: Workshop and tool</h2><%- include("partials/choice", { item: question("d1_pace") }) %>
+<%- include("partials/rating-table", { items: ["d2_explanations", "d2_practice_time", "d2_editor", "d2_docs"].map(question) }) %>
+<%- include("partials/choice", { item: question("d3_continue") }) %><%- include("partials/text", { item: question("d4_keep") }) %><%- include("partials/text", { item: question("d5_change") }) %></section>
+<section><h2>Section E: Your wishes (optional)</h2>
+<p>What would you like to be able to do in GIC, in the workshop or with the AI help? Add as many as you like.</p>
+<div id="wishes"><% for (const wish of wishes) { %><%- include("partials/wish-row", { wish }) %><% } %></div>
+<template id="wish-template"><%- include("partials/wish-row", { wish: { want: "", soThat: "" } }) %></template>
+<button id="add-wish" type="button">+ Add another</button></section>
+<button type="submit">Submit feedback</button>
+</form>
+<%- include("partials/page-end") %>

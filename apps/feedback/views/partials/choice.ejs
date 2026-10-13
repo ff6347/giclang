@@ -1,0 +1,6 @@
+<%# ABOUTME: Renders one optional single-choice questionnaire item. %>
+<%# ABOUTME: Marks the participant's submitted choice without serializing HTML. %>
+<fieldset>
+<legend><%- include("label", { label: item.label }) %></legend>
+<% for (const option of item.options) { %><label><input type="radio" name="<%= item.id %>" value="<%= option.value %>"<% if (values.getAll(item.id).includes(option.value)) { %> checked<% } %>> <%= option.label %></label>
+<% } %></fieldset>
