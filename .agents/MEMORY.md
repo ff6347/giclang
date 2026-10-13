@@ -307,6 +307,8 @@ Slices 1–6 are implemented on `docs/gic-agent-plan`. `.agents/plans/gic-agent-
 - [decision] `apps/feedback` is a separate Node/Hono/SQLite application with native server-rendered forms and package-owned style assets. `.agents/plans/feedback.md` freezes its questionnaire; `docs/feedback.md` documents operation. Deployment, logging privacy, institutional review, and the human pilot remain operator gates.
 - [lesson] Native form POSTs can send `Origin: null` under `Referrer-Policy: no-referrer`. Feedback uses `same-origin` so strict Origin checks work while external referrers remain suppressed. Behind HTTPS termination, the private backend relies on the proxy preserving Host and overwriting X-Forwarded-Proto.
 - [technique] Feedback's Compose service runs as UID 1000 with a read-only root and a directory bind mount for SQLite/WAL/SHM. Validate persistence across container replacement and use SQLite backup APIs or `VACUUM INTO`, never a live raw-file copy.
+- [preference] Feedback uses Zod for validation, EJS for templates, and `csv-stringify` for exports rather than handwritten equivalents. CSV's application-specific cast also protects formula prefixes after leading whitespace.
+- [decision] `pnpm dev:feedback` enables explicit development defaults: loopback port 3000, an open form, an ignored development database, and ephemeral in-memory secrets. Production startup does not enable these defaults.
 
 ## Issue Tracking
 
