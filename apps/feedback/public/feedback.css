@@ -14,7 +14,7 @@ body {
 }
 
 main {
-	width: min(100%, 70rem);
+	width: min(100%, 60rem);
 	margin: 0 auto;
 	padding: var(--s4);
 }

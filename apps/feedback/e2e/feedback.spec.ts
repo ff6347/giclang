@@ -80,6 +80,13 @@ test("uses only local shared styles and contains table overflow on narrow screen
 
 	await login(page);
 
+	const formBounds = await page.locator("main").boundingBox();
+	expect(formBounds).not.toBeNull();
+	expect(formBounds!.width).toBeLessThanOrEqual(960);
+	expect(formBounds!.x).toBeCloseTo(
+		(page.viewportSize()!.width - formBounds!.width) / 2,
+		0,
+	);
 	await expect(page.locator('link[href="/assets/tokens.css"]')).toHaveCount(1);
 	await expect(page.locator('link[href="/assets/feedback.css"]')).toHaveCount(
 		1,
