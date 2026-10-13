@@ -109,7 +109,7 @@ td {
 }
 
 .opt-out {
-	border-left: var(--s3) solid var(--color-background);
+	border-left: var(--s1) double var(--color-text);
 }
 
 @media (max-width: 40rem) {

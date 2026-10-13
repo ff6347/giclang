@@ -88,6 +88,19 @@ test("uses only local shared styles and contains table overflow on narrow screen
 		"font-family",
 		/"IBM Plex Mono"/,
 	);
+	const textColor = await page
+		.locator("body")
+		.evaluate((body) => getComputedStyle(body).color);
+	for (const selector of ["thead .opt-out", "tbody .opt-out"]) {
+		await expect(page.locator(selector).first()).toHaveCSS(
+			"border-left-style",
+			"double",
+		);
+		await expect(page.locator(selector).first()).toHaveCSS(
+			"border-left-color",
+			textColor,
+		);
+	}
 	await page.evaluate(() => document.fonts.ready);
 	expect(
 		requests.some((url) =>
