@@ -1,0 +1,69 @@
+func h(a, b) {
+	let r = floor(random(a, b));
+	let c0 = "0";
+	let c1 = "1";
+	let c2 = "2";
+	let c3 = "3";
+	let c4 = "4";
+	let c5 = "5";
+	let c6 = "6";
+	let c7 = "7";
+	let c8 = "8";
+	let c9 = "9";
+	let ca = "a";
+	let cb = "b";
+	let cc = "c";
+	let cd = "d";
+	let ce = "e";
+	let cf = "f";
+	if (r == 0) {
+		return c0;
+	} else if (r == 1) {
+		return c1;
+	} else if (r == 2) {
+		return c2;
+	} else if (r == 3) {
+		return c3;
+	} else if (r == 4) {
+		return c4;
+	} else if (r == 5) {
+		return c5;
+	} else if (r == 6) {
+		return c6;
+	} else if (r == 7) {
+		return c7;
+	} else if (r == 8) {
+		return c8;
+	} else if (r == 9) {
+		return c9;
+	} else if (r == 10) {
+		return ca;
+	} else if (r == 11) {
+		return cb;
+	} else if (r == 12) {
+		return cc;
+	} else if (r == 13) {
+		return cd;
+	} else if (r == 14) {
+		return ce;
+	} else {
+		return cf;
+	}
+}
+func hexer(rl1, rh1, rl2, rh2, gl1, gh1, gl2, gh2, bl1, bh1, bl2, bh2) {
+	return "#" + h(rl1, rh1) + h(rl2, rh2) + h(gl1, gh1) + h(gl2, gh2) + h(bl1, bh1) + h(bl2, bh2);
+}
+// --- functions above 
+let x = 0;
+let y = 0;
+let step = 10;
+noStroke();
+repeat(i, 0, 100 * 100, step) {
+	fill(hexer(0, 15, 0, 15, 10, 12, 10, 12, 10, 12, 10, 12));
+	rect(x, y, step, step);
+	x = x + step;
+	if (x > WIDTH) {
+		x = 0;
+		y = y + step;
+	}
+}

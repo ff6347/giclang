@@ -1,0 +1,41 @@
+func rectt(cx, cy, w, h, deg) {
+	let x1 = 0;
+	let x2 = 0;
+	let x3 = 0;
+	let x4 = 0;
+	let y1 = 0;
+	let y2 = 0;
+	let y3 = 0;
+	let y4 = 0;
+	let a = deg;
+	repeat(i, 0, 4) {
+		if (i == 0) {
+			let dx = w / 2;
+			let dy = -h / 2;
+			x1 = cx + dx * cos(deg) - dy * sin(deg);
+			y1 = cy + dx * sin(deg) + dy * cos(deg);
+		} else if (i == 1) {
+			let dx = w / 2;
+			let dy = h / 2;
+			x2 = cx + dx * cos(deg) - dy * sin(deg);
+			y2 = cy + dx * sin(deg) + dy * cos(deg);
+		} else if (i == 2) {
+			let dx = -w / 2;
+			let dy = h / 2;
+			x3 = cx + dx * cos(deg) - dy * sin(deg);
+			y3 = cy + dx * sin(deg) + dy * cos(deg);
+		} else if (i == 3) {
+			let dx = -w / 2;
+			let dy = -h / 2;
+			x4 = cx + dx * cos(deg) - dy * sin(deg);
+			y4 = cy + dx * sin(deg) + dy * cos(deg);
+		}
+		a = a + 45;
+	}
+	quad(x1, y1, x2, y2, x3, y3, x4, y4);
+	return;
+}
+background("gold");
+fill("limegreen");
+strokeWidth(2);
+rectt(50, 50, 50, 50, 30);
