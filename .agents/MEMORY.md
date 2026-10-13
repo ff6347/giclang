@@ -309,6 +309,8 @@ Slices 1–6 are implemented on `docs/gic-agent-plan`. `.agents/plans/gic-agent-
 - [technique] Feedback's Compose service runs as UID 1000 with a read-only root and a directory bind mount for SQLite/WAL/SHM. Validate persistence across container replacement and use SQLite backup APIs or `VACUUM INTO`, never a live raw-file copy.
 - [preference] Feedback uses Zod for validation, EJS for templates, and `csv-stringify` for exports rather than handwritten equivalents. CSV's application-specific cast also protects formula prefixes after leading whitespace.
 - [decision] `pnpm dev:feedback` enables explicit development defaults: loopback port 3000, an open form, an ignored development database, and ephemeral in-memory secrets. Production startup does not enable these defaults.
+- [decision] The approved feedback v2 pilot adds C5 AI-use purposes and C6 perceived speed and makes C4 explicitly about an AI suggestion and its effect on understanding. C3 still refers to the main help source, including human help. Startup adds missing nullable question columns transactionally, preserving v1 responses and wishes; interpret C4 by `form_version`.
+- [lesson] Checkbox groups have independent missingness: selecting a C1 source must not turn skipped C5 purposes into zeros, or vice versa. Explicit group metadata controls NULL/0 normalization.
 
 ## Issue Tracking
 
