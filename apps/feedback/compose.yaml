@@ -3,7 +3,7 @@
 services:
   feedback:
     build:
-      context: ../..
+      context: .
       dockerfile: apps/feedback/Dockerfile
     restart: unless-stopped
     environment:

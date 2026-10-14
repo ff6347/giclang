@@ -61,8 +61,11 @@ Coolify runtime environment, never committed files or issue comments.
    ownership matches the host's Docker user-namespace configuration.
 3. Configure Coolify to use
    [`apps/feedback/compose.yaml`](../apps/feedback/compose.yaml) on the approved
-   feature commit. Its build context is the monorepo root and its Dockerfile is
-   [`apps/feedback/Dockerfile`](../apps/feedback/Dockerfile).
+   commit. Set Coolify's base/project directory to the monorepo root; the build
+   context `.` resolves from that directory, and the Dockerfile is
+   [`apps/feedback/Dockerfile`](../apps/feedback/Dockerfile). For local Compose
+   commands, run from the monorepo root with `--project-directory .`, as shown
+   in [`apps/feedback/env.sample`](../apps/feedback/env.sample).
 4. Supply the three secrets in Coolify's runtime environment, not build
    arguments. Start with `FORM_OPEN=false`.
 5. Route `https://feedback.giclang.cc` to the service's internal port 3000.
@@ -140,7 +143,7 @@ Use SQLite's backup API or `VACUUM INTO`, not a live raw-file copy. For example,
 from the deployed checkout, create a snapshot at an unused destination:
 
 ```sh
-docker compose -f apps/feedback/compose.yaml exec -T feedback \
+docker compose --project-directory . -f apps/feedback/compose.yaml exec -T feedback \
   node --input-type=module -e "
     import { DatabaseSync } from 'node:sqlite';
     process.umask(0o077);
