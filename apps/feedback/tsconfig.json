@@ -1,0 +1,10 @@
+{
+	// ABOUTME: Type-checks the feedback server independently of editor and core code.
+	// ABOUTME: Uses Node's TypeScript execution without emitting build artifacts.
+	"extends": "../../packages/core/tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "./src",
+		"lib": ["esnext", "dom", "dom.iterable"]
+	},
+	"include": ["src/**/*.ts"]
+}

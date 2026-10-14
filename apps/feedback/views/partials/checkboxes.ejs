@@ -1,0 +1,6 @@
+<%# ABOUTME: Renders an optional multiple-choice questionnaire group. %>
+<%# ABOUTME: Preserves each selected checkbox using escaped question metadata. %>
+<fieldset>
+<legend><%= legend %></legend>
+<% for (const item of items) { %><label><input type="checkbox" name="<%= item.id %>" value="1"<% if (values.getAll(item.id).includes("1")) { %> checked<% } %>> <%= item.label %></label><% } %>
+</fieldset>

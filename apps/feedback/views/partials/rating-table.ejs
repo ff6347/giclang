@@ -1,0 +1,6 @@
+<%# ABOUTME: Renders a group of optional rating questions as a scrollable table. %>
+<%# ABOUTME: Preserves submitted ratings and separates opt-out choices visually. %>
+<div class="rating-table-wrap"><table>
+<thead><tr><th scope="col">Statement</th><% for (const option of items[0]?.options ?? []) { %><th scope="col"<% if (option.value === "0") { %> class="opt-out"<% } %>><%= option.label %></th><% } %></tr></thead>
+<tbody><% for (const item of items) { %><tr><th scope="row"><%- include("label", { label: item.label }) %></th><% for (const option of item.options) { %><td<% if (option.value === "0") { %> class="opt-out"<% } %>><input type="radio" aria-label="<%= `${item.label}: ${option.label}` %>" name="<%= item.id %>" value="<%= option.value %>"<% if (values.getAll(item.id).includes(option.value)) { %> checked<% } %>></td><% } %></tr><% } %></tbody>
+</table></div>

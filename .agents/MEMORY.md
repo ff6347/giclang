@@ -302,6 +302,16 @@ Slices 1–6 are implemented on `docs/gic-agent-plan`. `.agents/plans/gic-agent-
 - [risk] Browser acceptance currently assumes port 5173 in the Monaco external-assets test. An isolated alternate-port run avoids disturbing another worktree's server but fails that hardcoded-origin assertion; report this separately rather than changing unrelated tests in a content slice.
 - [technique] Fabian manually imported the skill/reference ZIP into ChatGPT and Claude. ChatGPT generated `agents/openai.yaml` and a heart icon; the package owns the supplied metadata with GiC capitalization and bundles the existing GiC logo instead. The four-file archive's provider acceptance and icon presentation still need an account check; retain manual raw-text use and do not equate import with teaching-policy adherence.
 
+## Workshop Feedback
+
+- [decision] `apps/feedback` is a separate Node/Hono/SQLite application with native server-rendered forms and package-owned style assets. `.agents/plans/feedback.md` freezes its questionnaire; `.agents/feedback.md` records operation and `apps/feedback/env.sample` lists runtime settings. Deployment, logging privacy, institutional review, and the human pilot remain operator gates.
+- [lesson] Native form POSTs can send `Origin: null` under `Referrer-Policy: no-referrer`. Feedback uses `same-origin` so strict Origin checks work while external referrers remain suppressed. Behind HTTPS termination, the private backend relies on the proxy preserving Host and overwriting X-Forwarded-Proto.
+- [technique] Feedback's Compose service runs as UID 1000 with a read-only root and a directory bind mount for SQLite/WAL/SHM. Validate persistence across container replacement and use SQLite backup APIs or `VACUUM INTO`, never a live raw-file copy.
+- [preference] Feedback uses Zod for validation, EJS for templates, and `csv-stringify` for exports rather than handwritten equivalents. CSV's application-specific cast also protects formula prefixes after leading whitespace.
+- [decision] `pnpm dev:feedback` enables explicit development defaults: loopback port 3000, an open form, an ignored development database, and ephemeral in-memory secrets. Production startup does not enable these defaults.
+- [decision] The approved feedback v2 pilot adds C5 AI-use purposes and C6 perceived speed and makes C4 explicitly about an AI suggestion and its effect on understanding. C3 still refers to the main help source, including human help. Startup adds missing nullable question columns transactionally, preserving v1 responses and wishes; interpret C4 by `form_version`.
+- [lesson] Checkbox groups have independent missingness: selecting a C1 source must not turn skipped C5 purposes into zeros, or vice versa. Explicit group metadata controls NULL/0 normalization.
+
 ## Issue Tracking
 
 - [technique] `git-bug push` fails when the SSH agent has no identities (go-git only tries the agent). Confirmed fallback: system Git pushes fine via key files — `git push origin 'refs/bugs/*:refs/bugs/*' 'refs/identities/*:refs/identities/*'`. The SourceHut remote has no git-bug bridge.

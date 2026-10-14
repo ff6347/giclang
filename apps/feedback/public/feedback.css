@@ -1,0 +1,119 @@
+/* ABOUTME: Styles the feedback form with the shared GIC tokens and native controls. */
+/* ABOUTME: Keeps questionnaire tables readable on desktop and scrollable on tablets. */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--color-background);
+	color: var(--color-text);
+	font-family: var(--font-body);
+	line-height: 1.5;
+}
+
+main {
+	width: min(100%, 60rem);
+	margin: 0 auto;
+	padding: var(--s4);
+}
+
+form,
+section,
+fieldset,
+.text-answer,
+.wish-row {
+	display: grid;
+	gap: var(--s3);
+	min-width: 0;
+}
+
+form,
+section {
+	margin-block: var(--s5);
+}
+
+fieldset {
+	margin: 0;
+	border: 1px solid var(--color-text);
+	padding: var(--s3);
+}
+
+label {
+	display: block;
+}
+
+input,
+textarea,
+button {
+	font: inherit;
+}
+
+input:not([type="radio"], [type="checkbox"]),
+textarea {
+	width: 100%;
+	border: 1px solid var(--color-text);
+	padding: var(--s2);
+}
+
+textarea {
+	min-height: 8rem;
+	resize: vertical;
+}
+
+button {
+	width: fit-content;
+	border: 1px solid var(--color-text);
+	background: var(--color-chrome);
+	padding: var(--s2) var(--s3);
+}
+
+button:disabled {
+	cursor: wait;
+}
+
+.honeypot {
+	position: absolute;
+	left: -10000px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.error {
+	border: 1px solid var(--color-text);
+	padding: var(--s3);
+}
+
+.rating-table-wrap {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+table {
+	min-width: 52rem;
+	border-collapse: collapse;
+}
+
+th,
+td {
+	border: 1px solid var(--color-text);
+	padding: var(--s2);
+	text-align: left;
+	vertical-align: top;
+}
+
+td {
+	text-align: center;
+}
+
+.opt-out {
+	border-left: var(--s1) double var(--color-text);
+}
+
+@media (max-width: 40rem) {
+	main {
+		padding: var(--s3);
+	}
+}

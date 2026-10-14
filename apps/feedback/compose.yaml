@@ -1,0 +1,27 @@
+# ABOUTME: Configures the feedback service behind Coolify's HTTPS reverse proxy.
+# ABOUTME: Persists the SQLite database and its WAL files in a host-owned directory.
+services:
+  feedback:
+    build:
+      context: ../..
+      dockerfile: apps/feedback/Dockerfile
+    restart: unless-stopped
+    environment:
+      PARTICIPANT_PASSWORD: ${PARTICIPANT_PASSWORD:?Set the participant password in Coolify}
+      ADMIN_SECRET: ${ADMIN_SECRET:?Set a separate random admin secret in Coolify}
+      COOKIE_SECRET: ${COOKIE_SECRET:?Set a separate random cookie secret in Coolify}
+      FORM_OPEN: ${FORM_OPEN:-false}
+      DB_PATH: /data/feedback.sqlite
+    expose:
+      - "3000"
+    volumes:
+      - type: bind
+        source: /srv/gic-feedback
+        target: /data
+        bind:
+          create_host_path: false
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,7 @@
+<%# ABOUTME: Renders one optional participant wish with two free-text inputs. %>
+<%# ABOUTME: Escapes submitted wish text before it is placed in input attributes. %>
+<fieldset class="wish-row">
+<legend>Wish</legend>
+<label>As a user I want to be able to <input name="want" maxlength="500" value="<%= wish.want %>"></label>
+<label>so that <input name="so_that" maxlength="500" value="<%= wish.soThat %>"></label>
+</fieldset>

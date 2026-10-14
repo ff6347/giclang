@@ -1,0 +1,14 @@
+<%# ABOUTME: Starts each feedback document with shared metadata and local assets. %>
+<%# ABOUTME: Loads the form behavior only when the page requires it. %>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %></title>
+<link rel="stylesheet" href="/assets/tokens.css">
+<link rel="stylesheet" href="/assets/feedback.css">
+<% if (withScript) { %><script src="/assets/form.js" defer></script><% } %>
+</head>
+<body>
+<main>

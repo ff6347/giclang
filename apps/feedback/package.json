@@ -1,0 +1,23 @@
+{
+	"name": "@giclang/feedback",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "node --watch src/main.ts --development",
+		"start": "node src/main.ts",
+		"test": "node --test src/tests/*.test.ts",
+		"typecheck": "tsc -p tsconfig.json"
+	},
+	"dependencies": {
+		"@giclang/styles": "workspace:^",
+		"@hono/node-server": "2.1.4",
+		"csv-stringify": "6.9.0",
+		"ejs": "7.0.1",
+		"hono": "4.13.13",
+		"zod": "4.6.6"
+	},
+	"devDependencies": {
+		"@types/ejs": "3.1.5"
+	}
+}

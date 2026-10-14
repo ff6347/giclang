@@ -1,0 +1,21 @@
+# ABOUTME: Limits the feedback container context to runtime code and package manifests.
+# ABOUTME: Excludes participant data, environment files, tests, and unrelated applications.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!packages/
+!packages/styles/
+!packages/styles/package.json
+!packages/styles/tokens.css
+!packages/styles/fonts/
+!packages/styles/fonts/**
+!apps/
+!apps/feedback/
+!apps/feedback/package.json
+!apps/feedback/src/
+!apps/feedback/src/*.ts
+!apps/feedback/views/
+!apps/feedback/views/**
+!apps/feedback/public/
+!apps/feedback/public/*
