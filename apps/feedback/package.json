@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "node --watch src/main.ts --development",
+		"dev": "node --watch --watch-path=src --watch-path=views --watch-path=public src/main.ts --development",
 		"start": "node src/main.ts",
 		"test": "node --test src/tests/*.test.ts",
 		"typecheck": "tsc -p tsconfig.json"

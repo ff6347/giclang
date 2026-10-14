@@ -21,7 +21,7 @@ test("submits the questionnaire after a native validation error and caps added w
 		.locator("section")
 		.filter({
 			has: page.getByRole("heading", {
-				name: "Section B: Concepts and GIC without AI",
+				name: "Section B: Concepts and GiC without AI",
 			}),
 		})
 		.locator(".rating-table-wrap")
@@ -37,7 +37,7 @@ test("submits the questionnaire after a native validation error and caps added w
 
 	await page
 		.getByLabel(
-			"Describe one moment when GIC's simplicity helped you or got in your way.",
+			"Describe one moment when GiC's simplicity helped you or got in your way.",
 		)
 		.fill("I could follow the drawing state.");
 	await page
@@ -66,7 +66,7 @@ test("submits the questionnaire after a native validation error and caps added w
 	await expect(page).toHaveURL(/\/form$/);
 	await expect(
 		page.getByLabel(
-			"Describe one moment when GIC's simplicity helped you or got in your way.",
+			"Describe one moment when GiC's simplicity helped you or got in your way.",
 		),
 	).toHaveValue("I could follow the drawing state.");
 	await expect(page.getByLabel("As a user I want to be able to")).toHaveValue(
@@ -142,7 +142,7 @@ test("uses only local shared styles and contains table overflow on narrow screen
 			.evaluate((html) => html.scrollWidth <= html.clientWidth),
 	).toBeTruthy();
 	await page
-		.getByRole("heading", { name: "Section B: Concepts and GIC without AI" })
+		.getByRole("heading", { name: "Section B: Concepts and GiC without AI" })
 		.scrollIntoViewIfNeeded();
 	await page.screenshot({ path: testInfo.outputPath("feedback.png") });
 

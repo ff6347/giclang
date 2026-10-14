@@ -118,7 +118,7 @@ export const questions: Question[] = [
 			],
 			[
 				"b2_limits_blocked",
-				"GIC's limits stopped me from making something I wanted to make.",
+				"GiC's limits stopped me from making something I wanted to make.",
 			],
 			[
 				"b2_code_image",
@@ -131,13 +131,13 @@ export const questions: Question[] = [
 	{
 		id: "b3_simplicity_moment",
 		label:
-			"Describe one moment when GIC's simplicity helped you or got in your way.",
+			"Describe one moment when GiC's simplicity helped you or got in your way.",
 		kind: "text",
 		options: [],
 	},
 	...checkboxQuestions("help", [
-		["c1_tutor", "GIC tutor (built-in agent)"],
-		["c1_chat", "External chat (ChatGPT, Claude.ai, Le Chat, …)"],
+		["c1_tutor", "GiC tutor (built-in agent/provided skill)"],
+		["c1_chat", "External chat (ChatGPT, Claude.ai, …)"],
 		[
 			"c1_agent",
 			"Coding agent working on your files (opencode, Claude Code, Codex, …)",
@@ -150,10 +150,10 @@ export const questions: Question[] = [
 		label: "Which help did you use most?",
 		kind: "choice",
 		options: [
-			{ value: "tutor", label: "GIC tutor (built-in agent)" },
+			{ value: "tutor", label: "GiC tutor (built-in agent/provided skill)" },
 			{
 				value: "chat",
-				label: "External chat (ChatGPT, Claude.ai, Le Chat, …)",
+				label: "External chat (ChatGPT, Claude.ai, …)",
 			},
 			{
 				value: "agent",
@@ -225,7 +225,7 @@ export const questions: Question[] = [
 		[
 			["d2_explanations", "The explanations were clear."],
 			["d2_practice_time", "I had enough time to practise."],
-			["d2_editor", "The GIC editor worked without major problems."],
+			["d2_editor", "The GiC editor worked without major problems."],
 			["d2_docs", "The documentation and examples helped me."],
 		],
 		agreementOptions,
@@ -237,7 +237,7 @@ export const questions: Question[] = [
 		options: [
 			{ value: "no", label: "No" },
 			{ value: "maybe", label: "Maybe" },
-			{ value: "yes_gic", label: "Yes, with GIC" },
+			{ value: "yes_gic", label: "Yes, with GiC" },
 			{ value: "yes_other", label: "Yes, with another language or tool" },
 		],
 	},

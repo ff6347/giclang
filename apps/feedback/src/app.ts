@@ -91,7 +91,7 @@ export function createApp(config: Config, store: Store) {
 			!result.success ||
 			!matches(result.data.password, config.participantPassword)
 		) {
-			return c.html(loginPage("The password is incorrect."), 401);
+			return c.html(loginPage("The password is incorrect. Hint: What was this favorite thing again?"), 401);
 		}
 		await setSignedCookie(
 			c,

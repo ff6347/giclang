@@ -1,4 +1,4 @@
-/* ABOUTME: Styles the feedback form with the shared GIC tokens and native controls. */
+/* ABOUTME: Styles the feedback form with the shared GiC tokens and native controls. */
 /* ABOUTME: Keeps questionnaire tables readable on desktop and scrollable on tablets. */
 
 * {
@@ -108,8 +108,21 @@ td {
 	text-align: center;
 }
 
+ul{
+	padding-left: 1rem;
+}
+ li{
+	list-style-type: square;
+	padding-bottom: 1em;
+}
+
 .opt-out {
 	border-left: var(--s1) double var(--color-text);
+}
+code{
+	font-size: 1rem;
+  background: var(--color-chrome);
+  font-style: italic;
 }
 
 @media (max-width: 40rem) {
