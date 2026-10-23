@@ -67,10 +67,10 @@ pre { margin-bottom: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 <header><h1>Gestalten in Code</h1><p>Editable standalone sketch</p></header>
 <div class="editor"><label>Source<textarea aria-label="Source" rows="12"></textarea></label></div>
 <div class="preview"><canvas width="100" height="100"></canvas></div>
-<section><h2>Diagnostics</h2><pre id="diagnostics" data-gic-diagnostics></pre></section>
-<section><h2>Output</h2><pre id="output" data-gic-output></pre></section>
+<section><h2>Diagnostics</h2><pre id="diagnostics"></pre></section>
+<section><h2>Output</h2><pre id="output"></pre></section>
 </main>
-<script>${runtime.replace(/<\/script/gi, "<\\/script")}\nconst root = document.querySelector("main");\nroot.querySelector("textarea").value = ${JSON.stringify(source).replaceAll("<", "\\u003c")};\nGicRuntime.mountPreview(root);</script>
+<script>${runtime.replace(/<\/script/gi, "<\\/script")}\nGicRuntime.mountPreview({\ncanvas: document.querySelector("canvas"),\ninput: document.querySelector("textarea"),\ndiagnostics: document.getElementById("diagnostics"),\noutput: document.getElementById("output"),\ninitialCode: ${JSON.stringify(source).replaceAll("<", "\\u003c")}\n});</script>
 </html>`;
 }
 

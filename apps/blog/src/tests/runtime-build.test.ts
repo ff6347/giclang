@@ -69,14 +69,15 @@ test(
 				errors.push(`${response.status()} ${response.url()}`);
 		});
 		await page.goto(`http://127.0.0.1:${address.port}/workshop/`);
+		assert.deepEqual(errors, []);
 		await page.waitForFunction(
 			() =>
-				document.querySelectorAll("[data-gic-output]")[1]?.textContent ===
+				document.querySelectorAll(".output")[1]?.textContent ===
 				"Line 1: <second>",
 		);
 		assert.equal(await page.getByLabel("GIC source").count(), 2);
 		assert.equal(
-			await page.locator("[data-gic-output]").first().textContent(),
+			await page.locator(".output").first().textContent(),
 			"Line 1: first",
 		);
 		assert.deepEqual(
@@ -99,14 +100,36 @@ test(
 			.first()
 			.fill('background("#00ff00"); print("edited");');
 		await page.waitForFunction(
-			() =>
-				document.querySelector("[data-gic-output]")?.textContent ===
-				"Line 1: edited",
+			() => document.querySelector(".output")?.textContent === "Line 1: edited",
 		);
 		assert.equal(
-			await page.locator("[data-gic-output]").nth(1).textContent(),
+			await page.locator(".output").nth(1).textContent(),
 			"Line 1: <second>",
 		);
+		await page
+			.getByLabel("GIC source")
+			.first()
+			.fill("repeat(i, 0, 1000000000) {}");
+		await page.waitForTimeout(150);
+		await page
+			.locator("gic-sketch")
+			.first()
+			.evaluate((element) => {
+				element.remove();
+				document.body.append(element);
+			});
+		await page.getByLabel("GIC source").nth(1).fill('print("reconnected");');
+		await page.waitForFunction(
+			() =>
+				document.querySelectorAll(".output")[1]?.textContent ===
+				"Line 1: reconnected",
+		);
+		await page.waitForTimeout(600);
+		assert.equal(
+			await page.locator(".output").nth(1).textContent(),
+			"Line 1: reconnected",
+		);
+		assert.equal(await page.locator(".diagnostics").nth(1).textContent(), "");
 		assert.deepEqual(errors, []);
 	},
 );

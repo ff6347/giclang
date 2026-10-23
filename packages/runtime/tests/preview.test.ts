@@ -21,16 +21,14 @@ async function pixel(page: Page, index: number) {
 async function waitForOutput(page: Page, index: number, text: string) {
 	await page.waitForFunction(
 		({ index, text }) =>
-			document.querySelectorAll("[data-gic-output]")[index]?.textContent ===
-			text,
+			document.querySelectorAll(".result")[index]?.textContent === text,
 		{ index, text },
 	);
 }
 
 async function waitForDiagnostic(page: Page, text: string) {
 	await page.waitForFunction(
-		(text) =>
-			document.querySelector("[data-gic-diagnostics]")?.textContent === text,
+		(text) => document.querySelector(".problem")?.textContent === text,
 		text,
 	);
 }
@@ -49,9 +47,32 @@ test(
 			const errors: string[] = [];
 			page.on("pageerror", (error) => errors.push(error.message));
 			await page.setContent(`<!doctype html><html lang="en"><title>Sketches</title><body>
-			<gic-sketch><canvas width="100" height="100"></canvas><textarea aria-label="First source">background("#ff0000"); print("first");</textarea><pre data-gic-diagnostics></pre><pre data-gic-output></pre></gic-sketch>
-			<gic-sketch><canvas width="100" height="100"></canvas><textarea aria-label="Second source">background("#0000ff"); print("second");</textarea><pre data-gic-diagnostics></pre><pre data-gic-output></pre></gic-sketch>
-			<script>${runtime}\nGicRuntime.registerSketchElement();</script></body></html>`);
+			<div><canvas id="first-canvas" width="100" height="100"></canvas><canvas id="second-canvas" width="100" height="100"></canvas></div>
+			<div><textarea id="first-input" aria-label="First source">ignored textarea value</textarea><input id="second-input" aria-label="Second source" value="ignored input value"></div>
+			<div><pre id="first-diagnostics" class="problem"></pre><pre id="first-output" class="result"></pre><pre id="second-diagnostics" class="problem"></pre><pre id="second-output" class="result"></pre></div>
+			<button id="dispose">Dispose first preview</button><button id="mount">Mount first preview</button>
+			<script>${runtime}
+			const firstOptions = {
+				canvas: document.getElementById("first-canvas"),
+				input: document.getElementById("first-input"),
+				diagnostics: document.getElementById("first-diagnostics"),
+				output: document.getElementById("first-output"),
+				initialCode: 'background("#ff0000"); print("first");',
+			};
+			let dispose = GicRuntime.mountPreview(firstOptions);
+			GicRuntime.mountPreview({
+				canvas: document.getElementById("second-canvas"),
+				input: document.getElementById("second-input"),
+				diagnostics: document.getElementById("second-diagnostics"),
+				output: document.getElementById("second-output"),
+				initialCode: 'background("#0000ff"); print("second");',
+			});
+			document.getElementById("dispose").addEventListener("click", () => dispose());
+			document.getElementById("mount").addEventListener("click", () => {
+				dispose = GicRuntime.mountPreview({ ...firstOptions, initialCode: firstOptions.input.value });
+			});
+			</script></body></html>`);
+			assert.deepEqual(errors, []);
 			await waitForOutput(page, 0, "Line 1: first");
 			await waitForOutput(page, 1, "Line 1: second");
 			assert.deepEqual(await pixel(page, 0), [255, 0, 0, 255]);
@@ -87,7 +108,7 @@ test(
 				);
 				assert.deepEqual(await pixel(page, 0), [0, 0, 0, 0]);
 				assert.equal(
-					await page.locator("[data-gic-output]").first().textContent(),
+					await page.locator(".result").first().textContent(),
 					result.output
 						.map((entry) => `Line ${entry.line + 1}: ${entry.text}`)
 						.join("\n"),
@@ -99,10 +120,7 @@ test(
 			await page.getByLabel("First source").fill(source);
 			await waitForOutput(page, 0, "Line 2: edited");
 			await page.waitForTimeout(600);
-			assert.equal(
-				await page.locator("[data-gic-diagnostics]").first().textContent(),
-				"",
-			);
+			assert.equal(await page.locator(".problem").first().textContent(), "");
 			assert.deepEqual(await pixel(page, 0), [0, 255, 0, 255]);
 
 			await page
@@ -122,20 +140,26 @@ test(
 
 			await page.getByLabel("First source").fill(runaway);
 			await page.waitForTimeout(150);
-			await page
-				.locator("gic-sketch")
-				.first()
-				.evaluate((element) => {
-					element.remove();
-					document.body.append(element);
-				});
-			await page.getByLabel("First source").fill(source);
-			await waitForOutput(page, 1, "Line 2: edited");
+			await page.getByRole("button", { name: "Dispose first preview" }).click();
 			await page.waitForTimeout(600);
-			assert.equal(
-				await page.locator("[data-gic-diagnostics]").nth(1).textContent(),
-				"",
-			);
+			assert.equal(await page.locator(".problem").first().textContent(), "");
+			await page.getByLabel("First source").fill(source);
+			await page.waitForTimeout(200);
+			assert.equal(await page.locator(".result").first().textContent(), "");
+			assert.deepEqual(await pixel(page, 0), [0, 0, 0, 0]);
+			await page.getByRole("button", { name: "Mount first preview" }).click();
+			await waitForOutput(page, 0, "Line 2: edited");
+
+			await page.getByLabel("First source").fill('print("pending");');
+			await page.getByRole("button", { name: "Dispose first preview" }).click();
+			await page.waitForTimeout(250);
+			assert.equal(await page.locator(".result").first().textContent(), "");
+			assert.equal(await page.locator(".problem").first().textContent(), "");
+			await page
+				.getByLabel("Second source")
+				.fill('background("#00ff00"); print("input edited");');
+			await waitForOutput(page, 1, "Line 1: input edited");
+			assert.deepEqual(await pixel(page, 1), [0, 255, 0, 255]);
 			assert.deepEqual(errors, []);
 		} finally {
 			await browser.close();

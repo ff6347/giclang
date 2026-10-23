@@ -56,13 +56,13 @@ if (!page) {
 				<h2 id="diagnostics-heading" class="hidden">
 					Diagnostics
 				</h2>
-				<pre id="diagnostics" data-gic-diagnostics></pre>
+				<pre id="diagnostics"></pre>
 			</section>
 			<section>
 				<h2 id="output-heading" class="hidden">
 					Output
 				</h2>
-				<pre id="output" data-gic-output></pre>
+				<pre id="output"></pre>
 			</section>
 		</gic-sketch>
 		<section set:html={page.html} />
@@ -70,9 +70,31 @@ if (!page) {
 </DefaultLayout>
 
 <script>
-	import { registerSketchElement } from "@giclang/runtime";
+	import { mountPreview } from "@giclang/runtime";
 
-	registerSketchElement();
+	class GicSketch extends HTMLElement {
+		private dispose: (() => void) | undefined;
+
+		connectedCallback() {
+			const input = this.querySelector("textarea")!;
+			this.dispose = mountPreview({
+				canvas: this.querySelector("canvas")!,
+				input,
+				diagnostics: this.querySelector<HTMLElement>("#diagnostics")!,
+				output: this.querySelector<HTMLElement>("#output")!,
+				initialCode: input.value,
+			});
+		}
+
+		disconnectedCallback() {
+			this.dispose?.();
+			this.dispose = undefined;
+		}
+	}
+
+	if (!customElements.get("gic-sketch")) {
+		customElements.define("gic-sketch", GicSketch);
+	}
 </script>
 
 <style>

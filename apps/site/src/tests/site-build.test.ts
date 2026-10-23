@@ -50,7 +50,7 @@ test("build renders exactly two Skill actions and the combined source document",
 		new URL("../../dist/index.html", import.meta.url),
 		"utf8",
 	);
-	assert.match(html, /<main>[\s\S]*<\/main>/);
+	assert.match(html, /<main\b[^>]*>[\s\S]*<\/main>/);
 
 	const skillPage = await readFile(
 		new URL("../../dist/docs/skill/index.html", import.meta.url),

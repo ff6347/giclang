@@ -14,14 +14,36 @@ const { initialCode } = Astro.props;
 		aria-label="GIC source"
 		spellcheck="false"
 	>{initialCode}</textarea>
-	<pre data-gic-diagnostics aria-label="Diagnostics" aria-live="polite"></pre>
-	<pre data-gic-output aria-label="Output" aria-live="polite"></pre>
+	<pre class="diagnostics" aria-label="Diagnostics" aria-live="polite"></pre>
+	<pre class="output" aria-label="Output" aria-live="polite"></pre>
 </gic-sketch>
 
 <script>
-	import { registerSketchElement } from "@giclang/runtime";
+	import { mountPreview } from "@giclang/runtime";
 
-	registerSketchElement();
+	class GicSketch extends HTMLElement {
+		private dispose: (() => void) | undefined;
+
+		connectedCallback() {
+			const input = this.querySelector("textarea")!;
+			this.dispose = mountPreview({
+				canvas: this.querySelector("canvas")!,
+				input,
+				diagnostics: this.querySelector<HTMLElement>(".diagnostics")!,
+				output: this.querySelector<HTMLElement>(".output")!,
+				initialCode: input.value,
+			});
+		}
+
+		disconnectedCallback() {
+			this.dispose?.();
+			this.dispose = undefined;
+		}
+	}
+
+	if (!customElements.get("gic-sketch")) {
+		customElements.define("gic-sketch", GicSketch);
+	}
 </script>
 
 <style>

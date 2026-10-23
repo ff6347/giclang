@@ -43,26 +43,43 @@ diagnostics.
 
 ## Use in browser code
 
-Provide a root containing a `textarea`, a `canvas` with explicit backing dimensions,
-and elements marked `data-gic-diagnostics` and `data-gic-output`.
+Pass explicit element references and initial code using the exported
+`PreviewOptions` type:
 
 ```ts
-import { mountPreview } from "@giclang/runtime";
+import { mountPreview, type PreviewOptions } from "@giclang/runtime";
 
-const dispose = mountPreview(root);
-// Call dispose when the host removes the preview.
+const preview: PreviewOptions = {
+	canvas,
+	input,
+	diagnostics,
+	output,
+	initialCode: 'fill("lightpink"); circle(50, 50, 20);',
+};
+const dispose = mountPreview(preview);
 ```
 
-The initial source comes from the textarea's value. Typing schedules a run after
-100 ms. Each run uses a disposable Blob worker, terminated on completion,
+`canvas` is an `HTMLCanvasElement`; `input` is an `HTMLTextAreaElement` or a text
+`HTMLInputElement`; `diagnostics` and `output` are `HTMLElement` references. Mounting
+sets `input.value` to `initialCode` and runs it. Each call owns its worker, timers,
+and input listener. Call the returned `dispose()` when the host removes that preview.
+
+No selectors, IDs, attributes, custom elements, or common parent are required by
+the runtime. The host owns its markup and CSS and can place the elements in
+separate layout containers. Give the Canvas explicit backing dimensions;
+CSS can control its display size independently.
+
+Typing schedules a run after 100 ms. Each run uses a disposable Blob worker, terminated on completion,
 replacement, disposal, or a 500 ms timeout. Only the current worker can update
 the preview. Language failures display source-line diagnostics; unexpected worker
 failures display a preview failure message.
 
-Alternatively, wrap that markup in `<gic-sketch>` and call
-`registerSketchElement()` once in a client-side script. The custom element mounts
-on connection and disposes on disconnection. Give it `display: block` in the host's
-styles when it should occupy a block.
+The blog component and site demo each own a thin `<gic-sketch>` lifecycle adapter.
+Their client scripts pass local element references to `mountPreview()` in
+`connectedCallback()` and call `dispose()` in `disconnectedCallback()`. This keeps
+cleanup automatic when a preview is removed or replaced without coupling the
+runtime to Astro. The elements remain in light DOM, styled with ordinary host CSS;
+there is no Shadow DOM or slot contract.
 
 `renderToCanvas(canvas, commands)` and `clearCanvas(context, canvas)` are also
 exported for hosts that manage execution themselves.

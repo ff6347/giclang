@@ -7,14 +7,22 @@ export { clearCanvas, renderToCanvas } from "./render-to-canvas.ts";
 
 declare const GIC_WORKER_SOURCE: string;
 
-export function mountPreview(root: HTMLElement): () => void {
-	const editor = root.querySelector("textarea");
-	const canvas = root.querySelector("canvas");
-	const diagnostics = root.querySelector<HTMLElement>("[data-gic-diagnostics]");
-	const output = root.querySelector<HTMLElement>("[data-gic-output]");
-	if (!editor || !canvas || !diagnostics || !output) {
-		throw new Error("GIC preview elements are missing.");
-	}
+export interface PreviewOptions {
+	canvas: HTMLCanvasElement;
+	input: HTMLInputElement | HTMLTextAreaElement;
+	diagnostics: HTMLElement;
+	output: HTMLElement;
+	initialCode: string;
+}
+
+export function mountPreview({
+	canvas,
+	input,
+	diagnostics,
+	output,
+	initialCode,
+}: PreviewOptions): () => void {
+	input.value = initialCode;
 
 	let activeWorker: Worker | null = null;
 	let debounceTimer: number | undefined;
@@ -67,7 +75,7 @@ export function mountPreview(root: HTMLElement): () => void {
 			output.textContent = "";
 			diagnostics.textContent = "The preview could not be generated.";
 		};
-		worker.postMessage({ source: editor.value });
+		worker.postMessage({ source: input.value });
 	};
 	const schedule = () => {
 		window.clearTimeout(debounceTimer);
@@ -78,29 +86,11 @@ export function mountPreview(root: HTMLElement): () => void {
 		debounceTimer = window.setTimeout(run, 100);
 	};
 
-	editor.addEventListener("input", schedule);
+	input.addEventListener("input", schedule);
 	run();
 	return () => {
-		editor.removeEventListener("input", schedule);
+		input.removeEventListener("input", schedule);
 		window.clearTimeout(debounceTimer);
 		stop();
 	};
-}
-
-export function registerSketchElement(): void {
-	if (customElements.get("gic-sketch")) return;
-	customElements.define(
-		"gic-sketch",
-		class extends HTMLElement {
-			private dispose: (() => void) | undefined;
-
-			connectedCallback() {
-				this.dispose = mountPreview(this);
-			}
-
-			disconnectedCallback() {
-				this.dispose?.();
-			}
-		},
-	);
 }
