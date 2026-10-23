@@ -57,3 +57,31 @@
 - [blocked] Runtime issue `0182fff` remains open until broader verification
   blockers are resolved. Manual headed-browser smoke and container builds were
   not performed. Automated browser acceptance used real browser engines.
+
+## Explicit preview bindings
+
+- [decision] Fabian approved `PreviewOptions` with explicit Canvas, input,
+  diagnostics, output, and initial code. Commit `d21b24e` is pushed on `feat/blog`.
+  Mounting assigns the initial input value. Controls may be textarea or text input;
+  elements need no shared parent or runtime-specific attributes.
+- [decision] The runtime does not register custom elements. The blog component
+  and site page own their light-DOM lifecycle adapters and call disposal on
+  disconnection. Standalone export passes explicit bindings directly.
+- [technique] A real-worker test failed with the previous selector API before
+  implementation. It now passes with two previews spread across separate DOM
+  containers, deliberately different initial input values, both control types,
+  independent edits, diagnostics, timeout recovery, active-worker disposal,
+  removed input listeners, pending-debounce disposal, and remounting.
+- [technique] Production MDX acceptance verifies that removing and reconnecting
+  an active sketch cannot let the disposed run clear its replacement result.
+- [lesson] Astro scoped styles attach attributes to ancestor markup. The site
+  build assertion must recognize a `main` element with attributes rather than
+  require the literal opening tag `<main>`.
+- [technique] Passing checks: 433 core/CLI tests, runtime and production MDX
+  tests, all five site-build tests, package/core/editor typechecks, site build,
+  standalone file export in Chromium/Firefox/WebKit, and changed-code lint/format.
+- [blocked] Full blog and editor builds, browser E2E startup, and global
+  lint/format still reproduce the previously recorded unrelated blockers.
+  Compact tests again stalled at Vite watcher setup and were stopped by the
+  60-second tool timeout. The existing issues remain open; no local state was
+  deleted and no unrelated fixes were included.
