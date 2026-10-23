@@ -122,6 +122,10 @@
 	--box-shadow: 3px 3px 0 var(--color-text);
 }
 
+body {
+	font-family: var(--font-body);
+}
+
 h1 {
 	font-size: 1.953rem;
 	font-weight: 500;

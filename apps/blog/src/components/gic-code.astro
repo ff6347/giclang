@@ -1,0 +1,36 @@
+---
+const { initialCode, ...props } = Astro.props;
+---
+
+<canvas></canvas>
+<textarea name="code" id="code">{initialCode}</textarea>
+
+<style>
+	canvas {
+		width: 100px;
+		height: 100px;
+	}
+	textarea#code {
+		box-sizing: border-box;
+		width: 100%;
+		max-height: fit-content;
+		tab-size: 2;
+		border-radius: 0;
+		scrollbar-width: none;
+		border: 0;
+		padding: var(--s1);
+		font-weight: 600;
+		font-size: 0.9rem;
+		field-sizing: content;
+		min-height: 2lh;
+
+		&::-webkit-scrollbar {
+			display: none;
+		}
+	}
+
+	textarea#code:focus-visible {
+		outline: 3px dashed var(--color-text);
+		outline-offset: 2px;
+	}
+</style>
