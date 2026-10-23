@@ -1,5 +1,5 @@
 // ABOUTME: Builds and downloads one editable offline HTML artifact from GIC source.
-// ABOUTME: Embeds Vite-built core and Canvas bundles without external runtime requests.
+// ABOUTME: Embeds the shared browser runtime without external runtime requests.
 
 async function asset(name: string): Promise<string> {
 	const response = await fetch(`/standalone/${name}.js`);
@@ -7,11 +7,7 @@ async function asset(name: string): Promise<string> {
 	return response.text();
 }
 
-export function standaloneHtml(
-	source: string,
-	runtime: string,
-	worker: string,
-) {
+export function standaloneHtml(source: string, runtime: string) {
 	return `<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
@@ -71,19 +67,15 @@ pre { margin-bottom: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 <header><h1>Gestalten in Code</h1><p>Editable standalone sketch</p></header>
 <div class="editor"><label>Source<textarea aria-label="Source" rows="12"></textarea></label></div>
 <div class="preview"><canvas width="100" height="100"></canvas></div>
-<section><h2>Diagnostics</h2><pre id="diagnostics"></pre></section>
-<section><h2>Output</h2><pre id="output"></pre></section>
+<section><h2>Diagnostics</h2><pre id="diagnostics" data-gic-diagnostics></pre></section>
+<section><h2>Output</h2><pre id="output" data-gic-output></pre></section>
 </main>
-<script>${runtime}\nGicStandaloneRuntime.startStandalonePreview(${JSON.stringify(source)}, ${JSON.stringify(worker)});</script>
+<script>${runtime.replace(/<\/script/gi, "<\\/script")}\nconst root = document.querySelector("main");\nroot.querySelector("textarea").value = ${JSON.stringify(source).replaceAll("<", "\\u003c")};\nGicRuntime.mountPreview(root);</script>
 </html>`;
 }
 
 export async function createStandaloneHtml(source: string): Promise<string> {
-	const [runtime, worker] = await Promise.all([
-		asset("runtime"),
-		asset("worker"),
-	]);
-	return standaloneHtml(source, runtime, worker);
+	return standaloneHtml(source, await asset("runtime"));
 }
 
 export async function downloadStandaloneHtml(source: string) {

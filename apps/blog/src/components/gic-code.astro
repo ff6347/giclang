@@ -1,16 +1,38 @@
 ---
-const { initialCode, ...props } = Astro.props;
+interface Props {
+	initialCode: string;
+}
+
+const { initialCode } = Astro.props;
 ---
 
-<canvas></canvas>
-<textarea name="code" id="code">{initialCode}</textarea>
+<gic-sketch>
+	<canvas width="100" height="100"></canvas>
+	<textarea
+		name="code"
+		class="source"
+		aria-label="GIC source"
+		spellcheck="false"
+	>{initialCode}</textarea>
+	<pre data-gic-diagnostics aria-label="Diagnostics" aria-live="polite"></pre>
+	<pre data-gic-output aria-label="Output" aria-live="polite"></pre>
+</gic-sketch>
+
+<script>
+	import { registerSketchElement } from "@giclang/runtime";
+
+	registerSketchElement();
+</script>
 
 <style>
+	gic-sketch {
+		display: block;
+	}
 	canvas {
 		width: 100px;
 		height: 100px;
 	}
-	textarea#code {
+	textarea.source {
 		box-sizing: border-box;
 		width: 100%;
 		max-height: fit-content;
@@ -29,7 +51,7 @@ const { initialCode, ...props } = Astro.props;
 		}
 	}
 
-	textarea#code:focus-visible {
+	textarea.source:focus-visible {
 		outline: 3px dashed var(--color-text);
 		outline-offset: 2px;
 	}

@@ -44,6 +44,9 @@ importers:
       '@giclang/content':
         specifier: workspace:^
         version: link:../../packages/content
+      '@giclang/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
       '@giclang/styles':
         specifier: workspace:^
         version: link:../../packages/styles
@@ -71,6 +74,9 @@ importers:
       '@giclang/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@giclang/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
       '@giclang/styles':
         specifier: workspace:^
         version: link:../../packages/styles
@@ -145,6 +151,9 @@ importers:
       '@giclang/content':
         specifier: workspace:^
         version: link:../../packages/content
+      '@giclang/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
       '@giclang/styles':
         specifier: workspace:^
         version: link:../../packages/styles
@@ -190,6 +199,16 @@ importers:
         version: 4.0.9
 
   packages/core: {}
+
+  packages/runtime:
+    dependencies:
+      '@giclang/core':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      vite:
+        specifier: 8.2.2
+        version: 8.2.2(@types/node@25.7.0)(esbuild@0.28.2)(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2)(yaml@2.9.1)
 
   packages/styles: {}
 

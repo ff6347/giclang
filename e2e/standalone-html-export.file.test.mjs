@@ -12,20 +12,16 @@ import { standaloneHtml } from "../apps/editor/src/lib/standalone-export.ts";
 const outputDirectory = resolve("test-results/standalone-html-export");
 const artifactPath = resolve(outputDirectory, "sketch.html");
 const source =
-	'background(20, 0, 0);\nfill(0, 0, 0);\ncircle(50, 50, 30);\nprint("first");\nprint("second");';
+	'background(20, 0, 0);\nfill(0, 0, 0);\ncircle(50, 50, 30);\nprint("first");\nprint("second");\nprint("</script>");';
 const validSource = 'background(20, 0, 0);\nprint("recovered");';
-const runawaySource = `func forever() {
-	repeat(i, 0, 100000) {}
-	return forever();
-}
-forever();`;
+const runawaySource = "repeat(i, 0, 1000000000) {}";
 
 async function artifact() {
-	const [runtime, worker] = await Promise.all([
-		readFile("apps/editor/public/standalone/runtime.js", "utf8"),
-		readFile("apps/editor/public/standalone/worker.js", "utf8"),
-	]);
-	return standaloneHtml(source, runtime, worker);
+	const runtime = await readFile(
+		"apps/editor/public/standalone/runtime.js",
+		"utf8",
+	);
+	return standaloneHtml(source, runtime);
 }
 
 async function canvasAlpha(page, x = 0, y = 0) {
@@ -88,7 +84,7 @@ test(
 					assert.equal(await canvasAlpha(page), 255);
 					assert.equal(
 						await page.locator("#output").textContent(),
-						"Line 4: first\nLine 5: second",
+						"Line 4: first\nLine 5: second\nLine 6: </script>",
 					);
 
 					await expectFailure(

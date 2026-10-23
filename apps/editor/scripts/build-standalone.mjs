@@ -1,39 +1,15 @@
-// ABOUTME: Builds self-contained core-worker and Canvas-runtime assets for HTML export.
-// ABOUTME: Keeps the standalone artifact aligned with the shared browser source modules.
+// ABOUTME: Copies the shared browser runtime into the editor's export assets.
+// ABOUTME: Uses the same self-contained bundle as site and blog previews.
 
-import { rm } from "node:fs/promises";
+import { copyFile, mkdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { build } from "vite";
+import { fileURLToPath } from "node:url";
 
 const outputDirectory = resolve("public/standalone");
-const entries = [
-	{
-		entry: resolve("src/standalone-runtime.ts"),
-		fileName: "runtime",
-		name: "GicStandaloneRuntime",
-	},
-	{
-		entry: resolve("src/standalone-worker.ts"),
-		fileName: "worker",
-		name: "GicStandaloneWorker",
-	},
-];
+const runtime = fileURLToPath(
+	import.meta.resolve("@giclang/runtime/standalone"),
+);
 
 await rm(outputDirectory, { force: true, recursive: true });
-
-for (const { entry, fileName, name } of entries) {
-	await build({
-		build: {
-			emptyOutDir: false,
-			lib: {
-				entry,
-				fileName: () => `${fileName}.js`,
-				formats: ["iife"],
-				name,
-			},
-			outDir: outputDirectory,
-		},
-		configFile: false,
-		publicDir: false,
-	});
-}
+await mkdir(outputDirectory, { recursive: true });
+await copyFile(runtime, resolve(outputDirectory, "runtime.js"));
