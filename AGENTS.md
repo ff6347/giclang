@@ -48,6 +48,7 @@ This is one pnpm workspace with a private root command orchestrator and one lock
   - `core.ts` — host-neutral `parseSource` and `runSource` API.
 - `packages/core/src/tests/` — parser, analyzer, interpreter, and language-service tests.
 - `packages/cli/src/main.ts` — Node CLI entry point; `packages/cli/src/tests/` covers CLI output and installed tarballs.
+- `packages/runtime/src/` — shared browser preview controller, disposable worker, and Canvas rendering, exposed through `@giclang/runtime`.
 - `packages/content/content/` — host-neutral About, documentation, and immutable example bundles.
 - `packages/content/src/` — content validation, model, and trusted Markdown compilation.
 - `apps/editor/` — shared Vite React/Monaco/Canvas application and offline PWA.
@@ -100,6 +101,7 @@ Use the Node and pnpm versions declared in `mise.toml`.
 | `pnpm build:desktop`                | Build packaged desktop applications with Tauri.                                       |
 | `pnpm dev:browser --host 127.0.0.1` | Start the browser development server.                                                 |
 | `pnpm dev:desktop`                  | Start the shared IDE in the Tauri development shell.                                  |
+| `pnpm test:runtime`                 | Test shared previews and production MDX integration.                                  |
 | `pnpm test:desktop`                 | Run native bridge and persistence tests.                                              |
 | `pnpm test:e2e`                     | Run Playwright acceptance tests in Firefox.                                           |
 | `pnpm test:pwa`                     | Run production PWA offline and update acceptance in three browser engines.            |

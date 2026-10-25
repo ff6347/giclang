@@ -1,5 +1,5 @@
-// ABOUTME: Runs the shared GIC core inside a standalone HTML Blob worker.
-// ABOUTME: Keeps standalone execution results identical to browser preview results.
+// ABOUTME: Runs the shared GIC core inside a disposable browser worker.
+// ABOUTME: Returns structured commands, output, and diagnostics to preview hosts.
 
 import { runSource } from "@giclang/core";
 

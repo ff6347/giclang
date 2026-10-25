@@ -1,0 +1,34 @@
+---
+import "@giclang/styles/tokens.css";
+import "../styles/global.css";
+
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+
+const colors = [
+	"lightpink",
+	"lightgoldenrodyellow",
+	"salmon",
+	"aquamarine",
+	"coral",
+	"crimson",
+	"deeppink",
+	"hotpink",
+];
+const randomColor = colors[Math.floor(Math.random() * colors.length)];
+---
+
+<!doctype html>
+<html lang="en">
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<body>
+		<Header />
+		<main>
+			<slot />
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style define:vars={{ "color-random": randomColor }}></style>

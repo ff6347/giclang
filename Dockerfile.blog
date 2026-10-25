@@ -1,0 +1,30 @@
+# ABOUTME: Builds the static GIC webblog without Railpack or mise.
+# ABOUTME: Serves the Astro production output from a minimal Caddy image.
+FROM node:26.12.1-bookworm-slim AS build
+
+WORKDIR /app
+
+RUN npm install --global --allow-scripts=pnpm pnpm@12.5.1
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/core/package.json ./packages/core/package.json
+COPY packages/runtime/package.json ./packages/runtime/package.json
+COPY packages/content/package.json ./packages/content/package.json
+COPY packages/styles/package.json ./packages/styles/package.json
+COPY apps/blog/package.json ./apps/blog/package.json
+RUN pnpm install --frozen-lockfile
+
+COPY packages/core ./packages/core
+COPY packages/runtime ./packages/runtime
+COPY packages/content ./packages/content
+COPY packages/styles ./packages/styles
+COPY apps/blog ./apps/blog
+
+RUN pnpm run build:blog
+
+FROM caddy:2.10.2-alpine
+
+COPY Caddyfile.blog /etc/caddy/Caddyfile
+COPY --from=build /app/apps/blog/dist /srv
+
+EXPOSE 80

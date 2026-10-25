@@ -1,0 +1,50 @@
+//CC BY NC-SA 4.0 Pauline Gillner
+randomSeed(48876579);
+let counter = 0;
+//Polygon Kontur
+func polya(x, y) {
+	noStroke();
+	fill("wheat");
+	quad(x, y - 10, x, y + 10, x - 10, y + 5, x - 10, y - 5);
+	quad(x, y - 10, x, y + 10, x + 10, y + 5, x + 10, y - 5);
+	return;
+}
+//Raute
+func raute(x, y) {
+	strokeWidth(1);
+	stroke(80, 30, 85);
+	fill(70, 30, 80);
+	quad(x, y - 6, x, y, x - 6, y + 3, x - 6, y - 3);
+	quad(x, y - 6, x, y, x + 6, y + 3, x + 6, y - 3);
+	quad(x - 6, y + 3, x, y, x + 6, y + 3, x, y + 6);
+	return;
+}
+//Polygon
+func polyb(x, y) {
+	let number = random(0, 10);
+	if (number > 6) {
+		noStroke();
+		fill(80, 30, 85);
+		quad(x, y - 10 + 1.5, x, y + 10 - 1.5, x - 10 + 1.5, y + 5 - 1, x - 10 + 1.5, y - 5 + 1);
+		quad(x, y - 10 + 1.5, x, y + 10 - 1.5, x + 10 - 1.5, y + 5 - 1, x + 10 - 1.5, y - 5 + 1);
+		raute(x, y);
+	} else {
+		fill(random(50, 70), 40, random(50, 90));
+		quad(x, y - 10 + 1.5, x, y + 10 - 1.5, x - 10 + 1.5, y + 5 - 1, x - 10 + 1.5, y - 5 + 1);
+		quad(x, y - 10 + 1.5, x, y + 10 - 1.5, x + 10 - 1.5, y + 5 - 1, x + 10 - 1.5, y - 5 + 1);
+	}
+	return;
+}
+//Versatz
+repeat(y, 0, WIDTH + 10, 15) {
+	counter = counter + 1;
+	repeat(x, 0, WIDTH + 10, 20) {
+		if (counter % 2 == 1) {
+			polya(x, y);
+			polyb(x, y);
+		} else {
+			polya(x + 10, y);
+			polyb(x + 10, y);
+		}
+	}
+}

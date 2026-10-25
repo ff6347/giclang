@@ -1,0 +1,10 @@
+{/* ABOUTME: Renders two blog sketches through the real MDX component. */}
+{/* ABOUTME: Keeps production bundling and instance isolation observable in a browser. */}
+
+import GicCode from "../../../../src/components/gic-code.astro";
+
+# GIC sketches
+
+<GicCode initialCode={'background("#ff0000"); print("first");'} />
+
+<GicCode initialCode={'background("#0000ff"); print("<second>");'} />

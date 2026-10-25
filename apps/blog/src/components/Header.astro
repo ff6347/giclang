@@ -1,0 +1,47 @@
+---
+import { SITE_TITLE } from "../consts";
+---
+
+<header>
+	<nav>
+		<h2>
+			<a href="/" style={{ backgroundColor: `var(--color-random)` }}>
+				{SITE_TITLE}
+			</a>
+		</h2>
+	</nav>
+</header>
+<style>
+	header {
+		margin: 0;
+		padding: 0;
+	}
+
+	h2 a {
+		display: inline-block;
+	}
+	h2 a,
+	h2 a.active {
+		text-decoration: none;
+	}
+	h2 a:hover {
+		box-shadow: var(--box-shadow);
+	}
+	nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	nav a {
+		padding: 0 0.5em;
+		color: var(--black);
+		text-decoration: underline;
+	}
+	nav a.active {
+		text-decoration: none;
+		border-bottom-color: var(--color-chrome);
+	}
+
+	@media (max-width: 720px) {
+	}
+</style>

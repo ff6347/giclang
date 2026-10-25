@@ -78,10 +78,8 @@ pre {
 	tab-size: 2;
 }
 
-
 code {
 	font-family: var(--font-body);
-
 	background-color: var(--color-chrome);
 }
 pre > code {
@@ -204,19 +202,6 @@ nav.default-nav {
 
 	nav.default-nav[data-expanded="false"] ul {
 		display: none;
-	}
-}
-
-ul {
-	padding-bottom: var(--s4);
-}
-li {
-	list-style-type: square;
-	padding-left: var(--s1);
-
-	padding-bottom: var(--s0);
-	p {
-		margin: 0;
 	}
 }
 

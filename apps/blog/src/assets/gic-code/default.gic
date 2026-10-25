@@ -1,0 +1,9 @@
+// edit me!
+repeat(_, 0, 500) {
+	fill("lightpink");
+	strokeWidth(random(0.2,3));
+	circle((1 / sqrt(random(0, 1))) * 50 - WIDTH / 2,
+	random(0, HEIGHT),
+	random(0, 4));
+}
+// print("👋🏾 🌎!");

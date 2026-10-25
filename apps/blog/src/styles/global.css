@@ -1,0 +1,29 @@
+html,
+body {
+	height: 100%;
+}
+
+main {
+	padding: var(--s1);
+	max-width: 66ch;
+	margin: 0 auto;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+	box-shadow: var(--box-shadow);
+}
+
+footer {
+	text-align: right;
+}
+
+mark {
+	background-color: var(--color-random);
+}
+
+a:hover {
+	background-color: var(--color-random);
+	box-shadow: var(--box-shadow);
+}

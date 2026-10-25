@@ -1,5 +1,5 @@
 // ABOUTME: Builds and downloads one editable offline HTML artifact from GIC source.
-// ABOUTME: Embeds Vite-built core and Canvas bundles without external runtime requests.
+// ABOUTME: Embeds the shared browser runtime without external runtime requests.
 
 async function asset(name: string): Promise<string> {
 	const response = await fetch(`/standalone/${name}.js`);
@@ -7,11 +7,7 @@ async function asset(name: string): Promise<string> {
 	return response.text();
 }
 
-export function standaloneHtml(
-	source: string,
-	runtime: string,
-	worker: string,
-) {
+export function standaloneHtml(source: string, runtime: string) {
 	return `<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
@@ -74,16 +70,12 @@ pre { margin-bottom: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 <section><h2>Diagnostics</h2><pre id="diagnostics"></pre></section>
 <section><h2>Output</h2><pre id="output"></pre></section>
 </main>
-<script>${runtime}\nGicStandaloneRuntime.startStandalonePreview(${JSON.stringify(source)}, ${JSON.stringify(worker)});</script>
+<script>${runtime.replace(/<\/script/gi, "<\\/script")}\nGicRuntime.mountPreview({\ncanvas: document.querySelector("canvas"),\ninput: document.querySelector("textarea"),\ndiagnostics: document.getElementById("diagnostics"),\noutput: document.getElementById("output"),\ninitialCode: ${JSON.stringify(source).replaceAll("<", "\\u003c")}\n});</script>
 </html>`;
 }
 
 export async function createStandaloneHtml(source: string): Promise<string> {
-	const [runtime, worker] = await Promise.all([
-		asset("runtime"),
-		asset("worker"),
-	]);
-	return standaloneHtml(source, runtime, worker);
+	return standaloneHtml(source, await asset("runtime"));
 }
 
 export async function downloadStandaloneHtml(source: string) {
