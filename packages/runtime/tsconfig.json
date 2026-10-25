@@ -1,0 +1,25 @@
+// ABOUTME: Checks browser-runtime modules and emits their public declarations.
+// ABOUTME: Keeps DOM types outside the browser-neutral language package.
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"lib": ["DOM", "ESNext"],
+		"types": [],
+		"rootDir": "src",
+		"outDir": "dist",
+		"declaration": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"allowImportingTsExtensions": true,
+		"rewriteRelativeImportExtensions": true
+	},
+	"include": ["src/**/*.ts"]
+}

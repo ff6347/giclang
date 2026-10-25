@@ -38,12 +38,11 @@ test("downloads the exact current standalone HTML artifact", async ({
 	const download = await downloadPromise;
 	expect(download.suggestedFilename()).toBe("gic-sketch.html");
 
-	const [downloaded, runtime, worker] = await Promise.all([
+	const [downloaded, runtime] = await Promise.all([
 		readFile(await download.path(), "utf8"),
 		readFile("apps/editor/public/standalone/runtime.js", "utf8"),
-		readFile("apps/editor/public/standalone/worker.js", "utf8"),
 	]);
 	expect(downloaded).toBe(
-		standaloneHtml(currentSource.replaceAll("\n", "\r\n"), runtime, worker),
+		standaloneHtml(currentSource.replaceAll("\n", "\r\n"), runtime),
 	);
 });

@@ -1,0 +1,7 @@
+# ABOUTME: Serves the statically generated GIC website.
+# ABOUTME: Preserves Astro's file-based routes and ordinary 404 responses.
+:80 {
+	root * /srv
+	encode zstd gzip
+	file_server
+}

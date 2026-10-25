@@ -11,7 +11,7 @@ import {
 import Worker from "../worker.ts?worker";
 import type { RunResult } from "@giclang/core";
 import { setEditorDiagnostics, type GicEditor } from "../lib/gic-editor.ts";
-import { clearCanvas, renderToCanvas } from "../lib/render-to-canvas.ts";
+import { clearCanvas, renderToCanvas } from "@giclang/runtime";
 import { capturePreviewPng } from "../lib/preview-capture.ts";
 import { PreviewSource } from "../lib/preview-source.ts";
 
