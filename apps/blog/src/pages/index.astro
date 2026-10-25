@@ -3,40 +3,48 @@ import FormattedDate from "../components/FormattedDate.astro";
 import DefaultLayout from "../layouts/default.astro";
 import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
-
+import arrow from "pixelarticons/svg/arrow-down.svg?raw";
 const posts = (await getCollection("blog")).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 ---
 
 <DefaultLayout>
-	<body>
-		<main>
-			<h1>Hello, giclang</h1>
-			<section>
-				<ul>
-					{posts.map((post) => (
-						<li>
-							<a href={`/blog/${post.id}/`}>
-								{post.data.heroImage && (
-									<Image
-										width={100}
-										height={100}
-										src={post.data.heroImage}
-										alt=""
-									/>
-								)}
-								<h4 class="title">{post.data.title}</h4>
-								<p class="date">
-									<FormattedDate date={post.data.pubDate} />
-								</p>
-							</a>
-						</li>
-					))}
-				</ul>
-			</section>
-		</main>
-	</body>
+	<p>This is the giclang blog. We will see what happens here.</p>
+	<p>
+		If you want to find out what giclang is read{" "}
+		<a href="https://giclang.cc">giclang.cc</a>. If you want to play with the
+		language goto the <a href="https://editor.giclang.cc">editor</a>. There you
+		will also find the language reference. To see how the development process
+		works, check out the{" "}
+		<a href="https://github.com/ff6347/giclang">GitHub repository</a>. To read
+		more about the things in process carry on reading down there{" "}
+		<Fragment set:html={arrow} style={{ display: "inline-block;" }} />
+	</p>
+	<section>
+		<ul>
+			{posts.map((post) => (
+				<li>
+					<a href={`/blog/${post.id}/`}>
+						<h4 class="title">{post.data.title}</h4>
+					</a>
+					<FormattedDate date={post.data.pubDate} />
+					<div class="content">
+						{post.data.heroImage && (
+							<Image
+								width={100}
+								height={100}
+								src={post.data.heroImage}
+								alt=""
+							/>
+						)}
+						<p>{post.data.description}</p>
+					</div>
+					<p class="date"></p>
+				</li>
+			))}
+		</ul>
+	</section>
 </DefaultLayout>
 
 <style>
@@ -49,5 +57,16 @@ const posts = (await getCollection("blog")).sort(
 				padding: 0;
 			}
 		}
+	}
+	.content {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: var(--s4);
+	}
+
+	svg {
+		vertical-align: middle;
+		height: 10px;
 	}
 </style>

@@ -53,6 +53,9 @@ importers:
       astro:
         specifier: 7.4.2
         version: 7.4.2(@types/node@25.7.0)(esbuild@0.28.2)(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2)(yaml@2.9.1)
+      pixelarticons:
+        specifier: 2.4.2
+        version: 2.4.2(react@19.3.0)
       sharp:
         specifier: 0.35.0
         version: 0.35.0
@@ -3810,6 +3813,12 @@ packages:
 
   pixelarticons@2.4.1:
     resolution: {integrity: sha512-NIiwuEmBrFT6YG5PdMnOPRsGm0rbz4TiH0P5sgftjrQugxgdF+xtZPgGrgAOL76KUMJ04kk5Bq2lVLnmBg7IPw==}
+    hasBin: true
+    peerDependencies:
+      react: '>=16'
+
+  pixelarticons@2.4.2:
+    resolution: {integrity: sha512-BZKSU5ckLuioZCzES4fEmdQfnI8XEiQlHljdIVk+N6+KH7vTBQJNtMs+V0LQF7nC7cZbKT0qBXFOsT35sl8uhg==}
     hasBin: true
     peerDependencies:
       react: '>=16'
@@ -8469,6 +8478,10 @@ snapshots:
   picomatch@4.0.7: {}
 
   pixelarticons@2.4.1(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+
+  pixelarticons@2.4.2(react@19.3.0):
     dependencies:
       react: 19.3.0
 

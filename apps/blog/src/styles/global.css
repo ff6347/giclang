@@ -4,7 +4,7 @@ body {
 }
 
 main {
-	padding: var(--s2);
+	padding: var(--s1);
 	max-width: 66ch;
 	margin: 0 auto;
 }
@@ -17,4 +17,13 @@ img {
 
 footer {
 	text-align: right;
+}
+
+mark {
+	background-color: var(--color-random);
+}
+
+a:hover {
+	background-color: var(--color-random);
+	box-shadow: var(--box-shadow);
 }

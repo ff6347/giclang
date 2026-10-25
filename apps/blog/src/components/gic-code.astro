@@ -48,7 +48,9 @@ const { initialCode } = Astro.props;
 
 <style>
 	gic-sketch {
-		display: block;
+		display: flex;
+		flex-direction: column;
+		gap: var(--s2);
 	}
 	canvas {
 		width: 100px;
@@ -75,6 +77,6 @@ const { initialCode } = Astro.props;
 
 	textarea.source:focus-visible {
 		outline: 3px dashed var(--color-text);
-		outline-offset: 2px;
+		outline-offset: 0px;
 	}
 </style>

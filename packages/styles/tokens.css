@@ -165,3 +165,41 @@ h6 {
 	margin: var(--s0);
 	padding: 1.33em var(--s0) 0.33em;
 }
+
+pre {
+	box-sizing: border-box;
+	font-family: inherit;
+	font-size: inherit;
+	margin: 1em 0;
+	max-width: 100%;
+	overflow-x: auto;
+	tab-size: 2;
+}
+
+code {
+	font-family: var(--font-body);
+	background-color: var(--color-chrome);
+}
+pre > code {
+	background-color: transparent;
+}
+
+code:not(pre code) {
+	font-style: italic;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	tab-size: 2;
+}
+
+ul {
+	padding-bottom: var(--s4);
+}
+li {
+	list-style-type: square;
+	padding-left: var(--s1);
+
+	padding-bottom: var(--s0);
+	p {
+		margin: 0;
+	}
+}

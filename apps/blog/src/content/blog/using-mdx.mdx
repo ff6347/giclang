@@ -1,12 +1,32 @@
 ---
 title: "gic in this blog"
 description: "How to add gic code to this blog"
-pubDate: "Jun 01 2024"
-heroImage: "../../assets/gic-logo-v1.png"
+pubDate: "Oct 22 2026"
+heroImage: "../../assets/images/mdx.png"
+author: "Fabian Morón Zirfas"
 ---
 
 This is more of a experiment so we can have gic code in here. Loading from the core and things like this. Draw to a canvas.
 
+import source from "../../assets/gic-code/default.gic?raw";
 import GicCode from "../../components/gic-code.astro";
 
-<GicCode initialCode="repeat(_,0,500,1){}" />
+<GicCode initialCode={source} />
+
+Just to remind me how this works.
+
+We import the .gic source code as raw string here in Astro and have a component that uses the @giclang/runtime package to render the code.
+
+In the component, we have a web component that takes care of mounting and unmounting the gic runtime.
+We provide a
+
+- `HTMLTextAreaElement | HTMLInputElement` Where the code is editable.
+- `HTMLCanvasElement` Where the result is rendered.
+- `HTMLElement` for the diagnotics
+- `HTMLElement` for the output of the print statements.
+
+The `mountPreview ({canvas, diagnostics, output, input})` in the `connectedCallback` function returns a cleanup function that can be called in the `disconnectedCallback` of the web component.
+
+The `@giclang/runtime` also exports a standalone iife (remember: imidiately invoked function expression) that is used in the standalone export that the editor and the desktop app provide.
+
+Eventually I might publish this to the npm registry but I am not there yet.
